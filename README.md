@@ -6,6 +6,6 @@ This project leverages Flutter for the frontend and Node.js with MongoDB for the
 
 ## 🌟 Key Features
 - 📱 Augmented Reality (AR) virtual try-on
-- 👓 Personalized eyeglass recommendations
-- 📊 User profile and style tracking
+- 👓 Eyewear recommendations
+- 📊 User face shape analytics
 - 🔐 Secure authentication and user management
