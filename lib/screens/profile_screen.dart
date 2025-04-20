@@ -1,0 +1,171 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../constants.dart';
+import '../widgets/custom_text.dart';
+import '../widgets/custom_horizontal_product_card.dart';
+import '../widgets/custom_vertical_product_card.dart';
+
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String username = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsername();
+  }
+
+  Future<void> _loadUsername() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      username = prefs.getString('username') ?? 'Guest';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: WHITE_COLOR,
+      appBar: AppBar(
+        title: CustomText(
+          text: 'PROFILE',
+          fontSize: ScreenUtil().setSp(20),
+          fontWeight: FontWeight.bold,
+          color: BLACK_COLOR,
+        ),
+        backgroundColor: WHITE_COLOR,
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(ScreenUtil().setWidth(20)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundImage: AssetImage('assets/images/shizuku.jpeg'),
+                ),
+                SizedBox(width: 10.w),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    CustomText(
+                      text: '$username',
+                      fontSize: ScreenUtil().setSp(22),
+                      fontWeight: FontWeight.bold,
+                      color: BLACK_COLOR,
+                    ),
+                    SizedBox(height: 1.h),
+                    CustomText(
+                      text: 'aniascobeverly@gmail.com',
+                      fontSize: ScreenUtil().setSp(12),
+                      color: Colors.grey,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            SizedBox(height: 20.h),
+            _buildCompletedTransactionsDropdown(),
+            _buildDropdown('My Reviews', ['Review 1', 'Review 2', 'Review 3']),
+            _buildDropdown('My Personal Information', ['Name: John Doe', 'Email: john.doe@example.com', 'Phone: 123-456-7890']),
+            _buildSettingsDropdown(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCompletedTransactionsDropdown() {
+    return ExpansionTile(
+      title: CustomText(
+        text: 'Completed Transactions',
+        fontSize: ScreenUtil().setSp(18),
+        fontWeight: FontWeight.bold,
+        color: BLACK_COLOR,
+      ),
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 8.w),
+          child: Column(
+            children: [
+              CustomHorizontalProductCard(
+                prodName: 'WEBB',
+                prodSize: 'Total: ',
+                prodPrice: '500.00 PHP',
+                numStars: 4,
+                prodImage: 'assets/images/eyewear_1.png',
+              ),
+              SizedBox(height: 10.h),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDropdown(String title, List<String> items) {
+    return ExpansionTile(
+      title: CustomText(
+        text: title,
+        fontSize: ScreenUtil().setSp(18),
+        fontWeight: FontWeight.bold,
+        color: BLACK_COLOR,
+      ),
+      children: items
+          .map(
+            (item) => Padding(
+              padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 10.w),
+              child: CustomText(
+                text: item,
+                fontSize: ScreenUtil().setSp(16),
+                color: Colors.black54,
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  Widget _buildSettingsDropdown() {
+    return ExpansionTile(
+      title: CustomText(
+        text: 'Settings',
+        fontSize: ScreenUtil().setSp(18),
+        fontWeight: FontWeight.bold,
+        color: BLACK_COLOR,
+      ),
+      children: [
+        _buildSettingsButton('Change Password', () {}),
+        _buildSettingsButton('Privacy Policy', () {}),
+        _buildSettingsButton('Log Out', () {}),
+      ],
+    );
+  }
+
+  Widget _buildSettingsButton(String title, VoidCallback onPressed) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 10.w),
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: 10.h),
+          alignment: Alignment.centerLeft,
+        ),
+        child: CustomText(
+          text: title,
+          fontSize: ScreenUtil().setSp(16),
+          color: Colors.black54,
+        ),
+      ),
+    );
+  }
+}

@@ -1,0 +1,65 @@
+name: aniasco_long_exam1
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.2.6 <4.0.0'
+
+dependencies:
+  cached_network_image: ^3.4.1
+  delayed_display: ^2.0.0
+  flutter:
+    sdk: flutter
+  flutter_screenutil: ^5.9.3
+  http: ^1.3.0
+  shared_preferences: ^2.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  assets:
+    - assets/images/nu.png
+    - assets/images/shizuku.jpeg
+    - assets/images/hirono.jpg
+    - assets/images/mouse.png
+    - assets/images/keyboard.png
+    - assets/images/tshirt.jpg
+    - assets/images/blouse.jpg
+    - assets/images/plushi.jpg
+    - assets/images/ipad.jpg
+    - assets/images/laptop.jpg
+    - assets/images/iphonecase.jpg
+    - assets/images/mime.jpg
+    - assets/images/clot.jpg
+    - assets/images/bag.jpg
+    - assets/images/shoes.jpg
+    - assets/images/theotherone.jpg
+    - assets/images/dogfood.jpg
+    - assets/images/headset.jpg
+    - assets/images/earphones.jpeg
+    - assets/images/airpods.jpg
+    - assets/images/monitor.jpg
+    - assets/images/baobab_logo.png
+    - assets/images/eyewear_1.png
+    - assets/images/eyewear_2.png
+    - assets/images/eyewear_3.png
+    - assets/images/eyewear_4.png
+    - assets/images/faceshape.png
+    - assets/images/neutralface.jpg
+    - assets/images/wes.gif
+    - assets/images/eyewear_5.png
+    - assets/images/eyewear_6.png
+    - assets/images/eyewear_7.png
+    - assets/images/eyewear_8.png
+    - assets/images/eyewear_9.png
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 900
+  uses-material-design: true

@@ -1,0 +1,2 @@
+/Users/beverlyaniasco/Documents/Flutter Projects/aniasco_long_exam1/android/app/.cxx/Debug/6v2f6t22/x86/CMakeFiles/edit_cache.dir
+/Users/beverlyaniasco/Documents/Flutter Projects/aniasco_long_exam1/android/app/.cxx/Debug/6v2f6t22/x86/CMakeFiles/rebuild_cache.dir
