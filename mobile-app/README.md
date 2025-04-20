@@ -1,3 +1,2 @@
-# aniasco_long_exam1
+# Baobab Mobile Application
 
-A new Flutter project.
