@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
 import '../widgets/custom_text.dart';
-import 'package:aniasco_long_exam1/widgets/custom_horizontal_product_card.dart';
+import 'package:baobab_vision_project/widgets/custom_horizontal_product_card.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});

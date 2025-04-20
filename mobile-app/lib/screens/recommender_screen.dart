@@ -1,6 +1,6 @@
-import 'package:aniasco_long_exam1/constants.dart';
-import 'package:aniasco_long_exam1/screens/survey_screen.dart';
-import 'package:aniasco_long_exam1/widgets/custom_text.dart';
+import 'package:baobab_vision_project/constants.dart';
+import 'package:baobab_vision_project/screens/survey_screen.dart';
+import 'package:baobab_vision_project/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:delayed_display/delayed_display.dart';

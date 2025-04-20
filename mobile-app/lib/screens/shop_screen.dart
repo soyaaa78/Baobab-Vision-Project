@@ -1,11 +1,11 @@
-import 'package:aniasco_long_exam1/screens/recommender_screen.dart';
-import 'package:aniasco_long_exam1/screens/vto_screen.dart';
+import 'package:baobab_vision_project/screens/recommender_screen.dart';
+import 'package:baobab_vision_project/screens/vto_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
 import '../widgets/custom_text.dart';
-import 'package:aniasco_long_exam1/widgets/custom_vertical_product_card.dart';
-import 'package:aniasco_long_exam1/widgets/custom_horizontal_product_card.dart';
+import 'package:baobab_vision_project/widgets/custom_vertical_product_card.dart';
+import 'package:baobab_vision_project/widgets/custom_horizontal_product_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ShopScreen extends StatefulWidget {

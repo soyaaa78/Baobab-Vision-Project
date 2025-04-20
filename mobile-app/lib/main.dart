@@ -1,6 +1,6 @@
-import 'package:aniasco_long_exam1/screens/login_screen.dart';
-import 'package:aniasco_long_exam1/screens/register_screen.dart';
-import 'package:aniasco_long_exam1/screens/splash_screen.dart';
+import 'package:baobab_vision_project/screens/login_screen.dart';
+import 'package:baobab_vision_project/screens/register_screen.dart';
+import 'package:baobab_vision_project/screens/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

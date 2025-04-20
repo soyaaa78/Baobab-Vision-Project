@@ -1,4 +1,4 @@
-import 'package:aniasco_long_exam1/widgets/custom_vertical_product_card.dart';
+import 'package:baobab_vision_project/widgets/custom_vertical_product_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';

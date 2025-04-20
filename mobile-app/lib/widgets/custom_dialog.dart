@@ -1,6 +1,6 @@
 
-import 'package:aniasco_long_exam1/constants.dart';
-import 'package:aniasco_long_exam1/widgets/custom_text.dart';
+import 'package:baobab_vision_project/constants.dart';
+import 'package:baobab_vision_project/widgets/custom_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';

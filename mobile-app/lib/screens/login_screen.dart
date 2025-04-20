@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:aniasco_long_exam1/screens/email_verification_screen.dart';
+import 'package:baobab_vision_project/screens/email_verification_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;

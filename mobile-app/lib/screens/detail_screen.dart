@@ -1,5 +1,5 @@
-import 'package:aniasco_long_exam1/screens/cart_screen.dart';
-import 'package:aniasco_long_exam1/screens/vto_screen.dart';
+import 'package:baobab_vision_project/screens/cart_screen.dart';
+import 'package:baobab_vision_project/screens/vto_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
