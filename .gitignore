@@ -1,0 +1,44 @@
+# --- FLUTTER/DART ---
+.dart_tool/
+.packages
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.idea/
+.vscode/
+*.iml
+
+# --- iOS/macOS ---
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/.symlinks/
+macos/Pods/
+macos/Runner.xcworkspace/
+DerivedData/
+
+# --- ANDROID ---
+android/.gradle/
+android/.idea/
+android/local.properties
+
+# --- WINDOWS ---
+windows/runner/Debug/
+windows/runner/Release/
+windows/runner/Release_x64/
+
+# --- WEB ---
+web/.dart_tool/
+
+# --- NODEJS BACKEND ---
+node_modules/
+backend/node_modules/
+.env
+.env.local
+*.log
+
+# --- OTHER ---
+*.swp
+.DS_Store
+*.lock
+

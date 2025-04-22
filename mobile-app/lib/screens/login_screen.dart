@@ -33,29 +33,31 @@ class _LogInScreenState extends State<LogInScreen> {
   var url = Uri.parse('http://10.0.2.2:3001/auth/login');
 
   try {
-    var response = await http.post(
+    final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
-      body: json.encode({
+      body: jsonEncode({
         'username': usernameController.text.trim(),
         'password': passwordController.text.trim(),
       }),
     );
 
-    var resData = json.decode(response.body);
+    print('🔄 LOGIN RESPONSE CODE: ${response.statusCode}');
+    print('🔄 LOGIN RESPONSE BODY: ${response.body}');
+
+    final resData = jsonDecode(response.body);
 
     if (response.statusCode == 200) {
-      final token = resData['token']; // auth token
+      final token = resData['token'];
       final email = resData['email'];
-      final isVerified = resData['isVerified'];
-      final verificationToken = resData['verificationToken']; // ✅ NEW
+      final isVerified = resData['isVerified'] ?? true;
+      final verificationToken = resData['verificationToken'];
 
       await _saveUsername(usernameController.text.trim());
 
       if (isVerified) {
         Navigator.pushReplacementNamed(context, '/home');
       } else {
-        // Pass the verificationToken to the screen
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -63,149 +65,172 @@ class _LogInScreenState extends State<LogInScreen> {
               username: usernameController.text.trim(),
               password: passwordController.text.trim(),
               email: email,
-              token: verificationToken, // ✅ use correct token here
+              token: verificationToken,
               isVerified: false,
             ),
           ),
         );
       }
     } else {
-      customDialog(context, title: 'Login Failed', content: resData['message']);
+      final errorMessage = resData['message'] ?? 'Invalid login. Please try again.';
+      customDialog(context, title: 'Login Failed', content: errorMessage);
     }
   } catch (e) {
-    customDialog(context, title: 'Error', content: 'Something went wrong. Please try again.');
+    print('❌ Login Exception: $e');
+    customDialog(
+      context,
+      title: 'Error',
+      content: 'Unexpected error occurred. Please check your connection and try again.',
+    );
   }
 }
-
-
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: WHITE_COLOR,
-      body: SingleChildScrollView(
-        child: SizedBox(
-          height: ScreenUtil().screenHeight,
-          width: ScreenUtil().screenWidth,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SizedBox(height: 40.h),
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: WHITE_COLOR,
+    body: SingleChildScrollView(
+      child: SizedBox(
+        height: ScreenUtil().screenHeight,
+        width: ScreenUtil().screenWidth,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SizedBox(height: 40.h),
 
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 25.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Image.asset(
-                          'assets/images/baobab_logo.png',
-                          height: 150.h,
-                        ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 25.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Image.asset(
+                        'assets/images/baobab_logo.png',
+                        height: 150.h,
                       ),
-                      SizedBox(height: 30.h),
+                    ),
+                    SizedBox(height: 30.h),
 
-                      /// Username Field
-                      TextFormField(
-                        controller: usernameController,
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Please enter your username'
-                            : null,
-                        decoration: InputDecoration(
-                          labelText: 'Username',
-                          labelStyle: TextStyle(
-                            fontSize: 15.sp,
-                            color: BLACK_COLOR,
-                          ),
-                          prefixIcon: const Icon(Icons.person),
-                          border: const OutlineInputBorder(),
+                    /// Username Field
+                    TextFormField(
+                      controller: usernameController,
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Please enter your username'
+                          : null,
+                      decoration: InputDecoration(
+                        labelText: 'Username',
+                        labelStyle: TextStyle(
+                          fontSize: 15.sp,
+                          color: BLACK_COLOR,
                         ),
+                        prefixIcon: const Icon(Icons.person),
+                        border: const OutlineInputBorder(),
                       ),
-                      SizedBox(height: 20.h),
+                    ),
+                    SizedBox(height: 20.h),
 
-                      /// Password Field
-                      TextFormField(
-                        controller: passwordController,
-                        obscureText: _isObscure,
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Please enter your password'
-                            : null,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          labelStyle: TextStyle(
-                            fontSize: 15.sp,
-                            color: BLACK_COLOR,
-                          ),
-                          prefixIcon: const Icon(Icons.lock),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isObscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isObscure = !_isObscure;
-                              });
-                            },
-                          ),
-                          border: const OutlineInputBorder(),
+                    /// Password Field
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: _isObscure,
+                      validator: (value) => value == null || value.isEmpty
+                          ? 'Please enter your password'
+                          : null,
+                      decoration: InputDecoration(
+                        labelText: 'Password',
+                        labelStyle: TextStyle(
+                          fontSize: 15.sp,
+                          color: BLACK_COLOR,
                         ),
+                        prefixIcon: const Icon(Icons.lock),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isObscure
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isObscure = !_isObscure;
+                            });
+                          },
+                        ),
+                        border: const OutlineInputBorder(),
                       ),
-                      SizedBox(height: 30.h),
+                    ),
+                    SizedBox(height: 25.h),
 
-                      /// Login Button
-                      CustomInkwellButton(
+                    /// Forgot Password Link
+                    Center(
+                      child: GestureDetector(
                         onTap: () {
-                          if (_formKey.currentState!.validate()) {
-                            login();
-                          }
+                          Navigator.pushNamed(context, '/forgot-password');
                         },
-                        height: 45.h,
-                        width: double.infinity,
-                        buttonName: 'Login',
-                        fontSize: 16.sp,
+                        child: Text(
+                          'Forgot Password?',
+                          style: TextStyle(
+                            color: Theme.of(context).primaryColor,
+                            fontSize: 14.sp,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                    SizedBox(height: 25.h),
 
-                /// Register Link
-                Container(
-                  height: 50.h,
-                  width: double.infinity,
-                  color: BLACK_COLOR,
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account?",
+                    /// Login Button
+                    CustomInkwellButton(
+                      onTap: () {
+                        if (_formKey.currentState!.validate()) {
+                          login();
+                        }
+                      },
+                      height: 45.h,
+                      width: double.infinity,
+                      buttonName: 'Login',
+                      fontSize: 16.sp,
+                    ),
+                  ],
+                ),
+              ),
+
+              /// Register Link
+              Container(
+                height: 50.h,
+                width: double.infinity,
+                color: BLACK_COLOR,
+                alignment: Alignment.center,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account?",
+                      style: TextStyle(
+                        color: Colors.grey.shade300,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => Navigator.popAndPushNamed(context, '/register'),
+                      child: Text(
+                        ' Register Here',
                         style: TextStyle(
-                          color: Colors.grey.shade300,
+                          color: WHITE_COLOR,
+                          fontWeight: FontWeight.bold,
                           fontSize: 14.sp,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () => Navigator.popAndPushNamed(context, '/register'),
-                        child: Text(
-                          ' Register Here',
-                          style: TextStyle(
-                            color: WHITE_COLOR,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 }

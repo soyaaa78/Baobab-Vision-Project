@@ -1,3 +1,4 @@
+import 'package:baobab_vision_project/screens/forgot_password_screen.dart';
 import 'package:baobab_vision_project/screens/login_screen.dart';
 import 'package:baobab_vision_project/screens/register_screen.dart';
 import 'package:baobab_vision_project/screens/splash_screen.dart';
@@ -37,6 +38,7 @@ class NUBulldogzExchange extends StatelessWidget {
             '/login': (context) => const LogInScreen(),
             '/register': (context) => const RegisterScreen(),
             '/splash': (context) => const SplashScreen(),
+            '/forgot-password': (context) => const ForgotPasswordScreen(),
           },
         );
       },
