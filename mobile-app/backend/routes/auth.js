@@ -45,46 +45,45 @@ router.post('/login', async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     // Check if email is verified
-    if (!user.isVerified) {
-      const verificationToken = jwt.sign({ id: user._id }, process.env.EMAIL_SECRET_KEY, { expiresIn: '5m' });
-    
-      const baseUrl = process.env.NODE_ENV === 'production'
-        ? process.env.PRODUCTION_URL
-        : 'http://localhost:3001';
-    
-      const verificationLink = `${baseUrl}/auth/verify-silent?token=${verificationToken}`;
-    
-      const emailHtml = `
-        <div style="font-family: Arial; line-height: 1.6;">
-          <h2>Email Verification</h2>
-          <p>Tap the button below to verify your email.</p>
-          <a href="${verificationLink}">
-            <button style="padding: 10px 20px; background-color: #28a745; color: white;">
-              Verify Email
-            </button>
-          </a>
-          <p>After clicking, return to the app. The status will update automatically.</p>
-        </div>
-      `;
-    
-      try {
-        await sendEmail(user.email, 'Verify your email', verificationLink, emailHtml);
-      } catch (err) {
-        console.error('Verification email failed:', err);
-      }
-    }
-    
-    // ✅ Use a different name for the auth token
-    const authToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    
-    return res.status(200).json({
-      message: 'Login successful',
-      token: authToken,
-      email: user.email,
-      isVerified: user.isVerified
-    });
-    
-    
+    // Check if email is verified
+if (!user.isVerified) {
+  const verificationToken = jwt.sign({ id: user._id }, process.env.EMAIL_SECRET_KEY, { expiresIn: '5m' });
+
+  const baseUrl = process.env.NODE_ENV === 'production'
+    ? process.env.PRODUCTION_URL
+    : 'http://localhost:3001';
+
+  const verificationLink = `${baseUrl}/auth/verify-silent?token=${verificationToken}`;
+
+  const emailHtml = `
+    <div style="font-family: Arial; line-height: 1.6;">
+      <h2>Email Verification</h2>
+      <p>Tap the button below to verify your email.</p>
+      <a href="${verificationLink}">
+        <button style="padding: 10px 20px; background-color: #28a745; color: white;">
+          Verify Email
+        </button>
+      </a>
+      <p>After clicking, return to the app. The status will update automatically.</p>
+    </div>
+  `;
+
+  try {
+    await sendEmail(user.email, 'Verify your email', verificationLink, emailHtml);
+  } catch (err) {
+    console.error('Verification email failed:', err);
+  }
+
+  const authToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+  return res.status(200).json({
+    message: 'Login successful. Verification email sent.',
+    token: authToken,
+    email: user.email,
+    isVerified: false,
+    verificationToken // 👈 send this to frontend
+  });
+}    
     // All good: email verified + correct password → Login
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
@@ -187,7 +186,8 @@ router.post('/resend-verification', async (req, res) => {
       return res.status(500).json({ message: 'Error sending verification email. Please try again later.' });
     }
 
-    res.status(200).json({ message: 'Verification email sent again.' });
+    res.status(200).json({ message: 'Verification email sent again.', token });
+    
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -236,6 +236,7 @@ router.post('/check-verification-token', async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     res.status(200).json({ verified: user.isVerified });
+
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
       return res.status(400).json({ expired: true, message: 'Token expired' });

@@ -30,53 +30,53 @@ class _LogInScreenState extends State<LogInScreen> {
   }
 
   Future<void> login() async {
-    var url = Uri.parse('http://10.0.2.2:3001/auth/login');
+  var url = Uri.parse('http://10.0.2.2:3001/auth/login');
 
-    try {
-      var response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'username': usernameController.text.trim(),
-          'password': passwordController.text.trim(),
-        }),
-      );
-
-      var resData = json.decode(response.body);
-
-     if (response.statusCode == 200) {
-  final token = resData['token'];
-  final email = resData['email'];
-  final isVerified = resData['isVerified'];
-
-  await _saveUsername(usernameController.text.trim());
-
-  if (isVerified) {
-    // ✅ Already verified → go to home
-    Navigator.pushReplacementNamed(context, '/home');
-  } else {
-    // ❌ Not verified yet → go to verification screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EmailVerificationScreen(
-          username: usernameController.text.trim(),
-          password: passwordController.text.trim(),
-          email: email,
-          token: resData['token'],
-          isVerified: isVerified,
-        ),
-      ),
+  try {
+    var response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'username': usernameController.text.trim(),
+        'password': passwordController.text.trim(),
+      }),
     );
-  }
-  }else {
-    customDialog(context, title: 'Login Failed', content: resData['message']);
-    }
 
-    } catch (e) {
-      customDialog(context, title: 'Error', content: 'Something went wrong. Please try again.');
+    var resData = json.decode(response.body);
+
+    if (response.statusCode == 200) {
+      final token = resData['token']; // auth token
+      final email = resData['email'];
+      final isVerified = resData['isVerified'];
+      final verificationToken = resData['verificationToken']; // ✅ NEW
+
+      await _saveUsername(usernameController.text.trim());
+
+      if (isVerified) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        // Pass the verificationToken to the screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EmailVerificationScreen(
+              username: usernameController.text.trim(),
+              password: passwordController.text.trim(),
+              email: email,
+              token: verificationToken, // ✅ use correct token here
+              isVerified: false,
+            ),
+          ),
+        );
+      }
+    } else {
+      customDialog(context, title: 'Login Failed', content: resData['message']);
     }
+  } catch (e) {
+    customDialog(context, title: 'Error', content: 'Something went wrong. Please try again.');
   }
+}
+
 
   @override
   Widget build(BuildContext context) {

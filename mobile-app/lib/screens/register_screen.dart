@@ -138,11 +138,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   validator: (value) => value == null || value.isEmpty ? 'Last name required' : null,
                 ),
                 buildTextField(
-                  label: 'Email',
-                  controller: emailController,
-                  icon: Icons.email,
-                  validator: (value) => value == null || value.isEmpty ? 'Email required' : null,
-                ),
+                label: 'Email',
+                controller: emailController,
+                icon: Icons.email,
+                validator: (value) {
+                if (value == null || value.isEmpty) {
+                return 'Email required';
+                }
+
+                // 📧 Regex for validating email
+                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                if (!emailRegex.hasMatch(value)) {
+                return 'Please enter a valid email';
+                }
+
+                return null;
+                },
+              ),
+
                 buildTextField(
                   label: 'Username',
                   controller: usernameController,

@@ -1,3 +1,4 @@
+import 'package:baobab_vision_project/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -28,43 +29,50 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   bool _isResending = false;
   int _cooldownSeconds = 0;
   Timer? _cooldownTimer;
+  String? _currentToken;
 
-  Future<void> checkVerificationStatus() async {
-  setState(() => _isChecking = true);
-
-  final response = await http.post(
-    Uri.parse('http://10.0.2.2:3001/auth/check-verification'),
-    headers: {'Content-Type': 'application/json'},
-    body: json.encode({'email': widget.email}),
-  );
-
-  try {
-    final data = json.decode(response.body);
-    print('Verification status: $data');
-
-    if (response.statusCode == 200 && data['verified'] == true) {
-      // ✅ Verified → login
-      await loginUserAgain();
-    } else if (response.statusCode == 200 && data['verified'] == false) {
-      // ❌ Not yet verified
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email not verified yet. Please check your inbox.')),
-      );
-    } else {
-      // ⚠️ Unexpected error
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data['message'] ?? 'Unexpected error')),
-      );
-    }
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Something went wrong. Please try again.')),
-    );
+  @override
+  void initState() {
+    super.initState();
+    _currentToken = widget.token;
   }
 
-  setState(() => _isChecking = false);
-}
+  Future<void> checkVerificationStatus() async {
+    setState(() => _isChecking = true);
 
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:3001/auth/check-verification-token'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'token': _currentToken}),
+    );
+
+    try {
+      final data = json.decode(response.body);
+      print('Verification token check: $data');
+
+      if (response.statusCode == 200 && data['verified'] == true) {
+        await loginUserAgain();
+      } else if (response.statusCode == 400 && data['expired'] == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Your verification link expired. Kindly resend.')),
+        );
+      } else if (response.statusCode == 200 && data['verified'] == false) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email not verified yet. Please check your inbox.')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'] ?? 'Unexpected error')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Something went wrong. Please try again.')),
+      );
+    }
+
+    setState(() => _isChecking = false);
+  }
 
   Future<void> loginUserAgain() async {
     final url = Uri.parse('http://10.0.2.2:3001/auth/login');
@@ -94,16 +102,16 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       _isResending = true;
     });
 
-    final url = Uri.parse('http://10.0.2.2:3001/auth/resend-verification');
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:3001/auth/resend-verification'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'email': widget.email}),
+    );
 
     try {
-      final response = await http.post(
-  Uri.parse('http://10.0.2.2:3001/auth/resend-verification'),
-  headers: {'Content-Type': 'application/json'},
-  body: json.encode({'email': widget.email}),
-);
-
       if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        _currentToken = data['token']; // 🔁 update token from backend
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Verification email sent again.')),
         );
@@ -147,10 +155,10 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: WHITE_COLOR,
       appBar: AppBar(
         title: const Text('Email Verification'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: WHITE_COLOR,
         elevation: 0,
       ),
       body: Center(
@@ -164,7 +172,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.mark_email_unread, size: 60, color: Colors.deepPurple),
+                  const Icon(Icons.mark_email_unread, size: 60, color: BLACK_COLOR),
                   const SizedBox(height: 20),
                   Text(
                     'We’ve sent a verification message to:',
@@ -195,7 +203,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                             ),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              backgroundColor: Colors.deepPurple,
+                              backgroundColor: const Color.fromARGB(255, 32, 150, 69),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -227,7 +235,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.grey[800],
+                        backgroundColor: BLACK_COLOR,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
