@@ -76,7 +76,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(height: 20.h),
             _buildCompletedTransactionsDropdown(),
             _buildDropdown('My Reviews', ['Review 1', 'Review 2', 'Review 3']),
-            _buildDropdown('My Personal Information', ['Name: John Doe', 'Email: john.doe@example.com', 'Phone: 123-456-7890']),
+            _buildDropdown('My Personal Information', [
+              'Name: John Doe',
+              'Email: john.doe@example.com',
+              'Phone: 123-456-7890'
+            ]),
             _buildSettingsDropdown(),
           ],
         ),
@@ -96,17 +100,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Padding(
           padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 8.w),
           child: Column(
-            // children: [
-            //   CustomHorizontalProductCard(
-            //     prodName: 'WEBB',
-            //     prodSize: 'Total: ',
-            //     prodPrice: '500.00 PHP',
-            //     numStars: 4,
-            //     prodImage: 'assets/images/eyewear_1.png',
-            //   ),
+              // children: [
+              //   CustomHorizontalProductCard(
+              //     prodName: 'WEBB',
+              //     prodSize: 'Total: ',
+              //     prodPrice: '500.00 PHP',
+              //     numStars: 4,
+              //     prodImage: 'assets/images/eyewear_1.png',
+              //   ),
               // SizedBox(height: 10.h),
-            // ],
-          ),
+              // ],
+              ),
         ),
       ],
     );
@@ -146,7 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         _buildSettingsButton('Change Password', () {}),
         _buildSettingsButton('Privacy Policy', () {}),
-        _buildSettingsButton('Log Out', () {}),
+        _buildSettingsButton('Log Out', () => _confirmLogout(context)),
       ],
     );
   }
@@ -168,4 +172,51 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+}
+
+void _confirmLogout(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: CustomText(
+          text: 'Confirm Logout',
+          fontSize: ScreenUtil().setSp(18),
+          fontWeight: FontWeight.bold,
+          color: BLACK_COLOR,
+        ),
+        content: CustomText(
+          text: 'Are you sure you want to log out?',
+          fontSize: ScreenUtil().setSp(16),
+          color: Colors.black87,
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: CustomText(
+              text: 'Cancel',
+              fontSize: ScreenUtil().setSp(14),
+              color: Colors.grey,
+            ),
+            onPressed: () {
+              Navigator.of(dialogContext).pop(); // Dismiss the dialog
+            },
+          ),
+          TextButton(
+            child: CustomText(
+              text: 'Log Out',
+              fontSize: ScreenUtil().setSp(14),
+              color: Colors.redAccent,
+            ),
+            onPressed: () async {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.clear();
+              Navigator.of(dialogContext).pop(); // Close dialog first
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/login', (route) => false); // Go to login screen
+            },
+          ),
+        ],
+      );
+    },
+  );
 }
