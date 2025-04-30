@@ -1,2 +1,0 @@
-/Users/beverlyaniasco/Documents/Flutter Projects/baobab_vision_project/mobile-app/android/app/.cxx/Debug/294p5279/x86_64/CMakeFiles/edit_cache.dir
-/Users/beverlyaniasco/Documents/Flutter Projects/baobab_vision_project/mobile-app/android/app/.cxx/Debug/294p5279/x86_64/CMakeFiles/rebuild_cache.dir
