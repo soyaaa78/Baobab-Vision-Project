@@ -10,16 +10,16 @@ import '/screens/home_screen.dart';
  
 void main() async {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-    systemNavigationBarColor: NU_BLUE, // navigation bar color
+    systemNavigationBarColor: BLACK_COLOR, // navigation bar color
     statusBarIconBrightness: Brightness.dark, // status bar color
     statusBarColor: Colors.transparent,
     systemNavigationBarIconBrightness: Brightness.dark,
   ));
-  runApp(const NUBulldogzExchange());
+  runApp(const BaobabVision());
 }
  
-class NUBulldogzExchange extends StatelessWidget {
-  const NUBulldogzExchange({super.key});
+class BaobabVision extends StatelessWidget {
+  const BaobabVision({super.key});
  
   @override
   Widget build(BuildContext context) {
@@ -29,9 +29,9 @@ class NUBulldogzExchange extends StatelessWidget {
       splitScreenMode: true,
       builder: (_, child) {
         return MaterialApp(
-          color: Colors.white,
+          color: WHITE_COLOR,
           debugShowCheckedModeBanner: false,
-          title: 'NU Bulldogz Exchange',
+          title: 'Baobab Vision',
           initialRoute: '/splash',
           routes: {
             '/home': (context) => const HomeScreen(),

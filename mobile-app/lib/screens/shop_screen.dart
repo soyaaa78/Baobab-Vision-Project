@@ -1,11 +1,13 @@
+import 'dart:async';
+import 'dart:convert';
 import 'package:baobab_vision_project/screens/recommender_screen.dart';
 import 'package:baobab_vision_project/screens/vto_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:http/http.dart' as http;
 import '../constants.dart';
 import '../widgets/custom_text.dart';
-import 'package:baobab_vision_project/widgets/custom_vertical_product_card.dart';
-import 'package:baobab_vision_project/widgets/custom_horizontal_product_card.dart';
+import '../widgets/custom_vertical_product_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ShopScreen extends StatefulWidget {
@@ -13,23 +15,128 @@ class ShopScreen extends StatefulWidget {
 
   @override
   State<ShopScreen> createState() => _ShopScreenState();
-  
 }
 
 class _ShopScreenState extends State<ShopScreen> {
   String username = '';
+  List<dynamic> bestSellers = [];
+  List<dynamic> forYou = [];
+  List<String> slideshowImages = [];
+
+  late PageController _pageController;
+  int _currentPage = 0;
+  Timer? _carouselTimer;
 
   @override
   void initState() {
     super.initState();
     _loadUsername();
+    fetchBestSellers();
+    fetchSlideshowImages();
+    _pageController = PageController(initialPage: _currentPage);
+    _startAutoSlide();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _carouselTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startAutoSlide() {
+    _carouselTimer = Timer.periodic(Duration(seconds: 3), (Timer timer) {
+      if (_pageController.hasClients && slideshowImages.isNotEmpty) {
+        _currentPage++;
+        if (_currentPage >= slideshowImages.length) _currentPage = 0; // Dynamic length
+        _pageController.animateToPage(
+          _currentPage,
+          duration: Duration(milliseconds: 350),
+          curve: Curves.easeIn,
+        );
+      }
+    });
   }
 
   Future<void> _loadUsername() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    String loadedUsername = prefs.getString('username') ?? 'Guest';
+
     setState(() {
-      username = prefs.getString('username') ?? 'Guest';
+      username = loadedUsername;
     });
+
+    if (username != 'Guest') {
+      await fetchForYouProducts();
+    }
+  }
+
+  Future<void> fetchForYouProducts() async {
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/userPreferences/for-you/$username'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        if (data is List) {
+          setState(() {
+            forYou = data;
+          });
+        } else {
+          print('No personalized recommendations available.');
+        }
+      } else {
+        print('Failed to load personalized recommendations');
+      }
+    } catch (e) {
+      print('Error fetching personalized products: $e');
+    }
+  }
+
+  Future<void> fetchBestSellers() async {
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products/best-sellers'));
+
+      if (response.statusCode == 200) {
+        setState(() {
+          bestSellers = jsonDecode(response.body);
+        });
+      } else {
+        print('Failed to load best sellers');
+      }
+    } catch (e) {
+      print('Error fetching best sellers: $e');
+    }
+  }
+
+  Future<void> fetchSlideshowImages() async {
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/slideshow/all-images'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        setState(() {
+          slideshowImages = data.map((item) => item.toString()).toList();
+        });
+      } else {
+        print('Failed to load slideshow images');
+      }
+    } catch (e) {
+      print('Error fetching slideshow images: $e');
+    }
+  }
+
+  // Build pagination dots
+  Widget buildDot(int index, BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 4),
+      width: _currentPage == index ? 10 : 8,
+      height: _currentPage == index ? 10 : 8,
+      decoration: BoxDecoration(
+        color: _currentPage == index ? Colors.red : Colors.grey,
+        shape: BoxShape.circle,
+      ),
+    );
   }
 
   @override
@@ -46,6 +153,7 @@ class _ShopScreenState extends State<ShopScreen> {
         width: ScreenUtil().screenWidth,
         child: Column(
           children: [
+            // Header Section
             Align(
               alignment: Alignment.centerLeft,
               child: Image.asset(
@@ -74,93 +182,141 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
             ),
             SizedBox(height: ScreenUtil().setHeight(10)),
-            
-            // Virtual Try-On & Profiling Buttons
+
+            // Virtual Try-On & Recommender Buttons
             Row(
-  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  mainAxisAlignment: MainAxisAlignment.center,
   children: [
-    ElevatedButton(
-      onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => VirtualTryOnScreen()), // Navigate to ProfileScreen
-  );
-},
-      style: ElevatedButton.styleFrom(
-        backgroundColor: BLACK_COLOR,
-        minimumSize: Size(160, 120), // Square shape
-        padding: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8), // Slightly rounded corners
-        ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.add_a_photo, size: 30, color:WHITE_COLOR,),
-          SizedBox(height: 5),
-          Text('Virtual Try-On',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: WHITE_COLOR,
-                fontWeight: FontWeight.bold,
-              )
+    // Virtual Try-On Button
+    Expanded(
+      child: Container(
+        margin: EdgeInsets.only(right: 10),
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => VirtualTryOnScreen()),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: BLACK_COLOR,
+            padding: EdgeInsets.symmetric(vertical: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 8,
+            shadowColor: Colors.black45,
           ),
-          SizedBox(height: 2), // Add space between texts
-        Text(
-        'Want to Try a Frame on?',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 10,
-          color: WHITE_COLOR, // You can customize the color
-        )),
-        ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_a_photo, size: 36, color: WHITE_COLOR),
+              SizedBox(height: 8),
+              Text(
+                'Virtual Try-On',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: WHITE_COLOR,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     ),
-    ElevatedButton(
-      onPressed: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => RecommenderScreen()), // Navigate to ProfileScreen
-  );
-},
-      style: ElevatedButton.styleFrom(
-        backgroundColor: BLACK_COLOR,
-        minimumSize: Size(160, 120), // Square shape
-        padding: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8), // Slightly rounded corners
+
+    // Recommender Button
+    Expanded(
+      child: Container(
+        margin: EdgeInsets.only(left: 10),
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => RecommenderScreen()),
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: BLACK_COLOR,
+            padding: EdgeInsets.symmetric(vertical: 20),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            elevation: 8,
+            shadowColor: Colors.black45,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.person, size: 36, color: WHITE_COLOR),
+              SizedBox(height: 8),
+              Text(
+                'Recommender',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: WHITE_COLOR,
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.person, size: 30, color: WHITE_COLOR,),
-          SizedBox(height: 5),
-          Text('Recommender',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: WHITE_COLOR,
-                fontWeight: FontWeight.bold,
-              )),
-              SizedBox(height: 2), // Add space between texts
-        Text(
-        'Best Eyewear for You?',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 10,
-          color: WHITE_COLOR, // You can customize the color
-        )),
-        ],
       ),
     ),
   ],
 ),
 
-            SizedBox(height: ScreenUtil().setHeight(10)),
-            
+            SizedBox(height: ScreenUtil().setHeight(20)),
+
+            // Slideshow Section
+            Column(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: SizedBox(
+                    height: 150,
+                    child: slideshowImages.isEmpty
+                        ? Center(child: CircularProgressIndicator())
+                        : PageView.builder(
+                            controller: _pageController,
+                            onPageChanged: (int index) {
+                              setState(() {
+                                _currentPage = index;
+                              });
+                            },
+                            itemCount: slideshowImages.length,
+                            itemBuilder: (context, index) {
+                              return Image.network(
+                                slideshowImages[index],
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Center(child: Icon(Icons.broken_image));
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ),
+                SizedBox(height: 10),
+                slideshowImages.isEmpty
+                    ? Container()
+                    : Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          slideshowImages.length,
+                          (index) => buildDot(index, context),
+                        ),
+                      ),
+              ],
+            ),
+
+            SizedBox(height: ScreenUtil().setHeight(5)),
+
+            // FOR YOU Section
             Align(
               alignment: Alignment.centerLeft,
               child: CustomText(
@@ -170,107 +326,31 @@ class _ShopScreenState extends State<ShopScreen> {
                 fontWeight: FontWeight.w900,
               ),
             ),
-            SizedBox(height: ScreenUtil().setHeight(10)),
-            
+            SizedBox(height: ScreenUtil().setHeight(5)),
             SizedBox(
-              width: ScreenUtil().setWidth(1000),
-              child: const SingleChildScrollView(
+              height: 225.0,
+              child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    CustomVerticalProductCard(
-                      prodName: 'WEBB',
-                      prodSize: '10pcs Available',
-                      prodPrice: '500.00 PHP',
-                      numStars: 5,
-                      quantity: 10,
-                      description: 'WEBB is best worn on your way to grab your second coffee on a Monday. Pair it with sweatpants, sneakers, and a cropped tank to look put-together',
-                      prodImage: 'assets/images/eyewear_1.png',
+                itemCount: forYou.length,
+                itemBuilder: (context, index) {
+                  var product = forYou[index];
+                  return Padding(
+                    padding: EdgeInsets.only(right: ScreenUtil().setWidth(10)),
+                    child: CustomVerticalProductCard(
+                      prodName: product['name'] ?? 'Unknown',
+                      prodSize: '${product['stock']} pcs Available',
+                      prodPrice: '${product['price']} PHP',
+                      numStars: product['numStars'] ?? 5,
+                      prodImages: (product['imageUrls'] != null && product['imageUrls'] is List && product['imageUrls'].isNotEmpty)
+    ? List<String>.from(product['imageUrls'])
+    : ['https://via.placeholder.com/150'],
+
+                      description: product['description'] ?? '',
+                      productId: product["productId"] ?? '',
                     ),
-                    CustomVerticalProductCard(
-                      prodName: 'GILMORE',
-                      prodSize: '3pcs Available',
-                      prodPrice: '500.00 PHP',
-                      numStars: 5,
-                      quantity: 34,
-                      description: 'GILMORE is the best worn with your friends on the way to the outing. It says, yes-Im-present-and-enjoying-life-and-I-know-I-look-good. Plus, it has a top bar nose bridge which makes it universally flattering across all genders and face shapes.',
-                      prodImage: 'assets/images/eyewear_2.png',
-                    ),
-                    CustomVerticalProductCard(
-                      prodName: 'CAINE',
-                      prodSize: '3pcs Available',
-                      prodPrice: '500.00 PHP',
-                      numStars: 5,
-                      quantity: 34,
-                      description: 'Make a lasting impression with CAINE - a rectangular frame that has slightly swept up corners.',
-                      prodImage: 'assets/images/eyewear_3.png',
-                    ),
-                    CustomVerticalProductCard(
-                      prodName: 'JOLIE',
-                      prodSize: '3pcs Available',
-                      prodPrice: '500.00 PHP',
-                      numStars: 5,
-                      quantity: 34,
-                      description: 'Style JOLIE in something 90s. We suggest flared plants, a fitted top, and chunky platform shoes.',
-                      prodImage: 'assets/images/eyewear_5.png',
-                    ),
-                    CustomVerticalProductCard(
-                      prodName: 'MACK',
-                      prodSize: '3pcs Available',
-                      prodPrice: '500.00 PHP',
-                      numStars: 5,
-                      quantity: 34,
-                      description: 'A bold frame with gentle curves. MACK is a chunky rounded square frame thats a bit daring and up to no good.',
-                      prodImage: 'assets/images/eyewear_6.png',
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
-            ),
-            SizedBox(height: ScreenUtil().setHeight(10)),
-            
-            Align(
-              alignment: Alignment.centerLeft,
-              child: CustomText(
-                text: 'BEST SELLERS',
-                fontSize: ScreenUtil().setSp(15),
-                color: BLACK_COLOR,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            SizedBox(height: ScreenUtil().setHeight(10)),
-            
-            Column(
-              children: [
-                CustomHorizontalProductCard(
-                  prodName: 'MIRANDA',
-                  prodSize: '3pcs Available',
-                  prodPrice: '360.00 PHP',
-                  numStars: 5,
-                  prodImage: 'assets/images/eyewear_4.png',
-                ),
-                CustomHorizontalProductCard(
-                  prodName: 'JACQ',
-                  prodSize: '3pcs Available',
-                  prodPrice: '500.00 PHP',
-                  numStars: 5,
-                  prodImage: 'assets/images/eyewear_7.png',
-                ),
-                CustomHorizontalProductCard(
-                  prodName: 'JEAN',
-                  prodSize: '3pcs Available',
-                  prodPrice: '500.00 PHP',
-                  numStars: 5,
-                  prodImage: 'assets/images/eyewear_8.png',
-                ),
-                CustomHorizontalProductCard(
-                  prodName: 'ASTRA',
-                  prodSize: '3pcs Available',
-                  prodPrice: '500.00 PHP',
-                  numStars: 5,
-                  prodImage: 'assets/images/eyewear_9.png',
-                ),
-              ],
             ),
           ],
         ),

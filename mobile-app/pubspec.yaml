@@ -56,6 +56,10 @@ flutter:
     - assets/images/eyewear_7.png
     - assets/images/eyewear_8.png
     - assets/images/eyewear_9.png
+    - assets/images/event1.jpg
+    - assets/images/event2.jpg
+    - assets/images/try_eyewear.png
+
   fonts:
     - family: Poppins
       fonts:

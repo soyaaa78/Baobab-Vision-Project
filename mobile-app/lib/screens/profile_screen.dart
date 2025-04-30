@@ -96,16 +96,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Padding(
           padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 8.w),
           child: Column(
-            children: [
-              CustomHorizontalProductCard(
-                prodName: 'WEBB',
-                prodSize: 'Total: ',
-                prodPrice: '500.00 PHP',
-                numStars: 4,
-                prodImage: 'assets/images/eyewear_1.png',
-              ),
-              SizedBox(height: 10.h),
-            ],
+            // children: [
+            //   CustomHorizontalProductCard(
+            //     prodName: 'WEBB',
+            //     prodSize: 'Total: ',
+            //     prodPrice: '500.00 PHP',
+            //     numStars: 4,
+            //     prodImage: 'assets/images/eyewear_1.png',
+            //   ),
+              // SizedBox(height: 10.h),
+            // ],
           ),
         ),
       ],

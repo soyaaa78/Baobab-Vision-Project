@@ -74,7 +74,7 @@ class _CartScreenState extends State<CartScreen> {
                         prodSize: cartItems[index]['prodSize'],
                         prodPrice: '${cartItems[index]['prodPrice']} PHP',
                         numStars: cartItems[index]['numStars'],
-                        prodImage: cartItems[index]['prodImage'],
+                        prodImages: cartItems[index]['prodImage'],
                         isCart: true,
                       );
                     },

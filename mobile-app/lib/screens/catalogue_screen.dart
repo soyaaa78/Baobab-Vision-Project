@@ -1,127 +1,108 @@
-import 'package:baobab_vision_project/widgets/custom_vertical_product_card.dart';
+import 'package:baobab_vision_project/constants.dart';
+import 'package:baobab_vision_project/screens/detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../constants.dart';
-import '../widgets/custom_text.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert'; // For JSON decoding
+import 'package:shared_preferences/shared_preferences.dart';
 
-class CatalogueScreen extends StatelessWidget {
+class CatalogueScreen extends StatefulWidget {
   const CatalogueScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Product data
-    final List<Map<String, dynamic>> products = [
-      {
-        'prodName': 'WEBB',
-        'prodSize': '5pcs Available',
-        'prodPrice': '500.00 PHP',
-        'numStars': 4,
-        'prodImage': 'assets/images/eyewear_1.png',
-        'description': 'WEBB is the best worn on your way to grab second coffee on a Monday. Pair it wil sweatpants, sneakers, and a cropped tank to look put-together.',
-      },
-      {
-        'prodName': 'GILMORE',
-        'prodSize': '5pcs Available',
-        'prodPrice': '750.00 PHP',
-        'numStars': 5,
-        'prodImage': 'assets/images/eyewear_2.png',
-        'description': 'GILMORE is the best worn with your friends on the way to the outing. It says, yes-Im-present-and-enjoying-life-and-I-know-I-look-good. Plus, it has a top bar nose bridge which makes it universally flattering across all genders and face shapes.',
-      },
-      {
-        'prodName': 'CAINE',
-        'prodSize': '5pcs Available',
-        'prodPrice': '650.00 PHP',
-        'numStars': 4,
-        'prodImage': 'assets/images/eyewear_3.png',
-        'description': 'Make a lasting impression with CAINE - a rectangular frame that has slightly swept up corneres.',
-      },
-      {
-        'prodName': 'MIRANDA',
-        'prodSize': '5pcs Available',
-        'prodPrice': '600.00 PHP',
-        'numStars': 5,
-        'prodImage': 'assets/images/eyewear_4.png',
-        'description': 'MIRANDA is best worn while strolling a lavish mansion, wondering how you can contact the real estate agent.',
-      },
-      {
-        'prodName': 'JOLIE',
-        'prodSize': '5pcs Available',
-        'prodPrice': '600.00 PHP',
-        'numStars': 5,
-        'prodImage': 'assets/images/eyewear_5.png',
-        'description': 'Style JOLIE in something 90s. We suggest flared plants, a fitted top, and chunky platform shoes.',
-      },
-      {
-        'prodName': 'MACK',
-        'prodSize': '5pcs Available',
-        'prodPrice': '600.00 PHP',
-        'numStars': 5,
-        'prodImage': 'assets/images/eyewear_6.png',
-        'description': 'A bold frame with gentle curves. MACK is a chunky rounded square frame thats a bit daring and up to no good.',
-      },
-      {
-        'prodName': 'JACQ',
-        'prodSize': '5pcs Available',
-        'prodPrice': '600.00 PHP',
-        'numStars': 5,
-        'prodImage': 'assets/images/eyewear_7.png',
-        'description': 'The JACQ - sophisticated and posh; a cross betweek a cat eye and rectangular frame; its smooth lines and curves always command attention.',
-      },
-      {
-        'prodName': 'JEAN',
-        'prodSize': '5pcs Available',
-        'prodPrice': '600.00 PHP',
-        'numStars': 5,
-        'prodImage': 'assets/images/eyewear_8.png',
-        'description': 'Channel your inner popstar by adding JEAN to your collection, a stylish rectangle frame, to your look for a little extra pop of color.',
-      },{
-        'prodName': 'ASTRA',
-        'prodSize': '5pcs Available',
-        'prodPrice': '600.00 PHP',
-        'numStars': 5,
-        'prodImage': 'assets/images/eyewear_9.png',
-        'description': 'Looking for something out of this world? Meet Astra, an ultra-modern visor frame with a wrap-around design thatll have you feeling like you stepped into another time.',
-      },
-    ];
+  State<CatalogueScreen> createState() => _CatalogueScreenState();
+}
 
+class _CatalogueScreenState extends State<CatalogueScreen> {
+  // List to hold fetched products
+  List<dynamic> products = [];
+
+  // Fetch products from the backend
+  Future<void> fetchProducts() async {
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products'));  // Fetch all products
+
+      if (response.statusCode == 200) {
+        // Decode the JSON response and update state
+        setState(() {
+          products = jsonDecode(response.body);
+        });
+        print("Fetched all products: $products");
+      } else {
+        print('Failed to load products: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching products: $e');
+    }
+  }
+
+  // Fetch a specific product by ID
+  Future<void> fetchProductById(String productId) async {
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products/$productId'));  // Fetch the specific product
+
+      if (response.statusCode == 200) {
+        final product = jsonDecode(response.body);
+        print("Fetched product details: $product");
+      } else {
+        print('Failed to load product details: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching product: $e');
+    }
+  }
+
+  Future<String?> getUsername() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('username');
+}
+
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProducts();  // Fetch all products when the screen loads
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: WHITE_COLOR,
-      appBar: AppBar( // Removes the default menu button
-        title: CustomText(
-          text: 'Catalogue',
-          fontSize: ScreenUtil().setSp(20),
-          fontWeight: FontWeight.bold,
-          color: BLACK_COLOR,
+      appBar: AppBar(
+        title: Text(
+          'Catalogue',
+          style: TextStyle(
+            fontSize: 20.sp,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
         ),
         backgroundColor: WHITE_COLOR,
-        elevation: 0, // Removes shadow
+        elevation: 0,
+        actions: [
+    IconButton(
+      icon: Icon(Icons.filter_list_alt, color: Colors.black),
+      onPressed: () { 
+        print('Filter icon pressed!');
+      },
+    ),
+  ],
       ),
       body: Padding(
         padding: EdgeInsets.all(ScreenUtil().setWidth(15)),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                CustomText(
-                  text: 'All items',
-                  fontSize: ScreenUtil().setSp(18),
-                  color: BLACK_COLOR,
+                Text(
+                  'All items',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    color: Colors.black,
+                  ),
                 ),
-                
                 Spacer(),
-                IconButton(
-                  icon: Icon(Icons.menu, color: BLACK_COLOR),
-                  onPressed: () {
-                    // Add filter functionality here
-                  },
-                ),
-                IconButton(
-                  icon: Icon(Icons.filter_alt, color: BLACK_COLOR),
-                  onPressed: () {
-                    // Add filter functionality here
-                  },
-                ),
+                // Optionally add filter buttons here
               ],
             ),
             SizedBox(height: 10.h),
@@ -135,13 +116,98 @@ class CatalogueScreen extends StatelessWidget {
                   childAspectRatio: 0.7,
                 ),
                 itemBuilder: (context, index) {
-                  return CustomVerticalProductCard(
-                    prodName: products[index]['prodName'],
-                    prodSize: products[index]['prodSize'],
-                    prodPrice: products[index]['prodPrice'],
-                    numStars: products[index]['numStars'],
-                    prodImage: products[index]['prodImage'],
-                    description: products[index]['description'],
+                  final product = products[index];
+
+                  return GestureDetector(
+                    onTap: () async {
+  String productId = product['_id'];
+  String? username = await getUsername(); // Load saved username
+
+  if (username == null) {
+    print('Error: No username found.');
+    return;
+  }
+
+  try {
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:3001/api/userPreferences/update-preferences/$username'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'productId': productId}),
+    );
+
+    if (response.statusCode == 200) {
+      print('Successfully updated preferences for productId: $productId');
+    } else {
+      print('Failed to update preferences: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error updating preferences: $e');
+  }
+    Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => DetailScreen(
+        prodName: product['name'] ?? 'Unknown',
+        prodSize: '${product['stock']} pcs Available',
+        prodPrice: '${product['price']} PHP',
+        numStars: product['numStars'] ?? 0,
+        quantity: product['stock'] ?? 0,
+        description: product['description'] ?? 'No description available',
+        prodImages: List<String>.from(product['imageUrls'] ?? ['assets/images/default.png']),
+      ),
+    ),
+  );
+},
+                    child: Card(
+                      color: Colors.white,
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      SizedBox(
+        height: 120.h,
+        width: double.infinity,
+        child: Image.network(
+  (product['imageUrls'] != null &&
+   product['imageUrls'] is List &&
+   product['imageUrls'].isNotEmpty)
+    ? product['imageUrls'][0]
+    : 'https://via.placeholder.com/150',
+  fit: BoxFit.cover,
+),
+
+      ),
+      SizedBox(height: 8.0),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0), // slight padding
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              product['name'],
+              style: TextStyle(fontWeight: FontWeight.bold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text('Stock: ${product['stock']} pcs'),
+            Text('${product['price']} PHP'),
+            Row(
+              children: List.generate(5, (index) {
+                return Icon(
+                  Icons.star,
+                  color: index < (product['numStars'] ?? 0)
+                      ? Colors.yellow
+                      : Colors.grey,
+                  size: 16,
+                );
+              }),
+            ),
+          ],
+        ),
+      ),
+    ],
+  ),
+),
+
                   );
                 },
               ),

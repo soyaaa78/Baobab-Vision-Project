@@ -12,7 +12,7 @@ class DetailScreen extends StatefulWidget {
   final int numStars;
   final int quantity;
   final String description;
-  final String prodImage;
+  final List<String> prodImages; // Updated from String
 
   const DetailScreen({
     super.key,
@@ -22,7 +22,7 @@ class DetailScreen extends StatefulWidget {
     required this.numStars,
     required this.quantity,
     this.description = 'Lorem ipsum',
-    required this.prodImage,
+    required this.prodImages,
   });
 
   @override
@@ -30,8 +30,27 @@ class DetailScreen extends StatefulWidget {
 }
 
 class _DetailScreenState extends State<DetailScreen> {
+  late PageController _pageController;
+  int _selectedImageIndex = 0;
+
   String selectedChoice = 'Built-in UV400 Lenses (FREE)';
-  List<String> choices = ['Built-in UV400 Lenses (FREE)', 'Polarized Lenses (+PHP300)', 'Photochromic Lenses (+PHP300)'];
+  List<String> choices = [
+    'Built-in UV400 Lenses (FREE)',
+    'Polarized Lenses (+PHP300)',
+    'Photochromic Lenses (+PHP300)'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,57 +58,120 @@ class _DetailScreenState extends State<DetailScreen> {
       backgroundColor: WHITE_COLOR,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
+  padding: const EdgeInsets.all(16.0),
+  child: SingleChildScrollView(
+    child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Product Image and Rating
-              Stack(
+              // ====== Main Image Carousel with Thumbnails ======
+              Column(
                 children: [
-                  Image.asset(
-                    widget.prodImage,
-                    width: double.infinity,
-                    height: ScreenUtil().setHeight(280),
-                    fit: BoxFit.cover,
-                  ),
-                  Positioned(
-                    top: ScreenUtil().setHeight(10),
-                    left: ScreenUtil().setWidth(10),
-                    child: InkWell(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Icon(
-                        Icons.keyboard_backspace,
-                        size: ScreenUtil().setSp(40),
+                  Stack(
+                    children: [
+                      SizedBox(
+                        height: ScreenUtil().setHeight(280),
+                        width: double.infinity,
+                        child: PageView.builder(
+                          controller: _pageController,
+                          itemCount: widget.prodImages.length,
+                          onPageChanged: (index) {
+                            setState(() {
+                              _selectedImageIndex = index;
+                            });
+                          },
+                          itemBuilder: (context, index) {
+                            return Image.network(
+                              widget.prodImages[index],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ),
-                  Positioned(
-                    top: ScreenUtil().setHeight(10),
-                    right: ScreenUtil().setWidth(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.yellow[700],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.white, size: 16),
-                          SizedBox(width: 4),
-                          CustomText(
-                            text: "${widget.numStars}",
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: ScreenUtil().setSp(14),
+                      Positioned(
+                        top: ScreenUtil().setHeight(10),
+                        left: ScreenUtil().setWidth(10),
+                        child: InkWell(
+                          onTap: () => Navigator.pop(context),
+                          child: Icon(
+                            Icons.keyboard_backspace,
+                            size: ScreenUtil().setSp(40),
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                      Positioned(
+                        top: ScreenUtil().setHeight(10),
+                        right: ScreenUtil().setWidth(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.yellow[700],
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.star, color: Colors.white, size: 16),
+                              SizedBox(width: 4),
+                              CustomText(
+                                text: "${widget.numStars}",
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: ScreenUtil().setSp(14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+
+                  SizedBox(height: 10),
+
+                  // ====== Thumbnails ======
+                  SingleChildScrollView(
+  scrollDirection: Axis.horizontal,
+  child: Row(
+    children: List.generate(widget.prodImages.length, (index) {
+      return GestureDetector(
+        onTap: () {
+          _pageController.animateToPage(
+            index,
+            duration: Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+          setState(() {
+            _selectedImageIndex = index;
+          });
+        },
+        child: Container(
+          margin: EdgeInsets.symmetric(horizontal: 5),
+          padding: EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            border: Border.all(
+              color: _selectedImageIndex == index ? BLACK_COLOR : Colors.transparent,
+              width: 2,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
+              widget.prodImages[index],
+              height: 60,
+              width: 60,
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+      );
+    }),
+  ),
+),
+
                 ],
               ),
+
+              // ====== Text Info Section ======
               SizedBox(height: ScreenUtil().setHeight(20)),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -161,17 +243,18 @@ class _DetailScreenState extends State<DetailScreen> {
                 fontSize: ScreenUtil().setSp(12),
               ),
               SizedBox(height: ScreenUtil().setHeight(16)),
-              Spacer(),
+
+              // ====== Buttons ======
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                    Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => VirtualTryOnScreen()), // Navigate to ProfileScreen
-                    );  
-                    },
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => VirtualTryOnScreen()),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: BLACK_COLOR,
                         shape: RoundedRectangleBorder(
@@ -182,7 +265,6 @@ class _DetailScreenState extends State<DetailScreen> {
                       child: CustomText(
                         text: 'Virtual Try-on',
                         fontSize: ScreenUtil().setSp(15),
-                        //fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
@@ -191,10 +273,10 @@ class _DetailScreenState extends State<DetailScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                      Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => CartScreen()), // Navigate to ProfileScreen
-                      );
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => CartScreen()),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: BLACK_COLOR,
@@ -206,7 +288,6 @@ class _DetailScreenState extends State<DetailScreen> {
                       child: CustomText(
                         text: 'Add to Cart',
                         fontSize: ScreenUtil().setSp(15),
-                        //fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
@@ -217,6 +298,7 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
       ),
+      )
     );
   }
 

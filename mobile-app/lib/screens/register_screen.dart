@@ -118,7 +118,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               children: [
                 SizedBox(height: 30.h),
                 const CustomText(
-                  text: 'Create Account',
+                  text: 'Register Account',
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
                   color: BLACK_COLOR,
@@ -200,7 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   width: double.infinity,
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  buttonName: 'Create',
+                  buttonName: 'Submit',
                 ),
 
                 SizedBox(height: 20.h),

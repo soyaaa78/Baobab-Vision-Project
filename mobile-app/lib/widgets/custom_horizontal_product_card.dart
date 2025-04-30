@@ -15,7 +15,7 @@ class CustomHorizontalProductCard extends StatefulWidget {
   final String description;
   final bool isCart;
   final bool isCheckout;
-  final String prodImage;
+  final List<String> prodImages;
 
   CustomHorizontalProductCard({
     super.key,
@@ -28,7 +28,7 @@ class CustomHorizontalProductCard extends StatefulWidget {
     this.description = '',
     this.isCart = false,
     this.isCheckout = false,
-    required this.prodImage,
+    required this.prodImages,
   });
 
   @override
@@ -59,8 +59,8 @@ class _CustomHorizontalProductCardState
               // Dynamic Product Image
              ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.asset(
-            widget.prodImage, // Dynamic product image
+            child: Image.network(
+            widget.prodImages[0],// Dynamic product image
             width: ScreenUtil().setWidth(88),
             height: ScreenUtil().setHeight(88),
             fit: BoxFit.cover,
@@ -143,7 +143,7 @@ class _CustomHorizontalProductCardState
                                     numStars: widget.numStars,
                                     quantity: widget.quantity,
                                     description: widget.description,
-                                    prodImage: widget.prodImage,
+                                    prodImages: widget.prodImages,
                                   );
                                 },
                               ));

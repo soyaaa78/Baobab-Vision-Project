@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const router = express.Router();
 const sendEmail = require('../services/sendEmail');
+const UserPreferences = require('../models/UserPreferences');  // Ensure this path is correct
 
 // REGISTER
 router.post('/register', async (req, res) => {
@@ -22,11 +23,28 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ firstname, lastname, email, username, password: hashedPassword });
-    await newUser.save();
 
-    res.status(201).json({ message: 'User registered successfully. Please log in to verify your email.' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+    // Save the new user
+    const savedUser = await newUser.save();
+
+    // Automatically create an entry in UserPreferences for the newly registered user
+    const newUserPreferences = new UserPreferences({
+      userId: savedUser._id,  // Set userId as MongoDB's _id of the user
+      preferences: new Map(),  // Initialize empty preferences
+    });
+    console.log("Saving user preferences for user:", savedUser._id);
+    await newUserPreferences.save();  // Save the user preferences
+    console.log("User preferences saved for user:", savedUser._id);
+
+    // Respond with the user details (excluding the password)
+    res.status(201).json({
+      userId: savedUser._id,  // Return the generated userId
+      username: savedUser.username,
+      message: 'User registered successfully. Please log in to verify your email.',
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -66,7 +84,18 @@ router.post('/login', async (req, res) => {
 
       const verificationLink = `${baseUrl}/auth/verify-silent?token=${verificationToken}`;
 
-      const emailHtml = `...`; // your email content
+      const emailHtml = `
+      <div style="font-family: Arial; line-height: 1.6;">
+        <h2>Email Verification</h2>
+        <p>Tap the button below to verify your email:</p>
+        <a href="${verificationLink}">
+          <button style="padding: 10px 20px; background-color: #28a745; color: white;">
+            Verify Email
+          </button>
+        </a>
+        <p>This link will expire in 5 minutes.</p>
+      </div>
+    `;// your email content
 
       try {
         await sendEmail(user.email, 'Verify your email', verificationLink, emailHtml);
