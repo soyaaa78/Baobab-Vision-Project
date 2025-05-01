@@ -5,6 +5,8 @@ import '../constants.dart';
 import '../widgets/custom_text.dart';
 import '../widgets/custom_horizontal_product_card.dart';
 import '../widgets/custom_vertical_product_card.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,18 +17,36 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String username = '';
+  File? _imageFile;
 
   @override
   void initState() {
     super.initState();
-    _loadUsername();
+    _loadProfile();
   }
 
-  Future<void> _loadUsername() async {
+  Future<void> _loadProfile() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? path = prefs.getString('profileImagePath');
     setState(() {
       username = prefs.getString('username') ?? 'Guest';
+      if (path != null) {
+        _imageFile = File(path);
+      }
     });
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('profileImagePath', pickedFile.path);
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
   }
 
   @override
@@ -49,9 +69,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundImage: AssetImage('assets/images/shizuku.jpeg'),
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: CircleAvatar(
+                    radius: 40,
+                    backgroundImage: _imageFile != null
+                        ? FileImage(_imageFile!)
+                        : AssetImage('assets/images/shizuku.jpeg')
+                            as ImageProvider,
+                    child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: Container(
+                        padding: EdgeInsets.all(2),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.edit, color: Colors.white, size: 16),
+                      ),
+                    ),
+                  ),
                 ),
                 SizedBox(width: 10.w),
                 Column(
@@ -100,16 +137,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Padding(
           padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 8.w),
           child: Column(
-              // children: [
-              //   CustomHorizontalProductCard(
-              //     prodName: 'WEBB',
-              //     prodSize: 'Total: ',
-              //     prodPrice: '500.00 PHP',
-              //     numStars: 4,
-              //     prodImage: 'assets/images/eyewear_1.png',
-              //   ),
-              // SizedBox(height: 10.h),
-              // ],
+              // Add product cards here if needed
               ),
         ),
       ],
