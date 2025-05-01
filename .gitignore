@@ -42,3 +42,6 @@ backend/node_modules/
 .DS_Store
 *.lock
 
+# Ignore native Android build intermediates
+mobile-app/android/app/.cxx/
+
