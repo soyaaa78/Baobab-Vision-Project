@@ -31,10 +31,10 @@ class _ShopScreenState extends State<ShopScreen> {
   void initState() {
     super.initState();
     _loadUsername();
-    fetchBestSellers();
     fetchSlideshowImages();
     _pageController = PageController(initialPage: _currentPage);
     _startAutoSlide();
+    fetchRecommendedProducts();
   }
 
   @override
@@ -65,48 +65,6 @@ class _ShopScreenState extends State<ShopScreen> {
     setState(() {
       username = loadedUsername;
     });
-
-    if (username != 'Guest') {
-      await fetchForYouProducts();
-    }
-  }
-
-  Future<void> fetchForYouProducts() async {
-    try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/userPreferences/for-you/$username'));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        if (data is List) {
-          setState(() {
-            forYou = data;
-          });
-        } else {
-          print('No personalized recommendations available.');
-        }
-      } else {
-        print('Failed to load personalized recommendations');
-      }
-    } catch (e) {
-      print('Error fetching personalized products: $e');
-    }
-  }
-
-  Future<void> fetchBestSellers() async {
-    try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products/best-sellers'));
-
-      if (response.statusCode == 200) {
-        setState(() {
-          bestSellers = jsonDecode(response.body);
-        });
-      } else {
-        print('Failed to load best sellers');
-      }
-    } catch (e) {
-      print('Error fetching best sellers: $e');
-    }
   }
 
   Future<void> fetchSlideshowImages() async {
@@ -125,6 +83,26 @@ class _ShopScreenState extends State<ShopScreen> {
       print('Error fetching slideshow images: $e');
     }
   }
+  Future<void> fetchRecommendedProducts() async {
+  try {
+    final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products/for-you'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      print('Recommended products fetched: $data');  // Debugging line
+
+      setState(() {
+        forYou = data;  // Update the forYou list with the fetched data
+      });
+    } else {
+      print('Failed to load recommended products');
+    }
+  } catch (e) {
+    print('Error fetching recommended products: $e');
+  }
+}
+
 
   // Build pagination dots
   Widget buildDot(int index, BuildContext context) {
@@ -314,13 +292,13 @@ class _ShopScreenState extends State<ShopScreen> {
               ],
             ),
 
-            SizedBox(height: ScreenUtil().setHeight(5)),
+            SizedBox(height: ScreenUtil().setHeight(10)),
 
             // FOR YOU Section
             Align(
               alignment: Alignment.centerLeft,
               child: CustomText(
-                text: 'FOR YOU',
+                text: 'RECOMMENDED FOR YOU',
                 fontSize: ScreenUtil().setSp(15),
                 color: BLACK_COLOR,
                 fontWeight: FontWeight.w900,
