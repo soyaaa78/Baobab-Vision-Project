@@ -1,10 +1,10 @@
 import 'dart:convert';
+import 'package:baobab_vision_project/screens/email_otp_verification_screen.dart';
 import 'package:baobab_vision_project/screens/email_verification_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../constants.dart';
 import '../screens/home_screen.dart';
 import '../widgets/custom_dialog.dart';
@@ -42,48 +42,40 @@ class _LogInScreenState extends State<LogInScreen> {
       }),
     );
 
-    print('🔄 LOGIN RESPONSE CODE: ${response.statusCode}');
-    print('🔄 LOGIN RESPONSE BODY: ${response.body}');
-
     final resData = jsonDecode(response.body);
+    print('🔄 LOGIN RESPONSE: $resData');
 
-    if (response.statusCode == 200) {
-      final token = resData['token'];
-      final email = resData['email'];
-      final isVerified = resData['isVerified'] ?? true;
-      final verificationToken = resData['verificationToken'];
-
-      await _saveUsername(usernameController.text.trim());
-
-      if (isVerified) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EmailVerificationScreen(
-              username: usernameController.text.trim(),
-              password: passwordController.text.trim(),
-              email: email,
-              token: verificationToken,
-              isVerified: false,
-            ),
+    if (response.statusCode == 403 && resData['requiresVerification'] == true) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EmailOtpVerificationScreen(
+            email: resData['email'],
           ),
-        );
-      }
+        ),
+      );
+    } else if (response.statusCode == 200) {
+      final token = resData['token'];
+      await _saveUsername(usernameController.text.trim());
+      Navigator.pushReplacementNamed(context, '/home');
     } else {
-      final errorMessage = resData['message'] ?? 'Invalid login. Please try again.';
-      customDialog(context, title: 'Login Failed', content: errorMessage);
+      customDialog(
+        context,
+        title: 'Login Failed',
+        content: resData['message'] ?? 'Invalid login',
+      );
     }
   } catch (e) {
     print('❌ Login Exception: $e');
     customDialog(
       context,
       title: 'Error',
-      content: 'Unexpected error occurred. Please check your connection and try again.',
+      content: 'Unexpected error occurred. Please check your connection.',
     );
   }
 }
+
+
   @override
 Widget build(BuildContext context) {
   return Scaffold(
