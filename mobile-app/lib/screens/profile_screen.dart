@@ -248,3 +248,50 @@ void _confirmLogout(BuildContext context) {
     },
   );
 }
+
+void _confirmLogout(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: CustomText(
+          text: 'Confirm Logout',
+          fontSize: ScreenUtil().setSp(18),
+          fontWeight: FontWeight.bold,
+          color: BLACK_COLOR,
+        ),
+        content: CustomText(
+          text: 'Are you sure you want to log out?',
+          fontSize: ScreenUtil().setSp(16),
+          color: Colors.black87,
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: CustomText(
+              text: 'Cancel',
+              fontSize: ScreenUtil().setSp(14),
+              color: Colors.grey,
+            ),
+            onPressed: () {
+              Navigator.of(dialogContext).pop(); // Dismiss the dialog
+            },
+          ),
+          TextButton(
+            child: CustomText(
+              text: 'Log Out',
+              fontSize: ScreenUtil().setSp(14),
+              color: Colors.redAccent,
+            ),
+            onPressed: () async {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              await prefs.clear();
+              Navigator.of(dialogContext).pop(); // Close dialog first
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/login', (route) => false); // Go to login screen
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
