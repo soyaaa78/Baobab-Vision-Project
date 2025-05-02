@@ -160,12 +160,10 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                             numStars: product['numStars'] ?? 0,
                             quantity: product['stock'] ?? 0,
                             description: product['description'] ?? 'No description available',
-                            prodImages: (product['imageUrls'] != null && product['imageUrls'] is Map)
-                                ? (product['imageUrls'] as Map<String, dynamic>)
-                                    .values
-                                    .expand((value) => List<String>.from(value))
-                                    .toList()
-                                : [imageUrl],  // Pass the correct image URL here
+                            prodImages: (product['imageUrls'] != null && product['imageUrls'] is List)
+    ? List<String>.from(product['imageUrls'])  // Handle as list
+    : [imageUrl],  // Fallback to default image if no URLs available
+ // Pass the correct image URL here
                           ),
                         ),
                       );
