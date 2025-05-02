@@ -20,7 +20,7 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
   // Fetch products from the backend
   Future<void> fetchProducts() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products'));  // Fetch all products
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes'));  // Fetch all products
 
       if (response.statusCode == 200) {
         // Decode the JSON response and update state
@@ -39,7 +39,7 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
   // Fetch a specific product by ID
   Future<void> fetchProductById(String productId) async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products/$productId'));  // Fetch the specific product
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes/$productId'));  // Fetch the specific product
 
       if (response.statusCode == 200) {
         final product = jsonDecode(response.body);
@@ -53,10 +53,9 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
   }
 
   Future<String?> getUsername() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('username');
-}
-
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('username');
+  }
 
   @override
   void initState() {
@@ -80,13 +79,13 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
         backgroundColor: WHITE_COLOR,
         elevation: 0,
         actions: [
-    IconButton(
-      icon: Icon(Icons.filter_list_alt, color: Colors.black),
-      onPressed: () { 
-        print('Filter icon pressed!');
-      },
-    ),
-  ],
+          IconButton(
+            icon: Icon(Icons.filter_list_alt, color: Colors.black),
+            onPressed: () { 
+              print('Filter icon pressed!');
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: EdgeInsets.all(ScreenUtil().setWidth(15)),
@@ -118,96 +117,115 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                 itemBuilder: (context, index) {
                   final product = products[index];
 
+                  // Check the image URL and fall back to default if needed
+                  String imageUrl = product['imageUrls'] != null && product['imageUrls'] is List
+                      ? product['imageUrls'].isNotEmpty
+                          ? product['imageUrls'][0]  // Get the first image if available
+                          : 'assets/images/default.png'  // Fallback to default image if list is empty
+                      : 'assets/images/default.png';  // Fallback if 'imageUrls' is null or not a list
+
                   return GestureDetector(
                     onTap: () async {
-  String productId = product['_id'];
-  String? username = await getUsername(); // Load saved username
+                      String productId = product['_id'];
+                      String? username = await getUsername(); // Load saved username
 
-  if (username == null) {
-    print('Error: No username found.');
-    return;
-  }
+                      if (username == null) {
+                        print('Error: No username found.');
+                        return;
+                      }
 
-  try {
-    final response = await http.post(
-      Uri.parse('http://10.0.2.2:3001/api/userPreferences/update-preferences/$username'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'productId': productId}),
-    );
+                      try {
+                        final response = await http.post(
+                          Uri.parse('http://10.0.2.2:3001/api/userPreferences/update-preferences/$username'),
+                          headers: {'Content-Type': 'application/json'},
+                          body: jsonEncode({'productId': productId}),
+                        );
 
-    if (response.statusCode == 200) {
-      print('Successfully updated preferences for productId: $productId');
-    } else {
-      print('Failed to update preferences: ${response.statusCode}');
-    }
-  } catch (e) {
-    print('Error updating preferences: $e');
-  }
-    Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => DetailScreen(
-        prodName: product['name'] ?? 'Unknown',
-        prodSize: '${product['stock']} pcs Available',
-        prodPrice: '${product['price']} PHP',
-        numStars: product['numStars'] ?? 0,
-        quantity: product['stock'] ?? 0,
-        description: product['description'] ?? 'No description available',
-        prodImages: List<String>.from(product['imageUrls'] ?? ['assets/images/default.png']),
-      ),
-    ),
-  );
-},
+                        if (response.statusCode == 200) {
+                          print('Successfully updated preferences for productId: $productId');
+                        } else {
+                          print('Failed to update preferences: ${response.statusCode}');
+                        }
+                      } catch (e) {
+                        print('Error updating preferences: $e');
+                      }
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetailScreen(
+                            prodName: product['name'] ?? 'Unknown',
+                            prodSize: '${product['stock']} pcs Available',
+                            prodPrice: '${product['price']} PHP',
+                            numStars: product['numStars'] ?? 0,
+                            quantity: product['stock'] ?? 0,
+                            description: product['description'] ?? 'No description available',
+                            prodImages: (product['imageUrls'] != null && product['imageUrls'] is Map)
+                                ? (product['imageUrls'] as Map<String, dynamic>)
+                                    .values
+                                    .expand((value) => List<String>.from(value))
+                                    .toList()
+                                : [imageUrl],  // Pass the correct image URL here
+                          ),
+                        ),
+                      );
+                    },
                     child: Card(
                       color: Colors.white,
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      SizedBox(
-        height: 120.h,
-        width: double.infinity,
-        child: Image.network(
-  (product['imageUrls'] != null &&
-   product['imageUrls'] is List &&
-   product['imageUrls'].isNotEmpty)
-    ? product['imageUrls'][0]
-    : 'https://via.placeholder.com/150',
-  fit: BoxFit.cover,
-),
-
-      ),
-      SizedBox(height: 8.0),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0), // slight padding
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              product['name'],
-              style: TextStyle(fontWeight: FontWeight.bold),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text('Stock: ${product['stock']} pcs'),
-            Text('${product['price']} PHP'),
-            Row(
-              children: List.generate(5, (index) {
-                return Icon(
-                  Icons.star,
-                  color: index < (product['numStars'] ?? 0)
-                      ? Colors.yellow
-                      : Colors.grey,
-                  size: 16,
-                );
-              }),
-            ),
-          ],
-        ),
-      ),
-    ],
-  ),
-),
-
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,  // Center the content inside the card
+                        crossAxisAlignment: CrossAxisAlignment.center,  // Center the content inside the card
+                        children: [
+                          SizedBox(
+                            height: 120.h,
+                            width: double.infinity,
+                            child: Image.network(
+                              imageUrl,  // Use the imageUrl variable defined above
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Icon(Icons.broken_image, size: 48),
+                            ),
+                          ),
+                          SizedBox(height: 8.0),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,  // Center text and other elements inside
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Text(
+                                  product['name'],
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,  // Center the text
+                                ),
+                                Text(
+                                  'Stock: ${product['stock']} pcs',
+                                  textAlign: TextAlign.center,  // Center the text
+                                ),
+                                Text(
+                                  '${product['price']} PHP',
+                                  textAlign: TextAlign.center,  // Center the text
+                                ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,  // Center the stars
+                                  children: List.generate(5, (index) {
+                                    return Icon(
+                                      Icons.star,
+                                      color: index < (product['numStars'] ?? 0)
+                                          ? Colors.yellow
+                                          : Colors.grey,
+                                      size: 16,
+                                    );
+                                  }),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 },
               ),

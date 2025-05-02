@@ -30,7 +30,7 @@ class _LogInScreenState extends State<LogInScreen> {
   }
 
   Future<void> login() async {
-  var url = Uri.parse('http://10.0.2.2:3001/auth/login');
+  var url = Uri.parse('http://10.0.2.2:3001/authRoutes/login');
 
   try {
     final response = await http.post(
@@ -42,8 +42,12 @@ class _LogInScreenState extends State<LogInScreen> {
       }),
     );
 
+    // Log the raw response to check what you're receiving
+    print('🔄 LOGIN RESPONSE: ${response.body}');
+
+    // Check if the response is valid JSON and decode it
     final resData = jsonDecode(response.body);
-    print('🔄 LOGIN RESPONSE: $resData');
+    print('🔄 LOGIN RESPONSE (decoded): $resData');
 
     if (response.statusCode == 403 && resData['requiresVerification'] == true) {
       Navigator.pushReplacement(
@@ -74,7 +78,6 @@ class _LogInScreenState extends State<LogInScreen> {
     );
   }
 }
-
 
   @override
 Widget build(BuildContext context) {

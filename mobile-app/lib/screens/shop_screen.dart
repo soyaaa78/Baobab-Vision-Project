@@ -69,7 +69,7 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> fetchSlideshowImages() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/slideshow/all-images'));
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/slideshowRoutes/all-images'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -83,26 +83,26 @@ class _ShopScreenState extends State<ShopScreen> {
       print('Error fetching slideshow images: $e');
     }
   }
+
   Future<void> fetchRecommendedProducts() async {
-  try {
-    final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products/for-you'));
+    try {
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes/for-you'));
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
 
-      print('Recommended products fetched: $data');  // Debugging line
+        print('Recommended products fetched: $data');  // Debugging line
 
-      setState(() {
-        forYou = data;  // Update the forYou list with the fetched data
-      });
-    } else {
-      print('Failed to load recommended products');
+        setState(() {
+          forYou = data;  // Update the forYou list with the fetched data
+        });
+      } else {
+        print('Failed to load recommended products');
+      }
+    } catch (e) {
+      print('Error fetching recommended products: $e');
     }
-  } catch (e) {
-    print('Error fetching recommended products: $e');
   }
-}
-
 
   // Build pagination dots
   Widget buildDot(int index, BuildContext context) {
@@ -163,89 +163,89 @@ class _ShopScreenState extends State<ShopScreen> {
 
             // Virtual Try-On & Recommender Buttons
             Row(
-  mainAxisAlignment: MainAxisAlignment.center,
-  children: [
-    // Virtual Try-On Button
-    Expanded(
-      child: Container(
-        margin: EdgeInsets.only(right: 10),
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => VirtualTryOnScreen()),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: BLACK_COLOR,
-            padding: EdgeInsets.symmetric(vertical: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 8,
-            shadowColor: Colors.black45,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.add_a_photo, size: 36, color: WHITE_COLOR),
-              SizedBox(height: 8),
-              Text(
-                'Virtual Try-On',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: WHITE_COLOR,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Virtual Try-On Button
+                Expanded(
+                  child: Container(
+                    margin: EdgeInsets.only(right: 10),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => VirtualTryOnScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: BLACK_COLOR,
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 8,
+                        shadowColor: Colors.black45,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.add_a_photo, size: 36, color: WHITE_COLOR),
+                          SizedBox(height: 8),
+                          Text(
+                            'Virtual Try-On',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: WHITE_COLOR,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
 
-    // Recommender Button
-    Expanded(
-      child: Container(
-        margin: EdgeInsets.only(left: 10),
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => RecommenderScreen()),
-            );
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: BLACK_COLOR,
-            padding: EdgeInsets.symmetric(vertical: 20),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-            elevation: 8,
-            shadowColor: Colors.black45,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.person, size: 36, color: WHITE_COLOR),
-              SizedBox(height: 8),
-              Text(
-                'Recommender',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: WHITE_COLOR,
+                // Recommender Button
+                Expanded(
+                  child: Container(
+                    margin: EdgeInsets.only(left: 10),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => RecommenderScreen()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: BLACK_COLOR,
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        elevation: 8,
+                        shadowColor: Colors.black45,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.person, size: 36, color: WHITE_COLOR),
+                          SizedBox(height: 8),
+                          Text(
+                            'Recommender',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: WHITE_COLOR,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    ),
-  ],
-),
+              ],
+            ),
 
             SizedBox(height: ScreenUtil().setHeight(20)),
 
@@ -312,6 +312,12 @@ class _ShopScreenState extends State<ShopScreen> {
                 itemCount: forYou.length,
                 itemBuilder: (context, index) {
                   var product = forYou[index];
+
+                  // Safely handling the product image URLs and fallback
+                  List<String> productImages = (product['imageUrls'] != null && product['imageUrls'] is List)
+                      ? List<String>.from(product['imageUrls'])
+                      : ['https://example.com/fallback-image.jpg'];  // Fallback image
+
                   return Padding(
                     padding: EdgeInsets.only(right: ScreenUtil().setWidth(10)),
                     child: CustomVerticalProductCard(
@@ -319,10 +325,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       prodSize: '${product['stock']} pcs Available',
                       prodPrice: '${product['price']} PHP',
                       numStars: product['numStars'] ?? 5,
-                      prodImages: (product['imageUrls'] != null && product['imageUrls'] is List && product['imageUrls'].isNotEmpty)
-    ? List<String>.from(product['imageUrls'])
-    : ['https://via.placeholder.com/150'],
-
+                      prodImages: productImages,
                       description: product['description'] ?? '',
                       productId: product["productId"] ?? '',
                     ),

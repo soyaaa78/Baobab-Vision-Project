@@ -28,7 +28,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() => isLoading = true);
 
-    final url = Uri.parse('http://10.0.2.2:3001/auth/reset-password');
+    final url = Uri.parse('http://10.0.2.2:3001/authRoutes/reset-password');
 
     try {
       final response = await http.post(

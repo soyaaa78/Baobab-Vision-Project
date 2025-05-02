@@ -35,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    var url = Uri.parse('http://10.0.2.2:3001/auth/register');
+    var url = Uri.parse('http://10.0.2.2:3001/authRoutes/register');
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

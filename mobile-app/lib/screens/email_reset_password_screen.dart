@@ -23,7 +23,7 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
 
   Future<void> verifyOtp() async {
     setState(() => isLoading = true);
-    final url = Uri.parse('http://10.0.2.2:3001/auth/verify-otp');
+    final url = Uri.parse('http://10.0.2.2:3001/authRoutes/verify-otp');
 
     try {
       final response = await http.post(
@@ -64,7 +64,7 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
   }
 
   Future<void> resendOtp() async {
-    final url = Uri.parse('http://10.0.2.2:3001/auth/resend-otp');
+    final url = Uri.parse('http://10.0.2.2:3001/authRoutes/resend-otp');
 
     try {
       final response = await http.post(
