@@ -205,7 +205,6 @@ const resetPassword = async (req, res) => {
   }
 };
 
-<<<<<<< HEAD:backend/controllers/authController.js
 module.exports = {
   register,
   login,
@@ -216,6 +215,3 @@ module.exports = {
   resendOtp,
   resetPassword
 };
-=======
-module.exports = router;
->>>>>>> 2f7dd77c7a348f2ee922fc5e687b4718d496198f:mobile-app/backend/routes/auth.js
