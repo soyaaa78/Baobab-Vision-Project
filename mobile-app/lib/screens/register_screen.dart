@@ -22,7 +22,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmpasswordController = TextEditingController();
+  final TextEditingController confirmpasswordController =
+      TextEditingController();
 
   bool _isObscurePassword = true;
   bool _isObscureConfirmPassword = true;
@@ -93,7 +94,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           prefixIcon: icon != null ? Icon(icon) : null,
           suffixIcon: isPassword
               ? IconButton(
-                  icon: Icon(obscureText ? Icons.visibility : Icons.visibility_off),
+                  icon: Icon(
+                      obscureText ? Icons.visibility : Icons.visibility_off),
                   onPressed: toggleObscure,
                 )
               : null,
@@ -124,43 +126,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   color: BLACK_COLOR,
                 ),
                 SizedBox(height: 30.h),
-
                 buildTextField(
                   label: 'First Name',
                   controller: firstnameController,
                   icon: Icons.person,
-                  validator: (value) => value == null || value.isEmpty ? 'First name required' : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'First name required'
+                      : null,
                 ),
                 buildTextField(
                   label: 'Last Name',
                   controller: lastnameController,
                   icon: Icons.person,
-                  validator: (value) => value == null || value.isEmpty ? 'Last name required' : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Last name required'
+                      : null,
                 ),
                 buildTextField(
-                label: 'Email',
-                controller: emailController,
-                icon: Icons.email,
-                validator: (value) {
-                if (value == null || value.isEmpty) {
-                return 'Email required';
-                }
+                  label: 'Email',
+                  controller: emailController,
+                  icon: Icons.email,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Email required';
+                    }
 
-                // 📧 Regex for validating email
-                final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-                if (!emailRegex.hasMatch(value)) {
-                return 'Please enter a valid email';
-                }
+                    // 📧 Regex for validating email
+                    final emailRegex =
+                        RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                    if (!emailRegex.hasMatch(value)) {
+                      return 'Please enter a valid email';
+                    }
 
-                return null;
-                },
-              ),
-
+                    return null;
+                  },
+                ),
                 buildTextField(
                   label: 'Username',
                   controller: usernameController,
                   icon: Icons.account_circle,
-                  validator: (value) => value == null || value.isEmpty ? 'Username required' : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Username required'
+                      : null,
                 ),
                 buildTextField(
                   label: 'Password',
@@ -174,7 +181,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     });
                   },
                   validator: (value) {
-                    if (value == null || value.isEmpty) return 'Password required';
+                    if (value == null || value.isEmpty)
+                      return 'Password required';
                     if (value.length < 6) return 'Minimum 6 characters';
                     return null;
                   },
@@ -190,9 +198,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _isObscureConfirmPassword = !_isObscureConfirmPassword;
                     });
                   },
-                  validator: (value) => value == null || value.isEmpty ? 'Confirm your password' : null,
+                  validator: (value) => value == null || value.isEmpty
+                      ? 'Confirm your password'
+                      : null,
                 ),
-
                 SizedBox(height: 30.h),
                 CustomInkwellButton(
                   onTap: register,
@@ -202,14 +211,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   fontWeight: FontWeight.w600,
                   buttonName: 'Submit',
                 ),
-
                 SizedBox(height: 20.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text("Already have an account? "),
                     GestureDetector(
-                      onTap: () => Navigator.pushReplacementNamed(context, '/login'),
+                      onTap: () =>
+                          Navigator.pushReplacementNamed(context, '/login'),
                       child: const Text(
                         'Login here',
                         style: TextStyle(
