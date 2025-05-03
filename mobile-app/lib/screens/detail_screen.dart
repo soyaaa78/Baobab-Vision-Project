@@ -247,16 +247,11 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
                 SizedBox(height: ScreenUtil().setHeight(16)),
                 CustomText(
-                  text: "Description",
-                  fontSize: ScreenUtil().setSp(15),
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-                SizedBox(height: ScreenUtil().setHeight(5)),
-                CustomText(
-                  text: widget.description,
-                  fontSize: ScreenUtil().setSp(12),
-                ),
+  text: widget.description,
+  fontSize: ScreenUtil().setSp(12),
+  maxLines: null,
+  textAlign: TextAlign.justify,
+),
                 SizedBox(height: ScreenUtil().setHeight(16)),
 
                 // ====== Buttons ======
