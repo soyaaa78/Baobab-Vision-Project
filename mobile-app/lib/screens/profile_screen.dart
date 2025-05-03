@@ -111,36 +111,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
             SizedBox(height: 20.h),
-            _buildCompletedTransactionsDropdown(),
-            _buildDropdown('My Reviews', ['Review 1', 'Review 2', 'Review 3']),
             _buildDropdown('My Personal Information', [
               'Name: John Doe',
               'Email: john.doe@example.com',
               'Phone: 123-456-7890'
             ]),
+            _buildDropdown(
+                'Order Status', ['Pending', 'Preparing', 'Out for Delivery']),
             _buildSettingsDropdown(),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildCompletedTransactionsDropdown() {
-    return ExpansionTile(
-      title: CustomText(
-        text: 'Completed Transactions',
-        fontSize: ScreenUtil().setSp(18),
-        fontWeight: FontWeight.bold,
-        color: BLACK_COLOR,
-      ),
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 8.w),
-          child: Column(
-              // Add product cards here if needed
-              ),
-        ),
-      ],
     );
   }
 
@@ -226,7 +207,7 @@ void _confirmLogout(BuildContext context) {
               color: Colors.grey,
             ),
             onPressed: () {
-              Navigator.of(dialogContext).pop(); // Dismiss the dialog
+              Navigator.of(dialogContext).pop();
             },
           ),
           TextButton(
@@ -238,9 +219,9 @@ void _confirmLogout(BuildContext context) {
             onPressed: () async {
               SharedPreferences prefs = await SharedPreferences.getInstance();
               await prefs.clear();
-              Navigator.of(dialogContext).pop(); // Close dialog first
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/login', (route) => false); // Go to login screen
+              Navigator.of(dialogContext).pop();
+              Navigator.of(context)
+                  .pushNamedAndRemoveUntil('/login', (route) => false);
             },
           ),
         ],

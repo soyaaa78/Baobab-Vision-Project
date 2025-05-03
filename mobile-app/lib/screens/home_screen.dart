@@ -4,18 +4,18 @@ import '../screens/shop_screen.dart';
 import '../screens/catalogue_screen.dart'; // Import CatalogueScreen
 import 'package:flutter/material.dart';
 import '../constants.dart';
- 
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
- 
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
- 
+
 class _HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
   final PageController pageController = PageController();
- 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
- 
+
   void onTappedBar(int value) {
     setState(() {
       selectedIndex = value;

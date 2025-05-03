@@ -48,7 +48,8 @@ class _ShopScreenState extends State<ShopScreen> {
     _carouselTimer = Timer.periodic(Duration(seconds: 3), (Timer timer) {
       if (_pageController.hasClients && slideshowImages.isNotEmpty) {
         _currentPage++;
-        if (_currentPage >= slideshowImages.length) _currentPage = 0; // Dynamic length
+        if (_currentPage >= slideshowImages.length)
+          _currentPage = 0; // Dynamic length
         _pageController.animateToPage(
           _currentPage,
           duration: Duration(milliseconds: 350),
@@ -69,7 +70,8 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> fetchSlideshowImages() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/slideshowRoutes/all-images'));
+      final response = await http.get(
+          Uri.parse('http://10.0.2.2:3001/api/slideshowRoutes/all-images'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -86,15 +88,16 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> fetchRecommendedProducts() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes/for-you'));
+      final response = await http
+          .get(Uri.parse('http://10.0.2.2:3001/api/productRoutes/for-you'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
 
-        print('Recommended products fetched: $data');  // Debugging line
+        print('Recommended products fetched: $data'); // Debugging line
 
         setState(() {
-          forYou = data;  // Update the forYou list with the fetched data
+          forYou = data; // Update the forYou list with the fetched data
         });
       } else {
         print('Failed to load recommended products');
@@ -173,7 +176,8 @@ class _ShopScreenState extends State<ShopScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => VirtualTryOnScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => VirtualTryOnScreen()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -213,7 +217,8 @@ class _ShopScreenState extends State<ShopScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => RecommenderScreen()),
+                          MaterialPageRoute(
+                              builder: (context) => RecommenderScreen()),
                         );
                       },
                       style: ElevatedButton.styleFrom(
@@ -272,7 +277,8 @@ class _ShopScreenState extends State<ShopScreen> {
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                                 errorBuilder: (context, error, stackTrace) {
-                                  return Center(child: Icon(Icons.broken_image));
+                                  return Center(
+                                      child: Icon(Icons.broken_image));
                                 },
                               );
                             },
@@ -314,9 +320,12 @@ class _ShopScreenState extends State<ShopScreen> {
                   var product = forYou[index];
 
                   // Safely handling the product image URLs and fallback
-                  List<String> productImages = (product['imageUrls'] != null && product['imageUrls'] is List)
+                  List<String> productImages = (product['imageUrls'] != null &&
+                          product['imageUrls'] is List)
                       ? List<String>.from(product['imageUrls'])
-                      : ['https://example.com/fallback-image.jpg'];  // Fallback image
+                      : [
+                          'https://example.com/fallback-image.jpg'
+                        ]; // Fallback image
 
                   return Padding(
                     padding: EdgeInsets.only(right: ScreenUtil().setWidth(10)),
