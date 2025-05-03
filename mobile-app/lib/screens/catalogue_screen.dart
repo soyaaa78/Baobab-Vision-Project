@@ -3,7 +3,7 @@ import 'package:baobab_vision_project/screens/detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert'; // For JSON decoding
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CatalogueScreen extends StatefulWidget {
@@ -14,16 +14,12 @@ class CatalogueScreen extends StatefulWidget {
 }
 
 class _CatalogueScreenState extends State<CatalogueScreen> {
-  // List to hold fetched products
   List<dynamic> products = [];
 
-  // Fetch products from the backend
   Future<void> fetchProducts() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes'));  // Fetch all products
-
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes'));
       if (response.statusCode == 200) {
-        // Decode the JSON response and update state
         setState(() {
           products = jsonDecode(response.body);
         });
@@ -36,11 +32,9 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
     }
   }
 
-  // Fetch a specific product by ID
   Future<void> fetchProductById(String productId) async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes/$productId'));  // Fetch the specific product
-
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes/$productId'));
       if (response.statusCode == 200) {
         final product = jsonDecode(response.body);
         print("Fetched product details: $product");
@@ -52,6 +46,23 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
     }
   }
 
+  Future<void> fetchFilteredProducts(String sortBy, String order) async {
+    final uri = Uri.parse('http://10.0.2.2:3001/api/productRoutes?sortBy=$sortBy&order=$order');
+    try {
+      final response = await http.get(uri);
+      if (response.statusCode == 200) {
+        setState(() {
+          products = jsonDecode(response.body);
+        });
+        print("Fetched filtered products sorted by $sortBy ($order)");
+      } else {
+        print('Failed to fetch filtered products');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
+
   Future<String?> getUsername() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('username');
@@ -60,7 +71,7 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
   @override
   void initState() {
     super.initState();
-    fetchProducts();  // Fetch all products when the screen loads
+    fetchProducts();
   }
 
   @override
@@ -72,17 +83,55 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
           'Catalogue',
           style: TextStyle(
             fontSize: 20.sp,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w700,
             color: Colors.black,
           ),
         ),
         backgroundColor: WHITE_COLOR,
-        elevation: 0,
+        elevation: 1,
         actions: [
           IconButton(
             icon: Icon(Icons.filter_list_alt, color: Colors.black),
-            onPressed: () { 
-              print('Filter icon pressed!');
+            onPressed: () {
+              showModalBottomSheet(
+                context: context,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+                ),
+                builder: (BuildContext context) {
+                  return Container(
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          height: 5.h,
+                          width: 40.w,
+                          margin: EdgeInsets.only(bottom: 10.h),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[400],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        ...[
+                          {'icon': Icons.star, 'text': 'Popular', 'sortBy': 'popular', 'order': 'desc'},
+                          {'icon': Icons.access_time, 'text': 'Latest', 'sortBy': 'latest', 'order': 'desc'},
+                          {'icon': Icons.trending_up, 'text': 'Top Sales', 'sortBy': 'top-sales', 'order': 'desc'},
+                          {'icon': Icons.price_change, 'text': 'Price: Low to High', 'sortBy': 'price', 'order': 'asc'},
+                          {'icon': Icons.price_change_outlined, 'text': 'Price: High to Low', 'sortBy': 'price', 'order': 'desc'},
+                        ].map((filter) => ListTile(
+                          leading: Icon(filter['icon'] as IconData),
+                          title: Text(filter['text'] as String, style: TextStyle(fontWeight: FontWeight.w600)),
+                          onTap: () {
+                            Navigator.pop(context);
+                            fetchFilteredProducts(filter['sortBy'] as String, filter['order'] as String);
+                          },
+                        )).toList(),
+                      ],
+                    ),
+                  );
+                },
+              );
             },
           ),
         ],
@@ -97,11 +146,11 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                   'All items',
                   style: TextStyle(
                     fontSize: 18.sp,
+                    fontWeight: FontWeight.w600,
                     color: Colors.black,
                   ),
                 ),
                 Spacer(),
-                // Optionally add filter buttons here
               ],
             ),
             SizedBox(height: 10.h),
@@ -110,37 +159,32 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                 itemCount: products.length,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  crossAxisSpacing: 10.w,
-                  mainAxisSpacing: 10.h,
-                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 12.w,
+                  mainAxisSpacing: 12.h,
+                  childAspectRatio: 0.78,
                 ),
                 itemBuilder: (context, index) {
                   final product = products[index];
-
-                  // Check the image URL and fall back to default if needed
                   String imageUrl = product['imageUrls'] != null && product['imageUrls'] is List
                       ? product['imageUrls'].isNotEmpty
-                          ? product['imageUrls'][0]  // Get the first image if available
-                          : 'assets/images/default.png'  // Fallback to default image if list is empty
-                      : 'assets/images/default.png';  // Fallback if 'imageUrls' is null or not a list
+                          ? product['imageUrls'][0]
+                          : 'assets/images/default.png'
+                      : 'assets/images/default.png';
 
                   return GestureDetector(
                     onTap: () async {
                       String productId = product['_id'];
-                      String? username = await getUsername(); // Load saved username
-
+                      String? username = await getUsername();
                       if (username == null) {
                         print('Error: No username found.');
                         return;
                       }
-
                       try {
                         final response = await http.post(
                           Uri.parse('http://10.0.2.2:3001/api/userPreferences/update-preferences/$username'),
                           headers: {'Content-Type': 'application/json'},
                           body: jsonEncode({'productId': productId}),
                         );
-
                         if (response.statusCode == 200) {
                           print('Successfully updated preferences for productId: $productId');
                         } else {
@@ -161,60 +205,81 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                             quantity: product['stock'] ?? 0,
                             description: product['description'] ?? 'No description available',
                             prodImages: (product['imageUrls'] != null && product['imageUrls'] is List)
-    ? List<String>.from(product['imageUrls'])  // Handle as list
-    : [imageUrl],  // Fallback to default image if no URLs available
- // Pass the correct image URL here
+                                ? List<String>.from(product['imageUrls'])
+                                : [imageUrl],
                           ),
                         ),
                       );
                     },
-                    child: Card(
-                      color: Colors.white,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: WHITE_COLOR,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            spreadRadius: 2,
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,  // Center the content inside the card
-                        crossAxisAlignment: CrossAxisAlignment.center,  // Center the content inside the card
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(
-                            height: 120.h,
-                            width: double.infinity,
+                          ClipRRect(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                             child: Image.network(
-                              imageUrl,  // Use the imageUrl variable defined above
+                              imageUrl,
+                              height: 130.h,
+                              width: double.infinity,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
-                                  Icon(Icons.broken_image, size: 48),
+                                  Container(
+                                    height: 130.h,
+                                    color: Colors.grey.shade200,
+                                    child: Icon(Icons.broken_image, size: 48),
+                                  ),
                             ),
                           ),
-                          SizedBox(height: 8.0),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                            padding: EdgeInsets.all(8.w),
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,  // Center text and other elements inside
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                Text(
-                                  product['name'],
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,  // Center the text
+                                Center(
+                                  child: Text(
+                                    product['name'],
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14.sp,
+                                      color: Colors.black87,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                                Text(
-                                  'Stock: ${product['stock']} pcs',
-                                  textAlign: TextAlign.center,  // Center the text
+                                SizedBox(height: 4.h),
+                                Center(
+                                  child: Text(
+                                    '${product['price']} PHP',
+                                    style: TextStyle(
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w900,
+                                      color: BLACK_COLOR,
+                                    ),
+                                  ),
                                 ),
-                                Text(
-                                  '${product['price']} PHP',
-                                  textAlign: TextAlign.center,  // Center the text
-                                ),
+                                SizedBox(height: 4.h),
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,  // Center the stars
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   children: List.generate(5, (index) {
                                     return Icon(
                                       Icons.star,
+                                      size: 14.sp,
                                       color: index < (product['numStars'] ?? 0)
-                                          ? Colors.yellow
-                                          : Colors.grey,
-                                      size: 16,
+                                          ? Colors.amber
+                                          : Colors.grey.shade300,
                                     );
                                   }),
                                 ),

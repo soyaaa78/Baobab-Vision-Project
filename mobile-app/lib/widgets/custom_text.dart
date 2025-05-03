@@ -11,7 +11,7 @@ class CustomText extends StatelessWidget {
     this.textAlign = TextAlign.left,
     this.letterSpacing = 0,
     this.fontStyle = FontStyle.normal,
-    this.maxLines = 1, // New maxLines parameter
+    this.maxLines,
   });
 
   final String text;
@@ -22,7 +22,7 @@ class CustomText extends StatelessWidget {
   final TextAlign textAlign;
   final String fontFamily;
   final FontStyle fontStyle;
-  final int maxLines; // New maxLines parameter
+  final int? maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -37,8 +37,8 @@ class CustomText extends StatelessWidget {
         fontStyle: fontStyle,
         letterSpacing: letterSpacing,
       ),
-      maxLines: maxLines, // Apply the maxLines
-      overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+      maxLines: maxLines,
+      overflow: maxLines == null ? TextOverflow.visible : TextOverflow.ellipsis,
     );
   }
 }

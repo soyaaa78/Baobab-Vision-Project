@@ -4,7 +4,7 @@ const Product = require('../models/Products');
 // Create product
 exports.createProduct = async (req, res) => {
   const {
-    name, description, price, stock, imageUrls, specs, numStars, recommendedFor
+    name, description, price, stock, imageUrls, specs, numStars, recommendedFor, sales
   } = req.body;
 
   // Validate required fields
@@ -21,7 +21,9 @@ exports.createProduct = async (req, res) => {
       imageUrls,  // Directly store the array of image URLs
       specs,
       numStars: numStars || 5,  // Default to 5 stars if not provided
-      recommendedFor: recommendedFor || false,  // Default to false
+      recommendedFor: recommendedFor || false,
+      sales: sales || 0,
+        // Default to false
     });
 
     await product.save();
@@ -33,15 +35,38 @@ exports.createProduct = async (req, res) => {
 };
 
 // Get all products
+// Get all products with optional sorting
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find();  // Returns all products
+    const { sortBy, order = 'desc' } = req.query;
+
+    let sortCriteria = {};
+
+    switch (sortBy) {
+      case 'popular':
+        sortCriteria.numStars = order === 'asc' ? 1 : -1;
+        break;
+      case 'latest':
+        sortCriteria.createdAt = order === 'asc' ? 1 : -1;
+        break;
+      case 'top-sales':
+        sortCriteria.sales = order === 'asc' ? 1 : -1;
+        break;
+      case 'price':
+        sortCriteria.price = order === 'asc' ? 1 : -1;
+        break;
+      default:
+        sortCriteria.createdAt = -1; // Default to latest if no sort param
+    }
+
+    const products = await Product.find().sort(sortCriteria);
     res.status(200).json(products);
   } catch (err) {
     console.error('Error fetching products:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 };
+
 
 // Get recommended products
 exports.getRecommendedProducts = async (req, res) => {
