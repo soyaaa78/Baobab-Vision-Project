@@ -17,6 +17,9 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   String username = '';
+  String firstname = '';
+  String lastname = '';
+  String email = '';
   File? _imageFile;
 
   @override
@@ -30,6 +33,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String? path = prefs.getString('profileImagePath');
     setState(() {
       username = prefs.getString('username') ?? 'Guest';
+      firstname = prefs.getString('firstname') ?? 'User'; // 👈 Load first name
+      lastname = prefs.getString('lastname') ?? '';
+      email = prefs.getString('email') ?? 'no-email@example.com';
       if (path != null) {
         _imageFile = File(path);
       }
@@ -95,14 +101,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     CustomText(
-                      text: '$username',
+                      text: firstname,
                       fontSize: ScreenUtil().setSp(22),
                       fontWeight: FontWeight.bold,
                       color: BLACK_COLOR,
                     ),
                     SizedBox(height: 1.h),
                     CustomText(
-                      text: 'aniascobeverly@gmail.com',
+                      text: username,
                       fontSize: ScreenUtil().setSp(12),
                       color: Colors.grey,
                     ),
@@ -112,8 +118,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             SizedBox(height: 20.h),
             _buildDropdown('My Personal Information', [
-              'Name: John Doe',
-              'Email: john.doe@example.com',
+              'Name: $firstname $lastname',
+              'Email: $email',
               'Phone: 123-456-7890'
             ]),
             _buildDropdown(

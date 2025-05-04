@@ -24,9 +24,13 @@ class _LogInScreenState extends State<LogInScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isObscure = true;
 
-  Future<void> _saveUsername(String username) async {
+  Future<void> _saveUserInfo(
+      String username, String firstname, String lastname, String email) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('username', username);
+    await prefs.setString('firstname', firstname);
+    await prefs.setString('lastname', lastname); // 👈 New
+    await prefs.setString('email', email); // 👈 Save firstname
   }
 
   Future<void> login() async {
@@ -42,10 +46,7 @@ class _LogInScreenState extends State<LogInScreen> {
         }),
       );
 
-      // Log the raw response to check what you're receiving
       print('🔄 LOGIN RESPONSE: ${response.body}');
-
-      // Check if the response is valid JSON and decode it
       final resData = jsonDecode(response.body);
       print('🔄 LOGIN RESPONSE (decoded): $resData');
 
@@ -61,7 +62,13 @@ class _LogInScreenState extends State<LogInScreen> {
         );
       } else if (response.statusCode == 200) {
         final token = resData['token'];
-        await _saveUsername(usernameController.text.trim());
+        final firstname = resData['firstname'] ?? '';
+        final lastname = resData['lastname'] ?? ''; // 👈 New
+        final email = resData['email'] ?? ''; // 👈 Get firstname from response
+
+        await _saveUserInfo(usernameController.text.trim(), firstname, lastname,
+            email); // 👈 Save it
+
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         customDialog(

@@ -18,7 +18,7 @@ class ShopScreen extends StatefulWidget {
 }
 
 class _ShopScreenState extends State<ShopScreen> {
-  String username = '';
+  String firstname = '';
   List<dynamic> bestSellers = [];
   List<dynamic> forYou = [];
   List<String> slideshowImages = [];
@@ -61,10 +61,8 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> _loadUsername() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String loadedUsername = prefs.getString('username') ?? 'Guest';
-
     setState(() {
-      username = loadedUsername;
+      firstname = prefs.getString('firstname') ?? 'Guest'; // 👈 Use firstname
     });
   }
 
@@ -147,7 +145,7 @@ class _ShopScreenState extends State<ShopScreen> {
             Align(
               alignment: Alignment.centerLeft,
               child: CustomText(
-                text: 'Good day, $username',
+                text: 'Good day, $firstname',
                 fontSize: ScreenUtil().setSp(20),
                 color: BLACK_COLOR,
                 fontWeight: FontWeight.w900,
