@@ -2,9 +2,11 @@
 const Product = require('../models/Products');
 
 // Create product
+// Create product
 exports.createProduct = async (req, res) => {
   const {
-    name, description, price, stock, imageUrls, specs, numStars, recommendedFor, sales
+    name, description, price, stock, imageUrls, specs, numStars,
+    recommendedFor, sales, colorOptions, lensOptions // ✅ include lensOptions in destructuring
   } = req.body;
 
   // Validate required fields
@@ -18,12 +20,13 @@ exports.createProduct = async (req, res) => {
       description,
       price,
       stock,
-      imageUrls,  // Directly store the array of image URLs
+      imageUrls,
       specs,
-      numStars: numStars || 5,  // Default to 5 stars if not provided
+      numStars: numStars || 5,
       recommendedFor: recommendedFor || false,
       sales: sales || 0,
-        // Default to false
+      colorOptions: colorOptions || [],
+      lensOptions: lensOptions || [] // ✅ add comma before this line
     });
 
     await product.save();
@@ -34,7 +37,6 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-// Get all products
 // Get all products with optional sorting
 exports.getAllProducts = async (req, res) => {
   try {

@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:baobab_vision_project/models/productModel.dart';
+import 'package:baobab_vision_project/screens/detail_screen.dart';
 import 'package:baobab_vision_project/screens/recommender_screen.dart';
 import 'package:baobab_vision_project/screens/vto_screen.dart';
 import 'package:flutter/material.dart';
@@ -337,6 +339,12 @@ class _ShopScreenState extends State<ShopScreen> {
                       prodImages: productImages,
                       description: product['description'] ?? '',
                       productId: product["productId"] ?? '',
+                        colorOptions: (product['colorOptions'] as List<dynamic>? ?? [])
+      .map((e) => ColorOption.fromJson(e))
+      .toList(),
+      lensOptions: (product['lensOptions'] as List)
+      .map((e) => LensOption.fromJson(e))
+      .toList(), 
                     ),
                   );
                 },

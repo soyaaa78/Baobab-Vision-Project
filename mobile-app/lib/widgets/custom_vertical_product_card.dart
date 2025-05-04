@@ -1,3 +1,5 @@
+import 'package:baobab_vision_project/models/productModel.dart';
+
 import '../widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -13,6 +15,8 @@ class CustomVerticalProductCard extends StatelessWidget {
   final String description;
   final List<String> prodImages;
   final String productId; 
+  final List<ColorOption> colorOptions;
+  final List<LensOption> lensOptions;
 
   const CustomVerticalProductCard({
     super.key,
@@ -24,6 +28,8 @@ class CustomVerticalProductCard extends StatelessWidget {
     this.description = '',
     required this.prodImages,
     required this.productId,
+    required this.colorOptions, 
+     required this.lensOptions, 
   });
 
   @override
@@ -47,6 +53,8 @@ class CustomVerticalProductCard extends StatelessWidget {
                 quantity: quantity,
                 description: description,
                 prodImages: prodImages,
+                colorOptions: colorOptions,
+                lensOptions: lensOptions,
               ),
             ),
           );
