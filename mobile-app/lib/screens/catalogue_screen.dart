@@ -1,4 +1,5 @@
 import 'package:baobab_vision_project/constants.dart';
+import 'package:baobab_vision_project/models/productModel.dart';
 import 'package:baobab_vision_project/screens/detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -207,6 +208,12 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                             prodImages: (product['imageUrls'] != null && product['imageUrls'] is List)
                                 ? List<String>.from(product['imageUrls'])
                                 : [imageUrl],
+                            colorOptions: (product['colorOptions'] as List<dynamic>? ?? [])
+          .map((e) => ColorOption.fromJson(e))
+          .toList(),
+          lensOptions: (product['lensOptions'] as List<dynamic>)
+          .map((e) => LensOption.fromJson(e))
+          .toList(),
                           ),
                         ),
                       );

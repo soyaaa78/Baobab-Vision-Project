@@ -4,6 +4,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
 import '../widgets/custom_text.dart';
+import 'package:baobab_vision_project/models/productModel.dart';
+import 'package:file_picker/file_picker.dart';
+
+class LensOption {
+  final String label;
+  final double price;
+  final String type;
+
+  LensOption({required this.label, required this.price, required this.type});
+
+  factory LensOption.fromJson(Map<String, dynamic> json) {
+    return LensOption(
+      label: json['label'],
+      price: (json['price'] ?? 0).toDouble(),
+      type: json['type'] ?? 'builtin',
+    );
+  }
+}
 
 class DetailScreen extends StatefulWidget {
   final String prodName;
@@ -13,6 +31,8 @@ class DetailScreen extends StatefulWidget {
   final int quantity;
   final String description;
   final List<String> prodImages;
+  final List<ColorOption> colorOptions;
+  final List<LensOption> lensOptions;
 
   const DetailScreen({
     super.key,
@@ -23,13 +43,17 @@ class DetailScreen extends StatefulWidget {
     required this.quantity,
     this.description = 'Lorem ipsum',
     required this.prodImages,
+    required this.colorOptions,
+    required this.lensOptions,
   });
 
-  /// ✅ Factory constructor to safely flatten imageUrls from MongoDB-style JSON
   static DetailScreen fromJson(Map<String, dynamic> json) {
-    final imagesMap = Map<String, dynamic>.from(json['imageUrls'] ?? {});
-    final List<String> allImages = imagesMap.values
-        .expand((value) => List<String>.from(value))
+    final List<ColorOption> colorOptionsList = (json['colorOptions'] as List<dynamic>? ?? [])
+        .map((e) => ColorOption.fromJson(e))
+        .toList();
+
+    final List<LensOption> lensOptionsList = (json['lensOptions'] as List<dynamic>? ?? [])
+        .map((e) => LensOption.fromJson(e))
         .toList();
 
     return DetailScreen(
@@ -39,29 +63,32 @@ class DetailScreen extends StatefulWidget {
       numStars: json['numStars'] ?? 5,
       quantity: 1,
       description: json['description'] ?? '',
-      prodImages: allImages,
+      prodImages: List<String>.from(json['imageUrls'] ?? []),
+      colorOptions: colorOptionsList,
+      lensOptions: lensOptionsList,
     );
   }
 
   @override
   _DetailScreenState createState() => _DetailScreenState();
 }
+PlatformFile? prescriptionFile;
 
 class _DetailScreenState extends State<DetailScreen> {
   late PageController _pageController;
   int _selectedImageIndex = 0;
-
-  String selectedChoice = 'Built-in UV400 Lenses (FREE)';
-  List<String> choices = [
-    'Built-in UV400 Lenses (FREE)',
-    'Polarized Lenses (+PHP300)',
-    'Photochromic Lenses (+PHP300)'
-  ];
+  int selectedColorIndex = 0;
+  String selectedChoice = '';
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+
+    // Default to the first lens option
+    if (widget.lensOptions.isNotEmpty) {
+      selectedChoice = widget.lensOptions.first.label;
+    }
   }
 
   @override
@@ -72,6 +99,11 @@ class _DetailScreenState extends State<DetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final List<String> allImages = [
+      widget.colorOptions[selectedColorIndex].imageUrl,
+      ...widget.prodImages
+    ];
+
     return Scaffold(
       backgroundColor: WHITE_COLOR,
       body: SafeArea(
@@ -81,7 +113,6 @@ class _DetailScreenState extends State<DetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // ====== Main Image Carousel with Thumbnails ======
                 Column(
                   children: [
                     Stack(
@@ -91,7 +122,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           width: double.infinity,
                           child: PageView.builder(
                             controller: _pageController,
-                            itemCount: widget.prodImages.length,
+                            itemCount: allImages.length,
                             onPageChanged: (index) {
                               setState(() {
                                 _selectedImageIndex = index;
@@ -99,7 +130,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             },
                             itemBuilder: (context, index) {
                               return Image.network(
-                                widget.prodImages[index],
+                                allImages[index],
                                 fit: BoxFit.cover,
                                 width: double.infinity,
                               );
@@ -143,11 +174,10 @@ class _DetailScreenState extends State<DetailScreen> {
                       ],
                     ),
                     SizedBox(height: 10),
-                    // ====== Thumbnails ======
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
-                        children: List.generate(widget.prodImages.length, (index) {
+                        children: List.generate(allImages.length, (index) {
                           return GestureDetector(
                             onTap: () {
                               _pageController.animateToPage(
@@ -172,7 +202,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
                                 child: Image.network(
-                                  widget.prodImages[index],
+                                  allImages[index],
                                   height: 60,
                                   width: 60,
                                   fit: BoxFit.cover,
@@ -185,76 +215,199 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                   ],
                 ),
-
-                // ====== Text Info Section ======
                 SizedBox(height: ScreenUtil().setHeight(20)),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     CustomText(
-                      text: widget.prodName,
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: ScreenUtil().setSp(24),
-                    ),
+  text: widget.prodName,
+  color: Colors.black,
+  fontFamily: 'Montserrat',
+  fontWeight: FontWeight.w500,
+  fontSize: ScreenUtil().setSp(24),
+),
+
                     CustomText(
                       text: widget.prodPrice,
                       color: BLACK_COLOR,
-                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Montserrat',
+  fontWeight: FontWeight.w800,
                       fontSize: ScreenUtil().setSp(24),
                     ),
                   ],
                 ),
                 SizedBox(height: ScreenUtil().setHeight(5)),
                 CustomText(
-                  text: 'Available color versions:',
+                  text: 'Color: ${widget.colorOptions[selectedColorIndex].name}',
                   fontSize: ScreenUtil().setSp(15),
+                  fontFamily: 'Montserrat',
                   color: Colors.black,
                 ),
                 SizedBox(height: ScreenUtil().setHeight(8)),
-                Row(
-                  children: [
-                    _colorDot(BLACK_COLOR),
-                    const SizedBox(width: 8),
-                    _colorDot(EYEWEARCOLOR1),
-                    const SizedBox(width: 8),
-                    _colorDot(EYEWEARCOLOR2),
-                  ],
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: List.generate(widget.colorOptions.length, (index) {
+                      return _colorSwatch(widget.colorOptions[index], index == selectedColorIndex);
+                    }),
+                  ),
                 ),
                 SizedBox(height: ScreenUtil().setHeight(16)),
-                CustomText(
-                  text: 'Select an option:',
-                  fontSize: ScreenUtil().setSp(15),
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-                SizedBox(height: ScreenUtil().setHeight(8)),
-                DropdownButton<String>(
-                  value: selectedChoice,
-                  isExpanded: true,
-                  dropdownColor: WHITE_COLOR,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedChoice = newValue!;
-                    });
-                  },
-                  items: choices.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: ScreenUtil().setHeight(16)),
-                CustomText(
+CustomText(
   text: widget.description,
-  fontSize: ScreenUtil().setSp(12),
+  fontSize: ScreenUtil().setSp(17),
+  fontFamily: 'Nunito',
+  fontWeight: FontWeight.w600,
   maxLines: null,
   textAlign: TextAlign.justify,
 ),
-                SizedBox(height: ScreenUtil().setHeight(16)),
+SizedBox(height: ScreenUtil().setHeight(16)),
+CustomText(
+  text: 'SELECT LENS TYPE:',
+  fontSize: ScreenUtil().setSp(15),
+  color: Colors.black,
+  fontFamily: 'Montserrat',
+  fontWeight: FontWeight.w600,
+),
+SizedBox(height: ScreenUtil().setHeight(8)),
+DropdownButton<String>(
+  value: selectedChoice,
+  isExpanded: true,
+  dropdownColor: WHITE_COLOR,
+  onChanged: (String? newValue) {
+    setState(() {
+      selectedChoice = newValue!;
+    });
+  },
+   itemHeight: null,
+  items: [
+    // Built-in
+    DropdownMenuItem<String>(
+      enabled: false,
+      child: Text(
+        'BUILT-IN',
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 15,),
+      ),
+    ),
+    ...widget.lensOptions
+        .where((option) => option.type == 'builtin')
+        .map((option) => DropdownMenuItem<String>(
+              value: option.label,
+              child: Text('${option.label} (FREE)'),
+            )),
+    // Tinted
+    DropdownMenuItem<String>(
+      enabled: false,
+      child: Text(
+        'TINTED',
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 15),
+      ),
+    ),
+    ...widget.lensOptions
+        .where((option) => option.type == 'tinted')
+        .map((option) => DropdownMenuItem<String>(
+              value: option.label,
+              child: Text('${option.label} (+₱${option.price.toStringAsFixed(0)})'),
+            )),
+    // Sun Adaptive
+    DropdownMenuItem<String>(
+      enabled: false,
+      child: Text(
+        'SUN ADAPTIVE',
+        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 15),
+      ),
+    ),
+   ...widget.lensOptions
+        .where((option) => option.type == 'adaptive')
+        .map((option) => DropdownMenuItem<String>(
+              value: option.label,
+              child: SizedBox(
+                width: double.infinity,
+                child: Text(
+                  '${option.label} (+₱${option.price.toStringAsFixed(0)})',
+                  maxLines: 2, // 👈 allows wrapping
+                  overflow: TextOverflow.visible,
+                  softWrap: true,
+                ),
+              ),
+            )),
+  ],
+),
+SizedBox(height: ScreenUtil().setHeight(16)),
+CustomText(
+  text: 'UPLOAD PHOTO PRESCRIPTION',
+  fontSize: ScreenUtil().setSp(15),
+  color: Colors.black,
+  fontFamily: 'Montserrat',
+  fontWeight: FontWeight.w800,
+),
+SizedBox(height: ScreenUtil().setHeight(8)),
+prescriptionFile == null
+    ? GestureDetector(
+        onTap: () async {
+          FilePickerResult? result = await FilePicker.platform.pickFiles(
+            type: FileType.custom,
+            allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+          );
 
-                // ====== Buttons ======
+          if (result != null) {
+            setState(() {
+              prescriptionFile = result.files.first;
+            });
+          }
+        },
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(vertical: 20),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.black),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.upload_file, color: Colors.grey),
+              SizedBox(height: 8),
+              Text(
+                'Choose File\nor drop file to upload',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+              ),
+            ],
+          ),
+        ),
+      )
+    : Container(
+        padding: EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: Colors.black),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.insert_drive_file, color: Colors.green),
+            SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                prescriptionFile!.name,
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            IconButton(
+              icon: Icon(Icons.delete, color: Colors.red),
+              onPressed: () {
+                setState(() {
+                  prescriptionFile = null;
+                });
+              },
+              tooltip: 'Remove file',
+            ),
+          ],
+        ),
+      ),
+
+
+                SizedBox(height: ScreenUtil().setHeight(16)),
                 Row(
                   children: [
                     Expanded(
@@ -312,10 +465,57 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  Widget _colorDot(Color color) {
-    return CircleAvatar(
-      radius: 12,
-      backgroundColor: color,
+  Widget _colorSwatch(ColorOption option, bool isSelected) {
+    Widget swatch;
+
+    if (option.type == 'solid') {
+      swatch = CircleAvatar(
+        radius: 12,
+        backgroundColor: Color(int.parse('0xFF' + option.colors[0].substring(1))),
+      );
+    } else if (option.type == 'split') {
+      swatch = Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: option.colors
+                .map((hex) => Color(int.parse('0xFF' + hex.substring(1))))
+                .toList(),
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      );
+    } else {
+      swatch = CircleAvatar(
+        radius: 12,
+        backgroundImage: NetworkImage(option.swatchUrl),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        final index = widget.colorOptions.indexOf(option);
+        setState(() {
+          selectedColorIndex = index;
+          _selectedImageIndex = 0;
+          _pageController.jumpToPage(0);
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.all(2),
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: isSelected ? BLACK_COLOR : Colors.transparent,
+            width: 2,
+          ),
+          shape: BoxShape.circle,
+        ),
+        child: swatch,
+      ),
     );
   }
 }

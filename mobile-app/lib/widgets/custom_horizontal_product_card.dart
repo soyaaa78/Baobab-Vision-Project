@@ -1,3 +1,4 @@
+import 'package:baobab_vision_project/models/productModel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
@@ -16,6 +17,8 @@ class CustomHorizontalProductCard extends StatefulWidget {
   final bool isCart;
   final bool isCheckout;
   final List<String> prodImages;
+  final List<ColorOption> colorOptions;
+  final List<LensOption> lensOptions;
 
   CustomHorizontalProductCard({
     super.key,
@@ -29,6 +32,8 @@ class CustomHorizontalProductCard extends StatefulWidget {
     this.isCart = false,
     this.isCheckout = false,
     required this.prodImages,
+    required this.colorOptions,
+    required this.lensOptions, 
   });
 
   @override
@@ -144,6 +149,8 @@ class _CustomHorizontalProductCardState
                                     quantity: widget.quantity,
                                     description: widget.description,
                                     prodImages: widget.prodImages,
+                                    colorOptions: widget.colorOptions,
+                                    lensOptions: widget.lensOptions,
                                   );
                                 },
                               ));
