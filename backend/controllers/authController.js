@@ -72,7 +72,13 @@ const login = async (req, res) => {
       expiresIn: '1h',
     });
 
-    return res.status(200).json({ message: 'Login successful', token });
+    return res.status(200).json({
+      message: 'Login successful',
+      token,
+      firstname: user.firstname, // Send firstname
+      lastname: user.lastname,   // Send lastname
+      email: user.email,   // 👈 Add this line
+    });
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).json({ message: 'Internal server error' });
