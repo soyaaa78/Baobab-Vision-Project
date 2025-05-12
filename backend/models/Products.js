@@ -1,3 +1,4 @@
+// models/Product.js
 const mongoose = require('mongoose');
 
 const colorOptionSchema = new mongoose.Schema({
@@ -25,7 +26,7 @@ const productSchema = new mongoose.Schema({
   recommendedFor: { type: Boolean, default: false },
   sales: { type: Number, default: 0 },
   colorOptions: [colorOptionSchema],
-  lensOptions: [lensOptionSchema] // ➕ Add this
+  lensOptions: [lensOptionSchema] // Embedded as subdocuments
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', productSchema);

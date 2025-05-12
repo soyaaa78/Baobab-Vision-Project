@@ -1,21 +1,32 @@
 import 'package:baobab_vision_project/screens/cart_screen.dart';
 import 'package:baobab_vision_project/screens/vto_screen.dart';
+import 'package:baobab_vision_project/widgets/cart_animation_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
 import '../widgets/custom_text.dart';
 import 'package:baobab_vision_project/models/productModel.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LensOption {
+  final String id;
   final String label;
   final double price;
   final String type;
 
-  LensOption({required this.label, required this.price, required this.type});
+  LensOption({
+    required this.id,
+    required this.label,
+    required this.price,
+    required this.type,
+  });
 
   factory LensOption.fromJson(Map<String, dynamic> json) {
     return LensOption(
+      id: json['_id'] ?? '',
       label: json['label'],
       price: (json['price'] ?? 0).toDouble(),
       type: json['type'] ?? 'builtin',
@@ -23,7 +34,44 @@ class LensOption {
   }
 }
 
+Future<void> addToCart(
+  String token,
+  String productId,
+  int quantity,
+  String colorOptionId,
+  String lensOptionId,
+  String? prescriptionImage,
+) async {
+  final url = Uri.parse('http://10.0.2.2:3001/api/cartRoutes/add');
+
+  final body = json.encode({
+    'productId': productId,
+    'quantity': quantity,
+    'colorOptionId': colorOptionId,
+    'lensOptionId': lensOptionId,
+    'prescriptionImage': prescriptionImage,
+  });
+
+  final headers = {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer $token',
+  };
+
+  try {
+    final response = await http.post(url, body: body, headers: headers);
+    if (response.statusCode == 200) {
+      print('Item added to cart');
+    } else {
+      print('Failed to add item to cart');
+      print(response.body);
+    }
+  } catch (error) {
+    print('Error: $error');
+  }
+}
+
 class DetailScreen extends StatefulWidget {
+  final String productId;
   final String prodName;
   final String prodSize;
   final String prodPrice;
@@ -36,6 +84,7 @@ class DetailScreen extends StatefulWidget {
 
   const DetailScreen({
     super.key,
+    required this.productId,
     required this.prodName,
     required this.prodSize,
     required this.prodPrice,
@@ -57,6 +106,7 @@ class DetailScreen extends StatefulWidget {
         .toList();
 
     return DetailScreen(
+      productId: json['_id'] ?? '',
       prodName: json['name'] ?? '',
       prodSize: 'Standard',
       prodPrice: json['price'].toString(),
@@ -72,22 +122,23 @@ class DetailScreen extends StatefulWidget {
   @override
   _DetailScreenState createState() => _DetailScreenState();
 }
+
 PlatformFile? prescriptionFile;
 
 class _DetailScreenState extends State<DetailScreen> {
   late PageController _pageController;
   int _selectedImageIndex = 0;
   int selectedColorIndex = 0;
-  String selectedChoice = '';
+
+  String? selectedLensType;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
 
-    // Default to the first lens option
     if (widget.lensOptions.isNotEmpty) {
-      selectedChoice = widget.lensOptions.first.label;
+      selectedLensType = widget.lensOptions.first.label;
     }
   }
 
@@ -95,6 +146,11 @@ class _DetailScreenState extends State<DetailScreen> {
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<String?> getAuthToken() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token');
   }
 
   @override
@@ -220,18 +276,17 @@ class _DetailScreenState extends State<DetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     CustomText(
-  text: widget.prodName,
-  color: Colors.black,
-  fontFamily: 'Montserrat',
-  fontWeight: FontWeight.w500,
-  fontSize: ScreenUtil().setSp(24),
-),
-
+                      text: widget.prodName,
+                      color: Colors.black,
+                      fontFamily: 'Montserrat',
+                      fontWeight: FontWeight.w500,
+                      fontSize: ScreenUtil().setSp(24),
+                    ),
                     CustomText(
                       text: widget.prodPrice,
                       color: BLACK_COLOR,
                       fontFamily: 'Montserrat',
-  fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w800,
                       fontSize: ScreenUtil().setSp(24),
                     ),
                   ],
@@ -253,160 +308,136 @@ class _DetailScreenState extends State<DetailScreen> {
                   ),
                 ),
                 SizedBox(height: ScreenUtil().setHeight(16)),
-CustomText(
-  text: widget.description,
-  fontSize: ScreenUtil().setSp(17),
-  fontFamily: 'Nunito',
-  fontWeight: FontWeight.w600,
-  maxLines: null,
+                Text(
+  widget.description,
+  style: TextStyle(
+    fontSize: ScreenUtil().setSp(17),
+    fontFamily: 'Nunito',
+    fontWeight: FontWeight.w600,
+  ),
   textAlign: TextAlign.justify,
 ),
-SizedBox(height: ScreenUtil().setHeight(16)),
-CustomText(
-  text: 'SELECT LENS TYPE:',
-  fontSize: ScreenUtil().setSp(15),
-  color: Colors.black,
-  fontFamily: 'Montserrat',
-  fontWeight: FontWeight.w600,
-),
-SizedBox(height: ScreenUtil().setHeight(8)),
-DropdownButton<String>(
-  value: selectedChoice,
-  isExpanded: true,
-  dropdownColor: WHITE_COLOR,
-  onChanged: (String? newValue) {
-    setState(() {
-      selectedChoice = newValue!;
-    });
-  },
-   itemHeight: null,
-  items: [
-    // Built-in
-    DropdownMenuItem<String>(
-      enabled: false,
-      child: Text(
-        'BUILT-IN',
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 15,),
-      ),
-    ),
-    ...widget.lensOptions
-        .where((option) => option.type == 'builtin')
-        .map((option) => DropdownMenuItem<String>(
-              value: option.label,
-              child: Text('${option.label} (FREE)'),
-            )),
-    // Tinted
-    DropdownMenuItem<String>(
-      enabled: false,
-      child: Text(
-        'TINTED',
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 15),
-      ),
-    ),
-    ...widget.lensOptions
-        .where((option) => option.type == 'tinted')
-        .map((option) => DropdownMenuItem<String>(
-              value: option.label,
-              child: Text('${option.label} (+₱${option.price.toStringAsFixed(0)})'),
-            )),
-    // Sun Adaptive
-    DropdownMenuItem<String>(
-      enabled: false,
-      child: Text(
-        'SUN ADAPTIVE',
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600], fontSize: 15),
-      ),
-    ),
-   ...widget.lensOptions
-        .where((option) => option.type == 'adaptive')
-        .map((option) => DropdownMenuItem<String>(
-              value: option.label,
-              child: SizedBox(
-                width: double.infinity,
-                child: Text(
-                  '${option.label} (+₱${option.price.toStringAsFixed(0)})',
-                  maxLines: 2, // 👈 allows wrapping
-                  overflow: TextOverflow.visible,
-                  softWrap: true,
+
+                SizedBox(height: ScreenUtil().setHeight(16)),
+                CustomText(
+                  text: 'SELECT LENS TYPE:',
+                  fontSize: ScreenUtil().setSp(15),
+                  color: Colors.black,
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w600,
                 ),
-              ),
-            )),
-  ],
-),
-SizedBox(height: ScreenUtil().setHeight(16)),
-CustomText(
-  text: 'UPLOAD PHOTO PRESCRIPTION',
-  fontSize: ScreenUtil().setSp(15),
-  color: Colors.black,
-  fontFamily: 'Montserrat',
-  fontWeight: FontWeight.w800,
-),
-SizedBox(height: ScreenUtil().setHeight(8)),
-prescriptionFile == null
-    ? GestureDetector(
-        onTap: () async {
-          FilePickerResult? result = await FilePicker.platform.pickFiles(
-            type: FileType.custom,
-            allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
-          );
-
-          if (result != null) {
-            setState(() {
-              prescriptionFile = result.files.first;
-            });
-          }
-        },
-        child: Container(
-          width: double.infinity,
-          padding: EdgeInsets.symmetric(vertical: 20),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.black),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.upload_file, color: Colors.grey),
-              SizedBox(height: 8),
-              Text(
-                'Choose File\nor drop file to upload',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey[600], fontSize: 14),
-              ),
-            ],
-          ),
-        ),
-      )
-    : Container(
-        padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.black),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.insert_drive_file, color: Colors.green),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                prescriptionFile!.name,
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ),
-            IconButton(
-              icon: Icon(Icons.delete, color: Colors.red),
-              onPressed: () {
-                setState(() {
-                  prescriptionFile = null;
-                });
-              },
-              tooltip: 'Remove file',
-            ),
-          ],
-        ),
-      ),
-
-
+                SizedBox(height: ScreenUtil().setHeight(8)),
+                DropdownButton<String>(
+                  value: selectedLensType,
+                  isExpanded: true,
+                  dropdownColor: WHITE_COLOR,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedLensType = newValue!;
+                    });
+                  },
+                  itemHeight: null,
+                  items: [
+                    DropdownMenuItem<String>(
+                      enabled: false,
+                      child: Text('BUILT-IN', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                    ),
+                    ...widget.lensOptions
+                        .where((o) => o.type == 'builtin')
+                        .map((o) => DropdownMenuItem(value: o.label, child: Text('${o.label} (FREE)'))),
+                    DropdownMenuItem<String>(
+                      enabled: false,
+                      child: Text('TINTED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                    ),
+                    ...widget.lensOptions
+                        .where((o) => o.type == 'tinted')
+                        .map((o) => DropdownMenuItem(value: o.label, child: Text('${o.label} (+₱${o.price.toStringAsFixed(0)})'))),
+                    DropdownMenuItem<String>(
+                      enabled: false,
+                      child: Text('SUN ADAPTIVE', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                    ),
+                    ...widget.lensOptions
+                        .where((o) => o.type == 'adaptive')
+                        .map((o) => DropdownMenuItem(
+                              value: o.label,
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: Text('${o.label} (+₱${o.price.toStringAsFixed(0)})'),
+                              ),
+                            )),
+                  ],
+                ),
+                SizedBox(height: ScreenUtil().setHeight(16)),
+                CustomText(
+                  text: 'UPLOAD PHOTO PRESCRIPTION',
+                  fontSize: ScreenUtil().setSp(15),
+                  color: Colors.black,
+                  fontFamily: 'Montserrat',
+                  fontWeight: FontWeight.w800,
+                ),
+                SizedBox(height: ScreenUtil().setHeight(8)),
+                prescriptionFile == null
+                    ? GestureDetector(
+                        onTap: () async {
+                          FilePickerResult? result = await FilePicker.platform.pickFiles(
+                            type: FileType.custom,
+                            allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
+                          );
+                          if (result != null) {
+                            setState(() {
+                              prescriptionFile = result.files.first;
+                            });
+                          }
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.black),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.upload_file, color: Colors.grey),
+                              SizedBox(height: 8),
+                              Text(
+                                'Choose File\nor drop file to upload',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.insert_drive_file, color: Colors.green),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                prescriptionFile!.name,
+                                style: TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                setState(() {
+                                  prescriptionFile = null;
+                                });
+                              },
+                              tooltip: 'Remove file',
+                            ),
+                          ],
+                        ),
+                      ),
                 SizedBox(height: ScreenUtil().setHeight(16)),
                 Row(
                   children: [
@@ -434,26 +465,31 @@ prescriptionFile == null
                     ),
                     SizedBox(width: 10),
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => CartScreen()),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: BLACK_COLOR,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: CustomText(
-                          text: 'Add to Cart',
-                          fontSize: ScreenUtil().setSp(15),
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: CartAnimationButton(
+  label: 'Add to Cart',
+  // When adding to cart
+onPressed: () async {
+  final token = await getAuthToken();
+  if (token != null) {
+    final selectedLens = widget.lensOptions.firstWhere(
+      (option) => option.label == selectedLensType,
+      orElse: () => throw Exception("Invalid lens selected"),
+    );
+
+    await addToCart(
+      token,
+      widget.productId,
+      1, // Ensure this is set to 1 for first-time addition, adjust if necessary
+      widget.colorOptions[selectedColorIndex].id,
+      selectedLens.id,
+      prescriptionFile?.path ?? null,
+    );
+  } else {
+    print('User is not logged in!');
+  }
+},
+
+)
                     ),
                   ],
                 ),
@@ -467,7 +503,6 @@ prescriptionFile == null
 
   Widget _colorSwatch(ColorOption option, bool isSelected) {
     Widget swatch;
-
     if (option.type == 'solid') {
       swatch = CircleAvatar(
         radius: 12,
@@ -480,9 +515,7 @@ prescriptionFile == null
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
-            colors: option.colors
-                .map((hex) => Color(int.parse('0xFF' + hex.substring(1))))
-                .toList(),
+            colors: option.colors.map((hex) => Color(int.parse('0xFF' + hex.substring(1)))).toList(),
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

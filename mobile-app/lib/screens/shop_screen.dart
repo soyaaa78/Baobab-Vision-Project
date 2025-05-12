@@ -21,9 +21,12 @@ class ShopScreen extends StatefulWidget {
 
 class _ShopScreenState extends State<ShopScreen> {
   String firstname = '';
+  String token = '';
+  String userId = '';
   List<dynamic> bestSellers = [];
   List<dynamic> forYou = [];
   List<String> slideshowImages = [];
+  bool _isLoadingUser = true;
 
   late PageController _pageController;
   int _currentPage = 0;
@@ -32,7 +35,7 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUsername();
+    _loadUserInfo();
     fetchSlideshowImages();
     _pageController = PageController(initialPage: _currentPage);
     _startAutoSlide();
@@ -61,10 +64,15 @@ class _ShopScreenState extends State<ShopScreen> {
     });
   }
 
-  Future<void> _loadUsername() async {
+  Future<void> _loadUserInfo() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    
     setState(() {
-      firstname = prefs.getString('firstname') ?? 'Guest'; // 👈 Use firstname
+      firstname = prefs.getString('firstname') ?? 'Guest';
+       _isLoadingUser = false;
+      token = prefs.getString('token') ?? '';
+      userId = prefs.getString('userId') ?? '';
+      
     });
   }
 
@@ -94,8 +102,6 @@ class _ShopScreenState extends State<ShopScreen> {
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
 
-        print('Recommended products fetched: $data'); // Debugging line
-
         setState(() {
           forYou = data; // Update the forYou list with the fetched data
         });
@@ -106,6 +112,8 @@ class _ShopScreenState extends State<ShopScreen> {
       print('Error fetching recommended products: $e');
     }
   }
+
+
 
   // Build pagination dots
   Widget buildDot(int index, BuildContext context) {
@@ -146,12 +154,16 @@ class _ShopScreenState extends State<ShopScreen> {
             SizedBox(height: ScreenUtil().setHeight(5)),
             Align(
               alignment: Alignment.centerLeft,
-              child: CustomText(
-                text: 'Good day, $firstname',
-                fontSize: ScreenUtil().setSp(20),
-                color: BLACK_COLOR,
-                fontWeight: FontWeight.w900,
-              ),
+              child: _isLoadingUser
+  ? CircularProgressIndicator()
+  : CustomText(
+      text: 'Good day, ${firstname.isNotEmpty ? firstname : 'Guest'}',
+      fontSize: ScreenUtil().setSp(20),
+      color: BLACK_COLOR,
+      fontWeight: FontWeight.w900,
+    ),
+
+
             ),
             SizedBox(height: ScreenUtil().setHeight(3)),
             Align(
@@ -330,20 +342,41 @@ class _ShopScreenState extends State<ShopScreen> {
                   return Padding(
                     padding: EdgeInsets.only(right: ScreenUtil().setWidth(10)),
                     child: CustomVerticalProductCard(
-                      prodName: product['name'] ?? 'Unknown',
-                      prodSize: '${product['stock']} pcs Available',
-                      prodPrice: '${product['price']} PHP',
-                      numStars: product['numStars'] ?? 5,
-                      prodImages: productImages,
-                      description: product['description'] ?? '',
-                      productId: product["productId"] ?? '',
-                        colorOptions: (product['colorOptions'] as List<dynamic>? ?? [])
+  prodName: product['name'] ?? 'Unknown',
+  prodSize: '${product['stock']} pcs Available',
+  prodPrice: '${product['price']} PHP',
+  numStars: product['numStars'] ?? 0,
+  quantity: product['stock'] ?? 1,
+  description: product['description'] ?? '',
+  prodImages: productImages,
+  productId: product['_id'] ?? product['productId'] ?? '',
+
+  // ✅ These two were missing
+  colorOptions: (product['colorOptions'] as List<dynamic>? ?? [])
       .map((e) => ColorOption.fromJson(e))
       .toList(),
-      lensOptions: (product['lensOptions'] as List)
+
+  lensOptions: (product['lensOptions'] as List<dynamic>? ?? [])
       .map((e) => LensOption.fromJson(e))
-      .toList(), 
-                    ),
+      .toList(),
+
+  // ✅ Optional defaults if you also added selected fields
+  selectedColorName: (product['colorOptions'] != null &&
+                    product['colorOptions'] is List &&
+                    product['colorOptions'].isNotEmpty &&
+                    product['colorOptions'][0]['colorName'] != null)
+    ? product['colorOptions'][0]['colorName'] as String
+    : 'Default',
+
+selectedLensLabel: (product['lensOptions'] != null &&
+                    product['lensOptions'] is List &&
+                    product['lensOptions'].isNotEmpty &&
+                    product['lensOptions'][0]['label'] != null)
+    ? product['lensOptions'][0]['label'] as String
+    : 'Default',
+
+),
+
                   );
                 },
               ),

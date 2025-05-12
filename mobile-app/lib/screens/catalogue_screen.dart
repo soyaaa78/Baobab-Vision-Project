@@ -14,8 +14,11 @@ class CatalogueScreen extends StatefulWidget {
   State<CatalogueScreen> createState() => _CatalogueScreenState();
 }
 
-class _CatalogueScreenState extends State<CatalogueScreen> {
+class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAliveClientMixin {
   List<dynamic> products = [];
+
+  @override
+  bool get wantKeepAlive => true; // <-- Keeps the widget alive in PageView
 
   Future<void> fetchProducts() async {
     try {
@@ -30,20 +33,6 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
       }
     } catch (e) {
       print('Error fetching products: $e');
-    }
-  }
-
-  Future<void> fetchProductById(String productId) async {
-    try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes/$productId'));
-      if (response.statusCode == 200) {
-        final product = jsonDecode(response.body);
-        print("Fetched product details: $product");
-      } else {
-        print('Failed to load product details: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching product: $e');
     }
   }
 
@@ -77,6 +66,7 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // <-- Needed for AutomaticKeepAliveClientMixin
     return Scaffold(
       backgroundColor: WHITE_COLOR,
       appBar: AppBar(
@@ -176,10 +166,13 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                     onTap: () async {
                       String productId = product['_id'];
                       String? username = await getUsername();
+                      print("Username fetched: $username");
+
                       if (username == null) {
                         print('Error: No username found.');
                         return;
                       }
+
                       try {
                         final response = await http.post(
                           Uri.parse('http://10.0.2.2:3001/api/userPreferences/update-preferences/$username'),
@@ -190,6 +183,7 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                           print('Successfully updated preferences for productId: $productId');
                         } else {
                           print('Failed to update preferences: ${response.statusCode}');
+                          print(response.body);
                         }
                       } catch (e) {
                         print('Error updating preferences: $e');
@@ -199,6 +193,7 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => DetailScreen(
+                            productId: product['_id'], // <-- add this line
                             prodName: product['name'] ?? 'Unknown',
                             prodSize: '${product['stock']} pcs Available',
                             prodPrice: '${product['price']} PHP',
@@ -209,11 +204,11 @@ class _CatalogueScreenState extends State<CatalogueScreen> {
                                 ? List<String>.from(product['imageUrls'])
                                 : [imageUrl],
                             colorOptions: (product['colorOptions'] as List<dynamic>? ?? [])
-          .map((e) => ColorOption.fromJson(e))
-          .toList(),
-          lensOptions: (product['lensOptions'] as List<dynamic>)
-          .map((e) => LensOption.fromJson(e))
-          .toList(),
+                                .map((e) => ColorOption.fromJson(e))
+                                .toList(),
+                            lensOptions: (product['lensOptions'] as List<dynamic>)
+                                .map((e) => LensOption.fromJson(e))
+                                .toList(),
                           ),
                         ),
                       );

@@ -24,68 +24,88 @@ class _LogInScreenState extends State<LogInScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isObscure = true;
 
+  // Function to save the user's info to SharedPreferences
   Future<void> _saveUserInfo(
-      String username, String firstname, String lastname, String email) async {
+    String username, 
+    String firstname, 
+    String lastname, 
+    String email,
+    String token,
+    String userId,
+  ) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('username', username);
     await prefs.setString('firstname', firstname);
-    await prefs.setString('lastname', lastname); // 👈 New
-    await prefs.setString('email', email); // 👈 Save firstname
+    await prefs.setString('lastname', lastname); 
+    await prefs.setString('email', email);
+    await prefs.setString('token', token); // Save the token
+    await prefs.setString('userId', userId);
   }
 
+  // Login function
   Future<void> login() async {
-    var url = Uri.parse('http://10.0.2.2:3001/authRoutes/login');
+  var url = Uri.parse('http://10.0.2.2:3001/authRoutes/login');
 
-    try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': usernameController.text.trim(),
-          'password': passwordController.text.trim(),
-        }),
-      );
+  try {
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'username': usernameController.text.trim(),
+        'password': passwordController.text.trim(),
+      }),
+    );
 
-      print('🔄 LOGIN RESPONSE: ${response.body}');
-      final resData = jsonDecode(response.body);
-      print('🔄 LOGIN RESPONSE (decoded): $resData');
+    print('🔄 LOGIN RESPONSE: ${response.body}');
+    final resData = jsonDecode(response.body);
+    print('🔄 LOGIN RESPONSE (decoded): $resData');
 
-      if (response.statusCode == 403 &&
-          resData['requiresVerification'] == true) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EmailOtpVerificationScreen(
-              email: resData['email'],
-            ),
+    if (response.statusCode == 403 && resData['requiresVerification'] == true) {
+      // Navigate to email verification screen if the email is not verified
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EmailOtpVerificationScreen(
+            email: resData['email'],
           ),
-        );
-      } else if (response.statusCode == 200) {
-        final token = resData['token'];
-        final firstname = resData['firstname'] ?? '';
-        final lastname = resData['lastname'] ?? ''; // 👈 New
-        final email = resData['email'] ?? ''; // 👈 Get firstname from response
+        ),
+      );
+    } else if (response.statusCode == 200) {
+      final token = resData['token'];
+      final userId = resData['userId']; // Get userId from the response
+      final firstname = resData['firstname'] ?? '';
+      final lastname = resData['lastname'] ?? '';
+      final email = resData['email'] ?? '';
+      final username = usernameController.text.trim(); 
 
-        await _saveUserInfo(usernameController.text.trim(), firstname, lastname,
-            email); // 👈 Save it
+      // Save token, userId, and other user data to SharedPreferences
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token); // Save token
+      await prefs.setString('userId', userId); // Save userId
+      await prefs.setString('firstname', firstname); // Save firstname
+      await prefs.setString('lastname', lastname); // Save lastname
+      await prefs.setString('email', email); // Save email
+      await prefs.setString('username', username); //
 
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        customDialog(
-          context,
-          title: 'Login Failed',
-          content: resData['message'] ?? 'Invalid login',
-        );
-      }
-    } catch (e) {
-      print('❌ Login Exception: $e');
+      // Navigate to home screen
+      Navigator.pushReplacementNamed(context, '/home');
+    } else {
+      // Show login failed message if something went wrong
       customDialog(
         context,
-        title: 'Error',
-        content: 'Unexpected error occurred. Please check your connection.',
+        title: 'Login Failed',
+        content: resData['message'] ?? 'Invalid login',
       );
     }
+  } catch (e) {
+    print('❌ Login Exception: $e');
+    customDialog(
+      context,
+      title: 'Error',
+      content: 'Unexpected error occurred. Please check your connection.',
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {

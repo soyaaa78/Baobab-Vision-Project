@@ -1,16 +1,15 @@
-import 'package:baobab_vision_project/models/productModel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
 import '../screens/detail_screen.dart';
 import 'custom_text.dart';
+import '../models/productModel.dart';
 
 // ignore: must_be_immutable
 class CustomHorizontalProductCard extends StatefulWidget {
+  final String productId;
   final String prodName;
-  final String prodSize;
   final String prodPrice;
-  final String btnName;
   final int numStars;
   int quantity;
   final String description;
@@ -19,13 +18,17 @@ class CustomHorizontalProductCard extends StatefulWidget {
   final List<String> prodImages;
   final List<ColorOption> colorOptions;
   final List<LensOption> lensOptions;
+  final String selectedColorName;
+  final String selectedLensLabel;
+  final String btnName;
+  final VoidCallback? onAdd;
+  final VoidCallback? onRemove;   // ✅ Added onRemove callback
 
   CustomHorizontalProductCard({
     super.key,
+    required this.productId,
     required this.prodName,
-    required this.prodSize,
     required this.prodPrice,
-    this.btnName = 'Check Product',
     required this.numStars,
     this.quantity = 1,
     this.description = '',
@@ -33,146 +36,99 @@ class CustomHorizontalProductCard extends StatefulWidget {
     this.isCheckout = false,
     required this.prodImages,
     required this.colorOptions,
-    required this.lensOptions, 
+    required this.lensOptions,
+    required this.selectedColorName,
+    required this.selectedLensLabel,
+    this.btnName = 'Check Product',
+    this.onAdd,                 // ✅ Added onAdd callback
+    this.onRemove, 
   });
 
   @override
-  State<CustomHorizontalProductCard> createState() =>
-      _CustomHorizontalProductCardState();
+  State<CustomHorizontalProductCard> createState() => _CustomHorizontalProductCardState();
 }
 
-class _CustomHorizontalProductCardState
-    extends State<CustomHorizontalProductCard> {
+class _CustomHorizontalProductCardState extends State<CustomHorizontalProductCard> {
   @override
   Widget build(BuildContext context) {
     return Card(
       color: Colors.white,
-      child: GestureDetector(
-        onTap: () {},
-        child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: ScreenUtil().setWidth(15),
-            vertical: ScreenUtil().setHeight(15),
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Dynamic Product Image
-             ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-            widget.prodImages[0],// Dynamic product image
-            width: ScreenUtil().setWidth(88),
-            height: ScreenUtil().setHeight(88),
-            fit: BoxFit.cover,
-           ),
-          ),
-
-              SizedBox(width: ScreenUtil().setWidth(10)),
-              Column(
+      margin: EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: Padding(
+        padding: EdgeInsets.all(ScreenUtil().setWidth(12)),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.network(
+                widget.prodImages[0],
+                width: ScreenUtil().setWidth(80),
+                height: ScreenUtil().setWidth(80),
+                fit: BoxFit.cover,
+              ),
+            ),
+            SizedBox(width: ScreenUtil().setWidth(12)),
+            // Product Details
+            Expanded(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Name
                   CustomText(
                     text: widget.prodName,
                     fontSize: ScreenUtil().setSp(15),
+                    fontWeight: FontWeight.w700,
                     color: Colors.black,
-                    fontWeight: FontWeight.w900,
                   ),
-                  SizedBox(height: ScreenUtil().setHeight(3)),
+                  SizedBox(height: 4),
+                  // Description (e.g. Frame in Black, Prescription Lenses)
+                  Text(
+                    'Frame in ${widget.selectedColorName}, ${widget.selectedLensLabel}',
+                    style: TextStyle(
+                      fontSize: ScreenUtil().setSp(13),
+                      color: Colors.black54,
+                      height: 1.3,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  // Price + Quantity Controls
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       CustomText(
-                        text: "Quantity:",
-                        fontSize: ScreenUtil().setSp(12),
+                        text: widget.prodPrice,
+                        fontSize: ScreenUtil().setSp(15),
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
                       ),
-                      SizedBox(width: ScreenUtil().setWidth(10)),
-                      GestureDetector(
-                        onTap: () => setState(() {
-                          if (widget.quantity > 1) widget.quantity--;
-                        }),
-                        child: Icon(
-                          Icons.remove,
-                          color: NU_BLUE,
-                          size: ScreenUtil().setSp(12),
-                        ),
-                      ),
-                      SizedBox(width: ScreenUtil().setWidth(10)),
-                      CustomText(
-                        text: '${widget.quantity}',
-                        fontSize: ScreenUtil().setSp(12),
-                      ),
-                      SizedBox(width: ScreenUtil().setWidth(10)),
-                      GestureDetector(
-                        onTap: () => setState(() {
-                          widget.quantity++;
-                        }),
-                        child: Icon(
-                          Icons.add,
-                          color: NU_BLUE,
-                          size: ScreenUtil().setSp(12),
-                        ),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: widget.onRemove,  // ✅ Call onRemove callback
+                            child: Icon(Icons.remove, size: 18, color: BLACK_COLOR),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: CustomText(
+                              text: '${widget.quantity}',
+                              fontSize: ScreenUtil().setSp(14),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: widget.onAdd,  // ✅ Call onAdd callback
+                            child: Icon(Icons.add, size: 18, color: BLACK_COLOR),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  SizedBox(height: ScreenUtil().setHeight(5)),
-                  CustomText(
-                    text: widget.prodSize,
-                    fontSize: ScreenUtil().setSp(10),
-                    color: Colors.black45,
-                  ),
-                  SizedBox(height: ScreenUtil().setHeight(5)),
-                  CustomText(
-                    text: widget.prodPrice,
-                    fontSize: ScreenUtil().setSp(17),
-                    color: BLACK_COLOR,
-                  ),
-                  SizedBox(height: ScreenUtil().setHeight(5)),
-                  widget.isCheckout
-                      ? const SizedBox()
-                      : SizedBox(
-                          width: ScreenUtil().setWidth(200),
-                          height: ScreenUtil().setHeight(30),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(context, MaterialPageRoute(
-                                builder: (context) {
-                                  return DetailScreen(
-                                    prodName: widget.prodName,
-                                    prodSize: widget.prodSize,
-                                    prodPrice: widget.prodPrice,
-                                    numStars: widget.numStars,
-                                    quantity: widget.quantity,
-                                    description: widget.description,
-                                    prodImages: widget.prodImages,
-                                    colorOptions: widget.colorOptions,
-                                    lensOptions: widget.lensOptions,
-                                  );
-                                },
-                              ));
-                            },
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5),
-                              ),
-                              backgroundColor: BLACK_COLOR,
-                            ),
-                            child: CustomText(
-                              text: widget.btnName,
-                              fontSize: ScreenUtil().setSp(12),
-                              color: WHITE_COLOR,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

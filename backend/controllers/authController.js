@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const UserPreferences = require('../models/UserPreferences');
 const sendEmail = require('../services/sendEmail');
+const UserCart = require('../models/UserCart');
 
 // REGISTER
 const register = async (req, res) => {
@@ -51,7 +52,7 @@ const login = async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!isMatch) return res.status(400).json({ message: 'Incorrect Password' });
 
     if (!user.isVerified) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -72,12 +73,20 @@ const login = async (req, res) => {
       expiresIn: '1h',
     });
 
+    let userCart = await UserCart.findOne({ userId: user._id });
+    if (!userCart) {
+      userCart = new UserCart({
+        userId: user._id,
+        items: [],
+      });
+      await userCart.save();
+    }
+
     return res.status(200).json({
       message: 'Login successful',
       token,
-      firstname: user.firstname, // Send firstname
-      lastname: user.lastname,   // Send lastname
-      email: user.email,   // 👈 Add this line
+      userId: user._id,
+      cartId: userCart._id,
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -219,5 +228,5 @@ module.exports = {
   requestOtp,
   verifyOtp,
   resendOtp,
-  resetPassword
+  resetPassword,
 };

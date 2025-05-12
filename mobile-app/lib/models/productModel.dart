@@ -42,6 +42,7 @@ class Product {
 }
 
 class ColorOption {
+  final String id; 
   final String name;
   final String type; // 'solid', 'split', 'swatch'
   final List<String> colors;
@@ -49,6 +50,7 @@ class ColorOption {
   final String imageUrl;
 
   ColorOption({
+    required this.id,
     required this.name,
     required this.type,
     required this.colors,
@@ -58,6 +60,7 @@ class ColorOption {
 
   factory ColorOption.fromJson(Map<String, dynamic> json) {
     return ColorOption(
+      id: json['_id'],
       name: json['name'],
       type: json['type'],
       colors: List<String>.from(json['colors'] ?? []),

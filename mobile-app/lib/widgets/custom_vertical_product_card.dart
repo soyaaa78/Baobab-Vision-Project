@@ -17,6 +17,8 @@ class CustomVerticalProductCard extends StatelessWidget {
   final String productId; 
   final List<ColorOption> colorOptions;
   final List<LensOption> lensOptions;
+    final String selectedColorName;
+  final String selectedLensLabel;
 
   const CustomVerticalProductCard({
     super.key,
@@ -30,6 +32,8 @@ class CustomVerticalProductCard extends StatelessWidget {
     required this.productId,
     required this.colorOptions, 
      required this.lensOptions, 
+     required this.selectedColorName,
+    required this.selectedLensLabel,
   });
 
   @override
@@ -46,6 +50,7 @@ class CustomVerticalProductCard extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => DetailScreen(
+                productId: productId,
                 prodName: prodName,
                 prodSize: prodSize,
                 prodPrice: prodPrice,
