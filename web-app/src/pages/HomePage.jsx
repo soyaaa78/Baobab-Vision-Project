@@ -1,7 +1,10 @@
 import React from 'react'
-import '../styles/Home.css';
+import '../styles/HomePage.css';
 import { Link } from 'react-router-dom';
 import EyeglassPreview from '../components/EyeglassPreview';
+import Button from '../components/Button.jsx';
+import { useNavigate } from 'react-router-dom';
+
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -23,7 +26,12 @@ ChartJS.register(
 
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 
-function HomePage() {
+const HomePage = () => {
+    const navigate = useNavigate();
+    const handleAdd = () => navigate('/dashboard/addeyeglasses');
+    const handleCatalogue = () => navigate('/dashboard/eyeglasses');
+    const handleStatistics = () => navigate('/dashboard/statistics');
+
     return (
         <>
             <div className='page' id='home'>
@@ -37,9 +45,15 @@ function HomePage() {
                             <p>Or maybe we are? You never know ;)</p>
 
                             <div className='hero-cta-buttons'>
-                                <Link to='home' className='home-button' id='home1'>Add a New Pair</Link>
-                                <Link to='home' className='home-button' id='home2'>Delete an Existing Pair</Link>
-                                <Link to='/dashboard/editeyeglasses' className='home-button' id='home3'>Edit an Existing Pair</Link>
+                                <Button className={'home-buttons'} onClick={handleAdd} children={<p>
+                                    Add a New Pair
+                                </p>} />
+                                <Button className={'home-buttons'} /* onClick={sort} */ children={<p>
+                                    Delete an Existing Pair
+                                </p>} />
+                                <Button className={'home-buttons'} /* onClick={sort} */ children={<p>
+                                    Edit an Existing Pair
+                                </p>} />
                             </div>
                         </div>
 
@@ -82,9 +96,7 @@ function HomePage() {
 
                                     <div className='quip'>
                                         <p>Want to see more?</p>
-                                        <div className='stats-button-container'>
-                                            <Link to='statistics' className='home-button' id='stats-cta'>View Full Statistics</Link>
-                                        </div>
+                                        <Button className='' onClick={handleStatistics} children={<p>See Statistics</p>} />
                                     </div>
                                 </div>
                             </div>
@@ -98,26 +110,29 @@ function HomePage() {
                     <div className='home-right'>
 
                         <div className='catalogue-preview'>
-                            <div className='preview-bg'>
-                                <p>Manage Eyeglass Selections</p>
-                                <div className='preview-items-container'>
-                                    <div className='preview-items'>
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
+                            <div className='cattext'>
+                                <h2>Manage Eyeglass Selections</h2> {/* put this up pls */}
+                                <p>Got something to check out? Look no further.</p>
+                            </div>
+                            <div className='prevtest'>
+                                <div className='preview-bg'>
+                                    <div className='preview-items-container'>
+                                        <div className='preview-items'>
+                                            <EyeglassPreview />
+                                            <EyeglassPreview />
+                                            <EyeglassPreview />
+                                            <EyeglassPreview />
+                                            <EyeglassPreview />
+                                            <EyeglassPreview />
+                                            <EyeglassPreview />
+                                            <EyeglassPreview />
 
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className='quip'>
-                                    <p>Want to see more?</p>
-                                    <div className='stats-button-container'> {/* change to button */}
-                                        <Link to='statistics' className='home-button' id='stats-cta'>View Full Catalogue</Link>
+                                    <div className='quip'>
+                                        <p>Want to see more?</p>
+                                        <Button className='' onClick={handleCatalogue} children={<p>See Full Catalogue</p>} />
                                     </div>
                                 </div>
                             </div>

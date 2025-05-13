@@ -1,0 +1,16 @@
+.button-component {
+    background: none;
+    border: none;
+    text-decoration: none;
+    padding: 20px 40px;
+    /* margin: 20px 20px 0 0; */ /* change this for homepage probably */
+    background-color: #252525;
+    color: white;
+    border-radius: 12px;
+    width: fit-content;
+    font-family: 'Red Rose', serif;
+}
+
+.button-component:hover {
+    cursor: pointer;
+}

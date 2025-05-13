@@ -20,7 +20,7 @@ function Navbar() {
                         <Link to = 'eyeglasses' className='nav-button'>Manage Eyeglass Selections</Link>
                     </li>
                     <li>
-                        <Link to = '/articles' className='nav-button'>Statistics</Link>
+                        <Link to = 'statistics' className='nav-button'>Statistics</Link>
                     </li>
                 </ul>
             </div>

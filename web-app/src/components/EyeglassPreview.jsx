@@ -1,24 +1,43 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import '../styles/EyeglassPreview.css';
 import placeholder from '../assets/placeholder.png';
+import Button from './Button';
 
 
-/* this thing should link to the product page affter linking */
+/* after mongodb connection, figure out usestate prop passing */
 
-function EyeglassPreview() {
+
+/* make another button for delete and make it not rendered */
+
+const EyeglassPreview = ({ className = '', deleteMode = false }) => {
+    
+
+    
+
     return (
         <>
-            <Link to='/home' className='eyeglass-listing'>
-                <div className='listing-content'> {/* this needs to be small enough to fit within a grid without blowing it over */}
+            <Link to='/dashboard/editeyeglasses' className={`eyeglass-listing ${className}`}>
+                <div className='listing-content'>
                     <div className='bg'>
                         <div className='content-container'>
                             <div className='pic'>
-                                <img id='eyeglass-img' src={placeholder} alt="placeholder" /> {/* placeholder (incl. alt text) to be replaced by, duh, actual javascript stuff like in flutter */}
+                                <img id='eyeglass-img' src={placeholder} alt="placeholder" /> {/* placeholder (incl. alt text) to be replaced actual javascript stuff like in flutter */}
                             </div>
-                            <div className='desc-container'> {/* think abt implementing straight to edit button here and thusly making the div inline? */}
-                                <div className='eyeglass-name'>
-                                    <p>Placeholder Name</p>
+                            <div className='desc-container'>
+                                <div className='eyeglass-descriptor'>
+                                    <div className='eyeglass-name'>
+                                        <h3><b>REID</b></h3>
+                                    </div>
+
+                                   <div className='eyeglass-buttons'>
+                                     {deleteMode && <Button 
+                                         className='button-component--listing delete'
+                                         /* onClick={delete(specificParam)} */ /* change after array */
+                                         children={<p>Delete</p>} />
+                                     }
+                                     <Button className='button-component--listing' children={<p>Edit</p>}/> {/* pass parameter to specify which array joint to look into */}
+                                   </div>
                                 </div>
                             </div>
                         </div>

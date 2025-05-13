@@ -23,9 +23,50 @@
     justify-content: center;
 }
 
-.eyeglass-name {
+.desc-container {
+    margin: 0 20px;
+}
+
+.eyeglass-descriptor {
+    width: 100%;
     color: #252525;
-    margin: 20px;
+    margin: 20px 0;
     display: flex;
     justify-content: center;
+    align-items: center;
+}
+
+.eyeglass-descriptor p {
+    font-family: 'Rubik', sans-serif;
+}
+
+.eyeglass-name {
+    display: flex;
+    flex: 0.6;
+    align-items: center;
+}
+
+.eyeglass-buttons {
+    display: flex;
+    flex: 1;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.button-component.button-component--listing {
+    margin-left: 5px;
+    padding: 10px 20px;
+    background-color: white;
+    border: 1px solid #888888;
+    color: #252525;
+}
+
+.button-component.button-component--listing.delete {
+    color: white;
+    background-color: #6e0d21;
+    border: none;
+}
+
+.button-component.button-component--listing p {
+    font-family: 'Red Rose', serif;
 }

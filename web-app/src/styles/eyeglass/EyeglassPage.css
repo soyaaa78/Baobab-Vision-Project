@@ -1,0 +1,108 @@
+.catalogue-content {
+    height: 100%;
+}
+
+.catalogue-bulk {
+    height: 100%;
+    /* important to inherit parent's height to make the topbar and selections divs have the right sectioning */
+    padding: 1.5% 15%;
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar {
+    height: 10%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    /* background-color: lightcoral; */
+}
+
+@media (max-width: 700px) {}
+
+.search {
+    background-color: #ffffff;
+    border: 2px solid #474747;
+    min-width: 800px;
+    padding: 15px;
+    border-radius: 18px;
+}
+
+.options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.options-cta {
+    display: flex;
+}
+
+.options-sorting {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.options-action-buttons {
+    padding: 0;
+    min-width: 100px;
+    min-height: 40px;
+    margin: 0 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: 0.15s ease-in-out;
+}
+
+.active-delete-button {
+    background-color: #6e0d21;
+    color: white;
+    /* border: 1px solid #d9363e; */
+}
+
+.options-sort-buttons {
+    margin: 0 5px;
+    padding: 10px 20px;
+    background-color: white;
+    border: 1px solid #888888;
+    color: #252525;
+    /* font color lol */
+    transition: 0.15s linear;
+}
+
+.options-sort-buttons:hover {
+    color: white;
+    background-color: #bd9c80;
+}
+
+.selections {
+    display: flex;
+    justify-content: center;
+    margin: 10px;
+    /* border: 2px solid #252525; */
+    border-radius: 25px;
+    flex-grow: 1;
+    /* background-color: lightcyan; */
+    /* opacity: 0.3; */
+
+}
+
+.selections-grid {
+    margin: 20px;
+    display: grid;
+    grid-template-columns: repeat(4, 300px);
+    gap: 10px 20px;
+}
+
+.eyeglass-listing.eyeglass-listing--catalogue {
+    width: 300px;
+    height: 340px;
+    /* make responsive */
+    background-color: transparent;
+}
+
+.eyeglass-listing.eyeglass-listing--catalogue #eyeglass-img {
+    width: 260px;
+    height: 260px;
+}

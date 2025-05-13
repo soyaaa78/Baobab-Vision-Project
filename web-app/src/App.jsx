@@ -1,17 +1,20 @@
 import './App.css'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import Layout from './components/Layout';
+import ErrorPage from './pages/ErrorPage';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import StatisticsPage from './pages/StatisticsPage';
-import EyeglassPage from './pages/EyeglassPage';
-import EditEyeglassPage from './pages/EditEyeglassPage';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
+import EyeglassPage from './pages/eyeglass/EyeglassPage';
+import EditEyeglassPage from './pages/eyeglass/EditEyeglassPage';
+import AddEyeglassPage from './pages/eyeglass/AddEyeglassPage';
 
 
 const routes = [
   {
     path: '/',
-    element: <LoginPage />
+    element: <LoginPage />,
+    errorElement: <ErrorPage />
   },
   {
     path: '/dashboard',
@@ -28,6 +31,10 @@ const routes = [
       {
         path: 'editeyeglasses',
         element: <EditEyeglassPage />
+      },
+      {
+        path: 'addeyeglasses',
+        element: <AddEyeglassPage />
       },
       {
         path: 'statistics',

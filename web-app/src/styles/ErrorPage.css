@@ -1,0 +1,41 @@
+.error-container {
+    height: 100vh;
+}
+
+.error-content {
+    height: 100%;
+}
+
+.error-bulk {
+    height: 100%;
+    padding: 3%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.error-bulk h1 {
+    font-size: 16rem;
+    background-color: burlywood;
+    line-height: 1;
+    display: inline-block;
+    padding: 0;
+    margin: 0;
+}
+
+.error-bulk p {
+    font-size: 1.1em;
+}
+
+.error-bodytext {
+    margin-left: 20px;
+}
+
+.error-button {
+    margin-top: 15px;
+}
+
+/* .error-button:hover {
+    cursor: pointer;
+} */

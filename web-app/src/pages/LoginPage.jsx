@@ -1,82 +1,30 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import baobablogo from '../assets/bvfull.png';
-import '../styles/Login.css';
-import axios from 'axios';
+import '../styles/LoginPage.css';
 
-function LoginPage() {
+const LoginPage = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [otp, setOtp] = useState('');
-    const [email, setEmail] = useState('');
-    const [step, setStep] = useState('login');
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
-        try {
-            const res = await axios.post('http://localhost:3001/api/admin/login', {
-                username,
-                password
-            }, {
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+    // Hardcoded credentials (you can put this in a better place later)
+    const accounts = {
+        admin: { password: 'adminpass', role: 'admin' },
+        staff: { password: 'staffpass', role: 'staff' },
+    };
 
-            const { token, role } = res.data;
-            localStorage.setItem('token', token);
-            localStorage.setItem('role', role);
-
+    const handleLogin = () => {
+        const user = accounts[username];
+        if (user && user.password === password) {
+            setMessage('✅ Login successful!');
+            // Save to localStorage for now (until context is added)
+            localStorage.setItem('role', user.role);
+            localStorage.setItem('isLoggedIn', 'true');
             navigate('/dashboard/home');
-
-        } catch (err) {
-            const res = err.response;
-            if (res?.data?.requiresVerification) {
-                setStep('verify');
-                setEmail(res.data.email);
-                localStorage.setItem('pendingEmail', res.data.email);
-                return;
-            }
-            setError(res?.data?.message || 'Login failed');
-        }
-    };
-
-    const handleVerify = async (e) => {
-        e.preventDefault();
-        setError('');
-        setSuccess('');
-        try {
-            const res = await axios.post('http://localhost:3001/api/admin/verify-otp', {
-                email,
-                otp
-            });
-
-            localStorage.setItem('token', res.data.token);
-            localStorage.setItem('role', res.data.role);
-            localStorage.removeItem('pendingEmail');
-
-            setSuccess('Account successfully verified!');
-            setTimeout(() => navigate('/dashboard/home'), 1500);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Verification failed');
-        }
-    };
-
-    const handleResendOtp = async () => {
-        setError('');
-        setSuccess('');
-        try {
-            await axios.post('http://localhost:3001/api/admin/resend-otp', {
-                email
-            });
-            setSuccess('Verification code resent to your email.');
-        } catch (err) {
-            setError(err.response?.data?.message || 'Failed to resend code');
+        } else {
+            setMessage('❌ Invalid credentials.');
         }
     };
 
@@ -89,74 +37,33 @@ function LoginPage() {
             <div className='main-body'>
                 <div className='yellowbox'>
                     <div className='yellowbox-text'>
-                        <h1>{step === 'login' ? 'Staff Login' : 'Email Verification'}</h1>
-                        <p>
-                            {step === 'login'
-                                ? 'Heya, bud. Ready to take on the world?'
-                                : `OTP sent to ${email}`}
-                        </p>
+                        <h1>Staff Login</h1>
+                        <p>Heya, bud. Ready to take on the world?</p>
                     </div>
                 </div>
 
-                {step === 'login' ? (
-                    <form className='input-fields' onSubmit={handleLogin}>
-                        <input
-                            type="text"
-                            id="uname"
-                            name="username"
-                            placeholder="Username"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                        />
-                        <input
-                            type="password"
-                            id="pass"
-                            name="password"
-                            placeholder="Password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                        <div className='submit-container'>
-                            <input type="submit" value="SIGN IN" className='submit-button' />
-                        </div>
-                    </form>
-                ) : (
-                    <form className='input-fields' onSubmit={handleVerify}>
-                        <input
-                            type="text"
-                            id="otp"
-                            name="otp"
-                            placeholder="Enter 6-digit OTP"
-                            value={otp}
-                            onChange={(e) => setOtp(e.target.value)}
-                            maxLength={6}
-                            required
-                        />
-                        <div className='submit-container'>
-                            <input type="submit" value="VERIFY" className='submit-button' />
-                        </div>
-                        <div className='submit-container'>
-                            <button
-                                type="button"
-                                onClick={handleResendOtp}
-                                className='submit-button'
-                                style={{ marginTop: '10px' }}
-                            >
-                                Resend Verification Code
-                            </button>
-                        </div>
-                    </form>
-                )}
+                <div className='input-fields'>
+                    <input
+                        type="text"
+                        placeholder="Username"
+                        onChange={e => setUsername(e.target.value)}
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        onChange={e => setPassword(e.target.value)}
+                    />
 
-                {/* ✅ Message block positioned below the form */}
-                {(error || success) && (
-                    <div className="form-message-box">
-                        {error && <p className="form-error">{error}</p>}
-                        {success && <p className="form-success">{success}</p>}
+                    <div className='submit-container'>
+                        <input
+                            type="submit"
+                            value="SIGN IN"
+                            className='submit-button'
+                            onClick={handleLogin}
+                        />
                     </div>
-                )}
+                    {message && <p style={{ textAlign: 'center', marginTop: '1rem' }}>{message}</p>}
+                </div>
             </div>
         </>
     );
