@@ -65,6 +65,7 @@
     color: white;
     background-color: #6e0d21;
     border: none;
+    transition: 0.15s ease-in-out;
 }
 
 .button-component.button-component--listing p {

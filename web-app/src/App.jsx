@@ -8,6 +8,7 @@ import StatisticsPage from './pages/StatisticsPage';
 import EyeglassPage from './pages/eyeglass/EyeglassPage';
 import EditEyeglassPage from './pages/eyeglass/EditEyeglassPage';
 import AddEyeglassPage from './pages/eyeglass/AddEyeglassPage';
+import ManageUsersPage from './pages/ManageUsersPage';
 
 
 const routes = [
@@ -18,10 +19,10 @@ const routes = [
   },
   {
     path: '/dashboard',
-    element: <Layout />, 
+    element: <Layout />,
     children: [
       {
-        path: 'home',
+        path: '',
         element: <HomePage />
       },
       {
@@ -40,6 +41,10 @@ const routes = [
         path: 'statistics',
         element: <StatisticsPage />
       },
+      {
+        path: 'manageusers',
+        element: <ManageUsersPage />
+      }
     ]
   }
 ]
@@ -52,7 +57,7 @@ function App() {
 
   return (
     <>
-        <RouterProvider router={router} />
+      <RouterProvider router={router} />
 
     </>
   )

@@ -24,29 +24,41 @@
 
 
 .left-bottom {
-    height: 100%;
-    padding: 3%;
-    padding-left: 0;
+    flex: 1;
+    margin: 3% 3% 0 0;
     display: flex;
     flex-direction: column;
-
     /* background-color: lightcoral; */
 
 }
 
+.charts-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
 .chart-bg {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     background-color: #ffdfc8;
     border-radius: 12px;
     padding: 2%;
 }
 
 .charts {
-    max-width: 840px;
     width: 100%;
-    height: 240px;
+    /* height: 240px; */
     display: flex;
-    --fade-amount: 25%;
+    justify-content: center;
+    --fade-amount: 45%;
     mask: linear-gradient(to bottom, black, black var(--fade-amount), black calc(100% - var(--fade-amount)), transparent);
+}
+
+.home-chart-wrapper {
+    width: 350px;
+    height: 350px;
 }
 
 .quip {
@@ -86,7 +98,7 @@
     border-radius: 25px;
     display: flex;
     flex-direction: column;
-    
+
 }
 
 .cattext {

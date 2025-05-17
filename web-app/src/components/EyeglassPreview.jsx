@@ -5,10 +5,6 @@ import placeholder from '../assets/placeholder.png';
 import Button from './Button';
 
 
-/* after mongodb connection, figure out usestate prop passing */
-
-
-/* make another button for delete and make it not rendered */
 
 const EyeglassPreview = ({ className = '', deleteMode = false }) => {
     

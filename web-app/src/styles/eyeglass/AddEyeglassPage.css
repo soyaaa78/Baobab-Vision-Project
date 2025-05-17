@@ -1,9 +1,236 @@
 #add-eyeglass {
-    padding: 3%;
+    padding: 1.5% 15%;
+    height: auto;
 }
 
-.add-eyeglass-form form {
+#add-eyeglass h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Red Rose', serif;
+    color: #2a383d;
+}
+
+#add-eyeglass label {
+    font-family: 'Rubik', sans-serif;
+}
+
+.add-eyeglass-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.ae-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add-eyeglass-form-container {
+    height: 100%;
+}
+
+.add-eyeglass-form {
+    height: 100%;
+    display: grid;
+    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    grid-template-areas:
+        "basic image"
+        "basic category"
+}
+
+.add-eyeglass-form p,
+label {
+    color: #455c64;
+}
+
+.add-eyeglass-form .button-component p {
+    color: white;
+}
+
+.aef-section {
+    /* is the white bg */
+    background-color: white;
+    border: 2px solid #cacaca;
+    border-radius: 12px;
+}
+
+.aef-basic-sect {
+    grid-area: basic;
+}
+
+.aef-image-sect {
+    grid-area: image;
+}
+
+.aef-category-sect {
+    grid-area: category;
+}
+
+
+.section-details {
+    /* padding to make everything spaced */
+    padding: 15px;
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+
+.aef-sect-fields {
+    padding: 15px;
+    background-color: white;
+    border: 1px solid #e9e9e9;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+}
+
+.bsdf-input {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+
+.aef-sect-fields textarea,
+input {
+    padding: 1rem;
+    border: 1px solid #e9e9e9;
+    border-radius: 12px;
+    font-family: 'Rubik', sans-serif;
+    color: #2a383d;
+    background-color: white;
+    outline: none;
+}
+
+.aef-sect-fields textarea {
+    min-height: 250px;
+    resize: none;
+}
+
+/* ------------------------- */
+/* ----- image section ----- */
+/* ------------------------- */
+
+.isd-content {
+    gap: 10px;
+}
+
+.isdc-add-content {
+    background-color: #A9927D;
+    color: white;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.isdc-img-grid {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.isdc-img-box,
+.isdc-img-upload-box {
+    width: 90px;
+    height: 90px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f9fafb;
+    position: relative;
+    cursor: pointer;
+}
+
+.isdc-img-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.isdc-img-upload-box input {
+    display: none;
+}
+
+.isdc-img-upload-box span {
+    font-size: 12px;
+    color: #2a383d;
+    text-align: center;
+    cursor: pointer;
+}
+
+.isd-img-delete-btn {
+    position: absolute;
+    opacity: 0.2;
+    background-color: #cacaca;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    transition: 0.1s ease-in-out;
+}
+
+.isdc-img-box .isd-img-delete-btn.fade {
+    opacity: 0;
+}
+
+
+.isdc-img-box:hover .isd-img-delete-btn.fade {
+    opacity: 0.8;
+}
+
+.isd-img-delete-btn-text {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 1;
+}
+
+.isd-img-delete-btn-text p {
+    font-family: 'Rubik', sans-serif;
+}
+
+
+
+.csdc-lens-categorization {
+    display: flex;
+    justify-content: flex-start;
+    gap: 40px;
+}
+
+.csdc-lens-inclusions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+}
+
+.radio-container input {
+    margin-right: 5px;
+}
+
+.add-eyeglass-form form label {
+    font-family: 'Rubik', sans-serif;
+}
+
+
+
+
+.csd-post-button-container {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
 }

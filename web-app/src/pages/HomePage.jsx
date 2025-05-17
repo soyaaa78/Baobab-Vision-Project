@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import EyeglassPreview from '../components/EyeglassPreview';
 import Button from '../components/Button.jsx';
 import { useNavigate } from 'react-router-dom';
+import { PieChart } from '../components/charts/Pie.jsx';
+import { LineGraph } from '../components/charts/Line.jsx';
 
 import {
     Chart as ChartJS,
@@ -24,12 +26,12 @@ ChartJS.register(
     Legend
 );
 
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
 
 const HomePage = () => {
     const navigate = useNavigate();
     const handleAdd = () => navigate('/dashboard/addeyeglasses');
     const handleCatalogue = () => navigate('/dashboard/eyeglasses');
+    const handleDelete = () => navigate('/dashboard/eyeglasses', { state: { deleteMode: true } });
     const handleStatistics = () => navigate('/dashboard/statistics');
 
     return (
@@ -48,10 +50,10 @@ const HomePage = () => {
                                 <Button className={'home-buttons'} onClick={handleAdd} children={<p>
                                     Add a New Pair
                                 </p>} />
-                                <Button className={'home-buttons'} /* onClick={sort} */ children={<p>
+                                <Button className={'home-buttons'} onClick={handleDelete} children={<p>
                                     Delete an Existing Pair
                                 </p>} />
-                                <Button className={'home-buttons'} /* onClick={sort} */ children={<p>
+                                <Button className={'home-buttons'} onClick={handleCatalogue} children={<p>
                                     Edit an Existing Pair
                                 </p>} />
                             </div>
@@ -59,38 +61,22 @@ const HomePage = () => {
 
                         <div className='left-bottom'>
 
-                            <h2>Statistics</h2>
-                            <p>Your number-crunching digest, as usual. Care to take a look?</p>
+                            <div className='left-bottom-text'>
+                                <h2>Statistics</h2>
+                                <p>Your number-crunching digest, as usual. Care to take a look?</p>
+                            </div>
 
                             <div className='charts-container'>
                                 <div className='chart-bg'>
                                     <div className='charts'>
-                                        <Bar
-                                            data={{
-                                                labels: ["Square", "Circle", "Triangle"],
-                                                datasets: [
-                                                    {
-                                                        label: "Face Shapes",
-                                                        data: [10, 18, 16, 20],
-                                                        backgroundColor: '#799EE3',
-                                                    }
-                                                ],
-                                            }}
-                                        />
 
-                                        <Bar
-                                            data={{
-                                                labels: ["Square", "Circle", "Triangle"],
-                                                datasets: [
-                                                    {
-                                                        label: "Face Shapes",
-                                                        data: [10, 18, 16, 20],
-                                                        backgroundColor: '#799EE3',
-                                                    }
-                                                ],
-                                            }}
-                                        />
+                                        <div className='home-chart-wrapper'>
+                                            <PieChart />
+                                        </div>
 
+                                        <div className='home-chart-wrapper'>
+                                            <PieChart />
+                                        </div>
 
                                     </div>
 

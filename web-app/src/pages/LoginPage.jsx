@@ -32,7 +32,7 @@ function LoginPage() {
             localStorage.setItem('token', token);
             localStorage.setItem('role', role);
 
-            navigate('/dashboard/home');
+            navigate('/dashboard');
 
         } catch (err) {
             const res = err.response;

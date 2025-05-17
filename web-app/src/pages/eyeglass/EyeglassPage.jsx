@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import '../../styles/eyeglass/EyeglassPage.css';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Button from '../../components/Button.jsx';
 import EyeglassPreview from '../../components/EyeglassPreview.jsx';
 
 const EyeglassPage = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+    const initialDeleteMode = location.state?.deleteMode || false;
+    const [deleteMode, setDeleteMode] = useState(initialDeleteMode);
+    
     const handleAdd = () => navigate('/dashboard/addeyeglasses');
-    const [deleteMode, setDeleteMode] = useState(false);
 
     const handleToggleDeleteMode = () => {
         setDeleteMode(prev => !prev);
@@ -33,9 +36,6 @@ const EyeglassPage = () => {
                                             children={
                                                 <p>Delete Pair</p>
                                             } />
-                                        <Button className='options-action-buttons' /* onClick={sort} */ children={<p>
-                                            Edit Pair
-                                        </p>} />
                                     </div>
                                     <div className='options-sorting'>
                                         <p>Sort By:</p>

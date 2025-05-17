@@ -1,23 +1,30 @@
 .navigation {
     width: 100%;
-    padding: 35px 0;
+    padding: 35px 5%;
     border-bottom: 2px solid #252525;
     /* display: flex;
     align-items: center; */
 }
+
+
 
 .nav-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin: 0 auto;
-    padding: 0 5%;
 }
 
 .nav-logo-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+@media (max-width: 800px) {
+    .nav-logo-wrapper {
+        display: none !important;
+    }
 }
 
 .links {
