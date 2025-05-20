@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.aniasco_long_exam1"
+    namespace = "com.example.baobab_vision_project"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
