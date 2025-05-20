@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Red+Rose:wght@300..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
 :root {
+
+  --basecolor: #FCF7F2;
+  --darkcolor: #252525;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;

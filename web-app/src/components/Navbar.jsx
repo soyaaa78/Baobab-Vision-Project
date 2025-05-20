@@ -26,9 +26,7 @@ function Navbar() {
                     <li><Link to='/dashboard' className='nav-button'>Home</Link></li>
                     <li><Link to='eyeglasses' className='nav-button'>Manage Eyeglass Selections</Link></li>
                     <li><Link to='statistics' className='nav-button'>Statistics</Link></li>
-                    {role === 'super_admin' && (
-                        <li><Link to='manage-users' className='nav-button'>Manage Users</Link></li>
-                    )}
+                    <li><Link to='manageusers' className='nav-button'>Manage Users</Link></li>
                 </ul>
             </div>
 
