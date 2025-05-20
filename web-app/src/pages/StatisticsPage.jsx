@@ -56,13 +56,13 @@ function StatisticsPage() {
 
                                 <div className='stat-card'>
                                     <div className='stat-card-content'>
-                                        <p className='card-header'>grabe ka talaga bhie</p>
+                                        <p className='card-header'>Placeholder 1</p>
                                     </div>
                                 </div>
 
                                 <div className='stat-card'>
                                     <div className='stat-card-content'>
-                                        <p className='card-header'>di naman kasi ako pinapayagan ni mama mag twitter</p>
+                                        <p className='card-header'>Placeholder 2</p>
                                     </div>
                                 </div>
                             </div>
