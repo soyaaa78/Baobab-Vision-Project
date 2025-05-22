@@ -30,8 +30,8 @@ ChartJS.register(
 const HomePage = () => {
     const navigate = useNavigate();
     const handleAdd = () => navigate('/dashboard/addeyeglasses');
-    const handleCatalogue = () => navigate('/dashboard/eyeglasses');
-    const handleDelete = () => navigate('/dashboard/eyeglasses', { state: { deleteMode: true } });
+    const handleCatalogue = () => navigate('/dashboard/catalogue');
+    const handleDelete = () => navigate('/dashboard/catalogue', { state: { deleteMode: true } });
     const handleStatistics = () => navigate('/dashboard/statistics');
 
     return (

@@ -24,7 +24,7 @@ function Navbar() {
 
                 <ul className="links">
                     <li><Link to='/dashboard' className='nav-button'>Home</Link></li>
-                    <li><Link to='eyeglasses' className='nav-button'>Manage Eyeglass Selections</Link></li>
+                    <li><Link to='catalogue' className='nav-button'>Manage Eyeglass Selections</Link></li>
                     <li><Link to='statistics' className='nav-button'>Statistics</Link></li>
                     <li><Link to='manageusers' className='nav-button'>Manage Users</Link></li>
                 </ul>

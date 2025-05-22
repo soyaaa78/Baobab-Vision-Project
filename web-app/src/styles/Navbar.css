@@ -2,8 +2,6 @@
     width: 100%;
     padding: 35px 5%;
     border-bottom: 2px solid #252525;
-    /* display: flex;
-    align-items: center; */
 }
 
 
@@ -21,12 +19,6 @@
     align-items: center;
 }
 
-@media (max-width: 800px) {
-    .nav-logo-wrapper {
-        display: none !important;
-    }
-}
-
 .links {
     padding: 0;
     margin: 0;
@@ -37,6 +29,19 @@
     list-style: none;
 }
 
+.links li .nav-button {
+    color: #252525;
+    text-decoration: none;
+    font-family: 'Red Rose', serif;
+    font-size: 20px;
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    box-sizing: border-box;
+    /* white-space: nowrap; */
+}
+
 .links a {
     color: #252525;
     text-decoration: none;
@@ -44,10 +49,22 @@
     font-size: 20px;
 }
 
-.nav-button {
-    padding: 30px;
-}
-
 .nav-button a:hover {
     text-decoration: underline; /* weirdly doesnt work */
+}
+
+@media (max-width: 870px) {
+    .nav-logo-wrapper {
+        display: none !important;
+    }
+
+    .links li .nav-button {
+        font-size: 70%;
+    }
+}
+
+@media (max-width: 475px) {
+    .links li .nav-button {
+        font-size: 50%;
+    }
 }

@@ -1,108 +1,192 @@
 import React, { useState } from 'react';
+import '../../styles/eyeglass/AddEyeglassPage.css';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
-import '../../styles/eyeglass/EditEyeglassPage.css';
-import placeholder from '../../assets/placeholder.png';
 
 const EditEyeglassPage = () => {
-
     const navigate = useNavigate();
-    const handleBack = () => navigate('../eyeglasses');
+    const handleBack = () => navigate('../catalogue');
+    const [imagePreviews, setImagePreviews] = useState([]);
+
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+        const newPreviews = files.map(file => ({
+            id: URL.createObjectURL(file),
+            url: URL.createObjectURL(file)
+        }));
+        setImagePreviews(prev => [...prev, ...newPreviews]);
+    }
+
+    const handleDeleteImage = (idToRemove) => {
+        setImagePreviews(prev =>
+            prev.filter(img => img.id !== idToRemove)
+        );
+    };
+
+
+
+    const [product, setProduct] = useState('');
+    /* const addProduct = () => {
+        setProduct(userdata);
+    } */ /* raph eto yung iibahin para sa adding */
 
     return (
         <>
-            <div className='page' id='edit-eyeglass'>
-                <div className='edit-eyeglass-content'>
+            <div className='page' id='add-eyeglass'>
 
-                    <Button className='' onClick={handleBack} children={<p>Back</p>} />
-                    <div className='edit-eyeglass-bulk'>
 
-                        <div className='ee-image-section'>
-                            <div className='ee-product-image-wrapper'>
-                                <div className='ee-product-main-img'>
-                                    <img id='product-img' src={placeholder} alt="" />
-                                </div>
+                <div className="add-eyeglass-content">
 
-                                <div className='ee-product-tertiary-imgs'>
-                                    <img className='tertiary-img' id='ti-1' src={placeholder} alt="" />
-                                    <img className='tertiary-img' id='ti-2' src={placeholder} alt="" />
-                                    <img className='tertiary-img' id='ti-3' src={placeholder} alt="" />
-                                </div>
-                            </div>
+                    {<div className='ae-header'>
+                        <div className='ae-header-text'>
+                            <h1>Add Product</h1>
+                            <p style={{ color: '#666666' }}>Time to hash out the details.</p>
                         </div>
+                        <Button className='' onClick={handleBack} children={<p>Back</p>} />
+                    </div>}
 
-                        <div className='ee-details-section'>
-                            <div className='ee-header-wrapper'>
-                                <div className='ee-header-text'>
-                                    <h2>Placeholder Name</h2>
-                                </div>
-                                <div className='edit-eyeglass-button' id='top-edit'>
-                                    <input type="submit" value="EDIT" className='submit-button'></input>
-                                </div>
+                    <div className='add-eyeglass-form-container'>
+                        <form /* action={addProduct} */ className='add-eyeglass-form'>
 
-                            </div>
-                            <div className='ee-details-body-text'>
-                                <p>MIRANDA is best worn while strolling a lavish mansion, wondering how you can contact the real estate agent. <br /><br />
-
-                                    Why you need MIRANDA: <br />
-                                    - 51 x 18 x 145mm (frame-nose bridge-temple) <br />
-                                    - Hypoallergenic polycarbonate frame that can handle anything <br />
-                                    - Impact resistant and saltwater-proof <br />
-                                    - Perfect for men and women with round, heart, diamond, and oval face shapes who want maximum sun coverage in style</p>
-                            </div>
-
-                            <div className='ee-details-color-selection'>
-                                <div className='color-text'>
-                                    <p>color: placeholder {/* change placeholder to be changable */}</p>
-                                </div>
-
-                                <div className='color-indicators'>
-                                    <div className='colorcircle-border'>
-                                        <div className='colorcircle' id='color1' />
+                            <div className='aef-section aef-basic-sect'>
+                                <div className='section-details bsd'>
+                                    <div className='bsd-header'>
+                                        <h2>Basic Info</h2>
                                     </div>
-                                    <div className='colorcircle-border'>
-                                        <div className='colorcircle' id='color2' />
-                                    </div>
-                                    <div className='colorcircle-border'>
-                                        <div className='colorcircle' id='color3' />
-                                    </div>
-                                </div>
-
-
-                            </div>
-
-                            <div className='blackline' />
-
-
-                            <div className='customer-section'>
-                                <div className='price-section'>
-                                    <p>₱(PLACEHOLDER VALUE).00 PHP</p> {/* replace */}
-                                </div>
-
-                                <div className='lens-type-section'>
-                                    <div className='required-text-container'>
-                                        <p>SELECT LENS TYPE</p>
-                                        <p id='red'>&nbsp;*</p>
-                                    </div>
-                                </div>
-
-                                <div className='ee-dropdown-section'>
-                                    <div className='dropdown-container'>
-                                        <form action="">
-                                            <select name="lens" id="dropdown">
-                                                <option value="test">Built-in UV400 Lenses (FREE)</option>
-                                            </select>
-                                        </form>
-                                    </div>
-                                    <div className='edit-eyeglass-button' id='bottom-edit'>
-                                        <input type="submit" value="EDIT AVAILABILITY" className='submit-button'></input>
+                                    <div className='aef-sect-fields bsd-upper'>
+                                        <div className='bsdf-input bsdfu-name'>
+                                            <label for="title">Product Name</label>
+                                            <input type="text" id="title" name="title" placeholder="John or whatever" required />
+                                        </div>
+                                        <div className='bsdf-input bsdfu-desc'>
+                                            <label for="description">Description</label>
+                                            <textarea id="description" name="description" placeholder="Enter Product Details" required></textarea>
+                                        </div>
                                     </div>
 
+                                    <div className='bsd-price-header'>
+                                        <h2>Product Price</h2>
+                                    </div>
+
+                                    <div className='aef-sect-fields bsd-lower'>
+                                        <div className='bsdf-input bsdfl-price'>
+                                            <label for="title">Price</label>
+                                            <input type="number" min="1" step="any" placeholder='-1 PHP' required />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                        </div>
+                            <div className='aef-section aef-image-sect'>
+                                <div className='section-details isd'>
+                                    <div className='isd-header'>
+                                        <h2>Product Media</h2>
+                                    </div>
+                                    <div className='aef-sect-fields isd-content'>
 
+                                        <div className="isdc-img-grid">
+                                            {imagePreviews.map((img, idx) => (
+                                                <div key={img.id} className="isdc-img-box">
+                                                    <img src={img.url} alt={`Upload ${idx}`} />
+                                                    <a
+                                                        type="button"
+                                                        className="isd-img-delete-btn fade"
+                                                        onClick={() => handleDeleteImage(img.id)}
+                                                    >
+                                                        <div className='isd-img-delete-btn-text'>
+                                                            <p>X</p>
+                                                            <p>Remove</p>
+                                                        </div>
+                                                    </a>
+                                                </div>
+                                            ))}
+
+                                            <label className="isdc-img-upload-box">
+                                                <input type="file" accept="image/*" multiple onChange={handleImageChange} />
+                                                <span>+<br />Add Product</span>
+                                            </label>
+                                        </div>
+
+                                        <label>Virtual Try-On 3D Model</label>
+                                        <input type="file" id="3dmodel" name="media" accept=".usd,.usdc,.usdz" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className='aef-section aef-category-sect'>
+                                <div className='section-details csd'>
+                                    <div className='csd-header'>
+                                        <h2>Categories and Specifications</h2>
+                                    </div>
+
+                                    {/* "Oval", "Round", "Rectangle", "Square", "Heart", "Diamond", "Triangle" */}
+
+                                    <div className='aef-sect-fields csd-content'>
+                                        <div className='csdc-header'>
+                                            <p style={{ fontFamily: 'Rubik' }}>Face Shape Classification</p>
+                                            <p style={{ fontFamily: 'Rubik', fontSize: '0.7em', color: '#8f8f8f' }}>Select all that apply.</p>
+                                        </div>
+                                        <div className='csdc-lens-categorization'>
+                                            <div className='csdclc-first'>
+                                                <div className='radio-container'>
+                                                    <input type="radio" name="oval" id="" />
+                                                    <label for="oval">Oval</label>
+                                                </div>
+
+                                                <div className='radio-container'>
+                                                    <input type="radio" name="heart" id="" />
+                                                    <label for="heart">Heart</label>
+                                                </div>
+                                            </div>
+                                            <div className='csdclc-second'>
+                                                <div className='radio-container'>
+                                                    <input type="radio" name="round" id="" />
+                                                    <label for="round">Round</label>
+                                                </div>
+
+                                                <div className='radio-container'>
+                                                    <input type="radio" name="diamond" id="" />
+                                                    <label for="diamond">Diamond</label>
+                                                </div>
+                                            </div>
+                                            <div className='csdclc-third'>
+                                                <div className='radio-container'>
+                                                    <input type="radio" name="rectangle" id="" />
+                                                    <label for="rectangle">Rectangle</label>
+                                                </div>
+
+                                                <div className='radio-container'>
+                                                    <input type="radio" name="triangle" id="" />
+                                                    <label for="triangle">Triangle</label>
+                                                </div>
+                                            </div>
+
+                                            <div className='csdclc-fourth'>
+                                                <div className='radio-container'>
+                                                    <input type="radio" name="square" id="" />
+                                                    <label for="square">Square</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className='csdc-lens-inclusions'>
+                                            <div className='radio-container'>
+                                                <input type="radio" name="sal" id="" checked />
+                                                <label for="sal">Include Sun Adaptive Lens options</label>
+                                            </div>
+                                            <div className='radio-container'>
+                                                <input type="radio" name="tl" id="" checked />
+                                                <label for="tl">Include Tinted Lenses options</label>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                    <div className='csd-post-button-container'>
+                                        <Button className='' onClick={handleBack} children={<p>Add to Catalogue</p>} />
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -110,4 +194,4 @@ const EditEyeglassPage = () => {
     )
 }
 
-export default EditEyeglassPage
+export default EditEyeglassPage;

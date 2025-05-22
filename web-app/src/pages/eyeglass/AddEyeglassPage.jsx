@@ -5,7 +5,7 @@ import Button from '../../components/Button';
 
 const AddEyeglassPage = () => {
     const navigate = useNavigate();
-    const handleBack = () => navigate('../eyeglasses');
+    const handleBack = () => navigate('../catalogue');
     const [imagePreviews, setImagePreviews] = useState([]);
 
     const handleImageChange = (e) => {
@@ -101,6 +101,8 @@ const AddEyeglassPage = () => {
                                                 </div>
                                             ))}
 
+                                            
+
                                             <label className="isdc-img-upload-box">
                                                 <input type="file" accept="image/*" multiple onChange={handleImageChange} />
                                                 <span>+<br />Add Product</span>
@@ -182,7 +184,7 @@ const AddEyeglassPage = () => {
                                     </div>
 
                                     <div className='csd-post-button-container'>
-                                        <Button className='' onClick={handleBack} children={<p>Add to Catalogue</p>} />
+                                        <Button className='' onClick={handleBack} children={<p>Add to Catalogue</p>} /> {/* change onclick to add to db */}
                                     </div>
                                 </div>
                             </div>

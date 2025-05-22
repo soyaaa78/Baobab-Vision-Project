@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import Button from '../components/Button';
 import '../styles/ManageUsersPage.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faXmark, faCaretDown } from '@fortawesome/free-solid-svg-icons';
 
 const ManageUsersPage = () => {
     const [activeTab, setActiveTab] = useState('users');
     const [modal, setModal] = useState(false);
-    const [modalContent, setModalContent] = useState('nothingyet');
+    const [modalContent, setModalContent] = useState('Add New');
     const [dropdown, setDropdown] = useState(false);
 
     const toggleDropdown = () => {
@@ -41,7 +43,7 @@ const ManageUsersPage = () => {
                     <div className='manageusers-tab-content'>
                         {activeTab === 'users' && (
                             <div className="tab active">
-                                <Button className='muc-add-users-btn' onClick={() => (toggleModal(), setModalContent('Edit'))} children={(<p>
+                                <Button className='muc-add-users-btn' onClick={() => (toggleModal(), setModalContent('Add New'))} children={(<p>
                                     New User
                                 </p>)} />
                                 <div>
@@ -75,13 +77,13 @@ const ManageUsersPage = () => {
                                                             Edit
                                                         </li>
                                                         <li
-                                                            className='action-li dropdown'
+                                                            className={`action-li dropdown ${dropdown ? 'retractable' : ''}`}
                                                             onClick={() => (toggleDropdown())}
                                                         >
-                                                            V {/* down arrow */}
+                                                            <FontAwesomeIcon icon={faCaretDown} />
                                                         </li>
                                                     </div>
-                                                </td> {/* maybe think about making this into a component */}
+                                                </td>
                                             </tr>
                                             <tr>
                                                 <td>Tim</td>
@@ -103,27 +105,36 @@ const ManageUsersPage = () => {
 
                                     </table>
 
-                                    {modal && modalContent === 'Edit' && (
-                                        <div className='modal-container'>
-                                            <div className='modal-overlay'></div>
-                                            <div className={`modal-content ${modal ? 'show' : ''}`}>
-                                                <div className='modal-content-header'>
-                                                    <h2>{modalContent} User</h2>
-                                                    <li
-                                                        className='action-li close'
-                                                        onClick={() => (toggleModal())}
-                                                    >
-                                                        X
-                                                    </li>
-                                                </div>
+                                    {/* past mistake was rendering this absolutely conditionally, so the animations dont show */}
+                                    <div className={`modal-container ${modal ? 'active' : ''}`}>
+                                        <div className={`modal-overlay ${modal ? 'active' : ''}`} />
+                                        <div className={`modal-content ${modal ? 'show' : ''}`}>
+                                            <div className='modal-content-header'>
+                                                <h2>{modalContent} User</h2>
+                                                <li
+                                                    className='action-li close'
+                                                    onClick={() => (toggleModal())}
+                                                >
+                                                    <FontAwesomeIcon icon={faXmark} />
+                                                </li>
+                                            </div>
 
-                                                <div className='modal-content-body'>
-                                                    
-                                                </div>
+                                            <div className='modal-content-body'>
+
+                                                {modal && modalContent === 'Add New' && (
+                                                    <div className='modal-body-container' id='add'>
+                                                        <p>add test</p>
+                                                    </div>
+                                                )}
+
+                                                {modal && modalContent === 'Edit' && (
+                                                    <div className='modal-body-container' id='edit'>
+                                                        <p>edit test</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                    )
-                                    }
+                                    </div>
 
                                     {/* {modal && <p> kupal </p> } */}
 

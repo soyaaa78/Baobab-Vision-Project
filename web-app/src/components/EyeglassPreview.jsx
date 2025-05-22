@@ -13,7 +13,7 @@ const EyeglassPreview = ({ className = '', deleteMode = false }) => {
 
     return (
         <>
-            <Link to='/dashboard/editeyeglasses' className={`eyeglass-listing ${className}`}>
+            <Link to='/dashboard/eyeglasses' className={`eyeglass-listing ${className}`}> {/* change on context */}
                 <div className='listing-content'>
                     <div className='bg'>
                         <div className='content-container'>

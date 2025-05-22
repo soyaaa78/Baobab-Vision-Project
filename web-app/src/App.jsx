@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import StatisticsPage from './pages/StatisticsPage';
 import EyeglassPage from './pages/eyeglass/EyeglassPage';
+import EyeglassCataloguePage from './pages/eyeglass/EyeglassCataloguePage';
 import EditEyeglassPage from './pages/eyeglass/EditEyeglassPage';
 import AddEyeglassPage from './pages/eyeglass/AddEyeglassPage';
 import ManageUsersPage from './pages/ManageUsersPage';
@@ -26,16 +27,20 @@ const routes = [
         element: <HomePage />
       },
       {
+        path: 'catalogue',
+        element: <EyeglassCataloguePage />
+      },
+      {
         path: 'eyeglasses',
         element: <EyeglassPage />
       },
       {
-        path: 'editeyeglasses',
-        element: <EditEyeglassPage />
-      },
-      {
         path: 'addeyeglasses',
         element: <AddEyeglassPage />
+      },
+      {
+        path: 'editeyeglasses',
+        element: <EditEyeglassPage />
       },
       {
         path: 'statistics',

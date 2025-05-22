@@ -1,3 +1,4 @@
+/* Start with a mobile-first approach (default styles for small screens) */
 #add-eyeglass {
     padding: 1.5% 15%;
     height: auto;
@@ -36,12 +37,15 @@ h6 {
 .add-eyeglass-form {
     height: 100%;
     display: grid;
-    grid-template-rows: repeat(2, 1fr);
-    grid-template-columns: repeat(2, 1fr);
+    /* IMPORTANT: Default to single column for small screens */
+    grid-template-columns: 1fr; /* All items take full width */
+    grid-template-rows: auto; /* Rows adjust to content */
     gap: 20px;
+    /* IMPORTANT: Define areas for single column layout */
     grid-template-areas:
-        "basic image"
-        "basic category"
+        "basic"
+        "image"
+        "category";
 }
 
 .add-eyeglass-form p,
@@ -208,14 +212,38 @@ input {
 
 .csdc-lens-categorization {
     display: flex;
+    
+    flex-wrap: wrap;
     justify-content: flex-start;
-    gap: 40px;
+    gap: 20px;
 }
+
+.csdc-lens-categorization > div {
+    flex-basis: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+@media (min-width: 600px) {
+    .csdc-lens-categorization > div {
+        flex-basis: auto;
+    }
+}
+
 
 .csdc-lens-inclusions {
     display: flex;
+    flex-direction: column;
     justify-content: flex-start;
-    gap: 20px;
+    gap: 10px; /* Adjusted gap */
+}
+
+@media (min-width: 600px) {
+    .csdc-lens-inclusions {
+        flex-direction: row;
+        gap: 20px;
+    }
 }
 
 .radio-container input {
@@ -227,10 +255,25 @@ input {
 }
 
 
-
-
 .csd-post-button-container {
     display: flex;
     align-items: center;
     justify-content: flex-end;
+}
+
+
+@media (min-width: 800px) {
+    .add-eyeglass-form {
+        /* Override for larger screens */
+        grid-template-columns: repeat(auto-fit, minmax(45%, 1fr)); /* Allow columns to scale, min 45% */
+        grid-template-rows: repeat(2, auto); /* Rows adjust to content height */
+        grid-template-areas:
+            "basic image"
+            "basic category";
+    }
+
+    .csdc-lens-categorization {
+        justify-content: flex-start;
+        gap: 40px;
+    }
 }
