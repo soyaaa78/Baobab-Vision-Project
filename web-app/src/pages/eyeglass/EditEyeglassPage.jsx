@@ -39,8 +39,8 @@ const EditEyeglassPage = () => {
 
                     {<div className='ae-header'>
                         <div className='ae-header-text'>
-                            <h1>Add Product</h1>
-                            <p style={{ color: '#666666' }}>Time to hash out the details.</p>
+                            <h1>Edit Product</h1>
+                            <p style={{ color: '#666666' }}>Got the wrong color? A typo in the description, perhaps? This is the place to be.</p>
                         </div>
                         <Button className='' onClick={handleBack} children={<p>Back</p>} />
                     </div>}

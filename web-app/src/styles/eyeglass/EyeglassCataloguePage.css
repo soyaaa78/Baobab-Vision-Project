@@ -10,19 +10,17 @@
 }
 
 .topbar {
-    height: 10%;
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    /* background-color: lightcoral; */
 }
-
-@media (max-width: 700px) {}
 
 .search {
     background-color: #ffffff;
     border: 2px solid #474747;
-    min-width: 800px;
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 1.5%;
     padding: 15px;
     border-radius: 18px;
 }
@@ -77,11 +75,9 @@
 .selections {
     display: flex;
     justify-content: center;
-    margin: 10px;
     width: 100%;
-    background-color: lightcyan;
-    /* opacity: 0.3; */
-
+    background-color: #8f8f8f;
+    border-radius: 18px;
 }
 
 .selections-grid {
@@ -89,11 +85,8 @@
     margin: 20px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    border: 1px solid red;
     flex-direction: row;
     place-items: center;
-    /* place-content: center; */
-    /* gap: 10px 20px; */
 }
 
 .eyeglass-listing.eyeglass-listing--catalogue {
@@ -106,4 +99,24 @@
 .eyeglass-listing.eyeglass-listing--catalogue #eyeglass-img {
     width: 260px;
     height: 260px;
+}
+
+@media (max-width: 800px) {
+    .options-sorting {
+        display: block;
+    }
+
+    .options-sort-buttons {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 500px) {
+    .options-cta {
+        display: block;
+    }
+
+    .options-action-buttons {
+        margin: 5px 10px;
+    }
 }
