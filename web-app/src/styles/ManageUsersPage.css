@@ -1,4 +1,4 @@
-.manageusers-content {
+ .manageusers-content {
     height: 100%;
     padding: 3% 15%;
     transition: opacity 0.3s ease, filter 0.3s ease;
@@ -88,13 +88,48 @@
     transform: rotate(-180deg);
 }
 
+
+.td-action-dropdown {
+    position: relative;
+}
+
+.td-action-dropdown-menu {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.25rem);
+    background-color: white;
+    width: 170px;
+    height: 120px;
+    border-radius: 12px;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.1);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-10px);
+    transition: opacity 110ms ease-in-out, transform 110ms ease-in-out;
+}
+
+.td-action-dropdown-menu.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.dropdown-menu-options {
+    height: 100%;
+    padding: 0 10%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+
 .modal-container {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 990;
     pointer-events: none;
 }
 
@@ -103,7 +138,7 @@
 }
 
 .modal-overlay {
-    position: absolute; /* Position relative to .modal-container */
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
@@ -124,6 +159,7 @@
     right: 0;
     width: 30%;
     min-width: 300px;
+    max-width: 600px;
     height: 100%;
     background-color: var(--basecolor);
     padding: 2%;
@@ -131,6 +167,8 @@
     transform: translateX(100%);
     transition: transform 0.3s ease-in-out;
     z-index: 2;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-content.show {
@@ -154,6 +192,38 @@
 /* conditional modal section start */
 /* ------------------------------- */
 
+.modal-content-body {
+    flex: 1;
+}
+
+.modal-body-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.mcb-body-container {
+    width: 100%;
+}
+
+.mcb-body {
+    width: 100%;
+}
+
+.mu-modal-input { /* includes label, hence column flex */
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.modal-email {
+    margin: 0;
+}
+
+.mu-modal-input input {
+    min-width: 100px;
+}
 
 
 /* ----------------------------- */

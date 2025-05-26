@@ -100,7 +100,7 @@ const HomePage = () => {
                                 <h2>Manage Eyeglass Selections</h2> {/* put this up pls */}
                                 <p>Got something to check out? Look no further.</p>
                             </div>
-                            <div className='prevtest'>
+                            <div className='right-preview'>
                                 <div className='preview-bg'>
                                     <div className='preview-items-container'>
                                         <div className='preview-items'>
@@ -112,7 +112,6 @@ const HomePage = () => {
                                             <EyeglassPreview />
                                             <EyeglassPreview />
                                             <EyeglassPreview />
-
                                         </div>
                                     </div>
 

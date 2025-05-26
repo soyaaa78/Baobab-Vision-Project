@@ -9,6 +9,11 @@ const ManageUsersPage = () => {
     const [modal, setModal] = useState(false);
     const [modalContent, setModalContent] = useState('Add New');
     const [dropdown, setDropdown] = useState(false);
+    const [alertModal, setAlertModal] = useState(false);
+
+    const toggleAlertModal = () => {
+        setAlertModal(prev => !prev);
+    }
 
     const toggleDropdown = () => {
         setDropdown(prev => !prev);
@@ -17,10 +22,6 @@ const ManageUsersPage = () => {
     const toggleModal = () => {
         setModal(prev => !prev);
     }
-
-    /* if setActiveTable = staff, render conditional staff table data */
-    /* make two different tables with different rows */
-
 
     return (
         <>
@@ -76,12 +77,27 @@ const ManageUsersPage = () => {
                                                         >
                                                             Edit
                                                         </li>
-                                                        <li
-                                                            className={`action-li dropdown ${dropdown ? 'retractable' : ''}`}
-                                                            onClick={() => (toggleDropdown())}
-                                                        >
-                                                            <FontAwesomeIcon icon={faCaretDown} />
-                                                        </li>
+                                                        <div className='td-action-dropdown'>
+                                                            <li
+                                                                className={`action-li dropdown ${dropdown ? 'retractable' : ''}`}
+                                                                onClick={() => (toggleDropdown())}
+                                                            >
+                                                                <FontAwesomeIcon icon={faCaretDown} />
+                                                            </li>
+                                                            <div className={`td-action-dropdown-menu ${dropdown ? 'active' : ''}`}>
+                                                                <div className='dropdown-menu-options'>
+                                                                    <li className='action-li'>
+                                                                        Orders
+                                                                    </li>
+                                                                    <li className='action-li disable'>
+                                                                        Disable User
+                                                                    </li>
+                                                                    <li className='action-li delete'>
+                                                                        Delete Account
+                                                                    </li>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -123,13 +139,77 @@ const ManageUsersPage = () => {
 
                                                 {modal && modalContent === 'Add New' && (
                                                     <div className='modal-body-container' id='add'>
-                                                        <p>add test</p>
+
+                                                        <div className="add-text">
+                                                            <p>Upon addition, the user shall be sent a confirmation email to confirm their identity.</p>
+                                                        </div>
+
+                                                        <div className="mcb-body-container">
+                                                            <form className='mcb-body' id='add' action="" method="post">
+
+                                                                <div className="mu-modal-input modal-name" id='abn-firstname'>
+                                                                    <label for="firstname">First Name</label>
+                                                                    <input type="text" name="firstname" id="firstname" />
+                                                                </div>
+
+                                                                <div className="mu-modal-input modal-name" id='abn-lastname'>
+                                                                    <label for="lastname">Last Name</label>
+                                                                    <input type="text" name="lastname" id="lastname" />
+                                                                </div>
+
+                                                                <div className="mu-modal-input modal-name" id='abn-username'>
+                                                                    <label for="username">Username</label>
+                                                                    <input type="text" name="username" id="username" />
+                                                                </div>
+
+                                                                <div className="mu-modal-input modal-email">
+                                                                    <label for="add-email">Email</label>
+                                                                    <input type="email" name="add-email" id="add-email" />
+                                                                </div>
+
+                                                            </form>
+                                                        </div>
+
+                                                        <div className="add-text">
+                                                            <p>The user's default password will be set to <b>B40b4b2025!</b> <i>(exclamation point included).</i>
+                                                                <br />
+                                                                They shall be ordered to change their password once fully verified within the Baobab Vision mobile app.
+                                                            </p>
+                                                        </div>
+
+
                                                     </div>
                                                 )}
 
                                                 {modal && modalContent === 'Edit' && (
                                                     <div className='modal-body-container' id='edit'>
-                                                        <p>edit test</p>
+
+                                                        <div className="mcb-body-container">
+                                                            <form className='mcb-body' id='edit' action="" method="post">
+
+                                                                <div className="mu-modal-input modal-name" id='ebn-firstname'>
+                                                                    <label for="firstname">First Name</label>
+                                                                    <input type="text" name="firstname" id="firstname" value={'fn'} />
+                                                                </div>
+
+                                                                <div className="mu-modal-input modal-name" id='ebn-lastname'>
+                                                                    <label for="lastname">Last Name</label>
+                                                                    <input type="text" name="lastname" id="lastname" value={'ln'} />
+                                                                </div>
+
+                                                                <div className="mu-modal-input modal-name" id='ebn-username'>
+                                                                    <label for="username">Username</label>
+                                                                    <input type="text" name="username" id="username" value={'un'} />
+                                                                </div>
+
+                                                                <div className="mu-modal-input modal-email">
+                                                                    <label for="edit-email">Email</label>
+                                                                    <input type="email" name="edit-email" id="edit-email" value={'email'} />
+                                                                </div>
+
+                                                            </form>
+                                                        </div>
+
                                                     </div>
                                                 )}
                                             </div>
