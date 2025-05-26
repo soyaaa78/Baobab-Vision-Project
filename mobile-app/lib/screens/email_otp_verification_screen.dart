@@ -50,7 +50,7 @@ class _EmailOtpVerificationScreenState
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:3001/authRoutes/verify-email-otp'),
+        Uri.parse('http://10.0.2.2:3001/api/auth/verify-email-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': widget.email, 'otp': _otp}),
       );
@@ -72,7 +72,7 @@ class _EmailOtpVerificationScreenState
   Future<void> _resendOtp() async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:3001/authRoutes/resend-email-otp'),
+        Uri.parse('http://10.0.2.2:3001/api/auth/resend-email-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': widget.email}),
       );

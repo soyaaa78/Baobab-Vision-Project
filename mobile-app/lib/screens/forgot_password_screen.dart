@@ -22,7 +22,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> sendOtp() async {
     setState(() => _isLoading = true);
-    final url = Uri.parse('http://10.0.2.2:3001/authRoutes/request-otp');
+    final url = Uri.parse('http://10.0.2.2:3001/api/auth/request-otp');
 
     try {
       final response = await http.post(

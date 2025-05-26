@@ -79,7 +79,7 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> fetchSlideshowImages() async {
     try {
       final response = await http.get(
-          Uri.parse('http://10.0.2.2:3001/api/slideshowRoutes/all-images'));
+          Uri.parse('http://10.0.2.2:3001/api/slideshow/all-images'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -97,7 +97,7 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> fetchRecommendedProducts() async {
     try {
       final response = await http
-          .get(Uri.parse('http://10.0.2.2:3001/api/productRoutes/for-you'));
+          .get(Uri.parse('http://10.0.2.2:3001/api/products/for-you'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);

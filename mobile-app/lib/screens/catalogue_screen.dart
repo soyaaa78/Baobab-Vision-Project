@@ -22,7 +22,7 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
 
   Future<void> fetchProducts() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/productRoutes'));
+      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products'));
       if (response.statusCode == 200) {
         setState(() {
           products = jsonDecode(response.body);
@@ -37,7 +37,8 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
   }
 
   Future<void> fetchFilteredProducts(String sortBy, String order) async {
-    final uri = Uri.parse('http://10.0.2.2:3001/api/productRoutes?sortBy=$sortBy&order=$order');
+    final uri = Uri.parse('http://10.0.2.2:3001/api/products?sortBy=$sortBy&order=$order');
+
     try {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
@@ -175,7 +176,8 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
 
                       try {
                         final response = await http.post(
-                          Uri.parse('http://10.0.2.2:3001/api/userPreferences/update-preferences/$username'),
+                          Uri.parse('http://10.0.2.2:3001/api/user/update-preferences/$username'),
+
                           headers: {'Content-Type': 'application/json'},
                           body: jsonEncode({'productId': productId}),
                         );

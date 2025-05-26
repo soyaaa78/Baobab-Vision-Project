@@ -41,7 +41,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     setState(() => _isChecking = true);
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:3001/auth/check-verification-token'),
+      Uri.parse('http://10.0.2.2:3001/api/auth/check-verification-token'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'token': _currentToken}),
     );
@@ -75,7 +75,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 
   Future<void> loginUserAgain() async {
-    final url = Uri.parse('http://10.0.2.2:3001/auth/login');
+    final url = Uri.parse('http://10.0.2.2:3001/api/auth/login');
+
 
     final response = await http.post(
       url,
@@ -103,7 +104,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     });
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:3001/auth/resend-verification'),
+      Uri.parse('http://10.0.2.2:3001/api/auth/resend-verification'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'email': widget.email}),
     );

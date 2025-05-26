@@ -42,7 +42,7 @@ Future<void> addToCart(
   String lensOptionId,
   String? prescriptionImage,
 ) async {
-  final url = Uri.parse('http://10.0.2.2:3001/api/cartRoutes/add');
+  final url = Uri.parse('http://10.0.2.2:3001/api/cart/add');
 
   final body = json.encode({
     'productId': productId,
