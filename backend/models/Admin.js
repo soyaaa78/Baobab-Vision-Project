@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const AdminSchema = new mongoose.Schema({
   username: { type: String, unique: true },
@@ -6,29 +6,33 @@ const AdminSchema = new mongoose.Schema({
   password: String,
   role: {
     type: String,
-    enum: ['super_admin', 'admin'],
-    default: 'admin'
+    enum: ["super_admin", "admin"],
+    default: "admin",
   },
   permissions: {
     type: [String],
-    default: []
+    default: [],
   },
   isVerified: {
     type: Boolean,
-    default: false
+    default: false,
   },
   otp: {
     type: String,
-    default: null
+    default: null,
   },
   otpExpiry: {
     type: Date,
-    default: null
+    default: null,
   },
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
+  isDisabled: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-module.exports = mongoose.model('Admin', AdminSchema);
+module.exports = mongoose.model("Admin", AdminSchema);

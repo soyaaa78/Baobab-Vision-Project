@@ -4,15 +4,6 @@ import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
 
 function Navbar() {
-  const [role, setRole] = useState("");
-
-  useEffect(() => {
-    const storedRole = localStorage.getItem("role");
-    if (storedRole) {
-      setRole(storedRole);
-    }
-  }, []);
-
   return (
     <nav className="navigation">
       <div className="nav-content">
@@ -36,13 +27,11 @@ function Navbar() {
               Statistics
             </Link>
           </li>
-          {role === "super_admin" && (
-            <li>
-              <Link to="manageusers" className="nav-button">
-                Manage Users
-              </Link>
-            </li>
-          )}
+          <li>
+            <Link to="manageusers" className="nav-button">
+              Manage Users
+            </Link>
+          </li>
         </ul>
       </div>
     </nav>
