@@ -1,4 +1,3 @@
-/* Start with a mobile-first approach (default styles for small screens) */
 #add-eyeglass {
     padding: 1.5% 15%;
     height: auto;
@@ -28,6 +27,7 @@ h6 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 20px;
 }
 
 .add-eyeglass-form-container {
@@ -37,11 +37,9 @@ h6 {
 .add-eyeglass-form {
     height: 100%;
     display: grid;
-    /* IMPORTANT: Default to single column for small screens */
-    grid-template-columns: 1fr; /* All items take full width */
-    grid-template-rows: auto; /* Rows adjust to content */
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
     gap: 20px;
-    /* IMPORTANT: Define areas for single column layout */
     grid-template-areas:
         "basic"
         "image"
@@ -116,7 +114,7 @@ input {
 }
 
 .aef-sect-fields textarea {
-    min-height: 250px;
+    min-height: 150px;
     resize: none;
 }
 
@@ -125,7 +123,7 @@ input {
 /* ------------------------- */
 
 .isd-content {
-    gap: 10px;
+    gap: 40px;
 }
 
 .isdc-add-content {
@@ -140,7 +138,6 @@ input {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
-    margin-top: 1rem;
 }
 
 .isdc-img-box,
@@ -208,7 +205,38 @@ input {
     font-family: 'Rubik', sans-serif;
 }
 
+/* --------------------------- */
+/* ----- content section ----- */
+/* --------------------------- */
 
+.csdfl-lens-options {
+    height: 100%;
+    justify-content: flex-start;
+}
+
+
+.csdl-lens-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 20px;
+}
+
+.csd-lens {
+    width: 50%;
+}
+
+.csd-lens-multiselect {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.csd-lens-multiselect button {
+    padding: 5px;
+    font-family: 'Rubik', sans-serif;
+}
 
 .csdc-lens-categorization {
     display: flex;
@@ -246,7 +274,7 @@ input {
     }
 }
 
-.radio-container input {
+.checkbox-container input {
     margin-right: 5px;
 }
 
@@ -264,12 +292,11 @@ input {
 
 @media (min-width: 800px) {
     .add-eyeglass-form {
-        /* Override for larger screens */
-        grid-template-columns: repeat(auto-fit, minmax(45%, 1fr)); /* Allow columns to scale, min 45% */
-        grid-template-rows: repeat(2, auto); /* Rows adjust to content height */
+        grid-template-columns: repeat(auto-fit, minmax(45%, 1fr)); 
+        grid-template-rows: repeat(2, auto);
         grid-template-areas:
             "basic image"
-            "basic category";
+            "category category";
     }
 
     .csdc-lens-categorization {
