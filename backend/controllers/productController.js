@@ -49,7 +49,7 @@ exports.createProduct = async (req, res) => {
 // Get all products with optional sorting
 exports.getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find().sort(sortCriteria);
+    const products = await Product.find();
     res.status(200).json(products);
   } catch (err) {
     console.error("Error fetching products:", err);
