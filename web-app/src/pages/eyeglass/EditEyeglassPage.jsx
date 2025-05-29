@@ -37,7 +37,13 @@ const EditEyeglassPage = () => {
         setForm({
           name: data.name || "",
           description: data.description || "",
-          price: data.price || "",
+          price:
+            data.price !== undefined && data.price !== null
+              ? String(data.price)
+              : "",
+          specs: data.specs || [],
+          lensOptions: data.lensOptions || [],
+          // Add more fields as needed
         });
         setProductImages(
           (data.imageUrls || []).map((url, idx) => ({
@@ -103,6 +109,43 @@ const EditEyeglassPage = () => {
     }));
   };
 
+  const handleSpecsChange = (spec) => {
+    setForm((prev) => {
+      const specs = new Set(prev.specs);
+      if (specs.has(spec)) {
+        specs.delete(spec);
+      } else {
+        specs.add(spec);
+      }
+      return {
+        ...prev,
+        specs: Array.from(specs),
+      };
+    });
+  };
+
+  const handleLensOptionsChange = (label, type, price) => {
+    setForm((prev) => {
+      const lensOptions = prev.lensOptions ? [...prev.lensOptions] : [];
+      const optionIndex = lensOptions.findIndex(
+        (opt) => opt.label === label && opt.type === type
+      );
+      if (optionIndex > -1) {
+        // Remove the option if it already exists
+        return {
+          ...prev,
+          lensOptions: lensOptions.filter((_, i) => i !== optionIndex),
+        };
+      } else {
+        // Add the new option
+        return {
+          ...prev,
+          lensOptions: [...lensOptions, { label, type, price }],
+        };
+      }
+    });
+  };
+
   // Update handler
   const handleUpdate = async (e) => {
     e.preventDefault();
@@ -111,8 +154,21 @@ const EditEyeglassPage = () => {
       if (form.name !== eyeglass.name) updatedEyeglass.name = form.name;
       if (form.description !== eyeglass.description)
         updatedEyeglass.description = form.description;
-      if (form.price !== eyeglass.price)
+      if (form.price !== eyeglass.price.toString()) {
         updatedEyeglass.price = parseFloat(form.price);
+      }
+
+      // Only include specs and lensOptions if they have changed
+      if (JSON.stringify(form.specs) !== JSON.stringify(eyeglass.specs)) {
+        updatedEyeglass.specs = form.specs || [];
+      }
+      if (
+        JSON.stringify(form.lensOptions) !==
+        JSON.stringify(eyeglass.lensOptions)
+      ) {
+        updatedEyeglass.lensOptions = form.lensOptions || [];
+      }
+
       const newImageUrls = productImages.map((img) => img.url);
       if (JSON.stringify(newImageUrls) !== JSON.stringify(eyeglass.imageUrls)) {
         updatedEyeglass.imageUrls = newImageUrls;
@@ -129,12 +185,12 @@ const EditEyeglassPage = () => {
         updatedEyeglass.colorOptions = newColorOptions;
       }
       console.log(updatedEyeglass);
-      //   await axios.put(
-      //     `${SERVER_URL}/api/productRoutes?id=${eyeglass._id}`,
-      //     updatedEyeglass
-      //   );
+      await axios.put(
+        `${SERVER_URL}/api/productRoutes?id=${eyeglass._id}`,
+        updatedEyeglass
+      );
       alert("Eyeglass updated successfully!");
-      //   window.location.reload();
+      window.location.reload();
     } catch (error) {
       alert("Failed to update eyeglass.");
       console.error(error);
@@ -327,9 +383,8 @@ const EditEyeglassPage = () => {
                           <input
                             type="checkbox"
                             name="oval"
-                            id=""
-                            checked={eyeglass.specs?.includes("Oval")}
-                            readOnly
+                            checked={form.specs?.includes("Oval")}
+                            onChange={() => handleSpecsChange("Oval")}
                           />
                           <label htmlFor="oval">Oval</label>
                         </div>
@@ -338,9 +393,8 @@ const EditEyeglassPage = () => {
                           <input
                             type="checkbox"
                             name="heart"
-                            id=""
-                            checked={eyeglass.specs?.includes("Heart")}
-                            readOnly
+                            checked={form.specs?.includes("Heart")}
+                            onChange={() => handleSpecsChange("Heart")}
                           />
                           <label htmlFor="heart">Heart</label>
                         </div>
@@ -350,9 +404,8 @@ const EditEyeglassPage = () => {
                           <input
                             type="checkbox"
                             name="round"
-                            id=""
-                            checked={eyeglass.specs?.includes("Round")}
-                            readOnly
+                            checked={form.specs?.includes("Round")}
+                            onChange={() => handleSpecsChange("Round")}
                           />
                           <label htmlFor="round">Round</label>
                         </div>
@@ -361,9 +414,8 @@ const EditEyeglassPage = () => {
                           <input
                             type="checkbox"
                             name="diamond"
-                            id=""
-                            checked={eyeglass.specs?.includes("Diamond")}
-                            readOnly
+                            checked={form.specs?.includes("Diamond")}
+                            onChange={() => handleSpecsChange("Diamond")}
                           />
                           <label htmlFor="diamond">Diamond</label>
                         </div>
@@ -373,11 +425,10 @@ const EditEyeglassPage = () => {
                           <input
                             type="checkbox"
                             name="rectangle"
-                            id=""
-                            checked={eyeglass.specs?.includes(
-                              "Rectangle Shape"
-                            )}
-                            readOnly
+                            checked={form.specs?.includes("Rectangle Shape")}
+                            onChange={() =>
+                              handleSpecsChange("Rectangle Shape")
+                            }
                           />
                           <label htmlFor="rectangle">Rectangle</label>
                         </div>
@@ -386,9 +437,8 @@ const EditEyeglassPage = () => {
                           <input
                             type="checkbox"
                             name="triangle"
-                            id=""
-                            checked={eyeglass.specs?.includes("Triangle")}
-                            readOnly
+                            checked={form.specs?.includes("Triangle")}
+                            onChange={() => handleSpecsChange("Triangle")}
                           />
                           <label htmlFor="triangle">Triangle</label>
                         </div>
@@ -399,9 +449,8 @@ const EditEyeglassPage = () => {
                           <input
                             type="checkbox"
                             name="square"
-                            id=""
-                            checked={eyeglass.specs?.includes("Square")}
-                            readOnly
+                            checked={form.specs?.includes("Square")}
+                            onChange={() => handleSpecsChange("Square")}
                           />
                           <label htmlFor="square">Square</label>
                         </div>
@@ -449,21 +498,23 @@ const EditEyeglassPage = () => {
                               "Youthful Yellow",
                             ].map((label) => {
                               const lensLabel = `Tinted Lenses - ${label} (Prescription/Non-Prescription)`;
-                              const checked = eyeglass.lensOptions?.some(
+                              const checked = form.lensOptions?.some(
                                 (opt) =>
                                   opt.type === "tinted" &&
-                                  opt.label.includes(label)
+                                  opt.label === lensLabel
                               );
                               return (
                                 <div className="checkbox-container" key={label}>
                                   <input
                                     type="checkbox"
-                                    name={
-                                      label.toLowerCase().replace(/\s/g, "_") +
-                                      "_sun"
-                                    }
                                     checked={checked}
-                                    readOnly
+                                    onChange={() =>
+                                      handleLensOptionsChange(
+                                        lensLabel,
+                                        "tinted",
+                                        1600
+                                      )
+                                    }
                                   />
                                   <label htmlFor={label.toLowerCase()}>
                                     {label}
@@ -487,7 +538,6 @@ const EditEyeglassPage = () => {
                             </div>
                           </div>
                         </div>
-
                         <div
                           className="aef-sect-fields csd-lens"
                           id="sun-adaptive"
@@ -516,20 +566,23 @@ const EditEyeglassPage = () => {
                               "Youthful Yellow",
                             ].map((label) => {
                               const lensLabel = `Sun Adaptive Lenses - ${label} (Prescription/Non-Prescription)`;
-                              const checked = eyeglass.lensOptions?.some(
+                              const checked = form.lensOptions?.some(
                                 (opt) =>
                                   opt.type === "adaptive" &&
-                                  opt.label.includes(label)
+                                  opt.label === lensLabel
                               );
                               return (
                                 <div className="checkbox-container" key={label}>
                                   <input
                                     type="checkbox"
-                                    name={label
-                                      .toLowerCase()
-                                      .replace(/\s/g, "_")}
                                     checked={checked}
-                                    readOnly
+                                    onChange={() =>
+                                      handleLensOptionsChange(
+                                        lensLabel,
+                                        "adaptive",
+                                        2400
+                                      )
+                                    }
                                   />
                                   <label htmlFor={label.toLowerCase()}>
                                     {label}

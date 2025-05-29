@@ -124,7 +124,22 @@ exports.updateProduct = async (req, res) => {
 
     Object.keys(req.body).forEach((key) => {
       if (req.body[key] !== undefined && req.body[key] !== null) {
-        product[key] = req.body[key];
+        if (key === "colorOptions" && Array.isArray(req.body.colorOptions)) {
+          product.colorOptions = req.body.colorOptions.map((opt) => ({
+            ...opt,
+            _id: opt._id || undefined,
+          }));
+        } else if (
+          key === "lensOptions" &&
+          Array.isArray(req.body.lensOptions)
+        ) {
+          product.lensOptions = req.body.lensOptions.map((opt) => ({
+            ...opt,
+            _id: opt._id || undefined,
+          }));
+        } else {
+          product[key] = req.body[key];
+        }
       }
     });
     await product.save();
