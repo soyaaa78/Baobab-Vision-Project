@@ -44,7 +44,8 @@ class _LogInScreenState extends State<LogInScreen> {
 
   // Login function
   Future<void> login() async {
-    var url = Uri.parse('http://10.0.2.2:3001/authRoutes/login');
+    var url = Uri.parse(
+        'https://baobab-vision-project.onrender.com/authRoutes/login');
 
     try {
       final response = await http.post(
