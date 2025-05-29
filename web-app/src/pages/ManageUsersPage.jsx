@@ -229,7 +229,6 @@ const ManageUsersPage = () => {
                       <th>Username</th>
                       <th>Email</th>
                       <th>Role</th>
-                      <th>Permissions</th>
                       <th>Verification Status</th>
                       <th>Actions</th>
                     </tr>
@@ -245,11 +244,6 @@ const ManageUsersPage = () => {
                           <td>{staff.username}</td>
                           <td>{staff.email}</td>
                           <td>{staff.role}</td>
-                          <td>
-                            {Array.isArray(staff.permissions)
-                              ? staff.permissions.join(", ")
-                              : ""}
-                          </td>
                           <td>
                             {staff.isVerified ? "Verified" : "Unverified"}
                           </td>
