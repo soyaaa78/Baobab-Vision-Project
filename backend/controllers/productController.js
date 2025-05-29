@@ -179,3 +179,67 @@ exports.getFaceShapeStats = async (req, res) => {
     });
   }
 };
+
+exports.recommendEyewear = async (req, res) => {
+  const { faceShape, lifestyle, occasion, eyeglassStyle } = req.body;
+  if (!faceShape) {
+    return res.status(400).json({ message: "faceShape is required" });
+  }
+  try {
+    const normalizedFaceShape = faceShape
+      .toLowerCase()
+      .replace(/ shape$/, "")
+      .trim();
+
+    const products = await Product.find({
+      specs: {
+        $elemMatch: {
+          $regex: new RegExp(`^${normalizedFaceShape}`, "i"),
+        },
+      },
+    });
+
+    let filteredProducts = products;
+
+    const filters = [];
+    if (lifestyle) filters.push(lifestyle.toLowerCase());
+    if (occasion) filters.push(occasion.toLowerCase());
+    if (eyeglassStyle) filters.push(eyeglassStyle.toLowerCase());
+
+    if (filters.length > 0) {
+      filteredProducts = filteredProducts
+        .map((product) => {
+          const specMatches = product.specs
+            .map((spec) => spec.toLowerCase())
+            .filter((spec) => filters.includes(spec));
+          return {
+            product,
+            matchCount: specMatches.length,
+          };
+        })
+        .filter((item) => item.matchCount > 0)
+        .sort((a, b) => b.matchCount - a.matchCount)
+        .slice(0, 5)
+        .map((item) => item.product);
+    } else {
+      filteredProducts = filteredProducts.slice(0, 5);
+    }
+
+    const stat = new RecommendationStat({
+      faceShape,
+      lifestyle,
+      occasion,
+      eyeglassStyle,
+      recommendedProductIds: filteredProducts.map((p) => p._id),
+    });
+    await stat.save();
+
+    res.status(200).json({
+      recommended: filteredProducts,
+      statId: stat._id,
+    });
+  } catch (err) {
+    console.error("Error in recommendEyewear:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
