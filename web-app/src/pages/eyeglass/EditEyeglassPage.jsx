@@ -197,6 +197,24 @@ const EditEyeglassPage = () => {
     }
   };
 
+  // Delete handler
+  const handleDelete = async () => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this product? This action cannot be undone."
+      )
+    )
+      return;
+    try {
+      await axios.delete(`${SERVER_URL}/api/productRoutes?id=${eyeglass._id}`);
+      alert("Eyeglass deleted successfully!");
+      navigate("../catalogue");
+    } catch (error) {
+      alert("Failed to delete eyeglass.");
+      console.error(error);
+    }
+  };
+
   return (
     <>
       <div className="page" id="add-eyeglass">
@@ -622,6 +640,17 @@ const EditEyeglassPage = () => {
                       className=""
                       type="submit"
                       children={<p>Update Eyeglass</p>}
+                    />
+                    <Button
+                      className="delete-btn"
+                      type="button"
+                      onClick={handleDelete}
+                      style={{
+                        marginLeft: 12,
+                        background: "#e74c3c",
+                        color: "#fff",
+                      }}
+                      children={<p>Delete Eyeglass</p>}
                     />
                   </div>
                 </div>

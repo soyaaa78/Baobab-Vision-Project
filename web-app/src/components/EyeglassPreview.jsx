@@ -5,7 +5,12 @@ import placeholder from "../assets/placeholder.png";
 import Button from "./Button";
 
 // Accept eyeglass data as props
-const EyeglassPreview = ({ deleteMode = false, className = "", eyeglass }) => {
+const EyeglassPreview = ({
+  deleteMode = false,
+  className = "",
+  eyeglass,
+  onDelete,
+}) => {
   const navigate = useNavigate();
   const handleEdit = (id) => navigate(`/dashboard/editeyeglasses/${id}`);
 
@@ -39,6 +44,7 @@ const EyeglassPreview = ({ deleteMode = false, className = "", eyeglass }) => {
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          onDelete && onDelete(eyeglass._id);
                         }}
                         children={<p>Delete</p>}
                       />

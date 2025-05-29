@@ -19,7 +19,7 @@ exports.createProduct = async (req, res) => {
   } = req.body;
 
   // Validate required fields
-  if (!name || !description || !price || !stock || !imageUrls || !specs) {
+  if (!name || !description || !price || !specs) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
@@ -28,14 +28,14 @@ exports.createProduct = async (req, res) => {
       name,
       description,
       price,
-      stock,
+      stock: stock || 0,
       imageUrls,
       specs,
       numStars: numStars || 5,
       recommendedFor: recommendedFor || false,
       sales: sales || 0,
       colorOptions: colorOptions || [],
-      lensOptions: lensOptions || [], // ✅ add comma before this line
+      lensOptions: lensOptions || [],
     });
 
     await product.save();
@@ -144,6 +144,20 @@ exports.updateProduct = async (req, res) => {
     });
     await product.save();
     res.status(200).json({ message: "Product updated", product });
+  } catch (err) {
+    res.status(500).json({ message: "Internal server error", err });
+  }
+};
+
+// Delete product by ID
+exports.deleteProduct = async (req, res) => {
+  const { id } = req.query;
+  try {
+    const product = await Product.findByIdAndDelete(id);
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+    res.status(200).json({ message: "Product deleted", product });
   } catch (err) {
     res.status(500).json({ message: "Internal server error", err });
   }

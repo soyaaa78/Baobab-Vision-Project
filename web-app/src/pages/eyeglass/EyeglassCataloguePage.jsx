@@ -33,6 +33,23 @@ const EyeglassCataloguePage = () => {
     setEyeglasses(sorted);
   };
 
+  const handleDeleteProduct = async (id) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this product? This action cannot be undone."
+      )
+    )
+      return;
+    try {
+      await axios.delete(`${SERVER_URL}/api/productRoutes?id=${id}`);
+      setEyeglasses((prev) => prev.filter((e) => e._id !== id));
+      alert("Product deleted successfully!");
+    } catch (error) {
+      alert("Failed to delete product.");
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     const fetchEyeglasses = async () => {
       try {
@@ -105,6 +122,7 @@ const EyeglassCataloguePage = () => {
                       className="eyeglass-listing--catalogue"
                       deleteMode={deleteMode}
                       eyeglass={eyeglass}
+                      onDelete={handleDeleteProduct}
                     />
                   )
                 )}

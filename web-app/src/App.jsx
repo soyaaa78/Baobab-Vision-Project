@@ -30,7 +30,7 @@ const routes = [
         element: <EyeglassCataloguePage />,
       },
       {
-        path: "eyeglasses",
+        path: "eyeglasses/:id",
         element: <EyeglassPage />,
       },
       {

@@ -7,6 +7,7 @@ const {
   getRecommendedProducts,
   addProductToRecommended,
   updateProduct,
+  deleteProduct,
 } = require("../controllers/productController");
 
 // Create product (POST /api/products)
@@ -22,5 +23,7 @@ router.get("/for-you", getRecommendedProducts);
 router.post("/recommended", addProductToRecommended);
 
 router.put("/", updateProduct);
+
+router.delete("/", deleteProduct);
 
 module.exports = router;
