@@ -7,7 +7,7 @@ import Button from "./Button";
 // Accept eyeglass data as props
 const EyeglassPreview = ({ deleteMode = false, className = "", eyeglass }) => {
   const navigate = useNavigate();
-  const handleEdit = () => navigate(`/dashboard/editeyeglasses`);
+  const handleEdit = (id) => navigate(`/dashboard/editeyeglasses/${id}`);
 
   return (
     <>
@@ -48,7 +48,7 @@ const EyeglassPreview = ({ deleteMode = false, className = "", eyeglass }) => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleEdit();
+                        handleEdit(eyeglass._id);
                       }}
                       children={<p>Edit</p>}
                     />

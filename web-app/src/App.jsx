@@ -1,71 +1,66 @@
-import './App.css'
-import { createBrowserRouter, RouterProvider } from 'react-router-dom'
-import Layout from './components/Layout';
-import ErrorPage from './pages/ErrorPage';
-import LoginPage from './pages/LoginPage';
-import HomePage from './pages/HomePage';
-import StatisticsPage from './pages/StatisticsPage';
-import EyeglassPage from './pages/eyeglass/EyeglassPage';
-import EyeglassCataloguePage from './pages/eyeglass/EyeglassCataloguePage';
-import EditEyeglassPage from './pages/eyeglass/EditEyeglassPage';
-import AddEyeglassPage from './pages/eyeglass/AddEyeglassPage';
-import ManageUsersPage from './pages/ManageUsersPage';
-
+import "./App.css";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Layout from "./components/Layout";
+import ErrorPage from "./pages/ErrorPage";
+import LoginPage from "./pages/LoginPage";
+import HomePage from "./pages/HomePage";
+import StatisticsPage from "./pages/StatisticsPage";
+import EyeglassPage from "./pages/eyeglass/EyeglassPage";
+import EyeglassCataloguePage from "./pages/eyeglass/EyeglassCataloguePage";
+import EditEyeglassPage from "./pages/eyeglass/EditEyeglassPage";
+import AddEyeglassPage from "./pages/eyeglass/AddEyeglassPage";
+import ManageUsersPage from "./pages/ManageUsersPage";
 
 const routes = [
   {
-    path: '/',
+    path: "/",
     element: <LoginPage />,
-    errorElement: <ErrorPage />
+    errorElement: <ErrorPage />,
   },
   {
-    path: '/dashboard',
+    path: "/dashboard",
     element: <Layout />,
     children: [
       {
-        path: '',
-        element: <HomePage />
+        path: "",
+        element: <HomePage />,
       },
       {
-        path: 'catalogue',
-        element: <EyeglassCataloguePage />
+        path: "catalogue",
+        element: <EyeglassCataloguePage />,
       },
       {
-        path: 'eyeglasses',
-        element: <EyeglassPage />
+        path: "eyeglasses",
+        element: <EyeglassPage />,
       },
       {
-        path: 'addeyeglasses',
-        element: <AddEyeglassPage />
+        path: "addeyeglasses",
+        element: <AddEyeglassPage />,
       },
       {
-        path: 'editeyeglasses',
-        element: <EditEyeglassPage />
+        path: "editeyeglasses/:id",
+        element: <EditEyeglassPage />,
       },
       {
-        path: 'statistics',
-        element: <StatisticsPage />
+        path: "statistics",
+        element: <StatisticsPage />,
       },
       {
-        path: 'manageusers',
-        element: <ManageUsersPage />
-      }
-    ]
-  }
-]
+        path: "manageusers",
+        element: <ManageUsersPage />,
+      },
+    ],
+  },
+];
 
 const router = createBrowserRouter(routes);
 
-
 function App() {
-
-
   return (
     <>
       <RouterProvider router={router} />
-
     </>
-  )
+  );
 }
 
 export default App;

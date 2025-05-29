@@ -1,39 +1,68 @@
 import { useState, useRef, useEffect } from "react";
 import "../../styles/eyeglass/AddEyeglassPage.css";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Button from "../../components/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { useParams } from "react-router";
 import axios from "axios";
-import EyeglassPreview from "../../components/EyeglassPreview";
 
 const EditEyeglassPage = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const eyeglass = location.state?.eyeglass || null;
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-  const [productImages, setProductImages] = useState(eyeglass?.imageUrls || []);
+  const navigate = useNavigate();
+  const params = useParams();
+  const id = params?.id;
+  const handleBack = () => navigate("../catalogue");
+  const [productImages, setProductImages] = useState([]);
   const [colorwayImages, setColorwayImages] = useState([]);
-  const [name, setName] = useState(eyeglass?.name || "");
-  const [description, setDescription] = useState(eyeglass?.description || "");
-  const [price, setPrice] = useState(eyeglass?.price || "");
-  const [productId] = useState(eyeglass?._id || null);
+  const [eyeglass, setEyeglass] = useState({});
+  const [form, setForm] = useState({
+    name: "",
+    description: "",
+    price: "",
+    // Add more fields as needed
+  });
+
   const tintedRef = useRef(null);
   const sunAdaptiveRef = useRef(null);
 
   useEffect(() => {
-    if (eyeglass) {
-      setName(eyeglass.name || "");
-      setDescription(eyeglass.description || "");
-      setPrice(eyeglass.price || "");
-      setProductImages(
-        Array.isArray(eyeglass.imageUrls) ? eyeglass.imageUrls : []
-      );
+    const fetchEyeglass = async () => {
+      try {
+        const response = await axios.get(
+          `${SERVER_URL}/api/productRoutes?id=${id}`
+        );
+        const data = response.data;
+        setEyeglass(data);
+        setForm({
+          name: data.name || "",
+          description: data.description || "",
+          price: data.price || "",
+        });
+        setProductImages(
+          (data.imageUrls || []).map((url, idx) => ({
+            id: url,
+            url,
+          }))
+        );
+        setColorwayImages(
+          (data.colorOptions || []).map((opt) => ({
+            id: opt._id,
+            url: opt.imageUrl,
+            name: opt.name,
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching product data:", error);
+      }
+    };
+
+    if (id) {
+      fetchEyeglass();
     }
-  }, [eyeglass]);
+  }, [id]);
 
   const handleToggle = (ref, shouldCheck) => {
-    if (!ref?.current) return;
     const checkboxes = ref.current.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach((cb) => {
       cb.checked = shouldCheck;
@@ -46,7 +75,7 @@ const EditEyeglassPage = () => {
       id: URL.createObjectURL(file),
       url: URL.createObjectURL(file),
     }));
-    setProductImages((prev) => [...prev, ...newPreviews.map((img) => img.url)]);
+    setProductImages((prev) => [...prev, ...newPreviews]);
   };
 
   const handleColorwayImageChange = (e) => {
@@ -58,29 +87,59 @@ const EditEyeglassPage = () => {
     setColorwayImages((prev) => [...prev, ...newPreviews]);
   };
 
-  const handleDeleteProductImage = (urlToRemove) => {
-    setProductImages((prev) => prev.filter((url) => url !== urlToRemove));
+  const handleDeleteProductImage = (idToRemove) => {
+    setProductImages((prev) => prev.filter((img) => img.id !== idToRemove));
   };
 
   const handleDeleteColorwayImage = (idToRemove) => {
     setColorwayImages((prev) => prev.filter((img) => img.id !== idToRemove));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!productId) return;
-    try {
-      await axios.put(`${SERVER_URL}/api/productRoutes/${productId}`, {
-        name,
-        description,
-        price,
-        imageUrls: productImages,
-      });
-      navigate("/dashboard/catalogue");
-    } catch (err) {}
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleBack = () => navigate(-1);
+  // Update handler
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      const updatedEyeglass = {};
+      if (form.name !== eyeglass.name) updatedEyeglass.name = form.name;
+      if (form.description !== eyeglass.description)
+        updatedEyeglass.description = form.description;
+      if (form.price !== eyeglass.price)
+        updatedEyeglass.price = parseFloat(form.price);
+      const newImageUrls = productImages.map((img) => img.url);
+      if (JSON.stringify(newImageUrls) !== JSON.stringify(eyeglass.imageUrls)) {
+        updatedEyeglass.imageUrls = newImageUrls;
+      }
+      const newColorOptions = colorwayImages.map((img) => ({
+        name: img.name || "",
+        imageUrl: img.url,
+      }));
+      const oldColorOptions = (eyeglass.colorOptions || []).map((opt) => ({
+        name: opt.name || "",
+        imageUrl: opt.imageUrl,
+      }));
+      if (JSON.stringify(newColorOptions) !== JSON.stringify(oldColorOptions)) {
+        updatedEyeglass.colorOptions = newColorOptions;
+      }
+      console.log(updatedEyeglass);
+      //   await axios.put(
+      //     `${SERVER_URL}/api/productRoutes?id=${eyeglass._id}`,
+      //     updatedEyeglass
+      //   );
+      alert("Eyeglass updated successfully!");
+      //   window.location.reload();
+    } catch (error) {
+      alert("Failed to update eyeglass.");
+      console.error(error);
+    }
+  };
 
   return (
     <>
@@ -95,8 +154,9 @@ const EditEyeglassPage = () => {
             </div>
             <Button className="" onClick={handleBack} children={<p>Back</p>} />
           </div>
+
           <div className="add-eyeglass-form-container">
-            <form className="add-eyeglass-form" onSubmit={handleSubmit}>
+            <form className="add-eyeglass-form" onSubmit={handleUpdate}>
               <div className="aef-section aef-basic-sect">
                 <div className="section-details bsd">
                   <div className="bsd-header">
@@ -108,10 +168,11 @@ const EditEyeglassPage = () => {
                       <input
                         type="text"
                         id="title"
-                        name="title"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        name="name"
+                        placeholder="John or whatever"
                         required
+                        value={form.name}
+                        onChange={handleInputChange}
                       />
                     </div>
                     <div className="bsdf-input bsdfu-desc">
@@ -119,15 +180,18 @@ const EditEyeglassPage = () => {
                       <textarea
                         id="description"
                         name="description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Enter Product Details"
                         required
+                        value={form.description}
+                        onChange={handleInputChange}
                       ></textarea>
                     </div>
                   </div>
+
                   <div className="bsd-price-header">
                     <h2>Product Price</h2>
                   </div>
+
                   <div className="aef-sect-fields bsd-lower">
                     <div className="bsdf-input bsdfl-price">
                       <label htmlFor="price">Price</label>
@@ -135,16 +199,17 @@ const EditEyeglassPage = () => {
                         type="number"
                         min="1"
                         step="any"
-                        id="price"
-                        name="price"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
+                        placeholder="-1 PHP"
                         required
+                        name="price"
+                        value={form.price}
+                        onChange={handleInputChange}
                       />
                     </div>
                   </div>
                 </div>
               </div>
+
               <div className="aef-section aef-image-sect">
                 <div className="section-details isd">
                   <div className="isd-header">
@@ -154,16 +219,13 @@ const EditEyeglassPage = () => {
                     <div>
                       <label>Product Images</label>
                       <div className="isdc-img-grid" id="product-images">
-                        {(Array.isArray(productImages)
-                          ? productImages
-                          : []
-                        ).map((url, idx) => (
-                          <div key={url} className="isdc-img-box">
-                            <img src={url} alt={`Upload ${idx}`} />
+                        {productImages.map((img, idx) => (
+                          <div key={img.id} className="isdc-img-box">
+                            <img src={img.url} alt={`Upload ${idx}`} />
                             <a
                               type="button"
                               className="isd-img-delete-btn fade"
-                              onClick={() => handleDeleteProductImage(url)}
+                              onClick={() => handleDeleteProductImage(img.id)}
                             >
                               <div className="isd-img-delete-btn-text">
                                 <FontAwesomeIcon icon={faXmark} />
@@ -172,6 +234,7 @@ const EditEyeglassPage = () => {
                             </a>
                           </div>
                         ))}
+
                         <label className="isdc-img-upload-box">
                           <input
                             type="file"
@@ -186,15 +249,16 @@ const EditEyeglassPage = () => {
                         </label>
                       </div>
                     </div>
+
                     <div>
                       <label>Colorway Images</label>
                       <div className="isdc-img-grid" id="colorway-images">
-                        {(Array.isArray(colorwayImages)
-                          ? colorwayImages
-                          : []
-                        ).map((img, idx) => (
+                        {colorwayImages.map((img, idx) => (
                           <div key={img.id} className="isdc-img-box">
-                            <img src={img.url} alt={`Upload ${idx}`} />
+                            <img
+                              src={img.url}
+                              alt={img.name || `Colorway ${idx}`}
+                            />
                             <a
                               type="button"
                               className="isd-img-delete-btn fade"
@@ -208,6 +272,7 @@ const EditEyeglassPage = () => {
                           </div>
                         ))}
                       </div>
+
                       <label className="isdc-img-upload-box">
                         <input
                           type="file"
@@ -221,6 +286,7 @@ const EditEyeglassPage = () => {
                         </span>
                       </label>
                     </div>
+
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <label>Virtual Try-On 3D Model</label>
                       <input
@@ -233,11 +299,13 @@ const EditEyeglassPage = () => {
                   </div>
                 </div>
               </div>
+
               <div className="aef-section aef-category-sect">
                 <div className="section-details csd">
                   <div className="csd-header">
                     <h2>Categories and Specifications</h2>
                   </div>
+
                   <div className="aef-sect-fields csd-content">
                     <div className="csdc-header">
                       <p style={{ fontFamily: "Rubik" }}>
@@ -256,21 +324,47 @@ const EditEyeglassPage = () => {
                     <div className="csdc-lens-categorization">
                       <div className="csdclc-first">
                         <div className="checkbox-container">
-                          <input type="checkbox" name="oval" id="oval" />
+                          <input
+                            type="checkbox"
+                            name="oval"
+                            id=""
+                            checked={eyeglass.specs?.includes("Oval")}
+                            readOnly
+                          />
                           <label htmlFor="oval">Oval</label>
                         </div>
+
                         <div className="checkbox-container">
-                          <input type="checkbox" name="heart" id="heart" />
+                          <input
+                            type="checkbox"
+                            name="heart"
+                            id=""
+                            checked={eyeglass.specs?.includes("Heart")}
+                            readOnly
+                          />
                           <label htmlFor="heart">Heart</label>
                         </div>
                       </div>
                       <div className="csdclc-second">
                         <div className="checkbox-container">
-                          <input type="checkbox" name="round" id="round" />
+                          <input
+                            type="checkbox"
+                            name="round"
+                            id=""
+                            checked={eyeglass.specs?.includes("Round")}
+                            readOnly
+                          />
                           <label htmlFor="round">Round</label>
                         </div>
+
                         <div className="checkbox-container">
-                          <input type="checkbox" name="diamond" id="diamond" />
+                          <input
+                            type="checkbox"
+                            name="diamond"
+                            id=""
+                            checked={eyeglass.specs?.includes("Diamond")}
+                            readOnly
+                          />
                           <label htmlFor="diamond">Diamond</label>
                         </div>
                       </div>
@@ -279,22 +373,36 @@ const EditEyeglassPage = () => {
                           <input
                             type="checkbox"
                             name="rectangle"
-                            id="rectangle"
+                            id=""
+                            checked={eyeglass.specs?.includes(
+                              "Rectangle Shape"
+                            )}
+                            readOnly
                           />
                           <label htmlFor="rectangle">Rectangle</label>
                         </div>
+
                         <div className="checkbox-container">
                           <input
                             type="checkbox"
                             name="triangle"
-                            id="triangle"
+                            id=""
+                            checked={eyeglass.specs?.includes("Triangle")}
+                            readOnly
                           />
                           <label htmlFor="triangle">Triangle</label>
                         </div>
                       </div>
+
                       <div className="csdclc-fourth">
                         <div className="checkbox-container">
-                          <input type="checkbox" name="square" id="square" />
+                          <input
+                            type="checkbox"
+                            name="square"
+                            id=""
+                            checked={eyeglass.specs?.includes("Square")}
+                            readOnly
+                          />
                           <label htmlFor="square">Square</label>
                         </div>
                       </div>
@@ -322,103 +430,47 @@ const EditEyeglassPage = () => {
                             ref={tintedRef}
                           >
                             <label
-                              htmlFor="tinted"
+                              htmlFor="title"
                               style={{ marginBottom: "10px" }}
                             >
                               <b>
                                 <i>Tinted Lenses</i>
                               </b>
                             </label>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="samelenscolor_sun"
-                                id="samelenscolor_sun"
-                              />
-                              <label htmlFor="samelenscolor_sun">
-                                Same Lens Color
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="boostingblack_sun"
-                                id="boostingblack_sun"
-                              />
-                              <label htmlFor="boostingblack_sun">
-                                Boosting Black
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="blissfulblue_sun"
-                                id="blissfulblue_sun"
-                              />
-                              <label htmlFor="blissfulblue_sun">
-                                Blissful Blue
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="beamingbrown_sun"
-                                id="beamingbrown_sun"
-                              />
-                              <label htmlFor="beamingbrown_sun">
-                                Beaming Brown
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="gloriousgreen_sun"
-                                id="gloriousgreen_sun"
-                              />
-                              <label htmlFor="gloriousgreen_sun">
-                                Glorious Green
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="perfectpink_sun"
-                                id="perfectpink_sun"
-                              />
-                              <label htmlFor="perfectpink_sun">
-                                Perfect Pink
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="pleasingpurple_sun"
-                                id="pleasingpurple_sun"
-                              />
-                              <label htmlFor="pleasingpurple_sun">
-                                Pleasing Purple
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="radiantrose_sun"
-                                id="radiantrose_sun"
-                              />
-                              <label htmlFor="radiantrose_sun">
-                                Radiant Rose
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="youthfulyellow_sun"
-                                id="youthfulyellow_sun"
-                              />
-                              <label htmlFor="youthfulyellow_sun">
-                                Youthful Yellow
-                              </label>
-                            </div>
+                            {[
+                              "Same Lens Color",
+                              "Boosting Black",
+                              "Blissful Blue",
+                              "Beaming Brown",
+                              "Glorious Green",
+                              "Perfect Pink",
+                              "Pleasing Purple",
+                              "Radiant Rose",
+                              "Youthful Yellow",
+                            ].map((label) => {
+                              const lensLabel = `Tinted Lenses - ${label} (Prescription/Non-Prescription)`;
+                              const checked = eyeglass.lensOptions?.some(
+                                (opt) =>
+                                  opt.type === "tinted" &&
+                                  opt.label.includes(label)
+                              );
+                              return (
+                                <div className="checkbox-container" key={label}>
+                                  <input
+                                    type="checkbox"
+                                    name={
+                                      label.toLowerCase().replace(/\s/g, "_") +
+                                      "_sun"
+                                    }
+                                    checked={checked}
+                                    readOnly
+                                  />
+                                  <label htmlFor={label.toLowerCase()}>
+                                    {label}
+                                  </label>
+                                </div>
+                              );
+                            })}
                             <div className="csd-lens-multiselect">
                               <button
                                 type="button"
@@ -435,6 +487,7 @@ const EditEyeglassPage = () => {
                             </div>
                           </div>
                         </div>
+
                         <div
                           className="aef-sect-fields csd-lens"
                           id="sun-adaptive"
@@ -444,99 +497,46 @@ const EditEyeglassPage = () => {
                             ref={sunAdaptiveRef}
                           >
                             <label
-                              htmlFor="sun-adaptive"
+                              htmlFor="title"
                               style={{ marginBottom: "10px" }}
                             >
                               <b>
                                 <i>Sun-Adaptive Lenses</i>
                               </b>
                             </label>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="samelenscolor"
-                                id="samelenscolor"
-                              />
-                              <label htmlFor="samelenscolor">
-                                Same Lens Color
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="boostingblack"
-                                id="boostingblack"
-                              />
-                              <label htmlFor="boostingblack">
-                                Boosting Black
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="blissfulblue"
-                                id="blissfulblue"
-                              />
-                              <label htmlFor="blissfulblue">
-                                Blissful Blue
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="beamingbrown"
-                                id="beamingbrown"
-                              />
-                              <label htmlFor="beamingbrown">
-                                Beaming Brown
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="gloriousgreen"
-                                id="gloriousgreen"
-                              />
-                              <label htmlFor="gloriousgreen">
-                                Glorious Green
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="perfectpink"
-                                id="perfectpink"
-                              />
-                              <label htmlFor="perfectpink">Perfect Pink</label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="pleasingpurple"
-                                id="pleasingpurple"
-                              />
-                              <label htmlFor="pleasingpurple">
-                                Pleasing Purple
-                              </label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="radiantrose"
-                                id="radiantrose"
-                              />
-                              <label htmlFor="radiantrose">Radiant Rose</label>
-                            </div>
-                            <div className="checkbox-container">
-                              <input
-                                type="checkbox"
-                                name="youthfulyellow"
-                                id="youthfulyellow"
-                              />
-                              <label htmlFor="youthfulyellow">
-                                Youthful Yellow
-                              </label>
-                            </div>
+                            {[
+                              "Same Lens Color",
+                              "Boosting Black",
+                              "Blissful Blue",
+                              "Beaming Brown",
+                              "True Teal",
+                              "Perfect Pink",
+                              "Pleasing Purple",
+                              "Radiant Rose",
+                              "Youthful Yellow",
+                            ].map((label) => {
+                              const lensLabel = `Sun Adaptive Lenses - ${label} (Prescription/Non-Prescription)`;
+                              const checked = eyeglass.lensOptions?.some(
+                                (opt) =>
+                                  opt.type === "adaptive" &&
+                                  opt.label.includes(label)
+                              );
+                              return (
+                                <div className="checkbox-container" key={label}>
+                                  <input
+                                    type="checkbox"
+                                    name={label
+                                      .toLowerCase()
+                                      .replace(/\s/g, "_")}
+                                    checked={checked}
+                                    readOnly
+                                  />
+                                  <label htmlFor={label.toLowerCase()}>
+                                    {label}
+                                  </label>
+                                </div>
+                              );
+                            })}
                             <div className="csd-lens-multiselect">
                               <button
                                 type="button"
@@ -560,30 +560,21 @@ const EditEyeglassPage = () => {
                       </div>
                     </div>
                   </div>
+
                   <div
                     className="csd-post-button-container"
                     style={{ margin: "10px 0 0 0" }}
                   >
                     <Button
-                      type="submit"
                       className=""
-                      children={<p>Save Changes</p>}
+                      type="submit"
+                      children={<p>Update Eyeglass</p>}
                     />
                   </div>
                 </div>
               </div>
             </form>
           </div>
-          {eyeglass && (
-            <div style={{ margin: "2rem 0" }}>
-              <h2>Preview Eyeglass</h2>
-              <EyeglassPreview
-                name={eyeglass.name}
-                image={eyeglass.imageUrls?.[0]}
-                description={eyeglass.description}
-              />
-            </div>
-          )}
         </div>
       </div>
     </>
