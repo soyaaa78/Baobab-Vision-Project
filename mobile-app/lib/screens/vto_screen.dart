@@ -1,5 +1,9 @@
+import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:google_mlkit_commons/google_mlkit_commons.dart';
 
 class VirtualTryOnScreen extends StatefulWidget {
   const VirtualTryOnScreen({super.key});
@@ -9,9 +13,13 @@ class VirtualTryOnScreen extends StatefulWidget {
 }
 
 class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
-  int selectedItemIndex = 0; // Index of selected item
+  int selectedItemIndex = 0; // Index of selected eyewear
+  late CameraController _cameraController;
+  late FaceDetector _faceDetector;
+  bool _isDetecting = false;
+  bool _isCameraInitialized = false; // <-- Added flag for camera readiness
+  List<Face> _faces = [];
 
-  // Sample eyewear items (replace with actual image assets)
   final List<String> eyewearImages = [
     'assets/images/eyewear_1.png',
     'assets/images/eyewear_2.png',
@@ -25,11 +33,144 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+    _faceDetector = FaceDetector(
+      options: FaceDetectorOptions(
+        enableContours: true,
+        enableLandmarks: true,
+      ),
+    );
+  }
+
+  Future<void> _initializeCamera() async {
+    final cameras = await availableCameras();
+    final frontCamera = cameras.firstWhere(
+      (camera) => camera.lensDirection == CameraLensDirection.front,
+    );
+    _cameraController = CameraController(
+      frontCamera,
+      ResolutionPreset.medium,
+      enableAudio: false,
+    );
+
+    await _cameraController.initialize();
+
+    setState(() {
+      _isCameraInitialized = true;  // <-- Mark camera as ready here
+    });
+
+    _cameraController.startImageStream((cameraImage) {
+      if (_isDetecting) return;
+      _isDetecting = true;
+
+      _processCameraImage(cameraImage).then((faces) {
+        if (mounted) {
+          setState(() {
+            _faces = faces;
+          });
+        }
+        _isDetecting = false;
+      });
+    });
+  }
+
+  Future<List<Face>> _processCameraImage(CameraImage cameraImage) async {
+    // Check for supported image formats, skip if unsupported (emulator workaround)
+    if (cameraImage.format.raw != 17) {
+      return [];
+    }
+
+    final WriteBuffer allBytes = WriteBuffer();
+    for (final Plane plane in cameraImage.planes) {
+      allBytes.putUint8List(plane.bytes);
+    }
+    final bytes = allBytes.done().buffer.asUint8List();
+
+    final Size imageSize = Size(
+      cameraImage.width.toDouble(),
+      cameraImage.height.toDouble(),
+    );
+
+    final InputImageRotation imageRotation =
+        InputImageRotationValue.fromRawValue(
+                _cameraController.description.sensorOrientation) ??
+            InputImageRotation.rotation0deg;
+
+    final InputImageFormat inputImageFormat = InputImageFormatValue.fromRawValue(
+            cameraImage.format.raw) ??
+        InputImageFormat.nv21;
+
+    final int bytesPerRow = cameraImage.planes[0].bytesPerRow;
+
+    final inputImageMetadata = InputImageMetadata(
+      size: imageSize,
+      rotation: imageRotation,
+      format: inputImageFormat,
+      bytesPerRow: bytesPerRow,
+    );
+
+    final inputImage = InputImage.fromBytes(
+      bytes: bytes,
+      metadata: inputImageMetadata,
+    );
+
+    return await _faceDetector.processImage(inputImage);
+  }
+
+  double _calculateEyewearTop() {
+    if (_faces.isEmpty) return 200.h;
+
+    final face = _faces[0];
+    final nose = face.landmarks[FaceLandmarkType.noseBase];
+    if (nose == null) return 200.h;
+
+    return nose.position.y * MediaQuery.of(context).size.height /
+            _cameraController.value.previewSize!.height -
+        80.h;
+  }
+
+  double _calculateEyewearLeft() {
+    if (_faces.isEmpty) return MediaQuery.of(context).size.width / 2 - 100.w;
+
+    final face = _faces[0];
+    final leftEye = face.landmarks[FaceLandmarkType.leftEye];
+    final rightEye = face.landmarks[FaceLandmarkType.rightEye];
+
+    if (leftEye == null || rightEye == null) {
+      return MediaQuery.of(context).size.width / 2 - 100.w;
+    }
+
+    final centerX = (leftEye.position.x + rightEye.position.x) / 2;
+
+    return centerX * MediaQuery.of(context).size.width /
+            _cameraController.value.previewSize!.width -
+        100.w;
+  }
+
+  @override
+  void dispose() {
+    _cameraController.dispose();
+    _faceDetector.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (!_isCameraInitialized) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Virtual Try-On',
           style: TextStyle(color: Colors.white),
         ),
@@ -39,23 +180,15 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
       ),
       body: Column(
         children: [
-          // Camera Preview (Placeholder)
           Expanded(
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Container(
-                  color: Colors.black26, // Placeholder for Camera Feed
-                  width: double.infinity,
-                  child: Icon(
-                    Icons.camera_alt,
-                    color: Colors.white54,
-                    size: 100,
-                  ),
-                ),
-                if (eyewearImages.isNotEmpty)
+                CameraPreview(_cameraController),
+                if (eyewearImages.isNotEmpty && _faces.isNotEmpty)
                   Positioned(
-                    top: 200.h, // Adjust based on user face position
+                    top: _calculateEyewearTop(),
+                    left: _calculateEyewearLeft(),
                     child: Image.asset(
                       eyewearImages[selectedItemIndex],
                       width: 200.w,
@@ -64,8 +197,6 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
               ],
             ),
           ),
-
-          // Eyewear Selection
           Container(
             padding: EdgeInsets.symmetric(vertical: 10.h),
             color: Colors.black,

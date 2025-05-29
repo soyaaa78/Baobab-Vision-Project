@@ -22,6 +22,15 @@ const ManageUsersPage = () => {
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [selectedStaffAction, setSelectedStaffAction] = useState(null);
 
+  // Add Staff form state
+  const [addStaffForm, setAddStaffForm] = useState({
+    firstname: "",
+    lastname: "",
+    username: "",
+    email: "",
+    password: "",
+  });
+
   const toggleAlertModal = () => {
     setAlertModal((prev) => !prev);
   };
@@ -29,9 +38,18 @@ const ManageUsersPage = () => {
   const toggleDropdown = () => {
     setDropdown((prev) => !prev);
   };
-
   const toggleModal = () => {
     setModal((prev) => !prev);
+    // Reset form when closing modal
+    if (modal) {
+      setAddStaffForm({
+        firstname: "",
+        lastname: "",
+        username: "",
+        email: "",
+        password: "",
+      });
+    }
   };
 
   useEffect(() => {
@@ -120,6 +138,54 @@ const ManageUsersPage = () => {
       toggleAlertModal();
     } catch (error) {
       console.error(`${action} staff error:`, error);
+    }
+  };
+
+  // Handle form input changes
+  const handleAddStaffInputChange = (e) => {
+    const { name, value } = e.target;
+    setAddStaffForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Handle staff creation
+  const handleAddStaff = async (e) => {
+    e.preventDefault();
+
+    // Basic validation
+    if (
+      !addStaffForm.firstname ||
+      !addStaffForm.lastname ||
+      !addStaffForm.username ||
+      !addStaffForm.email ||
+      !addStaffForm.password
+    ) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    try {
+      await axios.post(`${SERVER_URL}/api/admin/create-staff`, addStaffForm, {
+        headers: { Authorization: `Bearer ${TOKEN}` },
+      });
+
+      // Refresh staff list
+      const response = await axios.get(`${SERVER_URL}/api/admin/staff-list`, {
+        headers: { Authorization: `Bearer ${TOKEN}` },
+      });
+      setStaffList(response.data);
+
+      toggleModal();
+      alert("Staff member added successfully!");
+    } catch (error) {
+      console.error("Add staff error:", error);
+      if (error.response?.data?.message) {
+        alert(error.response.data.message);
+      } else {
+        alert("Failed to add staff member");
+      }
     }
   };
 
@@ -220,36 +286,35 @@ const ManageUsersPage = () => {
               <div className="manageusers-tab-content">
                 <Button
                   className="muc-add-users-btn"
-                  onClick={() => (toggleModal(), setModalContent("Add New"))}
-                  children={<p>New User</p>}
+                  onClick={() => (toggleModal(), setModalContent("Add Staff"))}
+                  children={<p>New Staff</p>}
                 />
                 <table className="muc-manageusers-table table-users">
+                  {" "}
                   <thead>
                     <tr>
+                      <th>First Name</th>
+                      <th>Last Name</th>
                       <th>Username</th>
                       <th>Email</th>
                       <th>Role</th>
-                      <th>Permissions</th>
                       <th>Verification Status</th>
                       <th>Actions</th>
                     </tr>
-                  </thead>
+                  </thead>{" "}
                   <tbody>
                     {staffList.length === 0 ? (
                       <tr>
-                        <td colSpan="6">No staff found.</td>
+                        <td colSpan="7">No staff found.</td>
                       </tr>
                     ) : (
                       staffList.map((staff) => (
                         <tr key={staff._id} className="table-tr">
+                          <td>{staff.firstname || "N/A"}</td>
+                          <td>{staff.lastname || "N/A"}</td>
                           <td>{staff.username}</td>
                           <td>{staff.email}</td>
                           <td>{staff.role}</td>
-                          <td>
-                            {Array.isArray(staff.permissions)
-                              ? staff.permissions.join(", ")
-                              : ""}
-                          </td>
                           <td>
                             {staff.isVerified ? "Verified" : "Unverified"}
                           </td>
@@ -414,14 +479,14 @@ const ManageUsersPage = () => {
               <div className={`modal-overlay ${modal ? "active" : ""}`} />
               <div className={`modal-content ${modal ? "show" : ""}`}>
                 <div className="modal-content-header">
-                  <h2>{modalContent} User</h2>
+                  <h2>{modalContent}</h2>
                   <li className="action-li close" onClick={() => toggleModal()}>
                     <FontAwesomeIcon icon={faXmark} />
                   </li>
                 </div>
 
                 <div className="modal-content-body">
-                  {modal && modalContent === "Add New" && (
+                  {modal && modalContent === "Add Staff" && (
                     <div className="modal-body-container" id="add">
                       <div className="add-text">
                         <p>
@@ -429,23 +494,25 @@ const ManageUsersPage = () => {
                           email to confirm their identity.
                         </p>
                       </div>
-
                       <div className="mcb-body-container">
+                        {" "}
                         <form
                           className="mcb-body"
                           id="add"
-                          action=""
-                          method="post"
+                          onSubmit={handleAddStaff}
                         >
                           <div
                             className="mu-modal-input modal-name"
                             id="abn-firstname"
                           >
-                            <label for="firstname">First Name</label>
+                            <label htmlFor="firstname">First Name</label>
                             <input
                               type="text"
                               name="firstname"
                               id="firstname"
+                              value={addStaffForm.firstname}
+                              onChange={handleAddStaffInputChange}
+                              required
                             />
                           </div>
 
@@ -453,33 +520,63 @@ const ManageUsersPage = () => {
                             className="mu-modal-input modal-name"
                             id="abn-lastname"
                           >
-                            <label for="lastname">Last Name</label>
-                            <input type="text" name="lastname" id="lastname" />
+                            <label htmlFor="lastname">Last Name</label>
+                            <input
+                              type="text"
+                              name="lastname"
+                              id="lastname"
+                              value={addStaffForm.lastname}
+                              onChange={handleAddStaffInputChange}
+                              required
+                            />
                           </div>
 
                           <div
                             className="mu-modal-input modal-name"
                             id="abn-username"
                           >
-                            <label for="username">Username</label>
-                            <input type="text" name="username" id="username" />
+                            <label htmlFor="username">Username</label>
+                            <input
+                              type="text"
+                              name="username"
+                              id="username"
+                              value={addStaffForm.username}
+                              onChange={handleAddStaffInputChange}
+                              required
+                            />
                           </div>
 
                           <div className="mu-modal-input modal-email">
-                            <label for="add-email">Email</label>
+                            <label htmlFor="add-email">Email</label>
                             <input
                               type="email"
-                              name="add-email"
+                              name="email"
                               id="add-email"
+                              value={addStaffForm.email}
+                              onChange={handleAddStaffInputChange}
+                              required
+                            />
+                          </div>
+
+                          <div className="mu-modal-input modal-password">
+                            <label htmlFor="add-password">Password</label>
+                            <input
+                              type="password"
+                              name="password"
+                              id="add-password"
+                              value={addStaffForm.password}
+                              onChange={handleAddStaffInputChange}
+                              required
+                              minLength={6}
                             />
                           </div>
                         </form>
-                      </div>
-
+                      </div>{" "}
                       <Button
-                        /* onClick={} */ children={
+                        onClick={handleAddStaff}
+                        children={
                           <div>
-                            <p>Add User</p>
+                            <p>Add Staff</p>
                           </div>
                         }
                       />

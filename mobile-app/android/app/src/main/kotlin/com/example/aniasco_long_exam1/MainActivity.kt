@@ -1,4 +1,4 @@
-package com.example.aniasco_long_exam1
+package com.example.baobab_vision_project
 
 import io.flutter.embedding.android.FlutterActivity
 
