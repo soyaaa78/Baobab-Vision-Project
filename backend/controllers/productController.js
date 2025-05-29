@@ -1,5 +1,6 @@
 // controllers/productController.js
 const Product = require("../models/Products");
+const RecommendationStat = require("../models/RecommendationStat");
 
 // Create product
 // Create product
@@ -160,5 +161,21 @@ exports.deleteProduct = async (req, res) => {
     res.status(200).json({ message: "Product deleted", product });
   } catch (err) {
     res.status(500).json({ message: "Internal server error", err });
+  }
+};
+
+exports.getFaceShapeStats = async (req, res) => {
+  try {
+    const stats = await RecommendationStat.aggregate([
+      { $group: { _id: "$faceShape", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+    const total = stats.reduce((acc, curr) => acc + curr.count, 0);
+    res.json({ stats, total });
+  } catch (err) {
+    res.status(500).json({
+      message: "Failed to fetch face shape statistics",
+      error: err.message,
+    });
   }
 };

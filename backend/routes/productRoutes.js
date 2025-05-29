@@ -8,6 +8,8 @@ const {
   addProductToRecommended,
   updateProduct,
   deleteProduct,
+  recommendEyewear,
+  getFaceShapeStats,
 } = require("../controllers/productController");
 
 // Create product (POST /api/products)
@@ -21,6 +23,12 @@ router.get("/for-you", getRecommendedProducts);
 
 // Admin adds product to recommended (POST /api/products/recommended)
 router.post("/recommended", addProductToRecommended);
+
+// Add recommendation endpoint
+router.post("/recommend", recommendEyewear);
+
+// Add face shape statistics endpoint
+router.get("/face-shape-stats", getFaceShapeStats);
 
 router.put("/", updateProduct);
 
