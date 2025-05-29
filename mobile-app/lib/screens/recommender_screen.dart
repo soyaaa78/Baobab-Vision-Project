@@ -1190,7 +1190,9 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
               SizedBox(height: ScreenUtil().setHeight(25)),
               CustomText(
                 text: detectedFaceShape != null
-                    ? 'All set! Your face shape is $detectedFaceShape.'
+                    ? 'All set! Your face shape is ' +
+                        (detectedFaceShape ?? '') +
+                        '.'
                     : debugInfo.toLowerCase().contains("unclear") ||
                             (currentFaceShape == null &&
                                 hasDetectedFace &&
@@ -1199,7 +1201,9 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
                                 shapeVotes.isEmpty)
                         ? "Cannot determine shape clearly. Try again, ensure good lighting, and face the camera directly."
                         : currentFaceShape != null
-                            ? 'Hold still, refining 3D analysis for ${currentFaceShape ?? "your face"}...'
+                            ? 'Hold still, refining 3D analysis for ' +
+                                (currentFaceShape ?? "your face") +
+                                '...'
                             : hasDetectedFace
                                 ? 'Face detected! Please hold steady for 3D analysis.'
                                 : 'Position your face in the oval. Ensure good lighting and face the camera directly.',
@@ -1227,59 +1231,6 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
                     ? FontWeight.w600
                     : FontWeight.normal,
               ),
-              if (detectedFaceShape != null) ...[
-                SizedBox(height: ScreenUtil().setHeight(25)),
-                Container(
-                  width: double.infinity,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          colors: [Colors.green[100]!, Colors.teal[50]!],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                          color: Colors.green[300]!.withOpacity(0.8)),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.teal.withOpacity(0.1),
-                            blurRadius: 10,
-                            spreadRadius: 1,
-                            offset: const Offset(0, 4))
-                      ]),
-                  child: Column(
-                    children: [
-                      Icon(Icons.celebration_outlined,
-                          color: Colors.green[700], size: 44),
-                      const SizedBox(height: 15),
-                      Text('Detected Face Shape:',
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.teal[800]),
-                          textAlign: TextAlign.center),
-                      const SizedBox(height: 8),
-                      Text(detectedFaceShape!,
-                          style: TextStyle(
-                              fontSize: 28,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green[700],
-                              letterSpacing: 0.5)),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                        child: Text(getFaceShapeDescription(detectedFaceShape!),
-                            style: TextStyle(
-                                fontSize: 14.5,
-                                color: Colors.teal[700],
-                                height: 1.5),
-                            textAlign: TextAlign.center),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
               SizedBox(height: ScreenUtil().setHeight(35)),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10.0),
