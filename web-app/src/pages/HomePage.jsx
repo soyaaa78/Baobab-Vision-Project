@@ -127,9 +127,7 @@ const HomePage = () => {
                       ).map((eyeglass) => (
                         <EyeglassPreview
                           key={eyeglass._id}
-                          name={eyeglass.name}
-                          image={eyeglass.imageUrls?.[0]}
-                          description={eyeglass.description}
+                          eyeglass={eyeglass}
                           // Optionally pass more props as needed
                         />
                       ))}

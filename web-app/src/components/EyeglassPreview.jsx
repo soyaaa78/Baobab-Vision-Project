@@ -5,12 +5,7 @@ import placeholder from "../assets/placeholder.png";
 import Button from "./Button";
 
 // Accept eyeglass data as props
-const EyeglassPreview = ({
-  className = "",
-  deleteMode = false,
-  name = "",
-  image = "",
-}) => {
+const EyeglassPreview = ({ deleteMode = false, className = "", eyeglass }) => {
   const navigate = useNavigate();
   const handleEdit = () => navigate(`/dashboard/editeyeglasses`);
 
@@ -26,15 +21,15 @@ const EyeglassPreview = ({
               <div className="pic">
                 <img
                   id="eyeglass-img"
-                  src={image || placeholder}
-                  alt={name || "placeholder"}
+                  src={eyeglass.imageUrls?.[0] || placeholder}
+                  alt={eyeglass.name || "placeholder"}
                 />
               </div>
               <div className="desc-container">
                 <div className="eyeglass-descriptor">
                   <div className="eyeglass-name">
                     <h3>
-                      <b>{name || "Eyeglass"}</b>
+                      <b>{eyeglass.name || "Eyeglass"}</b>
                     </h3>
                   </div>
                   <div className="eyeglass-buttons">

@@ -104,8 +104,7 @@ const EyeglassCataloguePage = () => {
                       key={eyeglass._id}
                       className="eyeglass-listing--catalogue"
                       deleteMode={deleteMode}
-                      name={eyeglass.name}
-                      image={eyeglass.imageUrls?.[0]}
+                      eyeglass={eyeglass}
                     />
                   )
                 )}
