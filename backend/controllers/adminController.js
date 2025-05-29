@@ -62,7 +62,8 @@ exports.login = async (req, res) => {
 
 // CREATE STAFF (Super Admin only)
 exports.createStaff = async (req, res) => {
-  const { username, email, password, permissions } = req.body;
+  const { firstname, lastname, username, email, password, permissions } =
+    req.body;
 
   try {
     const existing = await Admin.findOne({ $or: [{ username }, { email }] });
@@ -72,6 +73,8 @@ exports.createStaff = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const staff = new Admin({
+      firstname,
+      lastname,
       username,
       email,
       password: hashedPassword,
@@ -80,9 +83,17 @@ exports.createStaff = async (req, res) => {
     });
 
     await staff.save();
-    res
-      .status(201)
-      .json({ message: "Staff account created", staffId: staff._id });
+
+    await sendEmail(
+      staff.email,
+      "Baobab Vision - Staff Account Created",
+      "Your staff account has been created. Please sign in to verify your email."
+    );
+
+    res.status(201).json({
+      message: "Staff account created and verification email sent",
+      staffId: staff._id,
+    });
   } catch (err) {
     console.error("Create staff error:", err);
     res.status(500).json({ message: "Server error" });
