@@ -37,7 +37,7 @@ const EyeglassCataloguePage = () => {
     const fetchEyeglasses = async () => {
       try {
         const response = await axios.get(`${SERVER_URL}/api/productRoutes`);
-        setEyeglasses(response.data);
+        setEyeglasses(response.data.reverse());
       } catch (error) {}
     };
 
