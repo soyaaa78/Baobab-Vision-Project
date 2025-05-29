@@ -21,6 +21,7 @@ const routes = [
   {
     path: '/dashboard',
     element: <Layout />,
+    errorElement: <ErrorPage />,
     children: [
       {
         path: '',
