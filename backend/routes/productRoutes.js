@@ -10,7 +10,6 @@ const {
   deleteProduct,
   recommendEyewear,
   getFaceShapeStats,
-  recommendEyewear, // <-- add this
 } = require("../controllers/productController");
 
 // Create product (POST /api/products)

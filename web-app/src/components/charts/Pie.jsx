@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from "react";
 import { Pie } from "react-chartjs-2";
-import axios from "axios";
 import { Chart as ChartJS, Tooltip, ArcElement } from "chart.js";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
 ChartJS.register(Tooltip, ArcElement);
 
-const PieChart = () => {
+export const PieChart = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
-  const [chartData, setChartData] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -18,15 +18,13 @@ const PieChart = () => {
         const res = await axios.get(
           `${SERVER_URL}/api/productRoutes/face-shape-stats`
         );
-        const { stats, total } = res.data;
-        const labels = stats.map((s) => s._id || "Unknown");
-        const data = stats.map((s) => s.count);
-        setChartData({
-          labels,
+        const { stats } = res.data;
+        setData({
+          labels: stats.map((s) => s._id || "Unknown"),
           datasets: [
             {
-              label: "Face Shape Distribution",
-              data,
+              label: "Face Shape",
+              data: stats.map((s) => s.count),
               backgroundColor: [
                 "#FF6384",
                 "#36A2EB",
@@ -38,7 +36,6 @@ const PieChart = () => {
               ],
             },
           ],
-          total,
         });
         setError(null);
       } catch (err) {
@@ -50,23 +47,28 @@ const PieChart = () => {
     fetchStats();
   }, []);
 
+  const options = {
+    plugins: {
+      legend: { display: true, position: "bottom" },
+    },
+    maintainAspectRatio: false,
+  };
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
-  if (!chartData) return null;
+  if (!data) return null;
 
   return (
-    <div style={{ width: "100%", height: "100%" }}>
-      <Pie
-        data={chartData}
-        options={{
-          plugins: {
-            legend: { display: true, position: "bottom" },
-          },
-          maintainAspectRatio: false,
-        }}
-      />
+    <div
+      style={{
+        width: 400,
+        height: 400,
+        maxWidth: "100%",
+        maxHeight: "100%",
+        margin: "0 auto",
+      }}
+    >
+      <Pie options={options} data={data} />
     </div>
   );
 };
-
-export { PieChart };
