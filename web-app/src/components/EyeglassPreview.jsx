@@ -17,7 +17,7 @@ const EyeglassPreview = ({
   return (
     <>
       <Link
-        to="/dashboard/eyeglasses"
+        to={`/dashboard/eyeglasses/${eyeglass._id}`}
         className={`eyeglass-listing ${className}`}
       >
         <div className="listing-content">
