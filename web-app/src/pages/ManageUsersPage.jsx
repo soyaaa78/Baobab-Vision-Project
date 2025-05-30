@@ -83,7 +83,7 @@ const ManageUsersPage = () => {
     };
     const fetchOrders = async () => {
       try {
-        const response = await axios.get(`${SERVER_URL}/api/admin/order-list`, {
+        const response = await axios.get(`${SERVER_URL}/api/orders`, {
           headers: {
             Authorization: `Bearer ${TOKEN}`,
           },
@@ -331,12 +331,15 @@ const ManageUsersPage = () => {
                       {orderList.length === 0 ? (
                         <tr><td colSpan="11">No orders found.</td></tr>
                       ) : (
-                        orderList.map((order) => (
-                          <React.Fragment key={order.id}>
+                        orderList.map((order) => {
+                          console.log(order.items);
+                          
+                          return (
+                            <React.Fragment key={order._id}>
                             <tr onClick={() => toggleExpandedOrder(order.id)}>
                               <td>{order.orderId}</td> {/* Order ID */}
                               <td>{order.date}</td> {/* Order Date */}
-                              <td>{order.items}</td> {/* Item Name(s) */}
+                              <td>{order.items.map(item => item.name).join(', ')}</td> {/* Item Name(s) */}
                               <td>{order.specifications}</td> {/* Specs */}
                               <td>{order.quantity}</td> {/* Qty */}
                               <td>PHP {order.price}</td> {/* Price */}
@@ -390,12 +393,15 @@ const ManageUsersPage = () => {
                               </tr>
                             )}
                           </React.Fragment>
-                        ))
+                          )
+                        })
                       )}
+                          
                     </tbody>
 
                   </table>
 
+                  
                   {console.log("modal:", modal, "modalContent:", modalContent)}
                 </div>
               </div>
