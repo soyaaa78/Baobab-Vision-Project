@@ -8,6 +8,10 @@
     align-items: center;
 }
 
+.eec-back-btn {
+    margin: 20px 85px;
+}
+
 .edit-eyeglass-bulk {
     display: grid;
     grid-template-columns: minmax(400px, 1fr) minmax(400px, 1fr);
@@ -70,6 +74,10 @@
     border-radius: 3px;
     margin: 10px 0;
     padding: 10px 40px;
+}
+
+#top-edit {
+    cursor: pointer;
 }
 
 .ee-details-color-selection {

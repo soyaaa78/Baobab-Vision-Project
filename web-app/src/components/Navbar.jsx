@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
+import Button from "./Button";
 
 function Navbar() {
   return (
@@ -32,6 +33,9 @@ function Navbar() {
               Manage Users
             </Link>
           </li>
+          <Button /* onClick={} */ children={(<div>
+            <p>Log Out</p>
+          </div>)} />
         </ul>
       </div>
     </nav>

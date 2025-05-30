@@ -338,3 +338,20 @@
 /* ----------------------------- */
 /* conditional modal section end */
 /* ----------------------------- */
+
+.order-details-row td {
+  background-color: #f8f8f8;
+  padding: 1rem;
+}
+
+.order-details-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.order-item {
+  font-size: 0.9rem;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 0.5rem;
+}

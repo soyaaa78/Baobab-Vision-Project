@@ -17,12 +17,13 @@ const ManageUsersPage = () => {
   const [dropdown, setDropdown] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [userList, setUserList] = useState([]);
+  const [orderList, setOrderList] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedAction, setSelectedAction] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [selectedStaffAction, setSelectedStaffAction] = useState(null);
+  const [expandedOrder, setExpandedOrder] = useState(null);
 
-  // Add Staff form state
   const [addStaffForm, setAddStaffForm] = useState({
     firstname: "",
     lastname: "",
@@ -40,7 +41,6 @@ const ManageUsersPage = () => {
   };
   const toggleModal = () => {
     setModal((prev) => !prev);
-    // Reset form when closing modal
     if (modal) {
       setAddStaffForm({
         firstname: "",
@@ -50,6 +50,10 @@ const ManageUsersPage = () => {
         password: "",
       });
     }
+  };
+
+  const toggleExpandedOrder = (orderId) => {
+    setExpandedOrder((prev) => (prev === orderId ? null : orderId));
   };
 
   useEffect(() => {
@@ -77,8 +81,21 @@ const ManageUsersPage = () => {
         console.error("Error fetching users:", error);
       }
     };
+    const fetchOrders = async () => {
+      try {
+        const response = await axios.get(`${SERVER_URL}/api/admin/order-list`, {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        });
+        setOrderList(response.data);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      }
+    };
     fetchStaff();
     fetchUsers();
+    fetchOrders();
   }, [SERVER_URL, TOKEN]);
 
   const handleUserAction = async (id, action) => {
@@ -100,7 +117,7 @@ const ManageUsersPage = () => {
           { headers: { Authorization: `Bearer ${TOKEN}` } }
         );
       }
-      // Refresh user list
+
       const response = await axios.get(`${SERVER_URL}/api/admin/user-list`, {
         headers: { Authorization: `Bearer ${TOKEN}` },
       });
@@ -130,7 +147,7 @@ const ManageUsersPage = () => {
           { headers: { Authorization: `Bearer ${TOKEN}` } }
         );
       }
-      // Refresh staff list
+
       const response = await axios.get(`${SERVER_URL}/api/admin/staff-list`, {
         headers: { Authorization: `Bearer ${TOKEN}` },
       });
@@ -141,7 +158,7 @@ const ManageUsersPage = () => {
     }
   };
 
-  // Handle form input changes
+
   const handleAddStaffInputChange = (e) => {
     const { name, value } = e.target;
     setAddStaffForm((prev) => ({
@@ -150,11 +167,11 @@ const ManageUsersPage = () => {
     }));
   };
 
-  // Handle staff creation
+
   const handleAddStaff = async (e) => {
     e.preventDefault();
 
-    // Basic validation
+
     if (
       !addStaffForm.firstname ||
       !addStaffForm.lastname ||
@@ -203,6 +220,14 @@ const ManageUsersPage = () => {
               >
                 Users
               </li>
+              <li
+                className={
+                  activeTab === "orders" ? "muc-link active" : "muc-link"
+                }
+                onClick={() => setActiveTab("orders")}
+              >
+                All Orders
+              </li>
               {ROLE !== "admin" && (
                 <li
                   className={
@@ -244,9 +269,8 @@ const ManageUsersPage = () => {
                             <td>
                               <div className="td-action">
                                 <li
-                                  className={`action-li ${
-                                    user.isDisabled ? "enable" : "disable"
-                                  }`}
+                                  className={`action-li ${user.isDisabled ? "enable" : "disable"
+                                    }`}
                                   onClick={() => {
                                     setSelectedUser(user._id);
                                     setSelectedAction(
@@ -276,6 +300,100 @@ const ManageUsersPage = () => {
                         ))
                       )}
                     </tbody>
+                  </table>
+
+                  {console.log("modal:", modal, "modalContent:", modalContent)}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "orders" && (
+              <div className="manageusers-tab-content">
+                <div>
+                  <table className="muc-manageusers-table table-orders">
+                    <thead>
+                      <tr>
+                        <th>Order ID</th>
+                        <th>Order Date</th>
+                        <th>Item Name(s)</th>
+                        <th>Specifications</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Ordered By (Username)</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Payment Method</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {orderList.length === 0 ? (
+                        <tr><td colSpan="11">No orders found.</td></tr>
+                      ) : (
+                        orderList.map((order) => (
+                          <React.Fragment key={order.id}>
+                            <tr onClick={() => toggleExpandedOrder(order.id)}>
+                              <td>{order.orderId}</td> {/* Order ID */}
+                              <td>{order.date}</td> {/* Order Date */}
+                              <td>{order.items}</td> {/* Item Name(s) */}
+                              <td>{order.specifications}</td> {/* Specs */}
+                              <td>{order.quantity}</td> {/* Qty */}
+                              <td>PHP {order.price}</td> {/* Price */}
+                              <td>{order.placedBy}</td> {/* Username */}
+                              <td>{order.userEmail}</td> {/* Email */}
+                              <td> {/* Order Status */}
+                                <select value={order.status} onChange={(e) => updateStatus(order.id, e.target.value)}>
+                                  <option>Order Placed</option>
+                                  <option>Processing</option>
+                                  <option>Ready for Pickup</option>
+                                  <option>Order Completed</option>
+                                </select>
+                              </td>
+                              <td>{order.paymentMethod}</td>
+                              <td> {/* Actions */}
+                                <li className="action-li disable"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setModalContent("Edit");
+                                    toggleModal();
+                                  }
+                                  }>
+                                  Edit
+                                </li>
+                                <li className="action-li delete"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setAlertModalContent("Delete");
+                                    toggleAlertModal();
+                                  }}
+                                >
+                                  Delete
+                                </li>
+                              </td>
+                            </tr>
+
+                            {expandedOrder === order.id && (
+                              <tr className="order-details-row">
+                                <td colSpan="10">
+                                  <div className="order-details-container">
+                                    {order.items.map((item, idx) => (
+                                      <div key={idx} className="order-item">
+                                        <p><b>Item:</b> {item.name}</p>
+                                        <p><b>Specs:</b> {item.specs}</p>
+                                        <p><b>Qty:</b> {item.quantity}</p>
+                                        <p><b>Price:</b> PHP {item.price}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        ))
+                      )}
+                    </tbody>
+
                   </table>
 
                   {console.log("modal:", modal, "modalContent:", modalContent)}
@@ -321,9 +439,8 @@ const ManageUsersPage = () => {
                           <td>
                             <div className="td-action">
                               <li
-                                className={`action-li ${
-                                  staff.isDisabled ? "enable" : "disable"
-                                }`}
+                                className={`action-li ${staff.isDisabled ? "enable" : "disable"
+                                  }`}
                                 onClick={() => {
                                   setSelectedStaff(staff._id);
                                   setSelectedStaffAction(
@@ -448,15 +565,14 @@ const ManageUsersPage = () => {
                         }
                       }}
                       children={alertModalContent}
-                      className={`button-component--alert ${
-                        alertModalContent === "Disable"
-                          ? "alert-disable"
-                          : alertModalContent === "Delete"
+                      className={`button-component--alert ${alertModalContent === "Disable"
+                        ? "alert-disable"
+                        : alertModalContent === "Delete"
                           ? "alert-delete"
                           : alertModalContent === "Enable"
-                          ? "alert-enable"
-                          : ""
-                      }`}
+                            ? "alert-enable"
+                            : ""
+                        }`}
                     />
 
                     <Button
