@@ -370,7 +370,6 @@ const ManageUsersPage = () => {
                       )}
                     </tbody>
                   </table>{" "}
-                  {console.log("modal:", modal, "modalContent:", modalContent)}
                 </div>
               </div>
             )}{" "}
@@ -874,7 +873,6 @@ const ManageUsersPage = () => {
                       }
                     />
                   </div>
-                  {console.log(alertModalContent)}
                 </div>
               </div>
             </div>
