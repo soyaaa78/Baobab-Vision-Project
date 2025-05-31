@@ -2,7 +2,13 @@ import React, { useState, useEffect } from "react";
 import Button from "../components/Button";
 import "../styles/ManageUsersPage.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark, faCaretDown } from "@fortawesome/free-solid-svg-icons";
+import {
+  faXmark,
+  faCaretDown,
+  faSort,
+  faSortUp,
+  faSortDown,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 
 const ManageUsersPage = () => {
@@ -22,6 +28,7 @@ const ManageUsersPage = () => {
   const [selectedAction, setSelectedAction] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [selectedStaffAction, setSelectedStaffAction] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
 
   const [addStaffForm, setAddStaffForm] = useState({
@@ -30,7 +37,8 @@ const ManageUsersPage = () => {
     username: "",
     email: "",
     password: "",
-  });
+  }); // Add status filter state - default to pending
+  const [selectedStatus, setSelectedStatus] = useState("pending");
 
   const toggleAlertModal = () => {
     setAlertModal((prev) => !prev);
@@ -83,12 +91,17 @@ const ManageUsersPage = () => {
     };
     const fetchOrders = async () => {
       try {
-        const response = await axios.get(`${SERVER_URL}/api/orders`, {
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-          },
-        });
-        setOrderList(response.data);
+        const response = await axios.get(
+          `${SERVER_URL}/api/orders?index=true`,
+          {
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+            },
+          }
+        );
+        // Handle the response structure - check if it's response.data.order or response.data
+        const orders = response.data.order || response.data;
+        setOrderList(Array.isArray(orders) ? orders : [orders]);
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
@@ -158,7 +171,6 @@ const ManageUsersPage = () => {
     }
   };
 
-
   const handleAddStaffInputChange = (e) => {
     const { name, value } = e.target;
     setAddStaffForm((prev) => ({
@@ -167,10 +179,58 @@ const ManageUsersPage = () => {
     }));
   };
 
+  // Add function to update order status
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await axios.put(
+        `${SERVER_URL}/api/orders?id=${orderId}`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        }
+      );
+
+      // Refresh orders list
+      const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
+      const orders = response.data.order || response.data;
+      setOrderList(Array.isArray(orders) ? orders : [orders]);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+    }
+  };
+
+  // Add function to delete order
+  const deleteOrder = async (orderId) => {
+    try {
+      await axios.delete(`${SERVER_URL}/api/orders?id=${orderId}`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
+
+      // Refresh orders list
+      const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
+      const orders = response.data.order || response.data;
+      setOrderList(Array.isArray(orders) ? orders : [orders]);
+
+      toggleAlertModal();
+    } catch (error) {
+      console.error("Error deleting order:", error);
+    }
+  };
 
   const handleAddStaff = async (e) => {
     e.preventDefault();
-
 
     if (
       !addStaffForm.firstname ||
@@ -204,6 +264,14 @@ const ManageUsersPage = () => {
         alert("Failed to add staff member");
       }
     }
+  }; // Filter orders by selected status
+  const getFilteredOrders = () => {
+    return orderList.filter((order) => order.status === selectedStatus);
+  };
+
+  // Handle status filter change
+  const handleStatusChange = (status) => {
+    setSelectedStatus(status);
   };
 
   return (
@@ -269,8 +337,9 @@ const ManageUsersPage = () => {
                             <td>
                               <div className="td-action">
                                 <li
-                                  className={`action-li ${user.isDisabled ? "enable" : "disable"
-                                    }`}
+                                  className={`action-li ${
+                                    user.isDisabled ? "enable" : "disable"
+                                  }`}
                                   onClick={() => {
                                     setSelectedUser(user._id);
                                     setSelectedAction(
@@ -295,114 +364,310 @@ const ManageUsersPage = () => {
                                   Delete
                                 </li>
                               </div>
-                            </td>
+                            </td>{" "}
                           </tr>
                         ))
                       )}
                     </tbody>
-                  </table>
-
+                  </table>{" "}
                   {console.log("modal:", modal, "modalContent:", modalContent)}
                 </div>
               </div>
-            )}
-
+            )}{" "}
             {activeTab === "orders" && (
               <div className="manageusers-tab-content">
-                <div>
-                  <table className="muc-manageusers-table table-orders">
-                    <thead>
-                      <tr>
-                        <th>Order ID</th>
-                        <th>Order Date</th>
-                        <th>Item Name(s)</th>
-                        <th>Specifications</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Ordered By (Username)</th>
-                        <th>Email</th>
-                        <th>Status</th>
-                        <th>Payment Method</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
+                <div className="orders-container">
+                  {" "}
+                  {/* Status Filter Controls */}
+                  <div className="sort-controls">
+                    <div className="sort-controls-content">
+                      <span className="sort-label">Filter by status:</span>
+                      <div className="sort-buttons">
+                        <button
+                          onClick={() => handleStatusChange("pending")}
+                          className={`sort-btn ${
+                            selectedStatus === "pending" ? "active" : ""
+                          }`}
+                        >
+                          Pending
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange("paid")}
+                          className={`sort-btn ${
+                            selectedStatus === "paid" ? "active" : ""
+                          }`}
+                        >
+                          Paid
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange("preparing")}
+                          className={`sort-btn ${
+                            selectedStatus === "preparing" ? "active" : ""
+                          }`}
+                        >
+                          Preparing
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange("ready to pick up")}
+                          className={`sort-btn ${
+                            selectedStatus === "ready to pick up"
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Ready to Pick Up
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="table-wrapper">
+                    <table className="orders-table">
+                      <thead>
+                        <tr>
+                          <th>Order ID</th>
+                          <th>Order Date</th>
+                          <th>Customer</th>
+                          <th>Email</th>
+                          <th>Products</th>
+                          <th>Total Amount</th>
+                          <th>Status</th>
+                          <th>Payment Method</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>{" "}
+                      <tbody>
+                        {orderList.length === 0 ? (
+                          <tr>
+                            <td colSpan="9" className="no-data">
+                              No orders found.
+                            </td>
+                          </tr>
+                        ) : (
+                          getFilteredOrders().map((order) => {
+                            const orderDate = new Date(
+                              order.date || order.createdAt
+                            ).toLocaleDateString();
+                            const customerName = order.customer
+                              ? `${order.customer.firstname} ${order.customer.lastname}`
+                              : "N/A";
+                            const customerEmail =
+                              order.customer?.email || "N/A";
 
-                    <tbody>
-                      {orderList.length === 0 ? (
-                        <tr><td colSpan="11">No orders found.</td></tr>
-                      ) : (
-                        orderList.map((order) => {
-                          console.log(order.items);
-                          
-                          return (
-                            <React.Fragment key={order._id}>
-                            <tr onClick={() => toggleExpandedOrder(order.id)}>
-                              <td>{order.orderId}</td> {/* Order ID */}
-                              <td>{order.date}</td> {/* Order Date */}
-                              <td>{order.items.map(item => item.name).join(', ')}</td> {/* Item Name(s) */}
-                              <td>{order.specifications}</td> {/* Specs */}
-                              <td>{order.quantity}</td> {/* Qty */}
-                              <td>PHP {order.price}</td> {/* Price */}
-                              <td>{order.placedBy}</td> {/* Username */}
-                              <td>{order.userEmail}</td> {/* Email */}
-                              <td> {/* Order Status */}
-                                <select value={order.status} onChange={(e) => updateStatus(order.id, e.target.value)}>
-                                  <option>Order Placed</option>
-                                  <option>Processing</option>
-                                  <option>Ready for Pickup</option>
-                                  <option>Order Completed</option>
-                                </select>
-                              </td>
-                              <td>{order.paymentMethod}</td>
-                              <td> {/* Actions */}
-                                <li className="action-li disable"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setModalContent("Edit");
-                                    toggleModal();
-                                  }
-                                  }>
-                                  Edit
-                                </li>
-                                <li className="action-li delete"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setAlertModalContent("Delete");
-                                    toggleAlertModal();
-                                  }}
+                            // Status badge styling
+                            const getStatusBadge = (status) => {
+                              switch (status) {
+                                case "pending":
+                                  return "status-badge pending";
+                                case "paid":
+                                  return "status-badge paid";
+                                case "preparing":
+                                  return "status-badge preparing";
+                                case "ready to pick up":
+                                  return "status-badge ready";
+                                default:
+                                  return "status-badge default";
+                              }
+                            };
+
+                            return (
+                              <React.Fragment key={order._id}>
+                                <tr
+                                  onClick={() => toggleExpandedOrder(order._id)}
+                                  className="order-row"
                                 >
-                                  Delete
-                                </li>
-                              </td>
-                            </tr>
+                                  <td className="order-id">
+                                    {order._id.slice(-8)}...
+                                  </td>
+                                  <td>{orderDate}</td>
+                                  <td>{customerName}</td>
+                                  <td className="customer-email">
+                                    {customerEmail}
+                                  </td>
+                                  <td>
+                                    <span className="product-count-badge">
+                                      {order.products?.length > 0
+                                        ? `${order.products.length} item(s)`
+                                        : "No products"}
+                                    </span>
+                                  </td>
+                                  <td className="total-amount">
+                                    ₱{order.totalAmount}
+                                  </td>
+                                  <td>
+                                    <select
+                                      value={order.status}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        updateOrderStatus(
+                                          order._id,
+                                          e.target.value
+                                        );
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="status-select"
+                                    >
+                                      <option value="pending">Pending</option>
+                                      <option value="paid">Paid</option>
+                                      <option value="preparing">
+                                        Preparing
+                                      </option>
+                                      <option value="ready to pick up">
+                                        Ready to Pick Up
+                                      </option>
+                                    </select>
+                                  </td>
+                                  <td>{order.paymentMethod || "N/A"}</td>
+                                  <td>
+                                    <button
+                                      className="action-li delete"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedOrder(order._id);
+                                        setSelectedAction("Delete");
+                                        setAlertModalContent("Delete");
+                                        toggleAlertModal();
+                                      }}
+                                    >
+                                      Delete
+                                    </button>
+                                  </td>
+                                </tr>
 
-                            {expandedOrder === order.id && (
-                              <tr className="order-details-row">
-                                <td colSpan="10">
-                                  <div className="order-details-container">
-                                    {order.items.map((item, idx) => (
-                                      <div key={idx} className="order-item">
-                                        <p><b>Item:</b> {item.name}</p>
-                                        <p><b>Specs:</b> {item.specs}</p>
-                                        <p><b>Qty:</b> {item.quantity}</p>
-                                        <p><b>Price:</b> PHP {item.price}</p>
+                                {expandedOrder === order._id && (
+                                  <tr className="order-details-row">
+                                    <td colSpan="9">
+                                      <div className="order-details-panel">
+                                        <div className="order-details-grid">
+                                          <div className="order-info-section">
+                                            <h4 className="section-title">
+                                              <svg
+                                                className="section-icon"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                              </svg>
+                                              Order Details
+                                            </h4>
+                                            <div className="detail-list">
+                                              <div className="detail-item">
+                                                <span className="detail-label">
+                                                  Address:
+                                                </span>
+                                                <span className="detail-value">
+                                                  {order.address || "N/A"}
+                                                </span>
+                                              </div>
+                                              <div className="detail-item">
+                                                <span className="detail-label">
+                                                  Contact:
+                                                </span>
+                                                <span className="detail-value">
+                                                  {order.contactNumber || "N/A"}
+                                                </span>
+                                              </div>
+                                              <div className="detail-item">
+                                                <span className="detail-label">
+                                                  Order Date:
+                                                </span>
+                                                <span className="detail-value">
+                                                  {new Date(
+                                                    order.date ||
+                                                      order.createdAt
+                                                  ).toLocaleString()}
+                                                </span>
+                                              </div>
+                                              <div className="detail-item">
+                                                <span className="detail-label">
+                                                  Status:
+                                                </span>
+                                                <span
+                                                  className={getStatusBadge(
+                                                    order.status
+                                                  )}
+                                                >
+                                                  {order.status}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="products-section">
+                                            <h4 className="section-title">
+                                              <svg
+                                                className="section-icon"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                              </svg>
+                                              Products (
+                                              {order.products?.length || 0})
+                                            </h4>
+                                            <div className="products-list">
+                                              {order.products?.map(
+                                                (product, idx) => (
+                                                  <div
+                                                    key={idx}
+                                                    className="product-card"
+                                                  >
+                                                    <div className="product-info">
+                                                      <div className="product-details">
+                                                        <p className="product-name">
+                                                          {product.productId
+                                                            ?.name ||
+                                                            "Unknown Product"}
+                                                        </p>
+                                                        <p className="product-spec">
+                                                          Color: {product.color}
+                                                        </p>
+                                                        <p className="product-spec">
+                                                          Lens: {product.lens}
+                                                        </p>
+                                                      </div>
+                                                      <div className="product-pricing">
+                                                        <p className="product-qty">
+                                                          Qty:{" "}
+                                                          {product.quantity}
+                                                        </p>
+                                                        <p className="product-price">
+                                                          ₱{product.price}
+                                                        </p>
+                                                        <p className="product-total">
+                                                          ₱
+                                                          {product.price *
+                                                            product.quantity}
+                                                        </p>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                )
+                                              ) || (
+                                                <p className="no-products">
+                                                  No products found
+                                                </p>
+                                              )}
+                                            </div>
+                                            <div className="order-total">
+                                              <div className="total-row">
+                                                <span className="total-label">
+                                                  Total:
+                                                </span>
+                                                <span className="total-value">
+                                                  ₱{order.totalAmount}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
                                       </div>
-                                    ))}
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
-                          )
-                        })
-                      )}
-                          
-                    </tbody>
-
-                  </table>
-
-                  
-                  {console.log("modal:", modal, "modalContent:", modalContent)}
+                                    </td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
@@ -445,8 +710,9 @@ const ManageUsersPage = () => {
                           <td>
                             <div className="td-action">
                               <li
-                                className={`action-li ${staff.isDisabled ? "enable" : "disable"
-                                  }`}
+                                className={`action-li ${
+                                  staff.isDisabled ? "enable" : "disable"
+                                }`}
                                 onClick={() => {
                                   setSelectedStaff(staff._id);
                                   setSelectedStaffAction(
@@ -479,7 +745,6 @@ const ManageUsersPage = () => {
                 </table>
               </div>
             )}
-
             <div
               className={`alert-modal-container ${alertModal ? "active" : ""}`}
             >
@@ -487,8 +752,16 @@ const ManageUsersPage = () => {
               <div
                 className={`alert-modal-content ${alertModal ? "active" : ""}`}
               >
+                {" "}
                 <div className="alert-modal-content-header">
-                  <h2>{alertModalContent} User Account</h2>
+                  <h2>
+                    {alertModalContent}{" "}
+                    {activeTab === "orders"
+                      ? "Order"
+                      : activeTab === "staff"
+                      ? "Staff Account"
+                      : "User Account"}
+                  </h2>
                   <li
                     className="action-li close"
                     onClick={() => toggleAlertModal()}
@@ -496,7 +769,6 @@ const ManageUsersPage = () => {
                     <FontAwesomeIcon icon={faXmark} />
                   </li>
                 </div>
-
                 <div className="alert-modal-content-body">
                   {alertModalContent === "Disable" && (
                     <div className="amcb-disable">
@@ -514,16 +786,23 @@ const ManageUsersPage = () => {
                         the account later if needed.
                       </p>
                     </div>
-                  )}
-
+                  )}{" "}
                   {alertModalContent === "Delete" && (
                     <div className="amcb-delete">
                       <p>
-                        You are about to <b>delete</b> this staff account.
+                        You are about to <b>delete</b> this{" "}
+                        {activeTab === "orders"
+                          ? "order"
+                          : activeTab === "staff"
+                          ? "staff account"
+                          : "user account"}
+                        .
                       </p>
                       <br />
                       <p>
-                        Deletion of accounts is permanent. This action is{" "}
+                        {activeTab === "orders"
+                          ? "Deletion of orders is permanent. This action is"
+                          : "Deletion of accounts is permanent. This action is"}{" "}
                         <b>
                           <u>NOT reversible</u>
                         </b>{" "}
@@ -531,7 +810,6 @@ const ManageUsersPage = () => {
                       </p>
                     </div>
                   )}
-
                   {alertModalContent === "Enable" && (
                     <div className="amcb-enable">
                       <p>
@@ -549,11 +827,10 @@ const ManageUsersPage = () => {
                       </p>
                     </div>
                   )}
-
                   <div className="amcb-continue-cta">
                     <p>
                       <i>Continue?</i>
-                    </p>
+                    </p>{" "}
                     <Button
                       onClick={() => {
                         if (
@@ -568,19 +845,25 @@ const ManageUsersPage = () => {
                           selectedStaffAction
                         ) {
                           handleStaffAction(selectedStaff, selectedStaffAction);
+                        } else if (
+                          activeTab === "orders" &&
+                          selectedOrder &&
+                          selectedAction === "Delete"
+                        ) {
+                          deleteOrder(selectedOrder);
                         }
                       }}
                       children={alertModalContent}
-                      className={`button-component--alert ${alertModalContent === "Disable"
-                        ? "alert-disable"
-                        : alertModalContent === "Delete"
+                      className={`button-component--alert ${
+                        alertModalContent === "Disable"
+                          ? "alert-disable"
+                          : alertModalContent === "Delete"
                           ? "alert-delete"
                           : alertModalContent === "Enable"
-                            ? "alert-enable"
-                            : ""
-                        }`}
+                          ? "alert-enable"
+                          : ""
+                      }`}
                     />
-
                     <Button
                       onClick={toggleAlertModal}
                       className="button-component--alert"
@@ -591,12 +874,10 @@ const ManageUsersPage = () => {
                       }
                     />
                   </div>
-
                   {console.log(alertModalContent)}
                 </div>
               </div>
             </div>
-
             <div className={`modal-container ${modal ? "active" : ""}`}>
               <div className={`modal-overlay ${modal ? "active" : ""}`} />
               <div className={`modal-content ${modal ? "show" : ""}`}>
