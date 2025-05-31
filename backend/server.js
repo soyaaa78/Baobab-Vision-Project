@@ -41,10 +41,16 @@ app.use((req, res, next) => {
   next();
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.log('MongoDB connection error:', err));
+// Connect to MongoDB with proper index control
+mongoose.connect(process.env.MONGO_URI, {
+  autoIndex: process.env.NODE_ENV !== 'production' // ✅ disables auto-indexing in production
+})
+.then(async () => {
+  console.log('✅ MongoDB connected');
+  await dropLegacyFirstnameIndex(); // ✅ clean legacy index if it exists
+})
+.catch(err => console.log('❌ MongoDB connection error:', err));
+
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
@@ -71,3 +77,19 @@ const seedSuperAdmin = async () => {
 };
 
 seedSuperAdmin();
+
+const dropLegacyFirstnameIndex = async () => {
+  try {
+    const indexInfo = await mongoose.connection.db.collection('users').indexInformation({ full: true });
+
+    const hasFirstnameIndex = indexInfo.some(index => index.name === 'firstname_1');
+    if (hasFirstnameIndex) {
+      await mongoose.connection.db.collection('users').dropIndex('firstname_1');
+      console.log('🧹 Dropped legacy unique index on firstname');
+    } else {
+      console.log('ℹ️ No legacy firstname index to drop');
+    }
+  } catch (err) {
+    console.error('⚠️ Error checking/dropping firstname index:', err.message);
+  }
+};

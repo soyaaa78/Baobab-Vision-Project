@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:baobab_vision_project/constants.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EmailOtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -41,33 +42,66 @@ class _EmailOtpVerificationScreenState
   }
 
   Future<void> _verifyOtp() async {
-    if (_otp.length != 6 || _otp.contains(RegExp(r'[^0-9]'))) {
-      _showSnackBar('Enter all 6 digits');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:3001/api/auth/verify-email-otp'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': widget.email, 'otp': _otp}),
-      );
-
-      final res = jsonDecode(response.body);
-      setState(() => _isLoading = false);
-
-      if (response.statusCode == 200) {
-        Navigator.pushReplacementNamed(context, '/home');
-      } else {
-        _showSnackBar(res['message'] ?? 'Invalid or expired OTP');
-      }
-    } catch (e) {
-      setState(() => _isLoading = false);
-      _showSnackBar('Verification failed. Try again.');
-    }
+  if (_otp.length != 6 || _otp.contains(RegExp(r'[^0-9]'))) {
+    _showSnackBar('Enter all 6 digits');
+    return;
   }
+
+  setState(() => _isLoading = true);
+
+  try {
+    final response = await http.post(
+      Uri.parse('http://10.0.2.2:3001/api/auth/verify-email-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': widget.email, 'otp': _otp}),
+    );
+
+    final res = jsonDecode(response.body);
+
+    if (response.statusCode == 200) {
+      // ✅ Now fetch profile after successful verification
+      final token = res['token'];
+      if (token != null) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        final profileRes = await http.get(
+          Uri.parse('http://10.0.2.2:3001/api/user/profile'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+        );
+
+        if (profileRes.statusCode == 200) {
+          final profileData = jsonDecode(profileRes.body);
+
+          await prefs.setString('firstname', profileData['firstname'] ?? '');
+          await prefs.setString('lastname', profileData['lastname'] ?? '');
+          await prefs.setString('email', profileData['email'] ?? '');
+
+          if (profileData['profileImage'] != null && profileData['profileImage'].toString().isNotEmpty) {
+            String imgPath = profileData['profileImage'];
+            if (imgPath.startsWith('/')) imgPath = imgPath.substring(1);
+            await prefs.setString('profileImageUrl', 'http://10.0.2.2:3001/$imgPath');
+          } else {
+            await prefs.remove('profileImageUrl');
+          }
+        }
+      }
+
+      setState(() => _isLoading = false);
+      Navigator.pushReplacementNamed(context, '/home'); // ✅ Safe to navigate now
+    } else {
+      setState(() => _isLoading = false);
+      _showSnackBar(res['message'] ?? 'Invalid or expired OTP');
+    }
+  } catch (e) {
+    setState(() => _isLoading = false);
+    _showSnackBar('Verification failed. Try again.');
+  }
+}
+
 
   Future<void> _resendOtp() async {
     try {
