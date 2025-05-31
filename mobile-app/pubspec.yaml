@@ -63,6 +63,7 @@ flutter:
     - assets/images/event2.jpg
     - assets/images/try_eyewear.png
     - assets/images/default_profile_icon.jpg
+    - assets/images/gcash.png
 
   fonts:
     - family: Poppins

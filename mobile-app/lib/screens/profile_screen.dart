@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:baobab_vision_project/screens/edit_profile_screen.dart';
 import 'package:baobab_vision_project/screens/privacy_policy_screen.dart';
+import 'package:baobab_vision_project/screens/pending_orders_screen.dart';
+import 'package:baobab_vision_project/screens/processing_orders_screen.dart';
+import 'package:baobab_vision_project/screens/ready_for_pickup_orders_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
@@ -152,11 +155,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }),
                   _buildSettingsOption(Icons.receipt_long, 'Completed Purchases', () {}),
                   _buildSettingsOption(Icons.lock_outline, 'Privacy Policy', () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
-  );
-}),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                    );
+                  }),
                   _buildSettingsOption(Icons.help_outline, 'Help Centre', () {}),
                   Padding(
                     padding: EdgeInsets.only(top: 6.h),
@@ -218,9 +221,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildOrdersSection() {
     final orders = [
-      {'icon': Icons.payment, 'label': 'Pending'},
-      {'icon': Icons.shopping_cart, 'label': 'Processing'},
-      {'icon': Icons.local_shipping, 'label': 'Ready for Pick-up'},
+      {'icon': Icons.payment, 'label': 'Pending', 'screen': const PendingOrdersScreen()},
+      {'icon': Icons.shopping_cart, 'label': 'Processing', 'screen': const ProcessingOrdersScreen()},
+      {'icon': Icons.local_shipping, 'label': 'Ready for Pick-up', 'screen': const ReadyForPickupOrdersScreen()},
     ];
 
     return Padding(
@@ -244,21 +247,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
             crossAxisSpacing: 6.w,
             childAspectRatio: 0.95,
             children: orders.map((order) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  CircleAvatar(
-                    backgroundColor: Colors.grey.shade100,
-                    radius: 21.r,
-                    child: Icon(order['icon'] as IconData, color: BLACK_COLOR, size: 18.sp),
-                  ),
-                  SizedBox(height: 3.h),
-                  CustomText(
-                    text: order['label'].toString(),
-                    fontSize: 12.sp,
-                    color: Colors.black,
-                  ),
-                ],
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => order['screen'] as Widget),
+                  );
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Colors.grey.shade100,
+                      radius: 21.r,
+                      child: Icon(order['icon'] as IconData, color: BLACK_COLOR, size: 18.sp),
+                    ),
+                    SizedBox(height: 3.h),
+                    CustomText(
+                      text: order['label'].toString(),
+                      fontSize: 12.sp,
+                      color: Colors.black,
+                    ),
+                  ],
+                ),
               );
             }).toList(),
           ),

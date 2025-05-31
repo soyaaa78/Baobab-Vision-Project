@@ -4,6 +4,7 @@ import 'package:baobab_vision_project/models/productModel.dart';
 import 'package:baobab_vision_project/screens/detail_screen.dart';
 import 'package:baobab_vision_project/screens/recommender_screen.dart';
 import 'package:baobab_vision_project/screens/vto_screen.dart';
+import 'package:baobab_vision_project/screens/profile_screen.dart'; // Added import for ProfileScreen
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
@@ -27,6 +28,8 @@ class _ShopScreenState extends State<ShopScreen> {
   List<dynamic> forYou = [];
   List<String> slideshowImages = [];
   bool _isLoadingUser = true;
+
+  String? profileImageUrl; // Added to hold profile image URL
 
   late PageController _pageController;
   int _currentPage = 0;
@@ -66,13 +69,13 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> _loadUserInfo() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    
+
     setState(() {
       firstname = prefs.getString('firstname') ?? 'Guest';
-       _isLoadingUser = false;
       token = prefs.getString('token') ?? '';
       userId = prefs.getString('userId') ?? '';
-      
+      profileImageUrl = prefs.getString('profileImageUrl'); // Load profile image URL here
+      _isLoadingUser = false;
     });
   }
 
@@ -113,8 +116,6 @@ class _ShopScreenState extends State<ShopScreen> {
     }
   }
 
-
-
   // Build pagination dots
   Widget buildDot(int index, BuildContext context) {
     return Container(
@@ -130,6 +131,15 @@ class _ShopScreenState extends State<ShopScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ImageProvider profileImageProvider;
+
+    if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
+      profileImageProvider = NetworkImage(profileImageUrl!);
+    } else {
+      profileImageProvider =
+          const AssetImage('assets/images/default_profile_icon.jpg');
+    }
+
     return SingleChildScrollView(
       child: Container(
         margin: EdgeInsets.fromLTRB(
@@ -142,38 +152,62 @@ class _ShopScreenState extends State<ShopScreen> {
         width: ScreenUtil().screenWidth,
         child: Column(
           children: [
-            // Header Section
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Image.asset(
-                'assets/images/baobab_logo.png',
-                width: ScreenUtil().setSp(130),
-                height: ScreenUtil().setSp(60),
-              ),
-            ),
-            SizedBox(height: ScreenUtil().setHeight(5)),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: _isLoadingUser
-  ? CircularProgressIndicator()
-  : CustomText(
-      text: 'Good day, ${firstname.isNotEmpty ? firstname : 'Guest'}',
-      fontSize: ScreenUtil().setSp(20),
-      color: BLACK_COLOR,
-      fontWeight: FontWeight.w900,
-    ),
+            // Header Row with logo, greeting, and profile picture
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Logo & Greeting in Column
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset(
+                      'assets/images/baobab_logo.png',
+                      width: ScreenUtil().setSp(130),
+                      height: ScreenUtil().setSp(60),
+                    ),
+                    SizedBox(height: ScreenUtil().setHeight(5)),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _isLoadingUser
+                          ? CircularProgressIndicator()
+                          : CustomText(
+                              text:
+                                  'Good day, ${firstname.isNotEmpty ? firstname : 'Guest'}',
+                              fontSize: ScreenUtil().setSp(20),
+                              color: BLACK_COLOR,
+                              fontWeight: FontWeight.w900,
+                            ),
+                    ),
+                    SizedBox(height: ScreenUtil().setHeight(3)),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: CustomText(
+                        text: 'Ready to see the Future?',
+                        fontSize: ScreenUtil().setSp(12),
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
 
+                // Profile Picture clickable avatar on the right
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const ProfileScreen()),
+                    );
+                  },
+                  child: CircleAvatar(
+                    radius: ScreenUtil().setSp(25),
+                    backgroundImage: profileImageProvider,
+                    backgroundColor: Colors.grey.shade200,
+                  ),
+                ),
+              ],
+            ),
 
-            ),
-            SizedBox(height: ScreenUtil().setHeight(3)),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: CustomText(
-                text: 'Ready to see the Future?',
-                fontSize: ScreenUtil().setSp(12),
-                color: Colors.grey,
-              ),
-            ),
             SizedBox(height: ScreenUtil().setHeight(10)),
 
             // Virtual Try-On & Recommender Buttons
@@ -204,7 +238,8 @@ class _ShopScreenState extends State<ShopScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add_a_photo, size: 36, color: WHITE_COLOR),
+                          Icon(Icons.add_a_photo,
+                              size: 36, color: WHITE_COLOR),
                           SizedBox(height: 8),
                           Text(
                             'Virtual Try-On',
@@ -332,51 +367,52 @@ class _ShopScreenState extends State<ShopScreen> {
                   var product = forYou[index];
 
                   // Safely handling the product image URLs and fallback
-                  List<String> productImages = (product['imageUrls'] != null &&
-                          product['imageUrls'] is List)
-                      ? List<String>.from(product['imageUrls'])
-                      : [
-                          'https://example.com/fallback-image.jpg'
-                        ]; // Fallback image
+                  List<String> productImages =
+                      (product['imageUrls'] != null &&
+                              product['imageUrls'] is List)
+                          ? List<String>.from(product['imageUrls'])
+                          : [
+                              'https://example.com/fallback-image.jpg'
+                            ]; // Fallback image
 
                   return Padding(
-                    padding: EdgeInsets.only(right: ScreenUtil().setWidth(10)),
+                    padding:
+                        EdgeInsets.only(right: ScreenUtil().setWidth(10)),
                     child: CustomVerticalProductCard(
-  prodName: product['name'] ?? 'Unknown',
-  prodSize: '${product['stock']} pcs Available',
-  prodPrice: '${product['price']} PHP',
-  numStars: product['numStars'] ?? 0,
-  quantity: product['stock'] ?? 1,
-  description: product['description'] ?? '',
-  prodImages: productImages,
-  productId: product['_id'] ?? product['productId'] ?? '',
+                      prodName: product['name'] ?? 'Unknown',
+                      prodSize: '${product['stock']} pcs Available',
+                      prodPrice: '${product['price']} PHP',
+                      numStars: product['numStars'] ?? 0,
+                      quantity: product['stock'] ?? 1,
+                      description: product['description'] ?? '',
+                      prodImages: productImages,
+                      productId: product['_id'] ?? product['productId'] ?? '',
 
-  // ✅ These two were missing
-  colorOptions: (product['colorOptions'] as List<dynamic>? ?? [])
-      .map((e) => ColorOption.fromJson(e))
-      .toList(),
+                      // ✅ These two were missing
+                      colorOptions: (product['colorOptions'] as List<dynamic>? ??
+                              [])
+                          .map((e) => ColorOption.fromJson(e))
+                          .toList(),
 
-  lensOptions: (product['lensOptions'] as List<dynamic>? ?? [])
-      .map((e) => LensOption.fromJson(e))
-      .toList(),
+                      lensOptions: (product['lensOptions'] as List<dynamic>? ?? [])
+                          .map((e) => LensOption.fromJson(e))
+                          .toList(),
 
-  // ✅ Optional defaults if you also added selected fields
-  selectedColorName: (product['colorOptions'] != null &&
-                    product['colorOptions'] is List &&
-                    product['colorOptions'].isNotEmpty &&
-                    product['colorOptions'][0]['colorName'] != null)
-    ? product['colorOptions'][0]['colorName'] as String
-    : 'Default',
+                      // ✅ Optional defaults if you also added selected fields
+                      selectedColorName: (product['colorOptions'] != null &&
+                              product['colorOptions'] is List &&
+                              product['colorOptions'].isNotEmpty &&
+                              product['colorOptions'][0]['colorName'] != null)
+                          ? product['colorOptions'][0]['colorName'] as String
+                          : 'Default',
 
-selectedLensLabel: (product['lensOptions'] != null &&
-                    product['lensOptions'] is List &&
-                    product['lensOptions'].isNotEmpty &&
-                    product['lensOptions'][0]['label'] != null)
-    ? product['lensOptions'][0]['label'] as String
-    : 'Default',
-
-),
-
+                      selectedLensLabel: (product['lensOptions'] != null &&
+                              product['lensOptions'] is List &&
+                              product['lensOptions'].isNotEmpty &&
+                              product['lensOptions'][0]['label'] != null)
+                          ? product['lensOptions'][0]['label'] as String
+                          : 'Default',
+                    ),
                   );
                 },
               ),
