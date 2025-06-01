@@ -1,6 +1,6 @@
 const express = require("express");
-const router = express.Router();
 const Order = require("../models/Order");
+const Product = require("../models/Products");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 
@@ -52,6 +52,7 @@ const order_post = catchAsync(async (req, res, next) => {
       return sum + quantity * price;
     }, 0);
   }
+
   const newOrder = new Order({
     customer,
     products,
@@ -61,8 +62,19 @@ const order_post = catchAsync(async (req, res, next) => {
     totalAmount,
     paymentMethod,
   });
-
   await newOrder.save();
+
+  if (Array.isArray(products)) {
+    for (const item of products) {
+      if (item.productId) {
+        await Product.findByIdAndUpdate(
+          item.productId,
+          { $inc: { sales: item.quantity || 1 } },
+          { new: true }
+        );
+      }
+    }
+  }
 
   return res
     .status(201)

@@ -243,3 +243,47 @@ exports.recommendEyewear = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+exports.getProductStatistics = async (req, res) => {
+  try {
+    const { limit = 10, sortBy = "sales" } = req.query;
+
+    const bestSellingProducts = await Product.find()
+      .select("name sales price imageUrls")
+      .sort({ [sortBy]: -1 })
+      .limit(parseInt(limit));
+
+    const totalStats = await Product.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalProducts: { $sum: 1 },
+          totalSales: { $sum: "$sales" },
+          averageSales: { $avg: "$sales" },
+          maxSales: { $max: "$sales" },
+          minSales: { $min: "$sales" },
+        },
+      },
+    ]);
+
+    const neverSoldCount = await Product.countDocuments({ sales: 0 });
+
+    res.status(200).json({
+      message: "Product statistics retrieved successfully",
+      data: {
+        bestSellingProducts,
+        totalStats: totalStats[0] || {
+          totalProducts: 0,
+          totalSales: 0,
+          averageSales: 0,
+          maxSales: 0,
+          minSales: 0,
+        },
+        neverSoldCount,
+      },
+    });
+  } catch (err) {
+    console.error("Error getting product statistics:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
