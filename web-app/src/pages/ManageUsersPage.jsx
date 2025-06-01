@@ -382,6 +382,7 @@ const ManageUsersPage = () => {
                     <div className="sort-controls-content">
                       <span className="sort-label">Filter by status:</span>
                       <div className="sort-buttons">
+                        {" "}
                         <button
                           onClick={() => handleStatusChange("pending")}
                           className={`sort-btn ${
@@ -389,14 +390,6 @@ const ManageUsersPage = () => {
                           }`}
                         >
                           Pending
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange("paid")}
-                          className={`sort-btn ${
-                            selectedStatus === "paid" ? "active" : ""
-                          }`}
-                        >
-                          Paid
                         </button>
                         <button
                           onClick={() => handleStatusChange("preparing")}
@@ -457,8 +450,6 @@ const ManageUsersPage = () => {
                               switch (status) {
                                 case "pending":
                                   return "status-badge pending";
-                                case "paid":
-                                  return "status-badge paid";
                                 case "preparing":
                                   return "status-badge preparing";
                                 case "ready to pick up":
@@ -506,7 +497,6 @@ const ManageUsersPage = () => {
                                       className="status-select"
                                     >
                                       <option value="pending">Pending</option>
-                                      <option value="paid">Paid</option>
                                       <option value="preparing">
                                         Preparing
                                       </option>
