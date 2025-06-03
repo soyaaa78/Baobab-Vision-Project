@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
 import Button from "./Button";
 
-function Navbar() {
+const Navbar = () => {
+
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/');
+  };
+
   return (
     <nav className="navigation">
       <div className="nav-content">
@@ -33,7 +41,7 @@ function Navbar() {
               Manage Users
             </Link>
           </li>
-          <Button /* onClick={} */ children={(<div>
+          <Button onClick={handleLogout} children={(<div>
             <p>Log Out</p>
           </div>)} />
         </ul>

@@ -1,4 +1,5 @@
 import "./App.css";
+import RequireAuth from "./components/RequireAuth";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Layout from "./components/Layout";
 import ErrorPage from "./pages/ErrorPage";
@@ -19,36 +20,20 @@ const routes = [
   },
   {
     path: "/dashboard",
-    element: <Layout />,
+    element: <RequireAuth />,
     errorElement: <ErrorPage />,
     children: [
       {
-        path: "",
-        element: <HomePage />,
-      },
-      {
-        path: "catalogue",
-        element: <EyeglassCataloguePage />,
-      },
-      {
-        path: "eyeglasses/:id",
-        element: <EyeglassPage />,
-      },
-      {
-        path: "addeyeglasses",
-        element: <AddEyeglassPage />,
-      },
-      {
-        path: "editeyeglasses/:id",
-        element: <EditEyeglassPage />,
-      },
-      {
-        path: "statistics",
-        element: <StatisticsPage />,
-      },
-      {
-        path: "manageusers",
-        element: <ManageUsersPage />,
+        element: <Layout />,
+        children: [
+          { path: "", element: <HomePage /> },
+          { path: "catalogue", element: <EyeglassCataloguePage /> },
+          { path: "eyeglasses/:id", element: <EyeglassPage /> },
+          { path: "addeyeglasses", element: <AddEyeglassPage /> },
+          { path: "editeyeglasses/:id", element: <EditEyeglassPage /> },
+          { path: "statistics", element: <StatisticsPage /> },
+          { path: "manageusers", element: <ManageUsersPage /> },
+        ],
       },
     ],
   },

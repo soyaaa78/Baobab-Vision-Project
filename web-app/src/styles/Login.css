@@ -11,11 +11,6 @@
     display: flex;
 }
 
-@media screen and (min-width: 345px) {
-    .yellowbox {
-        display: none;
-    }
-}
 
 .yellowbox {
     background-color: #FFBD6E;
@@ -105,3 +100,9 @@
     border: 1px solid #badbcc;
   }
   
+
+  @media screen and (max-width: 945px) {
+    .yellowbox {
+        display: none;
+    }
+}

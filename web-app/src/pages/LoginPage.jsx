@@ -160,8 +160,7 @@ function LoginPage() {
             </div>
           </form>
         )}
-
-        {/* ✅ Message block positioned below the form */}
+        
         {(error || success) && (
           <div className="form-message-box">
             {error && <p className="form-error">{error}</p>}

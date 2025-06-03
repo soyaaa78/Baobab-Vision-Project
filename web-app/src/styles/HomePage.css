@@ -148,7 +148,7 @@
   }
 }
 
-@media screen and (max-width: 1346px) {
+@media screen and (max-width: 1346px), screen and (max-height: 885px) {
   .preview-items > *:nth-child(n+5) {
     display: none;
   }
