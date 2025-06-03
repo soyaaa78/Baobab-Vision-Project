@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import baobablogo from "../assets/bvfull.png";
 import "../styles/Login.css";
 import axios from "axios";
@@ -13,6 +14,14 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
+  const { login, isAuthenticated, loading } = useAuth();
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, loading, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -36,11 +45,8 @@ function LoginPage() {
         setError("Your account is disabled. Please contact support.");
         return;
       }
-
       const { token, role } = res.data;
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role);
-
+      login(token, role);
       navigate("/dashboard");
     } catch (err) {
       const res = err.response;
@@ -66,13 +72,11 @@ function LoginPage() {
           otp,
         }
       );
-
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.role);
+      login(res.data.token, res.data.role);
       localStorage.removeItem("pendingEmail");
 
       setSuccess("Account successfully verified!");
-      setTimeout(() => navigate("/dashboard/home"), 1500);
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (err) {
       setError(err.response?.data?.message || "Verification failed");
     }

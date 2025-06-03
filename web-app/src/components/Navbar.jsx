@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
 import Button from "./Button";
 
-const Navbar = () => {
-
-  const navigate = useNavigate();
+function Navbar() {
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/');
+    logout();
   };
 
   return (
@@ -40,10 +39,15 @@ const Navbar = () => {
             <Link to="manageusers" className="nav-button">
               Manage Users
             </Link>
-          </li>
-          <Button onClick={handleLogout} children={(<div>
-            <p>Log Out</p>
-          </div>)} />
+          </li>{" "}
+          <Button
+            onClick={handleLogout}
+            children={
+              <div>
+                <p>Log Out</p>
+              </div>
+            }
+          />
         </ul>
       </div>
     </nav>

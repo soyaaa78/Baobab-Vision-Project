@@ -9,6 +9,7 @@ const {
   deleteProduct,
   recommendEyewear,
   getFaceShapeStats,
+  getProductStatistics,
 } = require("../controllers/productController");
 
 // Create product (POST /api/products)
@@ -28,6 +29,8 @@ router.post("/recommend", recommendEyewear);
 
 // Add face shape statistics endpoint
 router.get("/face-shape-stats", getFaceShapeStats);
+
+router.get("/order-stats", getProductStatistics);
 
 router.post("/recommend", recommendEyewear);
 
