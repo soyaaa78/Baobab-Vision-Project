@@ -78,7 +78,7 @@ function LoginPage() {
       setSuccess("Account successfully verified!");
       setTimeout(() => navigate("/dashboard"), 1500);
     } catch (err) {
-      setError(err.response?.data?.message || "Verification failed");
+      setError(err.response?.data?.message || "Verification failed.");
     }
   };
 
@@ -91,7 +91,7 @@ function LoginPage() {
       });
       setSuccess("Verification code resent to your email.");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to resend code");
+      setError(err.response?.data?.message || "Failed to resend code.");
     }
   };
 
@@ -103,13 +103,23 @@ function LoginPage() {
         </div>
 
         <div className="main-body">
-          <div className="yellowbox">
+
+          <div className="yellowbox-text mobile-only">
+            <h1>{step === "login" ? "Staff Login" : "Email Verification"}</h1>
+            <p>
+              {step === "login"
+                ? "Heya, bud. Ready to take on the world?"
+                : `OTP has been sent to ${email}.`}
+            </p>
+          </div>
+
+          <div className="yellowbox desktop-only">
             <div className="yellowbox-text">
               <h1>{step === "login" ? "Staff Login" : "Email Verification"}</h1>
               <p>
                 {step === "login"
                   ? "Heya, bud. Ready to take on the world?"
-                  : `OTP sent to ${email}`}
+                  : `OTP has been sent to ${email}.`}
               </p>
             </div>
           </div>
@@ -137,6 +147,12 @@ function LoginPage() {
               <div className="submit-container">
                 <input type="submit" value="SIGN IN" className="submit-button" />
               </div>
+              {(error || success) && (
+                <div className="form-message-box">
+                  {error && <p className="form-error">{error}</p>}
+                  {success && <p className="form-success">{success}</p>}
+                </div>
+              )}
             </form>
           ) : (
             <form className="input-fields" onSubmit={handleVerify}>
@@ -151,27 +167,30 @@ function LoginPage() {
                 required
               />
               <div className="submit-container">
-                <input type="submit" value="VERIFY" className="submit-button" />
+                <input type="submit" value="VERIFY" className="submit-button" id="otp-verify" />
               </div>
               <div className="submit-container">
                 <button
                   type="button"
                   onClick={handleResendOtp}
                   className="submit-button"
+                  id="otp-resend"
                   style={{ marginTop: "10px" }}
                 >
                   Resend Verification Code
                 </button>
               </div>
+
+              {(error || success) && (
+                <div className="form-message-box">
+                  {error && <p className="form-error">{error}</p>}
+                  {success && <p className="form-success">{success}</p>}
+                </div>
+              )}
             </form>
           )}
 
-          {(error || success) && (
-            <div className="form-message-box">
-              {error && <p className="form-error">{error}</p>}
-              {success && <p className="form-success">{success}</p>}
-            </div>
-          )}
+
         </div>
       </div>
     </>
