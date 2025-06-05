@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import "../styles/StatisticsPage.css";
 import Button from "../components/Button.jsx";
 import { PieChart } from "../components/charts/Pie.jsx";
-import { LineGraph } from "../components/charts/Line.jsx";
+import { SalesLineChart } from "../components/charts/SalesLineChart.jsx";
+import { ProductViewsChart } from "../components/charts/ProductViewsChart.jsx";
 import placeholder from "../assets/placeholder.png";
 import axios from "axios";
 
@@ -12,29 +13,57 @@ function StatisticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const currentDate = new Date();
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.toLocaleDateString("en-US", {
+    month: "short",
+  });
+  const currentDay = currentDate.getDate();
+  const dayOfWeek = currentDate.toLocaleDateString("en-US", {
+    weekday: "long",
+  });
+
+  const topRatedEyewear = {
+    name: "LINDY",
+    category: "Prescription Glasses",
+    rating: 4.9,
+    reviews: 11,
+    price: 800,
+    imageUrl:
+      "https://baobabeyewear.com/cdn/shop/files/LINDY_-_1.0_Cover-No_Photocard.jpg?v=1746201927",
+  };
+
+  const mostVisitedEyewear = {
+    name: "COVE",
+    category: "Sunglasses",
+    views: 152,
+    price: 800,
+    imageUrl:
+      "https://baobabeyewear.com/cdn/shop/files/COVE_-_1.0_Cover-No_Photocard.jpg?v=1746201885",
+  };
   useEffect(() => {
-    const fetchOrderStats = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(
+
+        const orderStatsResponse = await axios.get(
           `${SERVER_URL}/api/productRoutes/order-stats?limit=1`
         );
-        const { bestSellingProducts } = response.data.data;
+        const { bestSellingProducts } = orderStatsResponse.data.data;
 
         if (bestSellingProducts && bestSellingProducts.length > 0) {
           setMostBoughtProduct(bestSellingProducts[0]);
         }
       } catch (err) {
-        console.error("Error fetching order statistics:", err);
+        console.error("Error fetching data:", err);
         setError("Failed to load statistics");
       } finally {
         setLoading(false);
       }
     };
 
-    fetchOrderStats();
+    fetchData();
   }, [SERVER_URL]);
-
   /* const [count, addCount] = useState(0);
 
     const handleAdding = () => {
@@ -49,46 +78,45 @@ function StatisticsPage() {
             <div className="piesect">
               <div className="chart-wrapper">
                 <PieChart />
-                <p>
-                  Oval:{" "}
-                  {/* ovaldata / totalusers raised limit to 2 decimals %*/}
-                </p>
+                <p>Oval:</p>
               </div>
             </div>
-
             <div className="linesect">
               <div className="chart-wrapper">
-                <LineGraph />
+                <SalesLineChart />
                 <p>
-                  Oval:{" "}
-                  {/* ovaldata / totalusers raised limit to 2 decimals %*/}
+                  {currentYear} sales showing strong growth - {currentMonth}{" "}
+                  {currentDay} current performance
                 </p>
               </div>
               <div className="chart-wrapper">
-                <LineGraph />
+                <ProductViewsChart />
                 <p>
-                  Oval:{" "}
-                  {/* ovaldata / totalusers raised limit to 2 decimals %*/}
+                  Product views for current week - {dayOfWeek} update (
+                  {currentMonth} {currentDay}, {currentYear})
                 </p>
               </div>
             </div>
-
             <div className="viewsect">
               <div className="stat-content" id="view">
                 <div className="stat-card">
                   <div className="stat-card-content">
                     <div className="content-text">
                       <p className="card-header">Most Visited Eyewear</p>
-                      <p>reid</p>
+                      <p>{mostVisitedEyewear.name}</p>
+                      <p>Views: {mostVisitedEyewear.views.toLocaleString()}</p>
+                      <p>Category: {mostVisitedEyewear.category}</p>
+                      <p>Price: ₱{mostVisitedEyewear.price}</p>
                     </div>
 
                     <div className="content-pic">
-                      {" "}
-                      {/* make responsive */}
-                      <img src={placeholder} alt="" />
+                      <img
+                        src={mostVisitedEyewear.imageUrl}
+                        alt={mostVisitedEyewear.name}
+                      />
                     </div>
-                  </div>
-                </div>{" "}
+                  </div>{" "}
+                </div>
                 <div className="stat-card">
                   <div className="stat-card-content">
                     <div className="content-text">
@@ -107,10 +135,7 @@ function StatisticsPage() {
                         <p>No data available</p>
                       )}
                     </div>
-
                     <div className="content-pic">
-                      {" "}
-                      {/* make responsive */}
                       <img
                         src={mostBoughtProduct?.imageUrls?.[0] || placeholder}
                         alt={mostBoughtProduct?.name || "Product"}
@@ -120,7 +145,19 @@ function StatisticsPage() {
                 </div>
                 <div className="stat-card">
                   <div className="stat-card-content">
-                    <p className="card-header">Placeholder 2</p>
+                    <div className="content-text">
+                      <p className="card-header">Top Rated This Month</p>
+                      <p>{topRatedEyewear.name}</p>
+                      <p>Rating: {topRatedEyewear.rating}/5.0 ⭐</p>
+                      <p>Reviews: {topRatedEyewear.reviews.toLocaleString()}</p>
+                      <p>Price: ₱{topRatedEyewear.price}</p>
+                    </div>
+                    <div className="content-pic">
+                      <img
+                        src={topRatedEyewear.imageUrl}
+                        alt={topRatedEyewear.name}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
