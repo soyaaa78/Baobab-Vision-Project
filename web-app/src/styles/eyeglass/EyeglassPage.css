@@ -68,12 +68,12 @@
 }
 
 .edit-eyeglass-button input {
-    /* change to button after first phase */
     background-color: #FCF7F2;
     border: 1px solid black;
     border-radius: 3px;
     margin: 10px 0;
     padding: 10px 40px;
+    cursor: pointer;
 }
 
 #top-edit {

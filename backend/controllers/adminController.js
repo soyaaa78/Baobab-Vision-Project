@@ -28,7 +28,6 @@ exports.login = async (req, res) => {
       admin.otpExpiry = Date.now() + 5 * 60 * 1000;
       await admin.save();
 
-      // ✅ Send the email
       await sendEmail(
         admin.email,
         "Staff Email Verification",

@@ -10,6 +10,7 @@ export const PieChart = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [stats, setStats] = useState([]); 
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -19,6 +20,7 @@ export const PieChart = () => {
           `${SERVER_URL}/api/productRoutes/face-shape-stats`
         );
         const { stats } = res.data;
+        setStats(stats);
         setData({
           labels: stats.map((s) => s._id || "Unknown"),
           datasets: [
@@ -69,6 +71,16 @@ export const PieChart = () => {
       }}
     >
       <Pie options={options} data={data} />
+
+      <div style={{ marginTop: "1em", textAlign: "center" }}>
+        {stats.map((item, index) => (
+          <p key={index}>
+            <b>{`${item._id} Shape` || "Unknown"}:</b> {item.count}
+          </p>
+
+          /* add math for extra statistics interpretation, perhaps? */
+        ))}
+      </div>
     </div>
   );
 };

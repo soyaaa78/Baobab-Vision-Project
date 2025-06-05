@@ -64,11 +64,6 @@ function StatisticsPage() {
 
     fetchData();
   }, [SERVER_URL]);
-  /* const [count, addCount] = useState(0);
-
-    const handleAdding = () => {
-        addCount(count + 1);
-    } */
 
   return (
     <>
@@ -78,7 +73,6 @@ function StatisticsPage() {
             <div className="piesect">
               <div className="chart-wrapper">
                 <PieChart />
-                <p>Oval:</p>
               </div>
             </div>
             <div className="linesect">
@@ -92,7 +86,7 @@ function StatisticsPage() {
               <div className="chart-wrapper">
                 <ProductViewsChart />
                 <p>
-                  Product views for current week - {dayOfWeek} update (
+                  Product views for current week - {dayOfWeek} Update (
                   {currentMonth} {currentDay}, {currentYear})
                 </p>
               </div>
