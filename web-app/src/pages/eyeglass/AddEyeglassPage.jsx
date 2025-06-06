@@ -12,6 +12,9 @@ const AddEyeglassPage = () => {
   const handleBack = () => navigate("../catalogue");
   const [productImages, setProductImages] = useState([]);
   const [colorwayImages, setColorwayImages] = useState([]);
+  const [model3dFile, setModel3dFile] = useState(null);
+  const [productImageFiles, setProductImageFiles] = useState([]);
+  const [colorwayImageFiles, setColorwayImageFiles] = useState([]);
 
   const tintedRef = useRef(null);
   const sunAdaptiveRef = useRef(null);
@@ -22,19 +25,15 @@ const AddEyeglassPage = () => {
       cb.checked = shouldCheck;
     });
   };
-
   const handleProductImageChange = (e) => {
-    const files = Array.from(
-      e.target.files
-    ); /* files = uploaded files from (input, in this case) */
+    const files = Array.from(e.target.files);
     const newPreviews = files.map((file) => ({
       id: URL.createObjectURL(file),
       url: URL.createObjectURL(file),
-    })); /* files.map puts everything uploaded in an array and returns it as the functional newPreviews array constant  */
-    setProductImages((prev) => [
-      ...prev,
-      ...newPreviews,
-    ]); /* three dots (aka spread operator) SPREADS items into the new array  */
+      file: file,
+    }));
+    setProductImages((prev) => [...prev, ...newPreviews]);
+    setProductImageFiles((prev) => [...prev, ...files]);
   };
 
   const handleColorwayImageChange = (e) => {
@@ -42,23 +41,42 @@ const AddEyeglassPage = () => {
     const newPreviews = files.map((file) => ({
       id: URL.createObjectURL(file),
       url: URL.createObjectURL(file),
+      file: file,
     }));
     setColorwayImages((prev) => [...prev, ...newPreviews]);
+    setColorwayImageFiles((prev) => [...prev, ...files]);
+  };
+
+  const handleModel3dChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setModel3dFile(file);
+    }
   };
 
   const handleDeleteProductImage = (idToRemove) => {
+    const imageToRemove = productImages.find((img) => img.id === idToRemove);
     setProductImages((prev) => prev.filter((img) => img.id !== idToRemove));
+    if (imageToRemove && imageToRemove.file) {
+      setProductImageFiles((prev) =>
+        prev.filter((file) => file !== imageToRemove.file)
+      );
+    }
   };
-
   const handleDeleteColorwayImage = (idToRemove) => {
+    const imageToRemove = colorwayImages.find((img) => img.id === idToRemove);
     setColorwayImages((prev) => prev.filter((img) => img.id !== idToRemove));
+    if (imageToRemove && imageToRemove.file) {
+      setColorwayImageFiles((prev) =>
+        prev.filter((file) => file !== imageToRemove.file)
+      );
+    }
   };
 
   const [product, setProduct] = useState("");
   /* const addProduct = () => {
         setProduct(userdata);
     } */ /* raph eto yung iibahin para sa adding */
-
   // --- Add product form state ---
   const [form, setForm] = useState({
     name: "",
@@ -68,6 +86,10 @@ const AddEyeglassPage = () => {
     lensOptions: [],
   });
 
+  // Loading and error states
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+
   // --- Handlers for form fields ---
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -76,7 +98,6 @@ const AddEyeglassPage = () => {
       [name]: value,
     }));
   };
-
   const handleSpecsChange = (spec) => {
     setForm((prev) => {
       const specs = new Set(prev.specs);
@@ -84,6 +105,22 @@ const AddEyeglassPage = () => {
         specs.delete(spec);
       } else {
         specs.add(spec);
+      }
+      return {
+        ...prev,
+        specs: Array.from(specs),
+      };
+    });
+  };
+
+  const handleFrameShapeChange = (frameShape) => {
+    setForm((prev) => {
+      const specs = new Set(prev.specs);
+      const frameSpec = `frame_${frameShape.toLowerCase().replace(" ", "_")}`;
+      if (specs.has(frameSpec)) {
+        specs.delete(frameSpec);
+      } else {
+        specs.add(frameSpec);
       }
       return {
         ...prev,
@@ -112,29 +149,97 @@ const AddEyeglassPage = () => {
         };
       }
     });
-  };
-
-  // --- Submit handler ---
+  }; // --- Submit handler ---
   const handleAddProduct = async (e) => {
     e.preventDefault();
+
+    // Reset error state
+    setSubmitError(null);
+
+    // Validation
+    if (productImageFiles.length === 0) {
+      setSubmitError("Please upload at least one product image.");
+      return;
+    }
+
+    if (form.specs.length === 0) {
+      setSubmitError("Please select at least one face shape specification.");
+      return;
+    }
+
+    if (!form.name.trim()) {
+      setSubmitError("Product name is required.");
+      return;
+    }
+
+    if (!form.description.trim()) {
+      setSubmitError("Product description is required.");
+      return;
+    }
+
+    if (!form.price || parseFloat(form.price) <= 0) {
+      setSubmitError("Please enter a valid price.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      const newProduct = {
-        name: form.name,
-        description: form.description,
-        price: parseFloat(form.price),
-        specs: form.specs,
-        lensOptions: form.lensOptions,
-        // stock, numStars, recommendedFor, sales, colorOptions, imageUrls can be added later
-      };
+      // Create FormData for file upload
+      const formData = new FormData();
+
+      // Add form fields
+      formData.append("name", form.name.trim());
+      formData.append("description", form.description.trim());
+      formData.append("price", form.price);
+      formData.append("specs", JSON.stringify(form.specs));
+      formData.append("lensOptions", JSON.stringify(form.lensOptions));
+
+      // Add product images
+      productImageFiles.forEach((file) => {
+        formData.append("productImages", file);
+      });
+
+      // Add colorway images if any
+      colorwayImageFiles.forEach((file) => {
+        formData.append("colorwayImages", file);
+      });
+
+      // Add 3D model if uploaded
+      if (model3dFile) {
+        formData.append("model3d", model3dFile);
+      }
+
       const res = await axios.post(
         `${SERVER_URL}/api/productRoutes/`,
-        newProduct
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
+
+      // Success notification
       alert("Product added successfully!");
       navigate("../catalogue");
     } catch (error) {
-      alert("Failed to add product.");
-      console.error(error);
+      console.error("Error adding product:", error);
+
+      // Better error handling
+      if (error.response?.data?.message) {
+        setSubmitError(error.response.data.message);
+      } else if (error.response?.status === 413) {
+        setSubmitError("Files are too large. Please upload smaller files.");
+      } else if (error.response?.status >= 500) {
+        setSubmitError("Server error. Please try again later.");
+      } else {
+        setSubmitError(
+          "Failed to add product. Please check your files and try again."
+        );
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -244,7 +349,6 @@ const AddEyeglassPage = () => {
                         </label>
                       </div>
                     </div>
-
                     <div>
                       <label>Colorway Images</label>
                       <div className="isdc-img-grid" id="colorway-images">
@@ -277,8 +381,7 @@ const AddEyeglassPage = () => {
                           Add Product
                         </span>
                       </label>
-                    </div>
-
+                    </div>{" "}
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <label>Virtual Try-On 3D Model</label>
                       <input
@@ -286,8 +389,38 @@ const AddEyeglassPage = () => {
                         id="3dmodel"
                         name="media"
                         accept=".usd,.usdc,.usdz"
-                      />{" "}
-                      {/* papalitan pa to accommodate 3d model file types */}
+                        onChange={handleModel3dChange}
+                      />
+                      {model3dFile && (
+                        <div
+                          style={{
+                            marginTop: "8px",
+                            fontSize: "0.85em",
+                            color: "#666",
+                            backgroundColor: "#f5f5f5",
+                            padding: "8px",
+                            borderRadius: "4px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <span>📁 {model3dFile.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => setModel3dFile(null)}
+                            style={{
+                              backgroundColor: "transparent",
+                              border: "none",
+                              color: "#ff4444",
+                              cursor: "pointer",
+                              fontSize: "1.2em",
+                            }}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -318,83 +451,163 @@ const AddEyeglassPage = () => {
                     </div>
                     <div className="csdc-lens-categorization">
                       <div className="csdclc-first">
+                        {" "}
                         <div className="checkbox-container">
                           <input
                             type="checkbox"
                             name="oval"
-                            checked={form.specs.includes("Oval")}
-                            onChange={() => handleSpecsChange("Oval")}
+                            checked={form.specs.includes("face_oval")}
+                            onChange={() => handleSpecsChange("face_oval")}
                           />
                           <label for="oval">Oval</label>
+                        </div>
+                        <div className="checkbox-container">
+                          <input
+                            type="checkbox"
+                            name="heart"
+                            checked={form.specs.includes("face_heart")}
+                            onChange={() => handleSpecsChange("face_heart")}
+                          />
+                          <label for="heart">Heart</label>
+                        </div>
+                      </div>
+                      <div className="csdclc-second">
+                        {" "}
+                        <div className="checkbox-container">
+                          <input
+                            type="checkbox"
+                            name="round"
+                            checked={form.specs.includes("face_round")}
+                            onChange={() => handleSpecsChange("face_round")}
+                          />
+                          <label for="round">Round</label>
+                        </div>
+                        <div className="checkbox-container">
+                          <input
+                            type="checkbox"
+                            name="diamond"
+                            checked={form.specs.includes("face_diamond")}
+                            onChange={() => handleSpecsChange("face_diamond")}
+                          />
+                          <label for="diamond">Diamond</label>
+                        </div>
+                      </div>
+                      <div className="csdclc-third">
+                        {" "}
+                        <div className="checkbox-container">
+                          <input
+                            type="checkbox"
+                            name="rectangle"
+                            checked={form.specs.includes("face_rectangle")}
+                            onChange={() => handleSpecsChange("face_rectangle")}
+                          />
+                          <label for="rectangle">Rectangle</label>
+                        </div>
+                        <div className="checkbox-container">
+                          <input
+                            type="checkbox"
+                            name="triangle"
+                            checked={form.specs.includes("face_triangle")}
+                            onChange={() => handleSpecsChange("face_triangle")}
+                          />
+                          <label for="triangle">Triangle</label>
+                        </div>
+                      </div>
+                      <div className="csdclc-fourth">
+                        {" "}
+                        <div className="checkbox-container">
+                          <input
+                            type="checkbox"
+                            name="square"
+                            checked={form.specs.includes("face_square")}
+                            onChange={() => handleSpecsChange("face_square")}
+                          />
+                          <label for="square">Square</label>
+                        </div>
+                      </div>{" "}
+                    </div>
+
+                    {/* Frame Shape Selection Section */}
+                    <div className="csdc-header" style={{ marginTop: "20px" }}>
+                      <p style={{ fontFamily: "Rubik" }}>
+                        Frame Shape Classification
+                      </p>
+                      <p
+                        style={{
+                          fontFamily: "Rubik",
+                          fontSize: "0.7em",
+                          color: "#8f8f8f",
+                        }}
+                      >
+                        Select all frame shapes this product includes.
+                      </p>
+                    </div>
+                    <div className="csdc-lens-categorization">
+                      <div className="csdclc-first">
+                        <div className="checkbox-container">
+                          <input
+                            type="checkbox"
+                            name="frame_rectangle"
+                            checked={form.specs.includes("frame_rectangle")}
+                            onChange={() => handleFrameShapeChange("rectangle")}
+                          />
+                          <label for="frame_rectangle">Rectangle</label>
                         </div>
 
                         <div className="checkbox-container">
                           <input
                             type="checkbox"
-                            name="heart"
-                            checked={form.specs.includes("Heart")}
-                            onChange={() => handleSpecsChange("Heart")}
+                            name="frame_round"
+                            checked={form.specs.includes("frame_round")}
+                            onChange={() => handleFrameShapeChange("round")}
                           />
-                          <label for="heart">Heart</label>
+                          <label for="frame_round">Round</label>
                         </div>
                       </div>
                       <div className="csdclc-second">
                         <div className="checkbox-container">
                           <input
                             type="checkbox"
-                            name="round"
-                            checked={form.specs.includes("Round")}
-                            onChange={() => handleSpecsChange("Round")}
+                            name="frame_cat_eye"
+                            checked={form.specs.includes("frame_cat_eye")}
+                            onChange={() => handleFrameShapeChange("cat_eye")}
                           />
-                          <label for="round">Round</label>
+                          <label for="frame_cat_eye">Cat Eye</label>
                         </div>
 
                         <div className="checkbox-container">
                           <input
                             type="checkbox"
-                            name="diamond"
-                            checked={form.specs.includes("Diamond")}
-                            onChange={() => handleSpecsChange("Diamond")}
+                            name="frame_pilot"
+                            checked={form.specs.includes("frame_pilot")}
+                            onChange={() => handleFrameShapeChange("pilot")}
                           />
-                          <label for="diamond">Diamond</label>
+                          <label for="frame_pilot">Pilot</label>
                         </div>
                       </div>
                       <div className="csdclc-third">
                         <div className="checkbox-container">
                           <input
                             type="checkbox"
-                            name="rectangle"
-                            checked={form.specs.includes("Rectangle Shape")}
-                            onChange={() =>
-                              handleSpecsChange("Rectangle Shape")
-                            }
+                            name="frame_square"
+                            checked={form.specs.includes("frame_square")}
+                            onChange={() => handleFrameShapeChange("square")}
                           />
-                          <label for="rectangle">Rectangle</label>
+                          <label for="frame_square">Square</label>
                         </div>
 
                         <div className="checkbox-container">
                           <input
                             type="checkbox"
-                            name="triangle"
-                            checked={form.specs.includes("Triangle")}
-                            onChange={() => handleSpecsChange("Triangle")}
+                            name="frame_oversized"
+                            checked={form.specs.includes("frame_oversized")}
+                            onChange={() => handleFrameShapeChange("oversized")}
                           />
-                          <label for="triangle">Triangle</label>
-                        </div>
-                      </div>
-
-                      <div className="csdclc-fourth">
-                        <div className="checkbox-container">
-                          <input
-                            type="checkbox"
-                            name="square"
-                            checked={form.specs.includes("Square")}
-                            onChange={() => handleSpecsChange("Square")}
-                          />
-                          <label for="square">Square</label>
+                          <label for="frame_oversized">Oversized</label>
                         </div>
                       </div>
                     </div>
+
                     <div className="aef-sect-fields csd-lower">
                       <div>
                         <p style={{ fontFamily: "Rubik" }}>

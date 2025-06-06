@@ -1,6 +1,6 @@
 #add-eyeglass {
-    padding: 1.5% 15%;
-    height: auto;
+  padding: 1.5% 15%;
+  height: auto;
 }
 
 #add-eyeglass h1,
@@ -9,112 +9,110 @@ h3,
 h4,
 h5,
 h6 {
-    font-family: 'Red Rose', serif;
-    color: #2a383d;
+  font-family: "Red Rose", serif;
+  color: #2a383d;
 }
 
 #add-eyeglass label {
-    font-family: 'Rubik', sans-serif;
+  font-family: "Rubik", sans-serif;
 }
 
 .add-eyeglass-content {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .ae-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .add-eyeglass-form-container {
-    height: 100%;
+  height: 100%;
 }
 
 .add-eyeglass-form {
-    height: 100%;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-    gap: 20px;
-    grid-template-areas:
-        "basic"
-        "image"
-        "category";
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto;
+  gap: 20px;
+  grid-template-areas:
+    "basic"
+    "image"
+    "category";
 }
 
 .add-eyeglass-form p,
 label {
-    color: #455c64;
+  color: #455c64;
 }
 
 .add-eyeglass-form .button-component p {
-    color: white;
+  color: white;
 }
 
 .aef-section {
-    /* is the white bg */
-    background-color: white;
-    border: 2px solid #cacaca;
-    border-radius: 12px;
+  /* is the white bg */
+  background-color: white;
+  border: 2px solid #cacaca;
+  border-radius: 12px;
 }
 
 .aef-basic-sect {
-    grid-area: basic;
+  grid-area: basic;
 }
 
 .aef-image-sect {
-    grid-area: image;
+  grid-area: image;
 }
 
 .aef-category-sect {
-    grid-area: category;
+  grid-area: category;
 }
-
 
 .section-details {
-    /* padding to make everything spaced */
-    padding: 15px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  /* padding to make everything spaced */
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-
 .aef-sect-fields {
-    padding: 15px;
-    background-color: white;
-    border: 1px solid #e9e9e9;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 20px;
+  padding: 15px;
+  background-color: white;
+  border: 1px solid #e9e9e9;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
 }
 
 .bsdf-input {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-
-.aef-sect-fields textarea, .aef-sect-fields input {
-    padding: 1rem;
-    border: 1px solid #e9e9e9;
-    border-radius: 12px;
-    font-family: 'Rubik', sans-serif;
-    color: #2a383d;
-    background-color: white;
-    outline: none;
+.aef-sect-fields textarea,
+.aef-sect-fields input {
+  padding: 1rem;
+  border: 1px solid #e9e9e9;
+  border-radius: 12px;
+  font-family: "Rubik", sans-serif;
+  color: #2a383d;
+  background-color: white;
+  outline: none;
 }
 
 .aef-sect-fields textarea {
-    min-height: 150px;
-    resize: none;
+  min-height: 150px;
+  resize: none;
 }
 
 /* ------------------------- */
@@ -122,86 +120,85 @@ label {
 /* ------------------------- */
 
 .isd-content {
-    gap: 40px;
+  gap: 40px;
 }
 
 .isdc-add-content {
-    background-color: #A9927D;
-    color: white;
-    cursor: pointer;
-    padding: 10px;
-    border-radius: 5px;
+  background-color: #a9927d;
+  color: white;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 5px;
 }
 
 .isdc-img-grid {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .isdc-img-box,
 .isdc-img-upload-box {
-    width: 90px;
-    height: 90px;
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #f9fafb;
-    position: relative;
-    cursor: pointer;
+  width: 90px;
+  height: 90px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+  position: relative;
+  cursor: pointer;
 }
 
 .isdc-img-box img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
 .isdc-img-upload-box input {
-    display: none;
+  display: none;
 }
 
 .isdc-img-upload-box span {
-    font-size: 12px;
-    color: #2a383d;
-    text-align: center;
-    cursor: pointer;
+  font-size: 12px;
+  color: #2a383d;
+  text-align: center;
+  cursor: pointer;
 }
 
 .isd-img-delete-btn {
-    position: absolute;
-    opacity: 0.2;
-    background-color: #cacaca;
-    width: 100%;
-    height: 100%;
-    cursor: pointer;
-    transition: 0.1s ease-in-out;
+  position: absolute;
+  opacity: 0.2;
+  background-color: #cacaca;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  transition: 0.1s ease-in-out;
 }
 
 .isdc-img-box .isd-img-delete-btn.fade {
-    opacity: 0;
+  opacity: 0;
 }
 
-
 .isdc-img-box:hover .isd-img-delete-btn.fade {
-    opacity: 0.8;
+  opacity: 0.8;
 }
 
 .isd-img-delete-btn-text {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    opacity: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  opacity: 1;
 }
 
 .isd-img-delete-btn-text p {
-    font-family: 'Rubik', sans-serif;
+  font-family: "Rubik", sans-serif;
 }
 
 /* --------------------------- */
@@ -209,98 +206,180 @@ label {
 /* --------------------------- */
 
 .csdfl-lens-options {
-    height: 100%;
-    justify-content: flex-start;
+  height: 100%;
+  justify-content: flex-start;
 }
 
-
 .csdl-lens-container {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    gap: 20px;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  gap: 20px;
 }
 
 .csd-lens {
-    width: 50%;
+  width: 50%;
 }
 
 .csd-lens-multiselect {
-    display: flex;
-    justify-content: flex-start;
-    gap: 10px;
-    margin-top: 10px;
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .csd-lens-multiselect button {
-    padding: 5px;
-    font-family: 'Rubik', sans-serif;
+  padding: 5px;
+  font-family: "Rubik", sans-serif;
 }
 
 .csdc-lens-categorization {
-    display: flex;
-    
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: 20px;
+  display: flex;
+
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 20px;
 }
 
 .csdc-lens-categorization > div {
-    flex-basis: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 @media (min-width: 600px) {
-    .csdc-lens-categorization > div {
-        flex-basis: auto;
-    }
+  .csdc-lens-categorization > div {
+    flex-basis: auto;
+  }
 }
-
 
 .csdc-lens-inclusions {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    gap: 10px; /* Adjusted gap */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 10px; /* Adjusted gap */
 }
 
 @media (min-width: 600px) {
-    .csdc-lens-inclusions {
-        flex-direction: row;
-        gap: 20px;
-    }
+  .csdc-lens-inclusions {
+    flex-direction: row;
+    gap: 20px;
+  }
 }
 
 .checkbox-container input {
-    margin-right: 5px;
+  margin-right: 5px;
 }
 
 .add-eyeglass-form form label {
-    font-family: 'Rubik', sans-serif;
+  font-family: "Rubik", sans-serif;
 }
-
 
 .csd-post-button-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
-
 @media (min-width: 800px) {
-    .add-eyeglass-form {
-        grid-template-columns: repeat(auto-fit, minmax(45%, 1fr)); 
-        grid-template-rows: repeat(2, auto);
-        grid-template-areas:
-            "basic image"
-            "category category";
-    }
+  .add-eyeglass-form {
+    grid-template-columns: repeat(auto-fit, minmax(45%, 1fr));
+    grid-template-rows: repeat(2, auto);
+    grid-template-areas:
+      "basic image"
+      "category category";
+  }
 
-    .csdc-lens-categorization {
-        justify-content: flex-start;
-        gap: 40px;
-    }
+  .csdc-lens-categorization {
+    justify-content: flex-start;
+    gap: 40px;
+  }
+}
+
+/* Error message styling */
+.error-message {
+  color: #e74c3c;
+  font-size: 0.8em;
+  margin-top: 5px;
+  display: block;
+  font-family: "Rubik", sans-serif;
+}
+
+/* Loading button state */
+.loading {
+  opacity: 0.7;
+  cursor: not-allowed !important;
+}
+
+.loading:hover {
+  background-color: inherit !important;
+}
+
+/* Required field indicator */
+label:has(+ input[required])::after,
+label[required]::after {
+  content: " *";
+  color: #e74c3c;
+}
+
+/* Improved form field spacing */
+.bsdf-input {
+  margin-bottom: 15px;
+}
+
+.bsdf-input input,
+.bsdf-input textarea,
+.bsdf-input select {
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: border-color 0.3s ease;
+}
+
+.bsdf-input input:focus,
+.bsdf-input textarea:focus,
+.bsdf-input select:focus {
+  border-color: #2a383d;
+  outline: none;
+}
+
+.bsdf-input input.error,
+.bsdf-input textarea.error {
+  border-color: #e74c3c;
+}
+
+/* Checkbox styling improvements */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.checkbox-container input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #2a383d;
+}
+
+/* Better spacing for product details section */
+.bsd-lower {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  align-items: start;
+}
+
+.bsdfl-recommended {
+  grid-column: 1 / -1;
+  margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .bsd-lower {
+    grid-template-columns: 1fr;
+  }
 }
