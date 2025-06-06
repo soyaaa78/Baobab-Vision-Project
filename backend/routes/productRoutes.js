@@ -8,7 +8,7 @@ const {
   addProductToRecommended,
   updateProduct,
   deleteProduct,
-  recommendEyewear, // <-- add this
+  recommendEyewear,
 } = require("../controllers/productController");
 
 // Create product (POST /api/products)

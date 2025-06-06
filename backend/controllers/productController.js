@@ -16,7 +16,7 @@ exports.createProduct = async (req, res) => {
     recommendedFor,
     sales,
     colorOptions,
-    lensOptions, // ✅ include lensOptions in destructuring
+    lensOptions,
   } = req.body;
 
   // Validate required fields
@@ -165,65 +165,341 @@ exports.deleteProduct = async (req, res) => {
 };
 
 exports.recommendEyewear = async (req, res) => {
-  const { faceShape, lifestyle, occasion, eyeglassStyle } = req.body;
+  console.log("run");
+  const {
+    faceShape,
+    lifestyleActivity,
+    uvProtectionImportance,
+    personalStyle,
+    fitPreference,
+    occasionUse,
+    colorPreference,
+  } = req.body;
+
   if (!faceShape) {
     return res.status(400).json({ message: "faceShape is required" });
   }
   try {
-    const normalizedFaceShape = faceShape
-      .toLowerCase()
-      .replace(/ shape$/, "")
-      .trim();
-
-    const products = await Product.find({
-      specs: {
-        $elemMatch: {
-          $regex: new RegExp(`^${normalizedFaceShape}`, "i"),
-        },
-      },
+    // Get recommendation mapping based on survey responses
+    const recommendations = getRecommendationMapping({
+      faceShape,
+      lifestyleActivity,
+      uvProtectionImportance,
+      personalStyle,
+      fitPreference,
+      occasionUse,
+      colorPreference,
     });
 
-    let filteredProducts = products;
+    console.log(`\n🎯 RECOMMENDATION REQUEST for ${faceShape} face shape:`);
+    console.log(
+      `   Survey: ${lifestyleActivity} | ${uvProtectionImportance} UV | ${personalStyle} style`
+    );
+    console.log(
+      `   Recommended frame shapes: [${recommendations.frameShapes.join(", ")}]`
+    );
+    console.log(
+      `   Recommended colors: [${recommendations.frameColors.join(", ")}]`
+    );
+    console.log(
+      `   Additional specs: [${recommendations.additionalSpecs.join(", ")}]`
+    );
 
-    const filters = [];
-    if (lifestyle) filters.push(lifestyle.toLowerCase());
-    if (occasion) filters.push(occasion.toLowerCase());
-    if (eyeglassStyle) filters.push(eyeglassStyle.toLowerCase());
+    // Find products that match the recommended frame shapes and colors
+    const products = await Product.find({}); // Score and filter products based on recommendations
+    let scoredProducts = products.map((product) => {
+      let score = 0;
+      let reasons = [];
 
-    if (filters.length > 0) {
-      filteredProducts = filteredProducts
-        .map((product) => {
-          const specMatches = product.specs
-            .map((spec) => spec.toLowerCase())
-            .filter((spec) => filters.includes(spec));
-          return {
-            product,
-            matchCount: specMatches.length,
-          };
-        })
-        .filter((item) => item.matchCount > 0)
-        .sort((a, b) => b.matchCount - a.matchCount)
-        .slice(0, 5)
-        .map((item) => item.product);
-    } else {
-      filteredProducts = filteredProducts.slice(0, 5);
+      // Check face shape compatibility
+      const normalizedFaceShape = faceShape
+        .toLowerCase()
+        .replace(/ shape$/, "")
+        .trim();
+      const faceShapeMatch = product.specs.some((spec) =>
+        spec.toLowerCase().includes(normalizedFaceShape)
+      );
+      if (faceShapeMatch) {
+        score += 10;
+        reasons.push(`Face shape match (+10): ${normalizedFaceShape}`);
+      }
+
+      // Check frame shape recommendations
+      recommendations.frameShapes.forEach((recommendedShape) => {
+        const shapeMatch = product.specs.some((spec) =>
+          spec.toLowerCase().includes(recommendedShape.toLowerCase())
+        );
+        if (shapeMatch) {
+          score += 8;
+          reasons.push(`Frame shape match (+8): ${recommendedShape}`);
+        }
+      });
+
+      // Check color recommendations
+      if (product.colorOptions && product.colorOptions.length > 0) {
+        recommendations.frameColors.forEach((recommendedColor) => {
+          const colorMatch = product.colorOptions.some(
+            (colorOption) =>
+              colorOption.name
+                .toLowerCase()
+                .includes(recommendedColor.toLowerCase()) ||
+              recommendedColor
+                .toLowerCase()
+                .includes(colorOption.name.toLowerCase())
+          );
+          if (colorMatch) {
+            score += 6;
+            reasons.push(`Color match (+6): ${recommendedColor}`);
+          }
+        });
+      }
+
+      // Check specs compatibility
+      product.specs.forEach((spec) => {
+        const specLower = spec.toLowerCase();
+        recommendations.additionalSpecs.forEach((additionalSpec) => {
+          if (specLower.includes(additionalSpec.toLowerCase())) {
+            score += 4;
+            reasons.push(`Spec match (+4): ${additionalSpec}`);
+          }
+        });
+      });
+
+      // Log recommendation reasoning for products with score > 0
+      if (score > 0) {
+        console.log(`\n🔍 ${product.name} - Total Score: ${score}`);
+        console.log(`   Reasons: ${reasons.join(", ")}`);
+        console.log(`   Product specs: [${product.specs.join(", ")}]`);
+        if (product.colorOptions && product.colorOptions.length > 0) {
+          const colorNames = product.colorOptions.map((c) => c.name).join(", ");
+          console.log(`   Available colors: [${colorNames}]`);
+        }
+      }
+
+      return { product, score };
+    }); // Filter products with score > 0 and sort by score
+    scoredProducts = scoredProducts
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8) // Get top 8 products
+      .map((item) => item.product);
+
+    console.log(`\n📊 RECOMMENDATION SUMMARY:`);
+    console.log(`   Total products evaluated: ${products.length}`);
+    console.log(`   Products with matching criteria: ${scoredProducts.length}`);
+    if (scoredProducts.length > 0) {
+      console.log(
+        `   Top recommendations: ${scoredProducts
+          .map((p) => p.name)
+          .join(", ")}`
+      );
     }
 
+    // If no scored products, fall back to face shape matching
+    if (scoredProducts.length === 0) {
+      const normalizedFaceShape = faceShape
+        .toLowerCase()
+        .replace(/ shape$/, "")
+        .trim();
+      scoredProducts = await Product.find({
+        specs: {
+          $elemMatch: {
+            $regex: new RegExp(`^${normalizedFaceShape}`, "i"),
+          },
+        },
+      }).limit(5);
+    }
+
+    // Save recommendation statistics
     const stat = new RecommendationStat({
       faceShape,
-      lifestyle,
-      occasion,
-      eyeglassStyle,
-      recommendedProductIds: filteredProducts.map((p) => p._id),
+      lifestyleActivity,
+      uvProtectionImportance,
+      personalStyle,
+      fitPreference,
+      occasionUse,
+      colorPreference,
+      recommendedProductIds: scoredProducts.map((p) => p._id),
     });
     await stat.save();
 
     res.status(200).json({
-      recommended: filteredProducts,
+      recommended: scoredProducts,
       statId: stat._id,
+      recommendations: recommendations, // Include the recommendation logic for debugging
     });
   } catch (err) {
     console.error("Error in recommendEyewear:", err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+function getRecommendationMapping({
+  faceShape,
+  lifestyleActivity,
+  uvProtectionImportance,
+  personalStyle,
+  fitPreference,
+  occasionUse,
+  colorPreference,
+}) {
+  let frameShapes = [];
+  let frameColors = [];
+  let additionalSpecs = [];
+
+  // Frame shape recommendations based on multiple factors
+
+  // Base recommendations based on face shape
+  if (faceShape) {
+    const normalizedFaceShape = faceShape.toLowerCase().trim();
+
+    switch (normalizedFaceShape) {
+      case "oval":
+        frameShapes.push("Rectangle", "Square", "Cat Eye");
+        frameColors.push("Black", "Tortoise", "Colors");
+        additionalSpecs.push("Versatile", "Classic");
+        break;
+      case "rectangle":
+        frameShapes.push("Round", "Cat Eye", "Oversized");
+        frameColors.push("Colors", "Crystal", "Tortoise");
+        additionalSpecs.push("Softening", "Rounded");
+        break;
+      case "round":
+        frameShapes.push("Rectangle", "Square", "Cat Eye");
+        frameColors.push("Black", "Tortoise", "Crystal");
+        additionalSpecs.push("Angular", "Structured");
+        break;
+      case "square":
+        frameShapes.push("Round", "Pilot", "Cat Eye");
+        frameColors.push("Crystal", "Colors", "Tortoise");
+        additionalSpecs.push("Curved", "Softening");
+        break;
+      case "heart":
+        frameShapes.push("Cat Eye", "Round", "Pilot");
+        frameColors.push("Colors", "Crystal", "Tortoise");
+        additionalSpecs.push("Bottom Heavy", "Balanced");
+        break;
+      case "diamond":
+        frameShapes.push("Cat Eye", "Oversized", "Round");
+        frameColors.push("Colors", "Crystal", "Black");
+        additionalSpecs.push("Fuller Frames", "Softening");
+        break;
+      case "triangle":
+        frameShapes.push("Cat Eye", "Oversized", "Round");
+        frameColors.push("Colors", "Tortoise", "Crystal");
+        additionalSpecs.push("Top Heavy", "Balancing");
+        break;
+    }
+  }
+
+  // Lifestyle Activity influence
+  if (lifestyleActivity === "Sports/Outdoor Adventures") {
+    frameShapes.push("Pilot", "Rectangle");
+    frameColors.push("Black", "Tortoise");
+    additionalSpecs.push("Sport", "Durable", "Secure Fit");
+  } else if (lifestyleActivity === "Relaxed Outings") {
+    frameShapes.push("Round", "Cat Eye");
+    frameColors.push("Crystal", "Colors");
+    additionalSpecs.push("Casual", "Comfortable");
+  } else if (lifestyleActivity === "Travel/Exploring") {
+    frameShapes.push("Oversized");
+    frameColors.push("Crystal", "Black");
+    additionalSpecs.push("Lightweight", "UV Protection");
+  } else if (lifestyleActivity === "Fashion/Statement") {
+    frameShapes.push("Cat Eye", "Oversized");
+    frameColors.push("Colors", "Tortoise");
+    additionalSpecs.push("Fashion", "Statement", "Trendy");
+  }
+
+  // UV Protection influence
+  if (uvProtectionImportance === "Very Important") {
+    frameShapes.push("Rectangle", "Pilot");
+    frameColors.push("Black", "Crystal");
+    additionalSpecs.push("UV Protection", "Polarized");
+  } else if (uvProtectionImportance === "Somewhat Important") {
+    frameShapes.push("Round", "Cat Eye");
+    frameColors.push("Tortoise", "Black");
+  } else if (uvProtectionImportance === "Not Very Important") {
+    frameShapes.push("Oversized");
+    frameColors.push("Colors");
+    additionalSpecs.push("Fashion");
+  }
+
+  // Personal Style influence
+  if (personalStyle === "Classic & Timeless") {
+    frameShapes.push("Square", "Rectangle");
+    frameColors.push("Black", "Tortoise");
+    additionalSpecs.push("Classic", "Timeless");
+  } else if (personalStyle === "Bold & Trendy") {
+    frameShapes.push("Oversized", "Cat Eye");
+    frameColors.push("Colors", "Tortoise");
+    additionalSpecs.push("Bold", "Trendy", "Statement");
+  } else if (personalStyle === "Sporty & Functional") {
+    frameShapes.push("Pilot", "Rectangle");
+    frameColors.push("Black", "Crystal");
+    additionalSpecs.push("Sport", "Functional", "Durable");
+  } else if (personalStyle === "Minimalist") {
+    frameShapes.push("Round", "Pilot");
+    frameColors.push("Crystal", "Black");
+    additionalSpecs.push("Minimalist", "Simple", "Clean");
+  }
+
+  // Fit Preference influence
+  if (fitPreference === "I need a snug fit") {
+    frameShapes.push("Rectangle", "Pilot");
+    frameColors.push("Black", "Tortoise");
+    additionalSpecs.push("Secure Fit", "Sport");
+  } else if (fitPreference === "I prefer a more relaxed, loose fit") {
+    frameShapes.push("Cat Eye", "Round");
+    frameColors.push("Colors", "Crystal");
+    additionalSpecs.push("Comfortable", "Relaxed");
+  } else if (fitPreference === "I like a mix of both") {
+    frameShapes.push("Oversized", "Square");
+    frameColors.push("Black", "Tortoise");
+  }
+
+  // Occasion Use influence
+  if (occasionUse === "Daily, All Day Wear") {
+    frameShapes.push("Pilot", "Rectangle");
+    frameColors.push("Black", "Crystal");
+    additionalSpecs.push("Comfortable", "Durable", "Versatile");
+  } else if (occasionUse === "Special Occasions/Outings") {
+    frameShapes.push("Cat Eye", "Oversized");
+    frameColors.push("Colors", "Tortoise");
+    additionalSpecs.push("Fashion", "Statement");
+  } else if (occasionUse === "Driving or Commuting") {
+    frameShapes.push("Rectangle", "Pilot");
+    frameColors.push("Black", "Polarized");
+    additionalSpecs.push("Polarized", "UV Protection");
+  } else if (occasionUse === "Sport/Activity-Specific") {
+    frameShapes.push("Pilot", "Rectangle");
+    frameColors.push("Black", "Crystal");
+    additionalSpecs.push("Sport", "Secure Fit", "Durable");
+  }
+
+  // Color Preference influence
+  if (colorPreference === "Neutral & Classic") {
+    frameColors.push("Black", "Tortoise", "Crystal");
+    additionalSpecs.push("Classic", "Neutral");
+  } else if (colorPreference === "Bold & Vibrant") {
+    frameColors.push("Colors", "Bright");
+    additionalSpecs.push("Bold", "Vibrant", "Statement");
+  } else if (colorPreference === "Earthy & Natural") {
+    frameColors.push("Tortoise", "Brown", "Green");
+    additionalSpecs.push("Natural", "Earthy");
+  } else if (colorPreference === "Metallic & Sleek") {
+    frameColors.push("Gold", "Silver", "Chrome");
+    additionalSpecs.push("Metallic", "Sleek", "Modern");
+  }
+
+  // Remove duplicates and return top recommendations
+  frameShapes = [...new Set(frameShapes)].slice(0, 3);
+  frameColors = [...new Set(frameColors)].slice(0, 3);
+  additionalSpecs = [...new Set(additionalSpecs)];
+
+  return {
+    frameShapes,
+    frameColors,
+    additionalSpecs,
+  };
+}

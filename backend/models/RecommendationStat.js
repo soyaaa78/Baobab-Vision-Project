@@ -3,9 +3,12 @@ const mongoose = require("mongoose");
 
 const recommendationStatSchema = new mongoose.Schema({
   faceShape: { type: String, required: true },
-  lifestyle: { type: String },
-  occasion: { type: String },
-  eyeglassStyle: { type: String },
+  lifestyleActivity: { type: String },
+  uvProtectionImportance: { type: String },
+  personalStyle: { type: String },
+  fitPreference: { type: String },
+  occasionUse: { type: String },
+  colorPreference: { type: String },
   recommendedProductIds: [
     { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
   ],
