@@ -14,10 +14,6 @@ exports.uploadProductFiles = uploadProductFiles;
 
 // Create product
 exports.createProduct = catchAsync(async (req, res, next) => {
-  console.log("=== CREATE PRODUCT DEBUG ===");
-  console.log("req.body:", req.body);
-  console.log("req.files:", req.files);
-
   const {
     name,
     description,
@@ -31,11 +27,6 @@ exports.createProduct = catchAsync(async (req, res, next) => {
     lensOptions,
   } = req.body;
 
-  console.log("Extracted values:");
-  console.log("name:", name, "type:", typeof name);
-  console.log("description:", description, "type:", typeof description);
-  console.log("price:", price, "type:", typeof price);
-
   // Validate required fields
   if (
     !name ||
@@ -45,9 +36,6 @@ exports.createProduct = catchAsync(async (req, res, next) => {
     description.trim() === "" ||
     price.toString().trim() === ""
   ) {
-    console.log(
-      "Validation failed - one or more required fields are missing or empty"
-    );
     return res
       .status(400)
       .json({ message: "Name, description, and price are required" });
