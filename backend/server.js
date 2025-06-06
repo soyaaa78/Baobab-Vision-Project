@@ -10,6 +10,7 @@ const slideshowRoutes = require("./routes/slideShowRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const storageRoutes = require("./routes/storageRoutes");
+const aliveRoute = require("./routes/aliveRoute");
 const PORT = process.env.PORT || 3001;
 const bcrypt = require("bcryptjs");
 const Admin = require("./models/Admin");
@@ -26,6 +27,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/storage", storageRoutes);
 app.use("/uploads", express.static("uploads"));
 app.use("/api/admin", adminRoutes);
+app.use("/api/alive", aliveRoute);
 app.use((req, res, next) => {
   console.log(`Incoming Request: ${req.method} ${req.url}`);
   next();
