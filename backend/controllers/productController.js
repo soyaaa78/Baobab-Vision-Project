@@ -14,6 +14,10 @@ exports.uploadProductFiles = uploadProductFiles;
 
 // Create product
 exports.createProduct = catchAsync(async (req, res, next) => {
+  console.log("=== CREATE PRODUCT DEBUG ===");
+  console.log("req.body:", req.body);
+  console.log("req.files:", req.files);
+
   const {
     name,
     description,
@@ -27,11 +31,34 @@ exports.createProduct = catchAsync(async (req, res, next) => {
     lensOptions,
   } = req.body;
 
+  console.log("Extracted values:");
+  console.log("name:", name, "type:", typeof name);
+  console.log("description:", description, "type:", typeof description);
+  console.log("price:", price, "type:", typeof price);
+
   // Validate required fields
-  if (!name || !description || !price) {
+  if (
+    !name ||
+    !description ||
+    !price ||
+    name.trim() === "" ||
+    description.trim() === "" ||
+    price.toString().trim() === ""
+  ) {
+    console.log(
+      "Validation failed - one or more required fields are missing or empty"
+    );
     return res
       .status(400)
       .json({ message: "Name, description, and price are required" });
+  }
+
+  // Validate price is a valid number
+  const parsedPrice = parseFloat(price);
+  if (isNaN(parsedPrice) || parsedPrice <= 0) {
+    return res
+      .status(400)
+      .json({ message: "Price must be a valid number greater than 0" });
   }
 
   // Parse JSON fields if they come as strings
@@ -61,7 +88,6 @@ exports.createProduct = catchAsync(async (req, res, next) => {
       .status(400)
       .json({ message: "At least one face shape specification is required" });
   }
-
   try {
     let imageUrls = [];
     let colorwayImageUrls = [];
@@ -92,19 +118,16 @@ exports.createProduct = catchAsync(async (req, res, next) => {
           "products/models"
         );
       }
-    }
-
-    // Validate that at least one product image is provided
+    } // Validate that at least one product image is provided
     if (imageUrls.length === 0) {
       return res
         .status(400)
         .json({ message: "At least one product image is required" });
     }
-
     const product = new Product({
       name: name.trim(),
       description: description.trim(),
-      price: parseFloat(price),
+      price: parsedPrice,
       stock: parseInt(stock) || 0,
       imageUrls,
       specs: parsedSpecs,
@@ -290,22 +313,10 @@ exports.recommendEyewear = async (req, res) => {
       colorPreference,
     });
 
-    console.log(`\n🎯 RECOMMENDATION REQUEST for ${faceShape} face shape:`);
-    console.log(
-      `   Survey: ${lifestyleActivity} | ${uvProtectionImportance} UV | ${personalStyle} style`
-    );
-    console.log(
-      `   Recommended frame shapes: [${recommendations.frameShapes.join(", ")}]`
-    );
-    console.log(
-      `   Recommended colors: [${recommendations.frameColors.join(", ")}]`
-    );
-    console.log(
-      `   Additional specs: [${recommendations.additionalSpecs.join(", ")}]`
-    );
-
     // Find products that match the recommended frame shapes and colors
-    const products = await Product.find({}); // Score and filter products based on recommendations
+    const products = await Product.find({});
+
+    // Score and filter products based on recommendations
     let scoredProducts = products.map((product) => {
       let score = 0;
       let reasons = []; // Check face shape compatibility (product should be suitable for user's face shape)
@@ -385,36 +396,12 @@ exports.recommendEyewear = async (req, res) => {
           });
         }
       });
-
-      // Log recommendation reasoning for products with score > 0
-      if (score > 0) {
-        console.log(`\n🔍 ${product.name} - Total Score: ${score}`);
-        console.log(`   Reasons: ${reasons.join(", ")}`);
-        console.log(`   Product specs: [${product.specs.join(", ")}]`);
-        if (product.colorOptions && product.colorOptions.length > 0) {
-          const colorNames = product.colorOptions.map((c) => c.name).join(", ");
-          console.log(`   Available colors: [${colorNames}]`);
-        }
-      }
-
       return { product, score };
     }); // Filter products with score > 0 and sort by score
     scoredProducts = scoredProducts
       .filter((item) => item.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 8) // Get top 8 products
-      .map((item) => item.product);
-
-    console.log(`\n📊 RECOMMENDATION SUMMARY:`);
-    console.log(`   Total products evaluated: ${products.length}`);
-    console.log(`   Products with matching criteria: ${scoredProducts.length}`);
-    if (scoredProducts.length > 0) {
-      console.log(
-        `   Top recommendations: ${scoredProducts
-          .map((p) => p.name)
-          .join(", ")}`
-      );
-    }
+      .slice(0, 8); // Get top 8 products      .map((item) => item.product);
 
     // If no scored products, fall back to face shape matching
     if (scoredProducts.length === 0) {
@@ -443,11 +430,9 @@ exports.recommendEyewear = async (req, res) => {
       recommendedProductIds: scoredProducts.map((p) => p._id),
     });
     await stat.save();
-
     res.status(200).json({
       recommended: scoredProducts,
       statId: stat._id,
-      recommendations: recommendations, // Include the recommendation logic for debugging
     });
   } catch (err) {
     console.error("Error in recommendEyewear:", err);

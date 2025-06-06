@@ -18,16 +18,34 @@ const firebaseConfig = {
 initializeApp(firebaseConfig);
 const storage = getStorage();
 
+// Helper function to determine content type based on file extension
+const getContentType = (filename) => {
+  const ext = filename.toLowerCase().split(".").pop();
+  const contentTypes = {
+    glb: "model/gltf-binary",
+    gltf: "model/gltf+json",
+    usd: "model/vnd.usd",
+    usdc: "model/vnd.usdc",
+    usdz: "model/vnd.usdz+zip",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+  };
+  return contentTypes[ext] || "application/octet-stream";
+};
+
 // Multer configuration for memory storage (for Firebase)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
-    fileSize: 10 * 1024 * 1024, // 10MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit for 3D models
   },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === "model3d") {
       // Allow 3D model files
-      const allowedTypes = /usd|usdc|usdz/;
+      const allowedTypes = /usd|usdc|usdz|glb|gltf/;
       const extname = allowedTypes.test(
         file.originalname.toLowerCase().split(".").pop()
       );
@@ -36,7 +54,7 @@ const upload = multer({
       } else {
         cb(
           new AppError(
-            "Only USD, USDC, and USDZ files are allowed for 3D models",
+            "Only USD, USDC, USDZ, GLB, and GLTF files are allowed for 3D models",
             400
           )
         );
@@ -70,9 +88,8 @@ const uploadSingleImage = async (file, folder, customName = null) => {
   const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
   const fileName = customName || `${file.originalname}-${uniqueSuffix}`;
   const storageRef = ref(storage, `${folder}/${fileName}`);
-
   const metadata = {
-    contentType: file.mimetype,
+    contentType: file.mimetype || getContentType(file.originalname),
   };
 
   const snapshot = await uploadBytesResumable(

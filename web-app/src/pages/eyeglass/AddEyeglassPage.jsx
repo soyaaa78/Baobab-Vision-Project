@@ -20,10 +20,12 @@ const AddEyeglassPage = () => {
   const sunAdaptiveRef = useRef(null);
 
   const handleToggle = (ref, shouldCheck) => {
-    const checkboxes = ref.current.querySelectorAll('input[type="checkbox"]');
-    checkboxes.forEach((cb) => {
-      cb.checked = shouldCheck;
-    });
+    if (ref && ref.current) {
+      const checkboxes = ref.current.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach((cb) => {
+        if (!cb.disabled) cb.checked = shouldCheck;
+      });
+    }
   };
   const handleProductImageChange = (e) => {
     const files = Array.from(e.target.files);
@@ -72,7 +74,6 @@ const AddEyeglassPage = () => {
       );
     }
   };
-
   const [product, setProduct] = useState("");
   /* const addProduct = () => {
         setProduct(userdata);
@@ -82,20 +83,26 @@ const AddEyeglassPage = () => {
     name: "",
     description: "",
     price: "",
+    stock: "",
+    numStars: 0.0,
+    recommendedFor: false,
+    sales: 0,
     specs: [],
-    lensOptions: [],
+    lensOptions: [
+      { label: "Built-in UV400 Lenses", price: 0, type: "builtin" },
+    ],
+    colorOptions: [],
   });
 
   // Loading and error states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
-
   // --- Handlers for form fields ---
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
   const handleSpecsChange = (spec) => {
@@ -131,24 +138,135 @@ const AddEyeglassPage = () => {
 
   const handleLensOptionsChange = (label, type, price) => {
     setForm((prev) => {
-      const lensOptions = prev.lensOptions ? [...prev.lensOptions] : [];
+      // Always keep the built-in lens as the first item
+      let lensOptions = prev.lensOptions ? [...prev.lensOptions] : [];
+      // Remove all built-in except the first
+      lensOptions = lensOptions.filter(
+        (opt, idx) => !(opt.type === "builtin" && idx !== 0)
+      );
+      // Ensure built-in is always present at index 0
+      if (!lensOptions.length || lensOptions[0].type !== "builtin") {
+        lensOptions.unshift({
+          label: "Built-in UV400 Lenses",
+          price: 0,
+          type: "builtin",
+        });
+      }
+      // Prevent removing the built-in lens
+      if (type === "builtin") {
+        return { ...prev, lensOptions };
+      }
       const optionIndex = lensOptions.findIndex(
         (opt) => opt.label === label && opt.type === type
       );
       if (optionIndex > -1) {
-        // Remove the option if it already exists
-        return {
-          ...prev,
-          lensOptions: lensOptions.filter((_, i) => i !== optionIndex),
-        };
+        // Remove the option if it already exists, but never remove built-in
+        if (lensOptions[optionIndex].type !== "builtin") {
+          lensOptions = lensOptions.filter((_, i) => i !== optionIndex);
+        }
       } else {
-        // Add the new option
-        return {
-          ...prev,
-          lensOptions: [...lensOptions, { label, type, price }],
-        };
+        lensOptions.push({ label, type, price });
       }
+      // Always ensure built-in is first and only once
+      lensOptions = [
+        lensOptions.find((opt) => opt.type === "builtin"),
+        ...lensOptions.filter((opt) => opt.type !== "builtin"),
+      ].filter(Boolean);
+      // Remove any _id fields from lensOptions before saving to state (let backend add them)
+      lensOptions = lensOptions.map(({ label, type, price }) => ({
+        label,
+        type,
+        price,
+      }));
+      return {
+        ...prev,
+        lensOptions,
+      };
     });
+  };
+
+  // --- Color Options Handlers ---
+  const handleAddColorOption = () => {
+    setForm((prev) => ({
+      ...prev,
+      colorOptions: [
+        ...prev.colorOptions,
+        {
+          name: "",
+          type: "solid",
+          colors: ["#000000"],
+          imageUrl: "",
+        },
+      ],
+    }));
+  };
+
+  const handleColorOptionChange = (optionIndex, field, value) => {
+    setForm((prev) => {
+      const newColorOptions = [...prev.colorOptions];
+      newColorOptions[optionIndex] = {
+        ...newColorOptions[optionIndex],
+        [field]: value,
+      };
+      return {
+        ...prev,
+        colorOptions: newColorOptions,
+      };
+    });
+  };
+
+  const handleColorOptionColorChange = (optionIndex, colorIndex, color) => {
+    setForm((prev) => {
+      const newColorOptions = [...prev.colorOptions];
+      const newColors = [...newColorOptions[optionIndex].colors];
+      newColors[colorIndex] = color;
+      newColorOptions[optionIndex] = {
+        ...newColorOptions[optionIndex],
+        colors: newColors,
+      };
+      return {
+        ...prev,
+        colorOptions: newColorOptions,
+      };
+    });
+  };
+
+  const handleAddColorToOption = (optionIndex) => {
+    setForm((prev) => {
+      const newColorOptions = [...prev.colorOptions];
+      newColorOptions[optionIndex] = {
+        ...newColorOptions[optionIndex],
+        colors: [...newColorOptions[optionIndex].colors, "#000000"],
+      };
+      return {
+        ...prev,
+        colorOptions: newColorOptions,
+      };
+    });
+  };
+
+  const handleRemoveColorFromOption = (optionIndex, colorIndex) => {
+    setForm((prev) => {
+      const newColorOptions = [...prev.colorOptions];
+      const newColors = newColorOptions[optionIndex].colors.filter(
+        (_, i) => i !== colorIndex
+      );
+      newColorOptions[optionIndex] = {
+        ...newColorOptions[optionIndex],
+        colors: newColors,
+      };
+      return {
+        ...prev,
+        colorOptions: newColorOptions,
+      };
+    });
+  };
+
+  const handleRemoveColorOption = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      colorOptions: prev.colorOptions.filter((_, i) => i !== index),
+    }));
   }; // --- Submit handler ---
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -192,8 +310,48 @@ const AddEyeglassPage = () => {
       formData.append("name", form.name.trim());
       formData.append("description", form.description.trim());
       formData.append("price", form.price);
+      formData.append("stock", form.stock || "0");
+      formData.append("numStars", "0.0");
+      formData.append("recommendedFor", form.recommendedFor);
+      formData.append("sales", "0");
       formData.append("specs", JSON.stringify(form.specs));
-      formData.append("lensOptions", JSON.stringify(form.lensOptions));
+      // Always include the built-in lens and all selected lens options (no duplicates)
+      const builtInLens = {
+        label: "Built-in UV400 Lenses",
+        price: 0,
+        type: "builtin",
+      };
+      // Remove any duplicate lens options (same label+type) and preserve all selected
+      const uniqueLensOptions = [];
+      const seen = new Set();
+      // Always start with built-in lens
+      uniqueLensOptions.push(builtInLens);
+      form.lensOptions.forEach((opt) => {
+        if (opt.type === "builtin") return; // skip any extra built-in
+        const key = `${opt.label}|${opt.type}`;
+        if (!seen.has(key)) {
+          uniqueLensOptions.push({
+            label: opt.label,
+            price: opt.price,
+            type: opt.type,
+          });
+          seen.add(key);
+        }
+      });
+      formData.append("lensOptions", JSON.stringify(uniqueLensOptions));
+      formData.append("colorOptions", JSON.stringify(form.colorOptions));
+
+      // Debug logging
+      console.log("Form data being sent:");
+      console.log("Name:", form.name.trim());
+      console.log("Description:", form.description.trim());
+      console.log("Price:", form.price);
+      console.log("Stock:", form.stock || "0");
+
+      // Log all FormData entries
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
 
       // Add product images
       productImageFiles.forEach((file) => {
@@ -209,9 +367,8 @@ const AddEyeglassPage = () => {
       if (model3dFile) {
         formData.append("model3d", model3dFile);
       }
-
       const res = await axios.post(
-        `${SERVER_URL}/api/productRoutes/`,
+        `${SERVER_URL}/api/productRoutes`,
         formData,
         {
           headers: {
@@ -383,12 +540,12 @@ const AddEyeglassPage = () => {
                       </label>
                     </div>{" "}
                     <div style={{ display: "flex", flexDirection: "column" }}>
-                      <label>Virtual Try-On 3D Model</label>
+                      <label>Virtual Try-On 3D Model</label>{" "}
                       <input
                         type="file"
                         id="3dmodel"
                         name="media"
-                        accept=".usd,.usdc,.usdz"
+                        accept=".usd,.usdc,.usdz,.glb,.gltf"
                         onChange={handleModel3dChange}
                       />
                       {model3dFile && (
@@ -526,7 +683,6 @@ const AddEyeglassPage = () => {
                         </div>
                       </div>{" "}
                     </div>
-
                     {/* Frame Shape Selection Section */}
                     <div className="csdc-header" style={{ marginTop: "20px" }}>
                       <p style={{ fontFamily: "Rubik" }}>
@@ -607,7 +763,6 @@ const AddEyeglassPage = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="aef-sect-fields csd-lower">
                       <div>
                         <p style={{ fontFamily: "Rubik" }}>
@@ -622,9 +777,30 @@ const AddEyeglassPage = () => {
                           }}
                         >
                           Select all that shall be offered.
-                        </p>
+                        </p>{" "}
                       </div>
                       <div className="csdl-lens-container">
+                        {/* Built-in UV400 Lenses (Always included) */}
+                        <div className="aef-sect-fields csd-lens" id="builtin">
+                          <div className="bsdf-input csdfl-lens-options">
+                            <label style={{ marginBottom: "10px" }}>
+                              <b>
+                                <i>Standard Lenses</i>
+                              </b>
+                            </label>
+                            <div className="checkbox-container">
+                              <input
+                                type="checkbox"
+                                checked={true}
+                                disabled={true}
+                              />
+                              <label>
+                                Built-in UV400 Lenses (Included with all frames)
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
                         <div className="aef-sect-fields csd-lens" id="tinted">
                           <div
                             className="bsdf-input csdfl-lens-options"
@@ -831,20 +1007,7 @@ const AddEyeglassPage = () => {
                               </label>
                             </div>
 
-                            <div className="csd-lens-multiselect">
-                              <button
-                                type="button"
-                                onClick={() => handleToggle(tintedRef, true)}
-                              >
-                                Select All
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleToggle(tintedRef, false)}
-                              >
-                                Select None
-                              </button>
-                            </div>
+                            <div className="csd-lens-multiselect"></div>
                           </div>
                         </div>
 
@@ -1057,29 +1220,337 @@ const AddEyeglassPage = () => {
                               </label>
                             </div>
 
-                            <div className="csd-lens-multiselect">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleToggle(sunAdaptiveRef, true)
-                                }
-                              >
-                                Select All
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  handleToggle(sunAdaptiveRef, false)
-                                }
-                              >
-                                Select None
-                              </button>
-                            </div>
+                            <div className="csd-lens-multiselect"></div>
                           </div>
                         </div>
                       </div>
+                    </div>{" "}
+                  </div>
+                </div>
+              </div>
+
+              {/* Color Options Section */}
+              <div className="aef-section aef-color-sect">
+                <div className="section-details">
+                  <div className="section-header">
+                    <h2>Color Options</h2>
+                    <p
+                      style={{
+                        color: "#666",
+                        fontSize: "0.9em",
+                        marginTop: "5px",
+                      }}
+                    >
+                      Add color options for this product
+                    </p>
+                  </div>
+                  <div className="aef-sect-fields">
+                    {form.colorOptions.map((option, optionIndex) => (
+                      <div
+                        key={optionIndex}
+                        className="color-option-container"
+                        style={{
+                          border: "1px solid #ddd",
+                          borderRadius: "8px",
+                          padding: "15px",
+                          marginBottom: "15px",
+                          backgroundColor: "#f9f9f9",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            marginBottom: "10px",
+                          }}
+                        >
+                          <h4>Color Option {optionIndex + 1}</h4>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveColorOption(optionIndex)}
+                            style={{
+                              backgroundColor: "#ff4444",
+                              color: "white",
+                              border: "none",
+                              borderRadius: "4px",
+                              padding: "5px 10px",
+                              cursor: "pointer",
+                              fontSize: "0.8em",
+                            }}
+                          >
+                            Remove Option
+                          </button>
+                        </div>
+                        <div style={{ marginBottom: "10px" }}>
+                          <label>Option Name:</label>
+                          <input
+                            type="text"
+                            value={option.name}
+                            onChange={(e) =>
+                              handleColorOptionChange(
+                                optionIndex,
+                                "name",
+                                e.target.value
+                              )
+                            }
+                            placeholder="e.g., Frame Color, Accent Color"
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              border: "1px solid #ccc",
+                              borderRadius: "4px",
+                              marginTop: "5px",
+                            }}
+                          />
+                        </div>
+                        <div style={{ marginBottom: "10px" }}>
+                          <label>Option Type:</label>
+                          <select
+                            value={option.type}
+                            onChange={(e) =>
+                              handleColorOptionChange(
+                                optionIndex,
+                                "type",
+                                e.target.value
+                              )
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              border: "1px solid #ccc",
+                              borderRadius: "4px",
+                              marginTop: "5px",
+                            }}
+                          >
+                            <option value="solid">Solid Color</option>
+                            <option value="split">Split Color</option>
+                            <option value="swatch">Color Swatch</option>
+                          </select>
+                        </div>{" "}
+                        <div style={{ marginBottom: "10px" }}>
+                          <label>
+                            Reference Image (from uploaded colorway images):
+                          </label>
+                          <select
+                            value={option.imageUrl}
+                            onChange={(e) =>
+                              handleColorOptionChange(
+                                optionIndex,
+                                "imageUrl",
+                                e.target.value
+                              )
+                            }
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              border: "1px solid #ccc",
+                              borderRadius: "4px",
+                              marginTop: "5px",
+                            }}
+                          >
+                            <option value="">
+                              Select a colorway image (optional)
+                            </option>
+                            {colorwayImages.map((img, idx) => (
+                              <option key={img.id} value={img.url}>
+                                Colorway Image {idx + 1}
+                              </option>
+                            ))}
+                          </select>
+                          {option.imageUrl && (
+                            <div style={{ marginTop: "10px" }}>
+                              <img
+                                src={option.imageUrl}
+                                alt="Selected colorway"
+                                style={{
+                                  width: "100px",
+                                  height: "100px",
+                                  objectFit: "cover",
+                                  borderRadius: "4px",
+                                  border: "1px solid #ddd",
+                                }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <label>Colors:</label>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: "10px",
+                              marginTop: "5px",
+                            }}
+                          >
+                            {option.colors.map((color, colorIndex) => (
+                              <div
+                                key={colorIndex}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "5px",
+                                }}
+                              >
+                                <input
+                                  type="color"
+                                  value={color}
+                                  onChange={(e) =>
+                                    handleColorOptionColorChange(
+                                      optionIndex,
+                                      colorIndex,
+                                      e.target.value
+                                    )
+                                  }
+                                  style={{
+                                    width: "40px",
+                                    height: "40px",
+                                    border: "none",
+                                    borderRadius: "4px",
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleRemoveColorFromOption(
+                                      optionIndex,
+                                      colorIndex
+                                    )
+                                  }
+                                  style={{
+                                    backgroundColor: "#ff4444",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "50%",
+                                    width: "20px",
+                                    height: "20px",
+                                    cursor: "pointer",
+                                    fontSize: "0.7em",
+                                  }}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleAddColorToOption(optionIndex)
+                              }
+                              style={{
+                                backgroundColor: "#4CAF50",
+                                color: "white",
+                                border: "none",
+                                borderRadius: "4px",
+                                padding: "8px 12px",
+                                cursor: "pointer",
+                                fontSize: "0.8em",
+                              }}
+                            >
+                              + Add Color
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={handleAddColorOption}
+                      style={{
+                        backgroundColor: "#2196F3",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "4px",
+                        padding: "10px 15px",
+                        cursor: "pointer",
+                        fontSize: "0.9em",
+                        marginTop: "10px",
+                      }}
+                    >
+                      + Add Color Option
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Product Fields Section */}
+              <div className="aef-section aef-additional-sect">
+                <div className="section-details">
+                  <div className="section-header">
+                    <h2>Additional Product Information</h2>
+                  </div>{" "}
+                  <div
+                    className="aef-sect-fields"
+                    style={{
+                      display: "flex",
+                      gap: "20px",
+                      alignItems: "flex-start",
+                    }}
+                  >
+                    <div className="bsdf-input" style={{ flex: "1" }}>
+                      <label htmlFor="stock">Stock Quantity</label>
+                      <input
+                        type="number"
+                        id="stock"
+                        name="stock"
+                        min="0"
+                        placeholder="0"
+                        value={form.stock}
+                        onChange={handleInputChange}
+                        style={{
+                          width: "100%",
+                          padding: "8px",
+                          border: "1px solid #ccc",
+                          borderRadius: "4px",
+                          marginTop: "5px",
+                        }}
+                      />
+                    </div>
+
+                    <div
+                      className="bsdf-input"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "10px",
+                        marginTop: "20px",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        id="recommendedFor"
+                        name="recommendedFor"
+                        checked={form.recommendedFor}
+                        onChange={handleInputChange}
+                      />
+                      <label htmlFor="recommendedFor">
+                        Recommended Product
+                      </label>
                     </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Error Display and Submit Section */}
+              <div className="aef-section">
+                <div className="section-details">
+                  {/* Error Display */}
+                  {submitError && (
+                    <div
+                      style={{
+                        backgroundColor: "#ffebee",
+                        color: "#c62828",
+                        padding: "10px",
+                        borderRadius: "4px",
+                        border: "1px solid #ffcdd2",
+                        marginBottom: "15px",
+                      }}
+                    >
+                      {submitError}
+                    </div>
+                  )}
 
                   <div
                     className="csd-post-button-container"
@@ -1088,7 +1559,14 @@ const AddEyeglassPage = () => {
                     <Button
                       className=""
                       type="submit"
-                      children={<p>Add to Catalogue</p>}
+                      disabled={isSubmitting}
+                      children={
+                        <p>
+                          {isSubmitting
+                            ? "Adding Product..."
+                            : "Add to Catalogue"}
+                        </p>
+                      }
                     />
                   </div>
                 </div>

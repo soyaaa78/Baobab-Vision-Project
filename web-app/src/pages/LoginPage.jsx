@@ -21,7 +21,7 @@ function LoginPage() {
 
   const togglePasswordVisibility = () => {
     setPassVisibility((prev) => !prev);
-  }
+  };
 
   // Redirect to dashboard if already authenticated
   useEffect(() => {
@@ -36,7 +36,7 @@ function LoginPage() {
     setSuccess("");
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/admin/login",
+        "https://baobab-vision-project.onrender.com/api/admin/login",
         {
           username,
           password,
@@ -73,7 +73,7 @@ function LoginPage() {
     setSuccess("");
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/admin/verify-otp",
+        "https://baobab-vision-project.onrender.com/api/admin/verify-otp",
         {
           email,
           otp,
@@ -93,9 +93,12 @@ function LoginPage() {
     setError("");
     setSuccess("");
     try {
-      await axios.post("http://localhost:3001/api/admin/resend-otp", {
-        email,
-      });
+      await axios.post(
+        "https://baobab-vision-project.onrender.com/api/admin/resend-otp",
+        {
+          email,
+        }
+      );
       setSuccess("Verification code resent to your email.");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to resend code.");
@@ -110,7 +113,6 @@ function LoginPage() {
         </div>
 
         <div className="main-body">
-
           <div className="yellowbox-text mobile-only">
             <h1>{step === "login" ? "Staff Login" : "Email Verification"}</h1>
             <p>
@@ -144,7 +146,7 @@ function LoginPage() {
               />
               <div className="password-wrapper">
                 <input
-                  type={passVisibility ? 'password' : 'text'}
+                  type={passVisibility ? "password" : "text"}
                   id="pass"
                   name="password"
                   placeholder="Password"
@@ -157,7 +159,11 @@ function LoginPage() {
                 </div>
               </div>
               <div className="submit-container">
-                <input type="submit" value="SIGN IN" className="submit-button" />
+                <input
+                  type="submit"
+                  value="SIGN IN"
+                  className="submit-button"
+                />
               </div>
               {(error || success) && (
                 <div className="form-message-box">
@@ -165,7 +171,6 @@ function LoginPage() {
                   {success && <p className="form-success">{success}</p>}
                 </div>
               )}
-
             </form>
           ) : (
             <form className="input-fields" onSubmit={handleVerify}>
@@ -180,7 +185,12 @@ function LoginPage() {
                 required
               />
               <div className="submit-container">
-                <input type="submit" value="VERIFY" className="submit-button" id="otp-verify" />
+                <input
+                  type="submit"
+                  value="VERIFY"
+                  className="submit-button"
+                  id="otp-verify"
+                />
               </div>
               <div className="submit-container">
                 <button
@@ -202,12 +212,9 @@ function LoginPage() {
               )}
             </form>
           )}
-
-
         </div>
       </div>
     </>
-
   );
 }
 
