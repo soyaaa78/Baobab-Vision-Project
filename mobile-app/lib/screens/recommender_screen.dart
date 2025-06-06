@@ -614,30 +614,22 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
             : (jawWidth > 1e-3 ? jawWidth : faceHeight * 0.75);
       }
       if (overallFaceWidth < 1e-3) return null;
-
-      double HWRatio =
-          faceHeight / overallFaceWidth; // Height-to-OverallWidth Ratio
+      double HWRatio = faceHeight / overallFaceWidth;
       double FWRatioToOverall = foreheadWidth / overallFaceWidth;
       double JWRatioToOverall = jawWidth / overallFaceWidth;
 
-      // --- Order of Classification (Most Distinct to More General) ---      // 1. Rectangle: Very long face, widths somewhat uniform.
       if (HWRatio >= 1.60) {
-        // Lowered threshold from 1.68
-        // Check if widths are relatively consistent (not extremely tapered like a very long diamond/oval)
         bool widthsSomewhatUniform =
             (foreheadWidth - jawWidth).abs() < overallFaceWidth * 0.25 &&
                 FWRatioToOverall > 0.75 &&
-                JWRatioToOverall >
-                    0.70; // Ensure forehead/jaw aren't excessively narrow
+                JWRatioToOverall > 0.70;
         if (widthsSomewhatUniform) {
           return "Rectangle";
         }
       }
 
-      // 2. Square: All three widths very similar, H/W ratio balanced.
       if (HWRatio >= 0.88 && HWRatio <= 1.25) {
-        // Slightly wider HWRatio band (was 0.90-1.22)
-        double widthTolerance = 0.18; // Relaxed from 0.15
+        double widthTolerance = 0.18;
         bool fw_eq_cw = (foreheadWidth - cheekboneWidth).abs() <
             cheekboneWidth * widthTolerance;
         bool jw_eq_cw =
@@ -649,32 +641,21 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
         }
       }
 
-      // 3. Triangle: Jawline is distinctly the widest, forehead is narrowest.
-      if (jawWidth >
-              foreheadWidth * 1.15 && // Jaw >15% wider than forehead (was 1.18)
-          jawWidth >
-              cheekboneWidth *
-                  1.05 && // Jaw >5% wider than cheekbones (was 1.08)
+      if (jawWidth > foreheadWidth * 1.15 &&
+          jawWidth > cheekboneWidth * 1.05 &&
           foreheadWidth < cheekboneWidth) {
-        // Forehead narrower than cheekbones (kept)
         if (HWRatio < 1.65) {
-          // Avoid conflict with very long faces that might have wide jaws
           return "Triangle";
         }
-      }
-
-      // 4. Heart: Forehead is broad (often widest part or comparable to cheeks), jaw is significantly narrower.
+      } // 4. Heart: Forehead is broad (often widest part or comparable to cheeks), jaw is significantly narrower.
       if (HWRatio > 1.0 && HWRatio < 1.65) {
-        // Adjusted HWRatio range (was 1.05-1.68)
-        bool foreheadProminent = foreheadWidth >=
-            cheekboneWidth *
-                0.93; // Forehead is wide, quite comparable or wider than cheeks (was 0.90)
+        bool foreheadProminent = foreheadWidth >= cheekboneWidth * 0.93;
         // OR if cheeks are widest, forehead is still substantial
-        bool cheeksWidestButForeheadBroad = cheekboneWidth > foreheadWidth &&
-            foreheadWidth >= jawWidth * 1.18; // (was 1.15)
+        bool cheeksWidestButForeheadBroad =
+            cheekboneWidth > foreheadWidth && foreheadWidth >= jawWidth * 1.18;
 
-        bool jawVeryNarrow = jawWidth < foreheadWidth * 0.78 &&
-            jawWidth < cheekboneWidth * 0.78; // Jaw much narrower (was 0.80)
+        bool jawVeryNarrow =
+            jawWidth < foreheadWidth * 0.78 && jawWidth < cheekboneWidth * 0.78;
 
         if ((foreheadProminent || cheeksWidestButForeheadBroad) &&
             jawVeryNarrow) {
@@ -685,19 +666,14 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
             return "Heart";
           }
         }
-      }
-
-      // 5. Diamond: Cheekbones are EXTREMELY the widest. Forehead and jawline are both significantly narrower and symmetrical.
+      } // 5. Diamond: Cheekbones are EXTREMELY the widest. Forehead and jawline are both significantly narrower and symmetrical.
       if (HWRatio > 1.10 && HWRatio < 1.65) {
-        // Adjusted HWRatio (was 1.68)
         bool cheeksVeryDominant = cheekboneWidth > foreheadWidth * 1.18 &&
-            cheekboneWidth > jawWidth * 1.18; // Cheeks >18% wider (was 1.20)
-        bool foreheadNarrow = foreheadWidth <
-            cheekboneWidth * 0.88; // Forehead <88% of CW (was 0.85)
-        bool jawNarrow =
-            jawWidth < cheekboneWidth * 0.88; // Jaw <88% of CW (was 0.85)
-        bool foreheadJawSymmetrical = (foreheadWidth - jawWidth).abs() <
-            foreheadWidth * 0.25; // FW and JW similar (was 0.22)
+            cheekboneWidth > jawWidth * 1.18;
+        bool foreheadNarrow = foreheadWidth < cheekboneWidth * 0.88;
+        bool jawNarrow = jawWidth < cheekboneWidth * 0.88;
+        bool foreheadJawSymmetrical =
+            (foreheadWidth - jawWidth).abs() < foreheadWidth * 0.25;
 
         if (cheeksVeryDominant &&
             foreheadNarrow &&
@@ -705,17 +681,12 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
             foreheadJawSymmetrical) {
           return "Diamond";
         }
-      }
-
-      // 6. Round: Face height and width are nearly equal. Soft, curved outline. Cheeks often widest or equal.
+      } // 6. Round: Face height and width are nearly equal. Soft, curved outline. Cheeks often widest or equal.
       if (HWRatio >= 0.88 && HWRatio <= 1.25) {
-        // H/W close to 1 (was 0.90-1.22)
         bool cheeksFull = cheekboneWidth >= foreheadWidth * 0.88 &&
-            cheekboneWidth >= jawWidth * 0.88; // (was 0.90)
-        bool jawNotOverlyWideOrNarrow = jawWidth > foreheadWidth * 0.80 &&
-            jawWidth <
-                foreheadWidth *
-                    1.10; // Jaw balanced with forehead (was 1.05 upper)
+            cheekboneWidth >= jawWidth * 0.88;
+        bool jawNotOverlyWideOrNarrow =
+            jawWidth > foreheadWidth * 0.80 && jawWidth < foreheadWidth * 1.10;
         bool foreheadNotPinched = FWRatioToOverall > 0.75;
         bool jawNotPinched = JWRatioToOverall > 0.70;
 
@@ -731,15 +702,11 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
             return "Round";
           }
         }
-      }
-
-      // 7. Oval: Distinctly longer than wide (but not Rectangle), gentle tapering from cheekbones.
+      } // 7. Oval: Distinctly longer than wide (but not Rectangle), gentle tapering from cheekbones.
       if (HWRatio > 1.25 && HWRatio < 1.65) {
-        // H/W ratio clearly above Round/Square (was 1.68 upper)
         bool cheeksGenerallyWidest = cheekboneWidth >= foreheadWidth * 0.95 &&
             cheekboneWidth >= jawWidth * 0.95;
-        bool gentleTaper = FWRatioToOverall < 0.97 &&
-            JWRatioToOverall < 0.93; // Slightly relaxed taper (was 0.96, 0.92)
+        bool gentleTaper = FWRatioToOverall < 0.97 && JWRatioToOverall < 0.93;
         bool balancedEnds =
             (foreheadWidth - jawWidth).abs() < cheekboneWidth * 0.30;
 
