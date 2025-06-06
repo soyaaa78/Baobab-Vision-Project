@@ -44,7 +44,7 @@ class _LogInScreenState extends State<LogInScreen> {
 
   // Login function
   Future<void> login() async {
-    var url = Uri.parse('http://192.168.1.5:3001/api/auth/login');
+    var url = Uri.parse('http://10.0.2.2:3001/api/auth/login');
 
     try {
       final response = await http.post(
