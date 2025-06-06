@@ -341,18 +341,6 @@ const AddEyeglassPage = () => {
       formData.append("lensOptions", JSON.stringify(uniqueLensOptions));
       formData.append("colorOptions", JSON.stringify(form.colorOptions));
 
-      // Debug logging
-      console.log("Form data being sent:");
-      console.log("Name:", form.name.trim());
-      console.log("Description:", form.description.trim());
-      console.log("Price:", form.price);
-      console.log("Stock:", form.stock || "0");
-
-      // Log all FormData entries
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
       // Add product images
       productImageFiles.forEach((file) => {
         formData.append("productImages", file);

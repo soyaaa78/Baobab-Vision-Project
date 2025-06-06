@@ -376,7 +376,6 @@ const EditEyeglassPage = () => {
       if (model3dFile && model3dFile !== eyeglass.model3dUrl) {
         updatedEyeglass.model3dFile = model3dFile;
       }
-      console.log(updatedEyeglass);
       await axios.put(
         `${SERVER_URL}/api/productRoutes?id=${eyeglass._id}`,
         updatedEyeglass
