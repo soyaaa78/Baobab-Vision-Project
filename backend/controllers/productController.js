@@ -1,16 +1,24 @@
 // controllers/productController.js
 const Product = require("../models/Products");
 const RecommendationStat = require("../models/RecommendationStat");
+const {
+  uploadProductFiles,
+  uploadMultipleImagesHelper,
+  uploadSingleImageHelper,
+} = require("./firebaseStorageController");
+const AppError = require("../utils/appError");
+const catchAsync = require("../utils/catchAsync");
+
+// Use Firebase storage middleware
+exports.uploadProductFiles = uploadProductFiles;
 
 // Create product
-// Create product
-exports.createProduct = async (req, res) => {
+exports.createProduct = catchAsync(async (req, res, next) => {
   const {
     name,
     description,
     price,
     stock,
-    imageUrls,
     specs,
     numStars,
     recommendedFor,
@@ -20,32 +28,108 @@ exports.createProduct = async (req, res) => {
   } = req.body;
 
   // Validate required fields
-  if (!name || !description || !price || !specs) {
-    return res.status(400).json({ message: "Missing required fields" });
+  if (!name || !description || !price) {
+    return res
+      .status(400)
+      .json({ message: "Name, description, and price are required" });
+  }
+
+  // Parse JSON fields if they come as strings
+  let parsedSpecs = [];
+  let parsedLensOptions = [];
+  let parsedColorOptions = [];
+
+  try {
+    parsedSpecs = typeof specs === "string" ? JSON.parse(specs) : specs || [];
+    parsedLensOptions =
+      typeof lensOptions === "string"
+        ? JSON.parse(lensOptions)
+        : lensOptions || [];
+    parsedColorOptions =
+      typeof colorOptions === "string"
+        ? JSON.parse(colorOptions)
+        : colorOptions || [];
+  } catch (error) {
+    return res
+      .status(400)
+      .json({ message: "Invalid JSON format in form data" });
+  }
+
+  // Validate that at least one spec is provided
+  if (!parsedSpecs || parsedSpecs.length === 0) {
+    return res
+      .status(400)
+      .json({ message: "At least one face shape specification is required" });
   }
 
   try {
+    let imageUrls = [];
+    let colorwayImageUrls = [];
+    let model3dUrl = null;
+
+    // Handle uploaded files with Firebase Storage
+    if (req.files) {
+      // Upload product images
+      if (req.files.productImages && req.files.productImages.length > 0) {
+        imageUrls = await uploadMultipleImagesHelper(
+          req.files.productImages,
+          "products/images"
+        );
+      }
+
+      // Upload colorway images
+      if (req.files.colorwayImages && req.files.colorwayImages.length > 0) {
+        colorwayImageUrls = await uploadMultipleImagesHelper(
+          req.files.colorwayImages,
+          "products/colorways"
+        );
+      }
+
+      // Upload 3D model
+      if (req.files.model3d && req.files.model3d.length > 0) {
+        model3dUrl = await uploadSingleImageHelper(
+          req.files.model3d[0],
+          "products/models"
+        );
+      }
+    }
+
+    // Validate that at least one product image is provided
+    if (imageUrls.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "At least one product image is required" });
+    }
+
     const product = new Product({
-      name,
-      description,
-      price,
-      stock: stock || 0,
+      name: name.trim(),
+      description: description.trim(),
+      price: parseFloat(price),
+      stock: parseInt(stock) || 0,
       imageUrls,
-      specs,
-      numStars: numStars || 5,
-      recommendedFor: recommendedFor || false,
-      sales: sales || 0,
-      colorOptions: colorOptions || [],
-      lensOptions: lensOptions || [],
+      specs: parsedSpecs,
+      numStars: parseInt(numStars) || 5,
+      recommendedFor: recommendedFor === "true" || recommendedFor === true,
+      sales: parseInt(sales) || 0,
+      colorOptions: parsedColorOptions,
+      lensOptions: parsedLensOptions,
+      colorwayImageUrls:
+        colorwayImageUrls.length > 0 ? colorwayImageUrls : undefined,
+      model3dUrl: model3dUrl || undefined,
     });
 
     await product.save();
-    res.status(201).json({ message: "Product created", product });
+    res.status(201).json({
+      message: "Product created successfully!",
+      product,
+    });
   } catch (err) {
     console.error("❌ Error creating product:", err);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: err.message });
   }
-};
+});
 
 // Get all products with optional sorting
 exports.getAllProducts = async (req, res) => {
