@@ -358,6 +358,7 @@ const ManageUsersPage = () => {
                                   onClick={() => {
                                     setSelectedUser(user._id);
                                     setSelectedAction("Delete");
+                                    setAlertModalContent("Delete");
                                     toggleAlertModal();
                                   }}
                                 >
@@ -881,8 +882,9 @@ const ManageUsersPage = () => {
                     <div className="modal-body-container" id="add">
                       <div className="add-text">
                         <p>
-                          Upon addition, the user shall be sent a confirmation
-                          email to confirm their identity.
+                          Upon addition, the user account shall be created. <br /><br />
+                          For them to fully use the administrator account, a confirmation email
+                            shall be sent to the email registered to confirm their identity and the validity of the email.
                         </p>
                       </div>
                       <div className="mcb-body-container">

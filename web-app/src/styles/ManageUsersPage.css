@@ -190,8 +190,8 @@
 }
 
 .orders-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
+  background: linear-gradient(to right, #ffbd6e 0%, #e29b4f 100%);
+  color: #2d3748;
 }
 
 .orders-table thead th {
@@ -200,7 +200,6 @@
   font-weight: 600;
   font-size: 0.95rem;
   letter-spacing: 0.025em;
-  border-bottom: 2px solid #4c51bf;
 }
 
 .orders-table tbody tr {
@@ -258,8 +257,8 @@
 
 /* Product count badge */
 .product-count-badge {
-  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
-  color: #ffffff;
+  background: #f5ddb3;
+  color: #2d3748;
   padding: 0.4rem 0.8rem;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -895,14 +894,14 @@ button.action-li:hover {
   display: flex;
   flex-direction: column;
   margin-bottom: 20px;
-}
-
-.modal-email {
-  margin: 0;
+  gap: 5px;
 }
 
 .mu-modal-input input {
-  min-width: 100px;
+  padding: 12px;
+  border: 1px solid #2d3748;
+  border-radius: 5px;
+  outline: none;
 }
 
 /* // // // // // // // // / */

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import baobablogo from "../assets/bvfull.png";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import "../styles/LoginPage.css";
 import axios from "axios";
 
@@ -15,6 +17,11 @@ function LoginPage() {
   const [success, setSuccess] = useState("");
   const navigate = useNavigate();
   const { login, isAuthenticated, loading } = useAuth();
+  const [passVisibility, setPassVisibility] = useState(true);
+
+  const togglePasswordVisibility = () => {
+    setPassVisibility((prev) => !prev);
+  }
 
   // Redirect to dashboard if already authenticated
   useEffect(() => {
@@ -135,15 +142,20 @@ function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
               />
-              <input
-                type="password"
-                id="pass"
-                name="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <div className="password-wrapper">
+                <input
+                  type={passVisibility ? 'password' : 'text'}
+                  id="pass"
+                  name="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <div className="eye-icon" onClick={togglePasswordVisibility}>
+                  <FontAwesomeIcon icon={passVisibility ? faEye : faEyeSlash} />
+                </div>
+              </div>
               <div className="submit-container">
                 <input type="submit" value="SIGN IN" className="submit-button" />
               </div>
@@ -153,6 +165,7 @@ function LoginPage() {
                   {success && <p className="form-success">{success}</p>}
                 </div>
               )}
+
             </form>
           ) : (
             <form className="input-fields" onSubmit={handleVerify}>

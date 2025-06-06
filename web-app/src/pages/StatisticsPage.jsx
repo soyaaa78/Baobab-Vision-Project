@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import "../styles/StatisticsPage.css";
-import Button from "../components/Button.jsx";
 import { PieChart } from "../components/charts/Pie.jsx";
 import { SalesLineChart } from "../components/charts/SalesLineChart.jsx";
 import { ProductViewsChart } from "../components/charts/ProductViewsChart.jsx";
@@ -71,7 +70,7 @@ function StatisticsPage() {
         <div className="statistics-content">
           <div className="statistics-bulk">
             <div className="piesect">
-              <div className="chart-wrapper">
+              <div className="chart-wrapper" id="stat-piechart">
                 <PieChart />
               </div>
             </div>

@@ -85,6 +85,30 @@ p {
     
 }
 
+.password-wrapper {
+  position: relative;
+  width: 330px;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 40px;
+}
+
+.eye-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #2a383d;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 #otp-verify, #otp-resend {
     background-color: #ececec;
 }

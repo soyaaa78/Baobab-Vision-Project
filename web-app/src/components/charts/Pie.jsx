@@ -61,24 +61,18 @@ export const PieChart = () => {
   if (!data) return null;
 
   return (
-    <div
-      style={{
-        width: 400,
-        height: 400,
-        maxWidth: "100%",
-        maxHeight: "100%",
-        margin: "0 auto",
-      }}
-    >
-      <Pie options={options} data={data} />
+    <div style={{ width: 325, height: 'auto', maxWidth: "100%",  margin: "0 auto" }}>
+      
+      <div style={{ height: 325 }}>
+        <Pie options={options} data={data} />
+      </div>
 
       <div style={{ marginTop: "1em", textAlign: "center" }}>
         {stats.map((item, index) => (
           <p key={index}>
-            <b>{`${item._id} Shape` || "Unknown"}:</b> {item.count}
+            <b>{item._id ? `${item._id} Shape` : "Unknown"}:</b> {item.count}
           </p>
 
-          /* add math for extra statistics interpretation, perhaps? */
         ))}
       </div>
     </div>

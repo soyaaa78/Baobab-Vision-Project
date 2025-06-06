@@ -235,7 +235,6 @@ label {
 
 .csdc-lens-categorization {
   display: flex;
-
   flex-wrap: wrap;
   justify-content: flex-start;
   gap: 20px;
