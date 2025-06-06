@@ -10,10 +10,11 @@ import {
   faSortDown,
 } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const ManageUsersPage = () => {
-  const TOKEN = localStorage.getItem("token");
-  const ROLE = localStorage.getItem("role");
+  const TOKEN = Cookies.get("token");
+  const ROLE = Cookies.get("role");
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
   const [activeTab, setActiveTab] = useState("users");
   const [modal, setModal] = useState(false);
@@ -882,9 +883,13 @@ const ManageUsersPage = () => {
                     <div className="modal-body-container" id="add">
                       <div className="add-text">
                         <p>
-                          Upon addition, the user account shall be created. <br /><br />
-                          For them to fully use the administrator account, a confirmation email
-                            shall be sent to the email registered to confirm their identity and the validity of the email.
+                          Upon addition, the user account shall be created.{" "}
+                          <br />
+                          <br />
+                          For them to fully use the administrator account, a
+                          confirmation email shall be sent to the email
+                          registered to confirm their identity and the validity
+                          of the email.
                         </p>
                       </div>
                       <div className="mcb-body-container">

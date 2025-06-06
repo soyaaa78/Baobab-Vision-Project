@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import "../styles/LoginPage.css";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 function LoginPage() {
   const [username, setUsername] = useState("");
@@ -60,7 +61,7 @@ function LoginPage() {
       if (res?.data?.requiresVerification) {
         setStep("verify");
         setEmail(res.data.email);
-        localStorage.setItem("pendingEmail", res.data.email);
+        Cookies.set("pendingEmail", res.data.email, { expires: 1 / 24 });
         return;
       }
       setError(res?.data?.message || "Login failed");
@@ -80,8 +81,7 @@ function LoginPage() {
         }
       );
       login(res.data.token, res.data.role);
-      localStorage.removeItem("pendingEmail");
-
+      Cookies.remove("pendingEmail");
       setSuccess("Account successfully verified!");
       setTimeout(() => navigate("/dashboard"), 1500);
     } catch (err) {

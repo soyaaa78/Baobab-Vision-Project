@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
 const AuthContext = createContext();
 
@@ -17,8 +18,8 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const role = localStorage.getItem("role");
+    const token = Cookies.get("token");
+    const role = Cookies.get("role");
 
     if (token && role) {
       setIsAuthenticated(true);
@@ -27,15 +28,15 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (token, role) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", role);
+    Cookies.set("token", token, { expires: 1 / 24 }); // 1 hour
+    Cookies.set("role", role, { expires: 1 / 24 });
     setIsAuthenticated(true);
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    localStorage.removeItem("pendingEmail");
+    Cookies.remove("token");
+    Cookies.remove("role");
+    Cookies.remove("pendingEmail");
     setIsAuthenticated(false);
     navigate("/");
   };
