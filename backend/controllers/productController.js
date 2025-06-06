@@ -181,7 +181,6 @@ exports.getFaceShapeStats = async (req, res) => {
 };
 
 exports.recommendEyewear = async (req, res) => {
-  console.log("run");
   const {
     faceShape,
     lifestyleActivity,
@@ -225,26 +224,47 @@ exports.recommendEyewear = async (req, res) => {
     const products = await Product.find({}); // Score and filter products based on recommendations
     let scoredProducts = products.map((product) => {
       let score = 0;
-      let reasons = [];
-
-      // Check face shape compatibility
+      let reasons = []; // Check face shape compatibility (product should be suitable for user's face shape)
       const normalizedFaceShape = faceShape
         .toLowerCase()
         .replace(/ shape$/, "")
         .trim();
-      const faceShapeMatch = product.specs.some((spec) =>
-        spec.toLowerCase().includes(normalizedFaceShape)
-      );
+
+      const faceShapeMatch = product.specs.some((spec) => {
+        const specLower = spec.toLowerCase();
+        return (
+          specLower.startsWith("face_") &&
+          specLower.includes(normalizedFaceShape)
+        );
+      });
+
       if (faceShapeMatch) {
         score += 10;
-        reasons.push(`Face shape match (+10): ${normalizedFaceShape}`);
+        reasons.push(`Suitable for face shape (+10): ${normalizedFaceShape}`);
       }
 
-      // Check frame shape recommendations
+      // Check frame shape recommendations (product's frame shape should match recommended shapes)
       recommendations.frameShapes.forEach((recommendedShape) => {
-        const shapeMatch = product.specs.some((spec) =>
-          spec.toLowerCase().includes(recommendedShape.toLowerCase())
-        );
+        const shapeMatch = product.specs.some((spec) => {
+          const specLower = spec.toLowerCase();
+          const recommendedLower = recommendedShape.toLowerCase();
+
+          // Match frame_shape_X patterns
+          return (
+            specLower.startsWith("frame_") &&
+            (specLower.includes(recommendedLower.replace(" ", "_")) ||
+              (recommendedLower === "cat eye" &&
+                specLower.includes("cat_eye")) ||
+              (recommendedLower === "pilot" && specLower.includes("pilot")) ||
+              (recommendedLower === "oversized" &&
+                specLower.includes("oversized")) ||
+              (recommendedLower === "round" && specLower.includes("round")) ||
+              (recommendedLower === "square" && specLower.includes("square")) ||
+              (recommendedLower === "rectangle" &&
+                specLower.includes("rectangle")))
+          );
+        });
+
         if (shapeMatch) {
           score += 8;
           reasons.push(`Frame shape match (+8): ${recommendedShape}`);
@@ -268,17 +288,18 @@ exports.recommendEyewear = async (req, res) => {
             reasons.push(`Color match (+6): ${recommendedColor}`);
           }
         });
-      }
-
-      // Check specs compatibility
+      } // Check additional specs compatibility (lifestyle, style preferences, etc.)
       product.specs.forEach((spec) => {
         const specLower = spec.toLowerCase();
-        recommendations.additionalSpecs.forEach((additionalSpec) => {
-          if (specLower.includes(additionalSpec.toLowerCase())) {
-            score += 4;
-            reasons.push(`Spec match (+4): ${additionalSpec}`);
-          }
-        });
+        // Only check specs that aren't face_ or frame_ prefixed
+        if (!specLower.startsWith("face_") && !specLower.startsWith("frame_")) {
+          recommendations.additionalSpecs.forEach((additionalSpec) => {
+            if (specLower.includes(additionalSpec.toLowerCase())) {
+              score += 4;
+              reasons.push(`Spec match (+4): ${additionalSpec}`);
+            }
+          });
+        }
       });
 
       // Log recommendation reasoning for products with score > 0
