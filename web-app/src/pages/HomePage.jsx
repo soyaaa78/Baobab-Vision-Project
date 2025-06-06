@@ -4,6 +4,7 @@ import EyeglassPreview from "../components/EyeglassPreview";
 import Button from "../components/Button.jsx";
 import { useNavigate } from "react-router-dom";
 import { PieChart } from "../components/charts/Pie.jsx";
+import { ProductViewsChart } from "../components/charts/ProductViewsChart.jsx";
 import axios from "axios";
 import {
   Chart as ChartJS,
@@ -88,11 +89,11 @@ const HomePage = () => {
                   </div>
                   <div className="charts">
                     <div className="home-chart-wrapper">
-                      <PieChart />
+                      <PieChart width="325px" height="325px" />
                     </div>
 
-                    <div className="home-chart-wrapper">
-                      <PieChart />
+                    <div className="home-chart-wrapper" id="productview">
+                      <ProductViewsChart />
                     </div>
                   </div>
 

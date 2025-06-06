@@ -24,6 +24,8 @@ const EyeglassCataloguePage = () => {
   const [alertModal, setAlertModal] = useState(false);
   const [alertModalContent, setAlertModalContent] = useState("Delete");
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [originalEyeglasses, setOriginalEyeglasses] = useState([]);
+
 
   const handleAdd = () => navigate("/dashboard/addeyeglasses");
 
@@ -33,7 +35,7 @@ const EyeglassCataloguePage = () => {
 
   const handleSort = (criteria) => {
     setSortBy(criteria);
-    let sorted = [...eyeglasses];
+    let sorted = [...originalEyeglasses];
     if (criteria === "latest") {
       sorted.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (criteria === "oldest") {
@@ -72,25 +74,27 @@ const EyeglassCataloguePage = () => {
   };
 
   const handleDeleteProduct = async () => {
-  if (!itemToDelete) return;
-  try {
-    await axios.delete(`${SERVER_URL}/api/productRoutes?id=${itemToDelete}`);
-    setEyeglasses((prev) => prev.filter((e) => e._id !== itemToDelete));
-    alert("Product deleted successfully!");
-  } catch (error) {
-    alert("Failed to delete product.");
-    console.error(error);
-  } finally {
-    closeDeleteModal();
-  }
-};
+    if (!itemToDelete) return;
+    try {
+      await axios.delete(`${SERVER_URL}/api/productRoutes?id=${itemToDelete}`);
+      setEyeglasses((prev) => prev.filter((e) => e._id !== itemToDelete));
+      alert("Product deleted successfully!");
+    } catch (error) {
+      alert("Failed to delete product.");
+      console.error(error);
+    } finally {
+      closeDeleteModal();
+    }
+  };
 
 
   useEffect(() => {
     const fetchEyeglasses = async () => {
       try {
         const response = await axios.get(`${SERVER_URL}/api/productRoutes`);
-        setEyeglasses(response.data.reverse());
+        const fetchedData = response.data.reverse();
+        setOriginalEyeglasses(fetchedData);
+        setEyeglasses(fetchedData);
       } catch (error) { }
     };
 
@@ -197,13 +201,12 @@ const EyeglassCataloguePage = () => {
                       <i>Continue?</i>
                     </p>{" "}
                     <Button
-                      onClick={() => {handleDeleteProduct
-                      }}
+                      onClick={() => { handleDeleteProduct(); }}
                       children={alertModalContent}
                       className={`button-component--alert`}
                     />
                     <Button
-                      onClick={() => {closeDeleteModal()}}
+                      onClick={() => { closeDeleteModal() }}
                       className="button-component--alert"
                       children={
                         <div>

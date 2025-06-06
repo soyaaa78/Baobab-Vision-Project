@@ -57,6 +57,11 @@
     height: 325px;
 }
 
+#productview {
+    width: 630px;
+    background-color: #ffebcd;
+}
+
 .quip {
     margin-top: 20px;
     display: flex;
