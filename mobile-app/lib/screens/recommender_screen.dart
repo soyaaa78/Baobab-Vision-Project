@@ -87,14 +87,13 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
   FaceMesh? _activeFaceMesh;
   InputImageMetadata? _inputImageMetadataForPainter;
   Size? _previewContainerSize; // Actual size of the preview widget on screen
-
   final List<String> faceShapes = [
     "Oval",
+    "Rectangle",
     "Round",
     "Square",
     "Heart",
     "Diamond",
-    "Oblong",
     "Triangle"
   ];
 
@@ -621,9 +620,7 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
       double FWRatioToOverall = foreheadWidth / overallFaceWidth;
       double JWRatioToOverall = jawWidth / overallFaceWidth;
 
-      // --- Order of Classification (Most Distinct to More General) ---
-
-      // 1. Oblong (Rectangle): Very long face, widths somewhat uniform.
+      // --- Order of Classification (Most Distinct to More General) ---      // 1. Rectangle: Very long face, widths somewhat uniform.
       if (HWRatio >= 1.60) {
         // Lowered threshold from 1.68
         // Check if widths are relatively consistent (not extremely tapered like a very long diamond/oval)
@@ -633,7 +630,7 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
                 JWRatioToOverall >
                     0.70; // Ensure forehead/jaw aren't excessively narrow
         if (widthsSomewhatUniform) {
-          return "Oblong";
+          return "Rectangle";
         }
       }
 
@@ -736,7 +733,7 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
         }
       }
 
-      // 7. Oval: Distinctly longer than wide (but not Oblong), gentle tapering from cheekbones.
+      // 7. Oval: Distinctly longer than wide (but not Rectangle), gentle tapering from cheekbones.
       if (HWRatio > 1.25 && HWRatio < 1.65) {
         // H/W ratio clearly above Round/Square (was 1.68 upper)
         bool cheeksGenerallyWidest = cheekboneWidth >= foreheadWidth * 0.95 &&
@@ -785,29 +782,6 @@ class _RecommenderScreenState extends State<RecommenderScreen> {
     } catch (e, s) {
       print("Error in classifyFaceShape3D: $e\n$s");
       return null;
-    }
-  }
-
-  String getFaceShapeDescription(String? shape) {
-    if (shape == null)
-      return "Shape could not be determined. Please try again or adjust conditions.";
-    switch (shape) {
-      case "Oval":
-        return "Balanced proportions, gently curved. Forehead may be slightly wider than jaw, tapering to a soft chin.";
-      case "Round":
-        return "Face width and height are nearly equal. Soft, curved jawline and full cheeks.";
-      case "Square":
-        return "Forehead, cheekbones, and jawline are nearly equal in width. Strong, angular jaw.";
-      case "Heart":
-        return "Wider forehead and/or cheekbones, tapering to a narrower, often pointed chin.";
-      case "Diamond":
-        return "Cheekbones are the widest part. Forehead and jawline are narrower and roughly similar.";
-      case "Oblong":
-        return "Face is noticeably longer than it is wide. Forehead, cheeks, and jawline can be similar in width, or taper.";
-      case "Triangle":
-        return "Jawline is the widest part of the face, with a narrower forehead.";
-      default:
-        return "Analyzing your unique facial structure.";
     }
   }
 
