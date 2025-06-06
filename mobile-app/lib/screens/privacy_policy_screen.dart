@@ -42,14 +42,13 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ]),
             _section('2. How We Use Your Information', [
               'To process and deliver your orders',
-              'To send updates and promotional offers',
               'To personalize your shopping experience',
               'To improve our app functionality and services',
               'To comply with legal obligations',
             ]),
             _section('3. Payment Security', [
               'We do not store credit card details.',
-              'Payments are securely processed through trusted third-party providers (e.g., Stripe, PayPal).',
+              'Payments are securely processed through trusted third-party providers (e.g., Gcash).',
             ]),
             _section('4. Order and Shipping Data', [
               'Your shipping information is used solely to fulfill your orders.',
@@ -63,25 +62,20 @@ class PrivacyPolicyScreen extends StatelessWidget {
             ]),
             _section('6. Your Rights', [
               'Access, update, or delete your data at any time',
-              'Opt out of promotional communications',
-              'Request data export or portability',
-              'Contact us for data-related requests: privacy@sharedsocials.com',
+
             ]),
             _section('7. Data Retention', [
               'We retain order-related data as long as required by tax and accounting laws.',
               'Other personal data is deleted upon account closure or by request.',
             ]),
-            _section('8. Children\'s Privacy', [
-              'Our app is not intended for users under 13.',
-              'We do not knowingly collect data from children.',
-            ]),
-            _section('9. Changes to This Policy', [
+
+            _section('8. Changes to This Policy', [
               'We may update this policy periodically.',
               'Significant changes will be communicated through the app.',
             ]),
             SizedBox(height: 20.h),
             CustomText(
-              text: "Last Updated: May 25, 2025",
+              text: "Last Updated: June 5, 2025",
               fontSize: 12.sp,
               color: Colors.grey,
             ),

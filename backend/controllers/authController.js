@@ -60,7 +60,25 @@ const login = async (req, res) => {
       user.otpExpiry = Date.now() + 5 * 60 * 1000;
       await user.save();
 
-      await sendEmail(user.email, 'Email Verification OTP', `Your verification OTP is: ${otp}`);
+      await sendEmail(
+        user.email, 
+        'Email Verification OTP', 
+        `
+          Hi ${user.firstname},
+      
+          We have received a request to verify your email address for your account. To complete the verification process, please use the one-time password (OTP) provided below:
+      
+          OTP: ${otp}
+      
+          This OTP is valid for the next 5 minutes. If you did not request this verification, please disregard this message.
+      
+          If you have any questions or need further assistance, feel free to reach out to our support team.
+      
+          Best regards,
+          The Baobab Vision Team
+        `
+      );
+      
 
       return res.status(403).json({
         message: 'Email not verified. OTP sent.',
@@ -140,7 +158,25 @@ const resendEmailOtp = async (req, res) => {
     user.otpExpiry = Date.now() + 5 * 60 * 1000;
     await user.save();
 
-    await sendEmail(user.email, 'Your Verification OTP', `Your new OTP is: ${otp}`);
+    await sendEmail(
+      user.email,
+      'Your Verification OTP',
+      `
+        Hi ${user.firstname},
+    
+        We received a request to resend the OTP for your email verification. Please use the following one-time password (OTP) to complete your email verification process:
+    
+        OTP: ${otp}
+    
+        This OTP will expire in 5 minutes. If you did not request this, please disregard this message.
+    
+        Should you require any further assistance, feel free to contact our support team.
+    
+        Best regards,
+        The Baobab Vision Team
+      `
+    );
+    
     res.status(200).json({ message: 'OTP resent to email' });
   } catch (err) {
     console.error('Resend OTP error:', err);
@@ -159,7 +195,26 @@ const requestOtp = async (req, res) => {
   user.otpExpiry = Date.now() + 5 * 60 * 1000;
   await user.save();
 
-  await sendEmail(user.email, 'Your OTP Code', `Your OTP is: ${otp}`);
+  await sendEmail(
+    user.email,
+    'Password Reset Request - OTP',
+    `
+      Hi ${user.firstname},
+  
+      We have received a request to reset your password for your account. To proceed, please use the one-time password (OTP) provided below:
+  
+      OTP: ${otp}
+  
+      This OTP is valid for the next 5 minutes. If you did not request a password reset, please disregard this message.
+  
+      If you need any help or have any questions, please do not hesitate to contact our support team.
+  
+      Best regards,
+      The Baobab Vision Team
+    `
+  );
+  
+  
   res.status(200).json({ message: 'OTP sent to email' });
 };
 
@@ -197,7 +252,25 @@ const resendOtp = async (req, res) => {
   user.otpExpiry = Date.now() + 5 * 60 * 1000;
   await user.save();
 
-  await sendEmail(user.email, 'Your New OTP', `New OTP: ${newOtp}`);
+  await sendEmail(
+    user.email,
+    'Your New OTP - Password Reset',
+    `
+      Hi ${user.firstname},
+  
+      We have received a request to resend your OTP for resetting your password. Please use the one-time password (OTP) provided below:
+  
+      OTP: ${newOtp}
+  
+      This OTP is valid for 5 minutes. If you did not request a password reset, please disregard this message.
+  
+      Should you require any assistance, please contact our support team.
+  
+      Best regards,
+      The Baobab Vision Team
+    `
+  );
+  
   res.status(200).json({ message: 'OTP resent' });
 };
 

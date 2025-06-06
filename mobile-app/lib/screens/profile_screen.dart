@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:baobab_vision_project/screens/completed_purchases_screen.dart';
 import 'package:baobab_vision_project/screens/edit_profile_screen.dart';
 import 'package:baobab_vision_project/screens/privacy_policy_screen.dart';
 import 'package:baobab_vision_project/screens/pending_orders_screen.dart';
@@ -153,7 +154,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                     ).then((_) => _fetchAndLoadProfile()); // Refresh after returning
                   }),
-                  _buildSettingsOption(Icons.receipt_long, 'Completed Purchases', () {}),
+                 _buildSettingsOption(Icons.receipt_long, 'Completed Purchases', () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const CompletedPurchasesScreen()),
+  );
+}),
+
                   _buildSettingsOption(Icons.lock_outline, 'Privacy Policy', () {
                     Navigator.push(
                       context,
