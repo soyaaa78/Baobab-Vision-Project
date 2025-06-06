@@ -53,7 +53,7 @@
     text-decoration: underline; /* weirdly doesnt work */
 }
 
-@media (max-width: 870px) {
+@media (max-width: 1020px) {
     .nav-logo-wrapper {
         display: none !important;
     }
@@ -63,7 +63,7 @@
     }
 }
 
-@media (max-width: 475px) {
+@media (max-width: 638px) {
     .links li .nav-button {
         font-size: 50%;
     }

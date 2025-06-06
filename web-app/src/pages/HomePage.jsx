@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import "../styles/HomePage.css";
-import { Link } from "react-router-dom";
 import EyeglassPreview from "../components/EyeglassPreview";
 import Button from "../components/Button.jsx";
 import { useNavigate } from "react-router-dom";
 import { PieChart } from "../components/charts/Pie.jsx";
-import { LineGraph } from "../components/charts/Line.jsx";
 import axios from "axios";
 import {
   Chart as ChartJS,
@@ -43,7 +41,7 @@ const HomePage = () => {
           `${SERVER_URL}/api/productRoutes/for-you`
         );
         setEyeglasses(response.data);
-      } catch (error) {}
+      } catch (error) { }
     };
 
     fetchEyeglasses();
@@ -79,15 +77,15 @@ const HomePage = () => {
             </div>
 
             <div className="left-bottom">
-              <div className="left-bottom-text">
-                <h2>Statistics</h2>
-                <p>
-                  Your number-crunching digest, as usual. Care to take a look?
-                </p>
-              </div>
 
               <div className="charts-container">
                 <div className="chart-bg">
+                  <div className="left-bottom-text">
+                    <h2>Statistics</h2>
+                    <p>
+                      Your number-crunching digest, as usual. Care to take a look?
+                    </p>
+                  </div>
                   <div className="charts">
                     <div className="home-chart-wrapper">
                       <PieChart />
@@ -114,7 +112,7 @@ const HomePage = () => {
           <div className="home-right">
             <div className="catalogue-preview">
               <div className="cattext">
-                <h2>Manage Eyeglass Selections</h2> {/* put this up pls */}
+                <h2>Manage Eyeglass Selections</h2>
                 <p>Got something to check out? Look no further.</p>
               </div>
               <div className="right-preview">
@@ -128,7 +126,6 @@ const HomePage = () => {
                         <EyeglassPreview
                           key={eyeglass._id}
                           eyeglass={eyeglass}
-                          // Optionally pass more props as needed
                         />
                       ))}
                     </div>

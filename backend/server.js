@@ -5,6 +5,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 const slideshowRoutes = require('./routes/slideShowRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const adminRoutes = require('./routes/adminRoutes');
@@ -20,6 +21,7 @@ app.use('/authRoutes', authRoutes);
 app.use('/api/productRoutes', productRoutes);
 app.use('/api/slideshowRoutes', slideshowRoutes);
 app.use('/api/cartRoutes', cartRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/uploads', express.static('uploads'));
 app.use('/api/admin', adminRoutes);
 app.use((req, res, next) => {

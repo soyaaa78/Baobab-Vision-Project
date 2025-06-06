@@ -17,8 +17,6 @@
 
 .error-bulk h1 {
     font-size: 16rem;
-    background-color: burlywood;
-    line-height: 1;
     display: inline-block;
     padding: 0;
     margin: 0;
@@ -35,7 +33,3 @@
 .error-button {
     margin-top: 15px;
 }
-
-/* .error-button:hover {
-    cursor: pointer;
-} */

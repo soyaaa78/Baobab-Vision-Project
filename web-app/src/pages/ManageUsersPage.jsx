@@ -2,7 +2,13 @@ import React, { useState, useEffect } from "react";
 import Button from "../components/Button";
 import "../styles/ManageUsersPage.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark, faCaretDown } from "@fortawesome/free-solid-svg-icons";
+import {
+  faXmark,
+  faCaretDown,
+  faSort,
+  faSortUp,
+  faSortDown,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 
 const ManageUsersPage = () => {
@@ -17,10 +23,22 @@ const ManageUsersPage = () => {
   const [dropdown, setDropdown] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [userList, setUserList] = useState([]);
+  const [orderList, setOrderList] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedAction, setSelectedAction] = useState(null);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [selectedStaffAction, setSelectedStaffAction] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+  const [expandedOrder, setExpandedOrder] = useState(null);
+
+  const [addStaffForm, setAddStaffForm] = useState({
+    firstname: "",
+    lastname: "",
+    username: "",
+    email: "",
+    password: "",
+  }); // Add status filter state - default to pending
+  const [selectedStatus, setSelectedStatus] = useState("pending");
 
   const toggleAlertModal = () => {
     setAlertModal((prev) => !prev);
@@ -29,9 +47,21 @@ const ManageUsersPage = () => {
   const toggleDropdown = () => {
     setDropdown((prev) => !prev);
   };
-
   const toggleModal = () => {
     setModal((prev) => !prev);
+    if (modal) {
+      setAddStaffForm({
+        firstname: "",
+        lastname: "",
+        username: "",
+        email: "",
+        password: "",
+      });
+    }
+  };
+
+  const toggleExpandedOrder = (orderId) => {
+    setExpandedOrder((prev) => (prev === orderId ? null : orderId));
   };
 
   useEffect(() => {
@@ -59,8 +89,26 @@ const ManageUsersPage = () => {
         console.error("Error fetching users:", error);
       }
     };
+    const fetchOrders = async () => {
+      try {
+        const response = await axios.get(
+          `${SERVER_URL}/api/orders?index=true`,
+          {
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+            },
+          }
+        );
+        // Handle the response structure - check if it's response.data.order or response.data
+        const orders = response.data.order || response.data;
+        setOrderList(Array.isArray(orders) ? orders : [orders]);
+      } catch (error) {
+        console.error("Error fetching orders:", error);
+      }
+    };
     fetchStaff();
     fetchUsers();
+    fetchOrders();
   }, [SERVER_URL, TOKEN]);
 
   const handleUserAction = async (id, action) => {
@@ -82,7 +130,7 @@ const ManageUsersPage = () => {
           { headers: { Authorization: `Bearer ${TOKEN}` } }
         );
       }
-      // Refresh user list
+
       const response = await axios.get(`${SERVER_URL}/api/admin/user-list`, {
         headers: { Authorization: `Bearer ${TOKEN}` },
       });
@@ -112,7 +160,7 @@ const ManageUsersPage = () => {
           { headers: { Authorization: `Bearer ${TOKEN}` } }
         );
       }
-      // Refresh staff list
+
       const response = await axios.get(`${SERVER_URL}/api/admin/staff-list`, {
         headers: { Authorization: `Bearer ${TOKEN}` },
       });
@@ -121,6 +169,109 @@ const ManageUsersPage = () => {
     } catch (error) {
       console.error(`${action} staff error:`, error);
     }
+  };
+
+  const handleAddStaffInputChange = (e) => {
+    const { name, value } = e.target;
+    setAddStaffForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  // Add function to update order status
+  const updateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await axios.put(
+        `${SERVER_URL}/api/orders?id=${orderId}`,
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        }
+      );
+
+      // Refresh orders list
+      const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
+      const orders = response.data.order || response.data;
+      setOrderList(Array.isArray(orders) ? orders : [orders]);
+    } catch (error) {
+      console.error("Error updating order status:", error);
+    }
+  };
+
+  // Add function to delete order
+  const deleteOrder = async (orderId) => {
+    try {
+      await axios.delete(`${SERVER_URL}/api/orders?id=${orderId}`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
+
+      // Refresh orders list
+      const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
+      const orders = response.data.order || response.data;
+      setOrderList(Array.isArray(orders) ? orders : [orders]);
+
+      toggleAlertModal();
+    } catch (error) {
+      console.error("Error deleting order:", error);
+    }
+  };
+
+  const handleAddStaff = async (e) => {
+    e.preventDefault();
+
+    if (
+      !addStaffForm.firstname ||
+      !addStaffForm.lastname ||
+      !addStaffForm.username ||
+      !addStaffForm.email ||
+      !addStaffForm.password
+    ) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    try {
+      await axios.post(`${SERVER_URL}/api/admin/create-staff`, addStaffForm, {
+        headers: { Authorization: `Bearer ${TOKEN}` },
+      });
+
+      // Refresh staff list
+      const response = await axios.get(`${SERVER_URL}/api/admin/staff-list`, {
+        headers: { Authorization: `Bearer ${TOKEN}` },
+      });
+      setStaffList(response.data);
+
+      toggleModal();
+      alert("Staff member added successfully!");
+    } catch (error) {
+      console.error("Add staff error:", error);
+      if (error.response?.data?.message) {
+        alert(error.response.data.message);
+      } else {
+        alert("Failed to add staff member");
+      }
+    }
+  }; // Filter orders by selected status
+  const getFilteredOrders = () => {
+    return orderList.filter((order) => order.status === selectedStatus);
+  };
+
+  // Handle status filter change
+  const handleStatusChange = (status) => {
+    setSelectedStatus(status);
   };
 
   return (
@@ -136,6 +287,14 @@ const ManageUsersPage = () => {
                 onClick={() => setActiveTab("users")}
               >
                 Users
+              </li>
+              <li
+                className={
+                  activeTab === "orders" ? "muc-link active" : "muc-link"
+                }
+                onClick={() => setActiveTab("orders")}
+              >
+                All Orders
               </li>
               {ROLE !== "admin" && (
                 <li
@@ -205,14 +364,299 @@ const ManageUsersPage = () => {
                                   Delete
                                 </li>
                               </div>
-                            </td>
+                            </td>{" "}
                           </tr>
                         ))
                       )}
                     </tbody>
-                  </table>
+                  </table>{" "}
+                </div>
+              </div>
+            )}{" "}
+            {activeTab === "orders" && (
+              <div className="manageusers-tab-content">
+                <div className="orders-container">
+                  {" "}
+                  {/* Status Filter Controls */}
+                  <div className="sort-controls">
+                    <div className="sort-controls-content">
+                      <span className="sort-label">Filter by status:</span>
+                      <div className="sort-buttons">
+                        {" "}
+                        <button
+                          onClick={() => handleStatusChange("pending")}
+                          className={`sort-btn ${
+                            selectedStatus === "pending" ? "active" : ""
+                          }`}
+                        >
+                          Pending
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange("preparing")}
+                          className={`sort-btn ${
+                            selectedStatus === "preparing" ? "active" : ""
+                          }`}
+                        >
+                          Preparing
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange("ready to pick up")}
+                          className={`sort-btn ${
+                            selectedStatus === "ready to pick up"
+                              ? "active"
+                              : ""
+                          }`}
+                        >
+                          Ready to Pick Up
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="table-wrapper">
+                    <table className="orders-table">
+                      <thead>
+                        <tr>
+                          <th>Order ID</th>
+                          <th>Order Date</th>
+                          <th>Customer</th>
+                          <th>Email</th>
+                          <th>Products</th>
+                          <th>Total Amount</th>
+                          <th>Status</th>
+                          <th>Payment Method</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>{" "}
+                      <tbody>
+                        {orderList.length === 0 ? (
+                          <tr>
+                            <td colSpan="9" className="no-data">
+                              No orders found.
+                            </td>
+                          </tr>
+                        ) : (
+                          getFilteredOrders().map((order) => {
+                            const orderDate = new Date(
+                              order.date || order.createdAt
+                            ).toLocaleDateString();
+                            const customerName = order.customer
+                              ? `${order.customer.firstname} ${order.customer.lastname}`
+                              : "N/A";
+                            const customerEmail =
+                              order.customer?.email || "N/A";
 
-                  {console.log("modal:", modal, "modalContent:", modalContent)}
+                            // Status badge styling
+                            const getStatusBadge = (status) => {
+                              switch (status) {
+                                case "pending":
+                                  return "status-badge pending";
+                                case "preparing":
+                                  return "status-badge preparing";
+                                case "ready to pick up":
+                                  return "status-badge ready";
+                                default:
+                                  return "status-badge default";
+                              }
+                            };
+
+                            return (
+                              <React.Fragment key={order._id}>
+                                <tr
+                                  onClick={() => toggleExpandedOrder(order._id)}
+                                  className="order-row"
+                                >
+                                  <td className="order-id">
+                                    {order._id.slice(-8)}...
+                                  </td>
+                                  <td>{orderDate}</td>
+                                  <td>{customerName}</td>
+                                  <td className="customer-email">
+                                    {customerEmail}
+                                  </td>
+                                  <td>
+                                    <span className="product-count-badge">
+                                      {order.products?.length > 0
+                                        ? `${order.products.length} item(s)`
+                                        : "No products"}
+                                    </span>
+                                  </td>
+                                  <td className="total-amount">
+                                    ₱{order.totalAmount}
+                                  </td>
+                                  <td>
+                                    <select
+                                      value={order.status}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        updateOrderStatus(
+                                          order._id,
+                                          e.target.value
+                                        );
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="status-select"
+                                    >
+                                      <option value="pending">Pending</option>
+                                      <option value="preparing">
+                                        Preparing
+                                      </option>
+                                      <option value="ready to pick up">
+                                        Ready to Pick Up
+                                      </option>
+                                    </select>
+                                  </td>
+                                  <td>{order.paymentMethod || "N/A"}</td>
+                                  <td>
+                                    <button
+                                      className="action-li delete"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedOrder(order._id);
+                                        setSelectedAction("Delete");
+                                        setAlertModalContent("Delete");
+                                        toggleAlertModal();
+                                      }}
+                                    >
+                                      Delete
+                                    </button>
+                                  </td>
+                                </tr>
+
+                                {expandedOrder === order._id && (
+                                  <tr className="order-details-row">
+                                    <td colSpan="9">
+                                      <div className="order-details-panel">
+                                        <div className="order-details-grid">
+                                          <div className="order-info-section">
+                                            <h4 className="section-title">
+                                              <svg
+                                                className="section-icon"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                              </svg>
+                                              Order Details
+                                            </h4>
+                                            <div className="detail-list">
+                                              <div className="detail-item">
+                                                <span className="detail-label">
+                                                  Address:
+                                                </span>
+                                                <span className="detail-value">
+                                                  {order.address || "N/A"}
+                                                </span>
+                                              </div>
+                                              <div className="detail-item">
+                                                <span className="detail-label">
+                                                  Contact:
+                                                </span>
+                                                <span className="detail-value">
+                                                  {order.contactNumber || "N/A"}
+                                                </span>
+                                              </div>
+                                              <div className="detail-item">
+                                                <span className="detail-label">
+                                                  Order Date:
+                                                </span>
+                                                <span className="detail-value">
+                                                  {new Date(
+                                                    order.date ||
+                                                      order.createdAt
+                                                  ).toLocaleString()}
+                                                </span>
+                                              </div>
+                                              <div className="detail-item">
+                                                <span className="detail-label">
+                                                  Status:
+                                                </span>
+                                                <span
+                                                  className={getStatusBadge(
+                                                    order.status
+                                                  )}
+                                                >
+                                                  {order.status}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="products-section">
+                                            <h4 className="section-title">
+                                              <svg
+                                                className="section-icon"
+                                                viewBox="0 0 24 24"
+                                              >
+                                                <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
+                                              </svg>
+                                              Products (
+                                              {order.products?.length || 0})
+                                            </h4>
+                                            <div className="products-list">
+                                              {order.products?.map(
+                                                (product, idx) => (
+                                                  <div
+                                                    key={idx}
+                                                    className="product-card"
+                                                  >
+                                                    <div className="product-info">
+                                                      <div className="product-details">
+                                                        <p className="product-name">
+                                                          {product.productId
+                                                            ?.name ||
+                                                            "Unknown Product"}
+                                                        </p>
+                                                        <p className="product-spec">
+                                                          Color: {product.color}
+                                                        </p>
+                                                        <p className="product-spec">
+                                                          Lens: {product.lens}
+                                                        </p>
+                                                      </div>
+                                                      <div className="product-pricing">
+                                                        <p className="product-qty">
+                                                          Qty:{" "}
+                                                          {product.quantity}
+                                                        </p>
+                                                        <p className="product-price">
+                                                          ₱{product.price}
+                                                        </p>
+                                                        <p className="product-total">
+                                                          ₱
+                                                          {product.price *
+                                                            product.quantity}
+                                                        </p>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                )
+                                              ) || (
+                                                <p className="no-products">
+                                                  No products found
+                                                </p>
+                                              )}
+                                            </div>
+                                            <div className="order-total">
+                                              <div className="total-row">
+                                                <span className="total-label">
+                                                  Total:
+                                                </span>
+                                                <span className="total-value">
+                                                  ₱{order.totalAmount}
+                                                </span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </React.Fragment>
+                            );
+                          })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             )}
@@ -220,36 +664,35 @@ const ManageUsersPage = () => {
               <div className="manageusers-tab-content">
                 <Button
                   className="muc-add-users-btn"
-                  onClick={() => (toggleModal(), setModalContent("Add New"))}
-                  children={<p>New User</p>}
+                  onClick={() => (toggleModal(), setModalContent("Add Staff"))}
+                  children={<p>New Staff</p>}
                 />
                 <table className="muc-manageusers-table table-users">
+                  {" "}
                   <thead>
                     <tr>
+                      <th>First Name</th>
+                      <th>Last Name</th>
                       <th>Username</th>
                       <th>Email</th>
                       <th>Role</th>
-                      <th>Permissions</th>
                       <th>Verification Status</th>
                       <th>Actions</th>
                     </tr>
-                  </thead>
+                  </thead>{" "}
                   <tbody>
                     {staffList.length === 0 ? (
                       <tr>
-                        <td colSpan="6">No staff found.</td>
+                        <td colSpan="7">No staff found.</td>
                       </tr>
                     ) : (
                       staffList.map((staff) => (
                         <tr key={staff._id} className="table-tr">
+                          <td>{staff.firstname || "N/A"}</td>
+                          <td>{staff.lastname || "N/A"}</td>
                           <td>{staff.username}</td>
                           <td>{staff.email}</td>
                           <td>{staff.role}</td>
-                          <td>
-                            {Array.isArray(staff.permissions)
-                              ? staff.permissions.join(", ")
-                              : ""}
-                          </td>
                           <td>
                             {staff.isVerified ? "Verified" : "Unverified"}
                           </td>
@@ -291,7 +734,6 @@ const ManageUsersPage = () => {
                 </table>
               </div>
             )}
-
             <div
               className={`alert-modal-container ${alertModal ? "active" : ""}`}
             >
@@ -299,8 +741,16 @@ const ManageUsersPage = () => {
               <div
                 className={`alert-modal-content ${alertModal ? "active" : ""}`}
               >
+                {" "}
                 <div className="alert-modal-content-header">
-                  <h2>{alertModalContent} User Account</h2>
+                  <h2>
+                    {alertModalContent}{" "}
+                    {activeTab === "orders"
+                      ? "Order"
+                      : activeTab === "staff"
+                      ? "Staff Account"
+                      : "User Account"}
+                  </h2>
                   <li
                     className="action-li close"
                     onClick={() => toggleAlertModal()}
@@ -308,7 +758,6 @@ const ManageUsersPage = () => {
                     <FontAwesomeIcon icon={faXmark} />
                   </li>
                 </div>
-
                 <div className="alert-modal-content-body">
                   {alertModalContent === "Disable" && (
                     <div className="amcb-disable">
@@ -326,16 +775,23 @@ const ManageUsersPage = () => {
                         the account later if needed.
                       </p>
                     </div>
-                  )}
-
+                  )}{" "}
                   {alertModalContent === "Delete" && (
                     <div className="amcb-delete">
                       <p>
-                        You are about to <b>delete</b> this staff account.
+                        You are about to <b>delete</b> this{" "}
+                        {activeTab === "orders"
+                          ? "order"
+                          : activeTab === "staff"
+                          ? "staff account"
+                          : "user account"}
+                        .
                       </p>
                       <br />
                       <p>
-                        Deletion of accounts is permanent. This action is{" "}
+                        {activeTab === "orders"
+                          ? "Deletion of orders is permanent. This action is"
+                          : "Deletion of accounts is permanent. This action is"}{" "}
                         <b>
                           <u>NOT reversible</u>
                         </b>{" "}
@@ -343,7 +799,6 @@ const ManageUsersPage = () => {
                       </p>
                     </div>
                   )}
-
                   {alertModalContent === "Enable" && (
                     <div className="amcb-enable">
                       <p>
@@ -361,11 +816,10 @@ const ManageUsersPage = () => {
                       </p>
                     </div>
                   )}
-
                   <div className="amcb-continue-cta">
                     <p>
                       <i>Continue?</i>
-                    </p>
+                    </p>{" "}
                     <Button
                       onClick={() => {
                         if (
@@ -380,6 +834,12 @@ const ManageUsersPage = () => {
                           selectedStaffAction
                         ) {
                           handleStaffAction(selectedStaff, selectedStaffAction);
+                        } else if (
+                          activeTab === "orders" &&
+                          selectedOrder &&
+                          selectedAction === "Delete"
+                        ) {
+                          deleteOrder(selectedOrder);
                         }
                       }}
                       children={alertModalContent}
@@ -393,7 +853,6 @@ const ManageUsersPage = () => {
                           : ""
                       }`}
                     />
-
                     <Button
                       onClick={toggleAlertModal}
                       className="button-component--alert"
@@ -404,24 +863,21 @@ const ManageUsersPage = () => {
                       }
                     />
                   </div>
-
-                  {console.log(alertModalContent)}
                 </div>
               </div>
             </div>
-
             <div className={`modal-container ${modal ? "active" : ""}`}>
               <div className={`modal-overlay ${modal ? "active" : ""}`} />
               <div className={`modal-content ${modal ? "show" : ""}`}>
                 <div className="modal-content-header">
-                  <h2>{modalContent} User</h2>
+                  <h2>{modalContent}</h2>
                   <li className="action-li close" onClick={() => toggleModal()}>
                     <FontAwesomeIcon icon={faXmark} />
                   </li>
                 </div>
 
                 <div className="modal-content-body">
-                  {modal && modalContent === "Add New" && (
+                  {modal && modalContent === "Add Staff" && (
                     <div className="modal-body-container" id="add">
                       <div className="add-text">
                         <p>
@@ -429,23 +885,25 @@ const ManageUsersPage = () => {
                           email to confirm their identity.
                         </p>
                       </div>
-
                       <div className="mcb-body-container">
+                        {" "}
                         <form
                           className="mcb-body"
                           id="add"
-                          action=""
-                          method="post"
+                          onSubmit={handleAddStaff}
                         >
                           <div
                             className="mu-modal-input modal-name"
                             id="abn-firstname"
                           >
-                            <label for="firstname">First Name</label>
+                            <label htmlFor="firstname">First Name</label>
                             <input
                               type="text"
                               name="firstname"
                               id="firstname"
+                              value={addStaffForm.firstname}
+                              onChange={handleAddStaffInputChange}
+                              required
                             />
                           </div>
 
@@ -453,33 +911,63 @@ const ManageUsersPage = () => {
                             className="mu-modal-input modal-name"
                             id="abn-lastname"
                           >
-                            <label for="lastname">Last Name</label>
-                            <input type="text" name="lastname" id="lastname" />
+                            <label htmlFor="lastname">Last Name</label>
+                            <input
+                              type="text"
+                              name="lastname"
+                              id="lastname"
+                              value={addStaffForm.lastname}
+                              onChange={handleAddStaffInputChange}
+                              required
+                            />
                           </div>
 
                           <div
                             className="mu-modal-input modal-name"
                             id="abn-username"
                           >
-                            <label for="username">Username</label>
-                            <input type="text" name="username" id="username" />
+                            <label htmlFor="username">Username</label>
+                            <input
+                              type="text"
+                              name="username"
+                              id="username"
+                              value={addStaffForm.username}
+                              onChange={handleAddStaffInputChange}
+                              required
+                            />
                           </div>
 
                           <div className="mu-modal-input modal-email">
-                            <label for="add-email">Email</label>
+                            <label htmlFor="add-email">Email</label>
                             <input
                               type="email"
-                              name="add-email"
+                              name="email"
                               id="add-email"
+                              value={addStaffForm.email}
+                              onChange={handleAddStaffInputChange}
+                              required
+                            />
+                          </div>
+
+                          <div className="mu-modal-input modal-password">
+                            <label htmlFor="add-password">Password</label>
+                            <input
+                              type="password"
+                              name="password"
+                              id="add-password"
+                              value={addStaffForm.password}
+                              onChange={handleAddStaffInputChange}
+                              required
+                              minLength={6}
                             />
                           </div>
                         </form>
-                      </div>
-
+                      </div>{" "}
                       <Button
-                        /* onClick={} */ children={
+                        onClick={handleAddStaff}
+                        children={
                           <div>
-                            <p>Add User</p>
+                            <p>Add Staff</p>
                           </div>
                         }
                       />

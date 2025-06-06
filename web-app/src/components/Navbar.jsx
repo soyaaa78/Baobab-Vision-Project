@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
+import Button from "./Button";
 
 function Navbar() {
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <nav className="navigation">
       <div className="nav-content">
@@ -31,7 +39,15 @@ function Navbar() {
             <Link to="manageusers" className="nav-button">
               Manage Users
             </Link>
-          </li>
+          </li>{" "}
+          <Button
+            onClick={handleLogout}
+            children={
+              <div>
+                <p>Log Out</p>
+              </div>
+            }
+          />
         </ul>
       </div>
     </nav>

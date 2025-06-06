@@ -1,4 +1,3 @@
-// routes/productRoutes.js
 const express = require("express");
 const router = express.Router();
 const {
@@ -8,6 +7,9 @@ const {
   addProductToRecommended,
   updateProduct,
   deleteProduct,
+  recommendEyewear,
+  getFaceShapeStats,
+  getProductStatistics,
   recommendEyewear,
 } = require("../controllers/productController");
 
@@ -22,6 +24,14 @@ router.get("/for-you", getRecommendedProducts);
 
 // Admin adds product to recommended (POST /api/products/recommended)
 router.post("/recommended", addProductToRecommended);
+
+// Add recommendation endpoint
+router.post("/recommend", recommendEyewear);
+
+// Add face shape statistics endpoint
+router.get("/face-shape-stats", getFaceShapeStats);
+
+router.get("/order-stats", getProductStatistics);
 
 router.post("/recommend", recommendEyewear);
 

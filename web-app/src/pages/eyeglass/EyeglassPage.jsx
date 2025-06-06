@@ -47,7 +47,7 @@ const EyeglassPage = () => {
       <div className="page" id="edit-eyeglass">
         <div className="edit-eyeglass-content">
           <Button
-            className=""
+            className="eec-back-btn"
             onClick={() => navigate("../catalogue")}
             children={<p>Back</p>}
           />
@@ -143,16 +143,6 @@ const EyeglassPage = () => {
                         ))}
                       </select>
                     </form>
-                  </div>
-                  <div className="edit-eyeglass-button" id="bottom-edit">
-                    <input
-                      type="button"
-                      value="EDIT AVAILABILITY"
-                      className="submit-button"
-                      onClick={() =>
-                        navigate(`/dashboard/editeyeglasses/${eyeglass._id}`)
-                      }
-                    />
                   </div>
                 </div>
               </div>

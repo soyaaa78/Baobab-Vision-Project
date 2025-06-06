@@ -4,6 +4,14 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import Button from "../../components/Button.jsx";
 import EyeglassPreview from "../../components/EyeglassPreview.jsx";
 import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faXmark,
+  faCaretDown,
+  faSort,
+  faSortUp,
+  faSortDown,
+} from "@fortawesome/free-solid-svg-icons";
 
 const EyeglassCataloguePage = () => {
   const navigate = useNavigate();
@@ -13,6 +21,9 @@ const EyeglassCataloguePage = () => {
   const [deleteMode, setDeleteMode] = useState(initialDeleteMode);
   const [eyeglasses, setEyeglasses] = useState([]);
   const [sortBy, setSortBy] = useState("latest");
+  const [alertModal, setAlertModal] = useState(false);
+  const [alertModalContent, setAlertModalContent] = useState("Delete");
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   const handleAdd = () => navigate("/dashboard/addeyeglasses");
 
@@ -33,7 +44,7 @@ const EyeglassCataloguePage = () => {
     setEyeglasses(sorted);
   };
 
-  const handleDeleteProduct = async (id) => {
+  /* const handleDeleteProduct = async (id) => {
     if (
       !window.confirm(
         "Are you sure you want to delete this product? This action cannot be undone."
@@ -48,14 +59,39 @@ const EyeglassCataloguePage = () => {
       alert("Failed to delete product.");
       console.error(error);
     }
+  }; */
+
+  const openDeleteModal = (id) => {
+    setItemToDelete(id);
+    setAlertModal(true);
   };
+
+  const closeDeleteModal = () => {
+    setItemToDelete(null);
+    setAlertModal(false);
+  };
+
+  const handleDeleteProduct = async () => {
+  if (!itemToDelete) return;
+  try {
+    await axios.delete(`${SERVER_URL}/api/productRoutes?id=${itemToDelete}`);
+    setEyeglasses((prev) => prev.filter((e) => e._id !== itemToDelete));
+    alert("Product deleted successfully!");
+  } catch (error) {
+    alert("Failed to delete product.");
+    console.error(error);
+  } finally {
+    closeDeleteModal();
+  }
+};
+
 
   useEffect(() => {
     const fetchEyeglasses = async () => {
       try {
         const response = await axios.get(`${SERVER_URL}/api/productRoutes`);
         setEyeglasses(response.data.reverse());
-      } catch (error) {}
+      } catch (error) { }
     };
 
     fetchEyeglasses();
@@ -76,9 +112,8 @@ const EyeglassCataloguePage = () => {
                       children={<p>Add Pair</p>}
                     />
                     <Button
-                      className={`options-action-buttons ${
-                        deleteMode ? "active-delete-button" : ""
-                      }`}
+                      className={`options-action-buttons ${deleteMode ? "active-delete-button" : ""
+                        }`}
                       onClick={handleToggleDeleteMode}
                       children={<p>Delete Pair</p>}
                     />
@@ -86,23 +121,20 @@ const EyeglassCataloguePage = () => {
                   <div className="options-sorting">
                     <p>Sort By:</p>
                     <Button
-                      className={`options-sort-buttons ${
-                        sortBy === "latest" ? "active" : ""
-                      }`}
+                      className={`options-sort-buttons ${sortBy === "latest" ? "active" : ""
+                        }`}
                       onClick={() => handleSort("latest")}
                       children={<p>Latest</p>}
                     />
                     <Button
-                      className={`options-sort-buttons ${
-                        sortBy === "oldest" ? "active" : ""
-                      }`}
+                      className={`options-sort-buttons ${sortBy === "oldest" ? "active" : ""
+                        }`}
                       onClick={() => handleSort("oldest")}
                       children={<p>Oldest</p>}
                     />
                     <Button
-                      className={`options-sort-buttons ${
-                        sortBy === "price" ? "active" : ""
-                      }`}
+                      className={`options-sort-buttons ${sortBy === "price" ? "active" : ""
+                        }`}
                       onClick={() => handleSort("price")}
                       children={<p>Price</p>}
                     />
@@ -113,7 +145,6 @@ const EyeglassCataloguePage = () => {
 
             <div className="selections">
               {" "}
-              {/* bordered section here as well (scroll down ka sa cosmos landing page) */}
               <div className="selections-grid">
                 {(Array.isArray(eyeglasses) ? eyeglasses : []).map(
                   (eyeglass) => (
@@ -122,10 +153,66 @@ const EyeglassCataloguePage = () => {
                       className="eyeglass-listing--catalogue"
                       deleteMode={deleteMode}
                       eyeglass={eyeglass}
-                      onDelete={handleDeleteProduct}
+                      onDelete={() => openDeleteModal(eyeglass._id)}
                     />
                   )
                 )}
+              </div>
+            </div>
+
+
+            <div
+              className={`alert-modal-container ${alertModal ? "active" : ""}`}
+            >
+              <div className={`modal-overlay ${alertModal ? "active" : ""}`} />
+              <div
+                className={`alert-modal-content ${alertModal ? "active" : ""}`}
+              >
+                {" "}
+                <div className="alert-modal-content-header">
+                  <h2>
+                    Delete Listing
+                  </h2>
+                  <li
+                    className="action-li close"
+                    onClick={() => closeDeleteModal()}
+                  >
+                    <FontAwesomeIcon icon={faXmark} />
+                  </li>
+                </div>
+                <div className="alert-modal-content-body">
+                  {alertModalContent === "Delete" && (
+                    <div className="amcb-delete">
+                      <p>
+                        You are about to <b>delete</b> this listing.
+                      </p>
+                      <br />
+                      <p>
+                        Deletion of product listings are permanent. This action is <b><u>NOT reversible</u></b> — once deleted, it is gone forever.
+                      </p>
+                    </div>
+                  )}
+                  <div className="amcb-continue-cta">
+                    <p>
+                      <i>Continue?</i>
+                    </p>{" "}
+                    <Button
+                      onClick={() => {handleDeleteProduct
+                      }}
+                      children={alertModalContent}
+                      className={`button-component--alert`}
+                    />
+                    <Button
+                      onClick={() => {closeDeleteModal()}}
+                      className="button-component--alert"
+                      children={
+                        <div>
+                          <p>Cancel</p>
+                        </div>
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>

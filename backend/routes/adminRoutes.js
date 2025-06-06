@@ -27,6 +27,8 @@ router.get(
   isSuperAdmin,
   adminController.getAllStaff
 );
+
+
 router.put(
   "/permissions/:id",
   adminAuth.verifyToken,
