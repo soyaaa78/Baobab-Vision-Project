@@ -7,7 +7,6 @@ const {
   addProductToRecommended,
   updateProduct,
   deleteProduct,
-  recommendEyewear,
   getFaceShapeStats,
   getProductStatistics,
   recommendEyewear,
