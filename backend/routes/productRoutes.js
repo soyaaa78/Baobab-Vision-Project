@@ -10,10 +10,11 @@ const {
   getFaceShapeStats,
   getProductStatistics,
   recommendEyewear,
+  uploadProductFiles,
 } = require("../controllers/productController");
 
-// Create product (POST /api/products)
-router.post("/", createProduct);
+// Create product (POST /api/products) - with file upload
+router.post("/", uploadProductFiles, createProduct);
 
 // GET all products (GET /api/products)
 router.get("/", getAllProducts);
