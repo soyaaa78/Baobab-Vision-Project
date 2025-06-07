@@ -26,7 +26,6 @@ const EyeglassCataloguePage = () => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [originalEyeglasses, setOriginalEyeglasses] = useState([]);
 
-
   const handleAdd = () => navigate("/dashboard/addeyeglasses");
 
   const handleToggleDeleteMode = () => {
@@ -76,7 +75,7 @@ const EyeglassCataloguePage = () => {
   const handleDeleteProduct = async () => {
     if (!itemToDelete) return;
     try {
-      await axios.delete(`${SERVER_URL}/api/productRoutes?id=${itemToDelete}`);
+      await axios.delete(`${SERVER_URL}/api/products?id=${itemToDelete}`);
       setEyeglasses((prev) => prev.filter((e) => e._id !== itemToDelete));
       alert("Product deleted successfully!");
     } catch (error) {
@@ -87,15 +86,14 @@ const EyeglassCataloguePage = () => {
     }
   };
 
-
   useEffect(() => {
     const fetchEyeglasses = async () => {
       try {
-        const response = await axios.get(`${SERVER_URL}/api/productRoutes`);
+        const response = await axios.get(`${SERVER_URL}/api/products`);
         const fetchedData = response.data.reverse();
         setOriginalEyeglasses(fetchedData);
         setEyeglasses(fetchedData);
-      } catch (error) { }
+      } catch (error) {}
     };
 
     fetchEyeglasses();
@@ -116,8 +114,9 @@ const EyeglassCataloguePage = () => {
                       children={<p>Add Pair</p>}
                     />
                     <Button
-                      className={`options-action-buttons ${deleteMode ? "active-delete-button" : ""
-                        }`}
+                      className={`options-action-buttons ${
+                        deleteMode ? "active-delete-button" : ""
+                      }`}
                       onClick={handleToggleDeleteMode}
                       children={<p>Delete Pair</p>}
                     />
@@ -125,20 +124,23 @@ const EyeglassCataloguePage = () => {
                   <div className="options-sorting">
                     <p>Sort By:</p>
                     <Button
-                      className={`options-sort-buttons ${sortBy === "latest" ? "active" : ""
-                        }`}
+                      className={`options-sort-buttons ${
+                        sortBy === "latest" ? "active" : ""
+                      }`}
                       onClick={() => handleSort("latest")}
                       children={<p>Latest</p>}
                     />
                     <Button
-                      className={`options-sort-buttons ${sortBy === "oldest" ? "active" : ""
-                        }`}
+                      className={`options-sort-buttons ${
+                        sortBy === "oldest" ? "active" : ""
+                      }`}
                       onClick={() => handleSort("oldest")}
                       children={<p>Oldest</p>}
                     />
                     <Button
-                      className={`options-sort-buttons ${sortBy === "price" ? "active" : ""
-                        }`}
+                      className={`options-sort-buttons ${
+                        sortBy === "price" ? "active" : ""
+                      }`}
                       onClick={() => handleSort("price")}
                       children={<p>Price</p>}
                     />
@@ -164,7 +166,6 @@ const EyeglassCataloguePage = () => {
               </div>
             </div>
 
-
             <div
               className={`alert-modal-container ${alertModal ? "active" : ""}`}
             >
@@ -174,9 +175,7 @@ const EyeglassCataloguePage = () => {
               >
                 {" "}
                 <div className="alert-modal-content-header">
-                  <h2>
-                    Delete Listing
-                  </h2>
+                  <h2>Delete Listing</h2>
                   <li
                     className="action-li close"
                     onClick={() => closeDeleteModal()}
@@ -192,7 +191,12 @@ const EyeglassCataloguePage = () => {
                       </p>
                       <br />
                       <p>
-                        Deletion of product listings are permanent. This action is <b><u>NOT reversible</u></b> — once deleted, it is gone forever.
+                        Deletion of product listings are permanent. This action
+                        is{" "}
+                        <b>
+                          <u>NOT reversible</u>
+                        </b>{" "}
+                        — once deleted, it is gone forever.
                       </p>
                     </div>
                   )}
@@ -201,12 +205,16 @@ const EyeglassCataloguePage = () => {
                       <i>Continue?</i>
                     </p>{" "}
                     <Button
-                      onClick={() => { handleDeleteProduct(); }}
+                      onClick={() => {
+                        handleDeleteProduct();
+                      }}
                       children={alertModalContent}
                       className={`button-component--alert`}
                     />
                     <Button
-                      onClick={() => { closeDeleteModal() }}
+                      onClick={() => {
+                        closeDeleteModal();
+                      }}
                       className="button-component--alert"
                       children={
                         <div>

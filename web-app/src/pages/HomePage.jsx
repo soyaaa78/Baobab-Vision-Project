@@ -38,11 +38,9 @@ const HomePage = () => {
   useEffect(() => {
     const fetchEyeglasses = async () => {
       try {
-        const response = await axios.get(
-          `${SERVER_URL}/api/productRoutes/for-you`
-        );
+        const response = await axios.get(`${SERVER_URL}/api/products/for-you`);
         setEyeglasses(response.data);
-      } catch (error) { }
+      } catch (error) {}
     };
 
     fetchEyeglasses();
@@ -78,13 +76,13 @@ const HomePage = () => {
             </div>
 
             <div className="left-bottom">
-
               <div className="charts-container">
                 <div className="chart-bg">
                   <div className="left-bottom-text">
                     <h2>Statistics</h2>
                     <p>
-                      Your number-crunching digest, as usual. Care to take a look?
+                      Your number-crunching digest, as usual. Care to take a
+                      look?
                     </p>
                   </div>
                   <div className="charts">

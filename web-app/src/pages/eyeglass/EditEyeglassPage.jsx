@@ -55,9 +55,7 @@ const EditEyeglassPage = () => {
   useEffect(() => {
     const fetchEyeglass = async () => {
       try {
-        const response = await axios.get(
-          `${SERVER_URL}/api/productRoutes?id=${id}`
-        );
+        const response = await axios.get(`${SERVER_URL}/api/products?id=${id}`);
         const data = response.data;
         setEyeglass(data);
         setForm({
@@ -377,7 +375,7 @@ const EditEyeglassPage = () => {
         updatedEyeglass.model3dFile = model3dFile;
       }
       await axios.put(
-        `${SERVER_URL}/api/productRoutes?id=${eyeglass._id}`,
+        `${SERVER_URL}/api/products?id=${eyeglass._id}`,
         updatedEyeglass
       );
       alert("Eyeglass updated successfully!");
@@ -397,7 +395,7 @@ const EditEyeglassPage = () => {
     )
       return;
     try {
-      await axios.delete(`${SERVER_URL}/api/productRoutes?id=${eyeglass._id}`);
+      await axios.delete(`${SERVER_URL}/api/products?id=${eyeglass._id}`);
       alert("Eyeglass deleted successfully!");
       navigate("../catalogue");
       return; // Prevent further code execution after navigation

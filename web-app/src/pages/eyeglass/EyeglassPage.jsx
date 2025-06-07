@@ -16,9 +16,7 @@ const EyeglassPage = () => {
   React.useEffect(() => {
     const fetchEyeglass = async () => {
       try {
-        const response = await axios.get(
-          `${SERVER_URL}/api/productRoutes?id=${id}`
-        );
+        const response = await axios.get(`${SERVER_URL}/api/products?id=${id}`);
         setEyeglass(response.data);
       } catch (error) {
         setEyeglass(null);

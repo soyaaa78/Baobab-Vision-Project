@@ -46,7 +46,7 @@ function StatisticsPage() {
         setLoading(true);
 
         const orderStatsResponse = await axios.get(
-          `${SERVER_URL}/api/productRoutes/order-stats?limit=1`
+          `${SERVER_URL}/api/products/order-stats?limit=1`
         );
         const { bestSellingProducts } = orderStatsResponse.data.data;
 

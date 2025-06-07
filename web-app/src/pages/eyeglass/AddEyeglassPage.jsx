@@ -355,15 +355,11 @@ const AddEyeglassPage = () => {
       if (model3dFile) {
         formData.append("model3d", model3dFile);
       }
-      const res = await axios.post(
-        `${SERVER_URL}/api/productRoutes`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const res = await axios.post(`${SERVER_URL}/api/products`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       // Success notification
       alert("Product added successfully!");

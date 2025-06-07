@@ -10,14 +10,14 @@ export const PieChart = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [stats, setStats] = useState([]); 
+  const [stats, setStats] = useState([]);
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
       try {
         const res = await axios.get(
-          `${SERVER_URL}/api/productRoutes/face-shape-stats`
+          `${SERVER_URL}/api/products/face-shape-stats`
         );
         const { stats } = res.data;
         setStats(stats);
@@ -61,8 +61,9 @@ export const PieChart = () => {
   if (!data) return null;
 
   return (
-    <div style={{ width: 325, height: 'auto', maxWidth: "100%",  margin: "0 auto" }}>
-      
+    <div
+      style={{ width: 325, height: "auto", maxWidth: "100%", margin: "0 auto" }}
+    >
       <div style={{ height: 325 }}>
         <Pie options={options} data={data} />
       </div>
@@ -72,7 +73,6 @@ export const PieChart = () => {
           <p key={index}>
             <b>{item._id ? `${item._id} Shape` : "Unknown"}:</b> {item.count}
           </p>
-
         ))}
       </div>
     </div>
