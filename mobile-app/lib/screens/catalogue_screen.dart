@@ -14,7 +14,8 @@ class CatalogueScreen extends StatefulWidget {
   State<CatalogueScreen> createState() => _CatalogueScreenState();
 }
 
-class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAliveClientMixin {
+class _CatalogueScreenState extends State<CatalogueScreen>
+    with AutomaticKeepAliveClientMixin {
   List<dynamic> products = [];
 
   @override
@@ -22,7 +23,8 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
 
   Future<void> fetchProducts() async {
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:3001/api/products'));
+      final response = await http.get(
+          Uri.parse('https://baobab-vision-project.onrender.com/api/products'));
       if (response.statusCode == 200) {
         setState(() {
           products = jsonDecode(response.body);
@@ -37,7 +39,8 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
   }
 
   Future<void> fetchFilteredProducts(String sortBy, String order) async {
-    final uri = Uri.parse('http://10.0.2.2:3001/api/products?sortBy=$sortBy&order=$order');
+    final uri = Uri.parse(
+        'https://baobab-vision-project.onrender.com/api/products?sortBy=$sortBy&order=$order');
 
     try {
       final response = await http.get(uri);
@@ -88,7 +91,8 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
               showModalBottomSheet(
                 context: context,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.0)),
+                  borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(16.0)),
                 ),
                 builder: (BuildContext context) {
                   return Container(
@@ -106,19 +110,50 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
                           ),
                         ),
                         ...[
-                          {'icon': Icons.star, 'text': 'Popular', 'sortBy': 'popular', 'order': 'desc'},
-                          {'icon': Icons.access_time, 'text': 'Latest', 'sortBy': 'latest', 'order': 'desc'},
-                          {'icon': Icons.trending_up, 'text': 'Top Sales', 'sortBy': 'top-sales', 'order': 'desc'},
-                          {'icon': Icons.price_change, 'text': 'Price: Low to High', 'sortBy': 'price', 'order': 'asc'},
-                          {'icon': Icons.price_change_outlined, 'text': 'Price: High to Low', 'sortBy': 'price', 'order': 'desc'},
-                        ].map((filter) => ListTile(
-                          leading: Icon(filter['icon'] as IconData),
-                          title: Text(filter['text'] as String, style: TextStyle(fontWeight: FontWeight.w600)),
-                          onTap: () {
-                            Navigator.pop(context);
-                            fetchFilteredProducts(filter['sortBy'] as String, filter['order'] as String);
+                          {
+                            'icon': Icons.star,
+                            'text': 'Popular',
+                            'sortBy': 'popular',
+                            'order': 'desc'
                           },
-                        )).toList(),
+                          {
+                            'icon': Icons.access_time,
+                            'text': 'Latest',
+                            'sortBy': 'latest',
+                            'order': 'desc'
+                          },
+                          {
+                            'icon': Icons.trending_up,
+                            'text': 'Top Sales',
+                            'sortBy': 'top-sales',
+                            'order': 'desc'
+                          },
+                          {
+                            'icon': Icons.price_change,
+                            'text': 'Price: Low to High',
+                            'sortBy': 'price',
+                            'order': 'asc'
+                          },
+                          {
+                            'icon': Icons.price_change_outlined,
+                            'text': 'Price: High to Low',
+                            'sortBy': 'price',
+                            'order': 'desc'
+                          },
+                        ]
+                            .map((filter) => ListTile(
+                                  leading: Icon(filter['icon'] as IconData),
+                                  title: Text(filter['text'] as String,
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w600)),
+                                  onTap: () {
+                                    Navigator.pop(context);
+                                    fetchFilteredProducts(
+                                        filter['sortBy'] as String,
+                                        filter['order'] as String);
+                                  },
+                                ))
+                            .toList(),
                       ],
                     ),
                   );
@@ -157,7 +192,8 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
                 ),
                 itemBuilder: (context, index) {
                   final product = products[index];
-                  String imageUrl = product['imageUrls'] != null && product['imageUrls'] is List
+                  String imageUrl = product['imageUrls'] != null &&
+                          product['imageUrls'] is List
                       ? product['imageUrls'].isNotEmpty
                           ? product['imageUrls'][0]
                           : 'assets/images/default.png'
@@ -176,15 +212,17 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
 
                       try {
                         final response = await http.post(
-                          Uri.parse('http://10.0.2.2:3001/api/user/update-preferences/$username'),
-
+                          Uri.parse(
+                              'https://baobab-vision-project.onrender.com/api/user/update-preferences/$username'),
                           headers: {'Content-Type': 'application/json'},
                           body: jsonEncode({'productId': productId}),
                         );
                         if (response.statusCode == 200) {
-                          print('Successfully updated preferences for productId: $productId');
+                          print(
+                              'Successfully updated preferences for productId: $productId');
                         } else {
-                          print('Failed to update preferences: ${response.statusCode}');
+                          print(
+                              'Failed to update preferences: ${response.statusCode}');
                           print(response.body);
                         }
                       } catch (e) {
@@ -201,16 +239,21 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
                             prodPrice: '${product['price']} PHP',
                             numStars: product['numStars'] ?? 0,
                             quantity: product['stock'] ?? 0,
-                            description: product['description'] ?? 'No description available',
-                            prodImages: (product['imageUrls'] != null && product['imageUrls'] is List)
+                            description: product['description'] ??
+                                'No description available',
+                            prodImages: (product['imageUrls'] != null &&
+                                    product['imageUrls'] is List)
                                 ? List<String>.from(product['imageUrls'])
                                 : [imageUrl],
-                            colorOptions: (product['colorOptions'] as List<dynamic>? ?? [])
-                                .map((e) => ColorOption.fromJson(e))
-                                .toList(),
-                            lensOptions: (product['lensOptions'] as List<dynamic>)
-                                .map((e) => LensOption.fromJson(e))
-                                .toList(),
+                            colorOptions:
+                                (product['colorOptions'] as List<dynamic>? ??
+                                        [])
+                                    .map((e) => ColorOption.fromJson(e))
+                                    .toList(),
+                            lensOptions:
+                                (product['lensOptions'] as List<dynamic>)
+                                    .map((e) => LensOption.fromJson(e))
+                                    .toList(),
                           ),
                         ),
                       );
@@ -232,7 +275,8 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ClipRRect(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                            borderRadius:
+                                BorderRadius.vertical(top: Radius.circular(12)),
                             child: Image.network(
                               imageUrl,
                               height: 130.h,
@@ -240,10 +284,10 @@ class _CatalogueScreenState extends State<CatalogueScreen> with AutomaticKeepAli
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Container(
-                                    height: 130.h,
-                                    color: Colors.grey.shade200,
-                                    child: Icon(Icons.broken_image, size: 48),
-                                  ),
+                                height: 130.h,
+                                color: Colors.grey.shade200,
+                                child: Icon(Icons.broken_image, size: 48),
+                              ),
                             ),
                           ),
                           Padding(

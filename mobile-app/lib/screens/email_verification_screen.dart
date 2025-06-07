@@ -21,7 +21,8 @@ class EmailVerificationScreen extends StatefulWidget {
   });
 
   @override
-  State<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
+  State<EmailVerificationScreen> createState() =>
+      _EmailVerificationScreenState();
 }
 
 class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
@@ -41,7 +42,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     setState(() => _isChecking = true);
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:3001/api/auth/check-verification-token'),
+      Uri.parse(
+          'https://baobab-vision-project.onrender.com/api/auth/check-verification-token'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'token': _currentToken}),
     );
@@ -54,11 +56,14 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         await loginUserAgain();
       } else if (response.statusCode == 400 && data['expired'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Your verification link expired. Kindly resend.')),
+          const SnackBar(
+              content: Text('Your verification link expired. Kindly resend.')),
         );
       } else if (response.statusCode == 200 && data['verified'] == false) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Email not verified yet. Please check your inbox.')),
+          const SnackBar(
+              content:
+                  Text('Email not verified yet. Please check your inbox.')),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -67,7 +72,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Please try again.')),
+        const SnackBar(
+            content: Text('Something went wrong. Please try again.')),
       );
     }
 
@@ -75,8 +81,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 
   Future<void> loginUserAgain() async {
-    final url = Uri.parse('http://10.0.2.2:3001/api/auth/login');
-
+    final url =
+        Uri.parse('https://baobab-vision-project.onrender.com/api/auth/login');
 
     final response = await http.post(
       url,
@@ -104,7 +110,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     });
 
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:3001/api/auth/resend-verification'),
+      Uri.parse(
+          'https://baobab-vision-project.onrender.com/api/auth/resend-verification'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'email': widget.email}),
     );
@@ -125,7 +132,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Please try again.')),
+        const SnackBar(
+            content: Text('Something went wrong. Please try again.')),
       );
     } finally {
       setState(() {
@@ -166,14 +174,17 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Card(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             elevation: 6,
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 24.0),
+              padding:
+                  const EdgeInsets.symmetric(vertical: 40.0, horizontal: 24.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.mark_email_unread, size: 60, color: BLACK_COLOR),
+                  const Icon(Icons.mark_email_unread,
+                      size: 60, color: BLACK_COLOR),
                   const SizedBox(height: 20),
                   Text(
                     'We’ve sent a verification message to:',
@@ -183,7 +194,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   const SizedBox(height: 8),
                   Text(
                     widget.email,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 30),
@@ -193,7 +205,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                           width: double.infinity,
                           child: ElevatedButton.icon(
                             onPressed: checkVerificationStatus,
-                            icon: const Icon(Icons.refresh, color: Colors.white),
+                            icon:
+                                const Icon(Icons.refresh, color: Colors.white),
                             label: const Text(
                               "I've Verified",
                               style: TextStyle(
@@ -204,7 +217,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                             ),
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(vertical: 14),
-                              backgroundColor: const Color.fromARGB(255, 32, 150, 69),
+                              backgroundColor:
+                                  const Color.fromARGB(255, 32, 150, 69),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
                               ),
@@ -222,7 +236,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                           ? const SizedBox(
                               height: 18,
                               width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
                             )
                           : const Icon(Icons.send, color: Colors.white),
                       label: Text(

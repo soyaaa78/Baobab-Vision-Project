@@ -22,7 +22,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> sendOtp() async {
     setState(() => _isLoading = true);
-    final url = Uri.parse('http://10.0.2.2:3001/api/auth/request-otp');
+    final url = Uri.parse(
+        'https://baobab-vision-project.onrender.com/api/auth/request-otp');
 
     try {
       final response = await http.post(
@@ -37,7 +38,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => EmailResetPasswordScreen(email: emailController.text.trim()),
+            builder: (_) =>
+                EmailResetPasswordScreen(email: emailController.text.trim()),
           ),
         );
       } else {
@@ -48,7 +50,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         );
       }
     } catch (e) {
-      customDialog(context, title: 'Network Error', content: 'Could not reach the server. Please try again.');
+      customDialog(context,
+          title: 'Network Error',
+          content: 'Could not reach the server. Please try again.');
     } finally {
       setState(() => _isLoading = false);
     }
@@ -86,12 +90,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               child: TextFormField(
                 controller: emailController,
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) =>
-                    value == null || value.isEmpty ? 'Please enter your email' : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter your email'
+                    : null,
                 decoration: InputDecoration(
                   labelText: 'Email address',
                   prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r)),
                 ),
               ),
             ),

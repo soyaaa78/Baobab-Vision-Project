@@ -42,71 +42,76 @@ class _EmailOtpVerificationScreenState
   }
 
   Future<void> _verifyOtp() async {
-  if (_otp.length != 6 || _otp.contains(RegExp(r'[^0-9]'))) {
-    _showSnackBar('Enter all 6 digits');
-    return;
-  }
+    if (_otp.length != 6 || _otp.contains(RegExp(r'[^0-9]'))) {
+      _showSnackBar('Enter all 6 digits');
+      return;
+    }
 
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  try {
-    final response = await http.post(
-      Uri.parse('http://10.0.2.2:3001/api/auth/verify-email-otp'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': widget.email, 'otp': _otp}),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://baobab-vision-project.onrender.com/api/auth/verify-email-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': widget.email, 'otp': _otp}),
+      );
 
-    final res = jsonDecode(response.body);
+      final res = jsonDecode(response.body);
 
-    if (response.statusCode == 200) {
-      // ✅ Now fetch profile after successful verification
-      final token = res['token'];
-      if (token != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', token);
+      if (response.statusCode == 200) {
+        // ✅ Now fetch profile after successful verification
+        final token = res['token'];
+        if (token != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', token);
 
-        final profileRes = await http.get(
-          Uri.parse('http://10.0.2.2:3001/api/user/profile'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        );
+          final profileRes = await http.get(
+            Uri.parse(
+                'https://baobab-vision-project.onrender.com/api/user/profile'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          );
 
-        if (profileRes.statusCode == 200) {
-          final profileData = jsonDecode(profileRes.body);
+          if (profileRes.statusCode == 200) {
+            final profileData = jsonDecode(profileRes.body);
 
-          await prefs.setString('firstname', profileData['firstname'] ?? '');
-          await prefs.setString('lastname', profileData['lastname'] ?? '');
-          await prefs.setString('email', profileData['email'] ?? '');
+            await prefs.setString('firstname', profileData['firstname'] ?? '');
+            await prefs.setString('lastname', profileData['lastname'] ?? '');
+            await prefs.setString('email', profileData['email'] ?? '');
 
-          if (profileData['profileImage'] != null && profileData['profileImage'].toString().isNotEmpty) {
-            String imgPath = profileData['profileImage'];
-            if (imgPath.startsWith('/')) imgPath = imgPath.substring(1);
-            await prefs.setString('profileImageUrl', 'http://10.0.2.2:3001/$imgPath');
-          } else {
-            await prefs.remove('profileImageUrl');
+            if (profileData['profileImage'] != null &&
+                profileData['profileImage'].toString().isNotEmpty) {
+              String imgPath = profileData['profileImage'];
+              if (imgPath.startsWith('/')) imgPath = imgPath.substring(1);
+              await prefs.setString('profileImageUrl',
+                  'https://baobab-vision-project.onrender.com/$imgPath');
+            } else {
+              await prefs.remove('profileImageUrl');
+            }
           }
         }
+
+        setState(() => _isLoading = false);
+        Navigator.pushReplacementNamed(
+            context, '/home'); // ✅ Safe to navigate now
+      } else {
+        setState(() => _isLoading = false);
+        _showSnackBar(res['message'] ?? 'Invalid or expired OTP');
       }
-
+    } catch (e) {
       setState(() => _isLoading = false);
-      Navigator.pushReplacementNamed(context, '/home'); // ✅ Safe to navigate now
-    } else {
-      setState(() => _isLoading = false);
-      _showSnackBar(res['message'] ?? 'Invalid or expired OTP');
+      _showSnackBar('Verification failed. Try again.');
     }
-  } catch (e) {
-    setState(() => _isLoading = false);
-    _showSnackBar('Verification failed. Try again.');
   }
-}
-
 
   Future<void> _resendOtp() async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:3001/api/auth/resend-email-otp'),
+        Uri.parse(
+            'https://baobab-vision-project.onrender.com/api/auth/resend-email-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': widget.email}),
       );
@@ -138,7 +143,8 @@ class _EmailOtpVerificationScreenState
       body: Center(
         child: Card(
           elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           margin: const EdgeInsets.symmetric(horizontal: 24),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),

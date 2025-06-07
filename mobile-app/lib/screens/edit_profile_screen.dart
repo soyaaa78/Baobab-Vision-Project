@@ -48,72 +48,74 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _fetchUserProfile() async {
-  setState(() => _isLoading = true);
-  final token = await _getToken();
-  if (token == null) {
-    setState(() => _isLoading = false);
-    return;
-  }
+    setState(() => _isLoading = true);
+    final token = await _getToken();
+    if (token == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-  try {
-    final response = await http.get(
-      Uri.parse('http://10.0.2.2:3001/api/user/profile'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://baobab-vision-project.onrender.com/api/user/profile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-      setState(() {
-        firstnameController.text = data['firstname'] ?? '';
-        lastnameController.text = data['lastname'] ?? '';
-        emailController.text = data['email'] ?? '';
-        usernameController.text = data['username'] ?? '';
-        phoneController.text = data['phone'] ?? '';
-        addressController.text = data['address'] ?? '';
+        setState(() {
+          firstnameController.text = data['firstname'] ?? '';
+          lastnameController.text = data['lastname'] ?? '';
+          emailController.text = data['email'] ?? '';
+          usernameController.text = data['username'] ?? '';
+          phoneController.text = data['phone'] ?? '';
+          addressController.text = data['address'] ?? '';
 
-        if (data['profileImage'] != null && data['profileImage'].toString().isNotEmpty) {
-          String imgPath = data['profileImage'].toString();
+          if (data['profileImage'] != null &&
+              data['profileImage'].toString().isNotEmpty) {
+            String imgPath = data['profileImage'].toString();
 
-          // Remove leading slash to avoid double slash in URL
-          if (imgPath.startsWith('/')) {
-            imgPath = imgPath.substring(1);
+            // Remove leading slash to avoid double slash in URL
+            if (imgPath.startsWith('/')) {
+              imgPath = imgPath.substring(1);
+            }
+
+            // Encode URI components to handle spaces and special characters
+            profileImageUrl = 'https://baobab-vision-project.onrender.com/' +
+                Uri.encodeFull(imgPath);
+          } else {
+            profileImageUrl = null;
           }
 
-          // Encode URI components to handle spaces and special characters
-          profileImageUrl = 'http://10.0.2.2:3001/' + Uri.encodeFull(imgPath);
-        } else {
-          profileImageUrl = null;
-        }
-
-        _initialValues = {
-          'firstname': firstnameController.text,
-          'lastname': lastnameController.text,
-          'email': emailController.text,
-          'username': usernameController.text,
-          'phone': phoneController.text,
-          'address': addressController.text,
-          'profileImage': profileImageUrl ?? '',
-        };
-      });
-    } else {
-      print('Failed to fetch profile: ${response.statusCode}');
+          _initialValues = {
+            'firstname': firstnameController.text,
+            'lastname': lastnameController.text,
+            'email': emailController.text,
+            'username': usernameController.text,
+            'phone': phoneController.text,
+            'address': addressController.text,
+            'profileImage': profileImageUrl ?? '',
+          };
+        });
+      } else {
+        print('Failed to fetch profile: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching profile: $e');
+    } finally {
+      setState(() => _isLoading = false);
     }
-  } catch (e) {
-    print('Error fetching profile: $e');
-  } finally {
-    setState(() => _isLoading = false);
   }
-}
-
-
 
   Future<void> _pickImage() async {
     if (!_isEditing) return; // only allow picking image in edit mode
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
@@ -151,7 +153,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
-      var uri = Uri.parse('http://10.0.2.2:3001/api/user/profile');
+      var uri = Uri.parse(
+          'https://baobab-vision-project.onrender.com/api/user/profile');
       var request = http.MultipartRequest('PUT', uri);
 
       request.headers['Authorization'] = 'Bearer $token';
@@ -164,7 +167,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       request.fields['address'] = addressController.text;
 
       if (_imageFile != null) {
-        request.files.add(await http.MultipartFile.fromPath('profileImage', _imageFile!.path));
+        request.files.add(await http.MultipartFile.fromPath(
+            'profileImage', _imageFile!.path));
       }
 
       final response = await request.send();
@@ -196,7 +200,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _fetchUserProfile();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update profile: ${response.statusCode}')),
+          SnackBar(
+              content:
+                  Text('Failed to update profile: ${response.statusCode}')),
         );
       }
     } catch (e) {
@@ -224,7 +230,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           controller: controller,
           decoration: InputDecoration(
             labelText: label,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+            border:
+                OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
           ),
           maxLines: multiline ? 3 : 1,
           validator: validator,
@@ -266,12 +273,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     ImageProvider profileImageProvider;
 
     if (_imageFile != null) {
-    profileImageProvider = FileImage(_imageFile!);
-  } else if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
-    profileImageProvider = NetworkImage(profileImageUrl!);
-  } else {
-    profileImageProvider = const AssetImage('assets/images/default_profile_icon.png');
-  }
+      profileImageProvider = FileImage(_imageFile!);
+    } else if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
+      profileImageProvider = NetworkImage(profileImageUrl!);
+    } else {
+      profileImageProvider =
+          const AssetImage('assets/images/default_profile_icon.png');
+    }
 
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
@@ -309,7 +317,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     context: context,
                     builder: (context) => AlertDialog(
                       title: const Text('Unsaved changes'),
-                      content: const Text('There are unsaved changes. Save or discard?'),
+                      content: const Text(
+                          'There are unsaved changes. Save or discard?'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop('discard'),
@@ -358,43 +367,49 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: Column(
                   children: [
                     Center(
-  child: GestureDetector(
-    onTap: _pickImage,
-    child: CircleAvatar(
-      radius: 55.r,
-      backgroundColor: Colors.grey.shade300,
-      backgroundImage: profileImageProvider,
-      child: _isEditing
-          ? Align(
-              alignment: Alignment.bottomRight,
-              child: CircleAvatar(
-                radius: 16.r,
-                backgroundColor: Colors.white,
-                child: Icon(Icons.camera_alt, size: 20.sp, color: Colors.black87),
-              ),
-            )
-          : null,
-    ),
-  ),
-),
-
+                      child: GestureDetector(
+                        onTap: _pickImage,
+                        child: CircleAvatar(
+                          radius: 55.r,
+                          backgroundColor: Colors.grey.shade300,
+                          backgroundImage: profileImageProvider,
+                          child: _isEditing
+                              ? Align(
+                                  alignment: Alignment.bottomRight,
+                                  child: CircleAvatar(
+                                    radius: 16.r,
+                                    backgroundColor: Colors.white,
+                                    child: Icon(Icons.camera_alt,
+                                        size: 20.sp, color: Colors.black87),
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
+                    ),
                     SizedBox(height: 30.h),
                     _buildTextOrField(
                       label: 'First Name',
                       controller: firstnameController,
-                      validator: (val) => val == null || val.isEmpty ? 'Please enter your first name' : null,
+                      validator: (val) => val == null || val.isEmpty
+                          ? 'Please enter your first name'
+                          : null,
                     ),
                     _buildTextOrField(
                       label: 'Last Name',
                       controller: lastnameController,
-                      validator: (val) => val == null || val.isEmpty ? 'Please enter your last name' : null,
+                      validator: (val) => val == null || val.isEmpty
+                          ? 'Please enter your last name'
+                          : null,
                     ),
                     _buildTextOrField(
                       label: 'Email',
                       controller: emailController,
                       validator: (val) {
-                        if (val == null || val.isEmpty) return 'Please enter your email';
-                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(val)) return 'Enter a valid email';
+                        if (val == null || val.isEmpty)
+                          return 'Please enter your email';
+                        if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(val))
+                          return 'Enter a valid email';
                         return null;
                       },
                       readOnly: true,
@@ -403,21 +418,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     _buildTextOrField(
                       label: 'Username',
                       controller: usernameController,
-                      validator: (val) => val == null || val.isEmpty ? 'Please enter your username' : null,
+                      validator: (val) => val == null || val.isEmpty
+                          ? 'Please enter your username'
+                          : null,
                       readOnly: true,
                       enabled: false,
                     ),
-                    
                     _buildTextOrField(
                       label: 'Mobile Phone Number',
                       controller: phoneController,
-                      validator: (val) => val == null || val.isEmpty ? 'Please enter your phone number' : null,
+                      validator: (val) => val == null || val.isEmpty
+                          ? 'Please enter your phone number'
+                          : null,
                     ),
                     _buildTextOrField(
                       label: 'Address',
                       controller: addressController,
                       multiline: true,
-                      validator: (val) => val == null || val.isEmpty ? 'Please enter your address' : null,
+                      validator: (val) => val == null || val.isEmpty
+                          ? 'Please enter your address'
+                          : null,
                     ),
                   ],
                 ),

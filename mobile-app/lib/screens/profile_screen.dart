@@ -58,7 +58,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3001/api/user/profile'),
+        Uri.parse(
+            'https://baobab-vision-project.onrender.com/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -77,12 +78,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         // Save profileImageUrl after prepending base URL if available
         String? imgUrl;
-        if (data['profileImage'] != null && data['profileImage'].toString().isNotEmpty) {
+        if (data['profileImage'] != null &&
+            data['profileImage'].toString().isNotEmpty) {
           String imgPath = data['profileImage'];
           if (imgPath.startsWith('/')) {
             imgPath = imgPath.substring(1);
           }
-          imgUrl = 'http://10.0.2.2:3001/$imgPath';
+          imgUrl = 'https://baobab-vision-project.onrender.com/$imgPath';
           await prefs.setString('profileImageUrl', imgUrl);
         } else {
           await prefs.remove('profileImageUrl');
@@ -132,7 +134,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
       profileImageProvider = NetworkImage(profileImageUrl!);
     } else {
-      profileImageProvider = const AssetImage('assets/images/default_profile_icon.jpg');
+      profileImageProvider =
+          const AssetImage('assets/images/default_profile_icon.jpg');
     }
 
     return Scaffold(
@@ -151,23 +154,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildSettingsOption(Icons.edit, 'View & Edit Profile', () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-                    ).then((_) => _fetchAndLoadProfile()); // Refresh after returning
+                      MaterialPageRoute(
+                          builder: (context) => const EditProfileScreen()),
+                    ).then((_) =>
+                        _fetchAndLoadProfile()); // Refresh after returning
                   }),
-                 _buildSettingsOption(Icons.receipt_long, 'Completed Purchases', () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const CompletedPurchasesScreen()),
-  );
-}),
-
-                  _buildSettingsOption(Icons.lock_outline, 'Privacy Policy', () {
+                  _buildSettingsOption(
+                      Icons.receipt_long, 'Completed Purchases', () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              const CompletedPurchasesScreen()),
                     );
                   }),
-                  _buildSettingsOption(Icons.help_outline, 'Help Centre', () {}),
+                  _buildSettingsOption(Icons.lock_outline, 'Privacy Policy',
+                      () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const PrivacyPolicyScreen()),
+                    );
+                  }),
+                  _buildSettingsOption(
+                      Icons.help_outline, 'Help Centre', () {}),
                   Padding(
                     padding: EdgeInsets.only(top: 6.h),
                     child: TextButton(
@@ -228,9 +238,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildOrdersSection() {
     final orders = [
-      {'icon': Icons.payment, 'label': 'Pending', 'screen': const PendingOrdersScreen()},
-      {'icon': Icons.shopping_cart, 'label': 'Processing', 'screen': const ProcessingOrdersScreen()},
-      {'icon': Icons.local_shipping, 'label': 'Ready for Pick-up', 'screen': const ReadyForPickupOrdersScreen()},
+      {
+        'icon': Icons.payment,
+        'label': 'Pending',
+        'screen': const PendingOrdersScreen()
+      },
+      {
+        'icon': Icons.shopping_cart,
+        'label': 'Processing',
+        'screen': const ProcessingOrdersScreen()
+      },
+      {
+        'icon': Icons.local_shipping,
+        'label': 'Ready for Pick-up',
+        'screen': const ReadyForPickupOrdersScreen()
+      },
     ];
 
     return Padding(
@@ -258,7 +280,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => order['screen'] as Widget),
+                    MaterialPageRoute(
+                        builder: (context) => order['screen'] as Widget),
                   );
                 },
                 child: Column(
@@ -267,7 +290,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     CircleAvatar(
                       backgroundColor: Colors.grey.shade100,
                       radius: 21.r,
-                      child: Icon(order['icon'] as IconData, color: BLACK_COLOR, size: 18.sp),
+                      child: Icon(order['icon'] as IconData,
+                          color: BLACK_COLOR, size: 18.sp),
                     ),
                     SizedBox(height: 3.h),
                     CustomText(
@@ -328,7 +352,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SharedPreferences prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
                 Navigator.of(dialogContext).pop();
-                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil('/login', (route) => false);
               },
               child: const Text('Log Out', style: TextStyle(color: Colors.red)),
             ),

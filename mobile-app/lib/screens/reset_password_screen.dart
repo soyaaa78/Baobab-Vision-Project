@@ -11,7 +11,8 @@ class ResetPasswordScreen extends StatefulWidget {
   final String email;
   final String token;
 
-  const ResetPasswordScreen({super.key, required this.email, required this.token});
+  const ResetPasswordScreen(
+      {super.key, required this.email, required this.token});
 
   @override
   State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
@@ -28,7 +29,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() => isLoading = true);
 
-    final url = Uri.parse('http://10.0.2.2:3001/api/auth/reset-password');
+    final url = Uri.parse(
+        'https://baobab-vision-project.onrender.com/api/auth/reset-password');
 
     try {
       final response = await http.post(
@@ -43,7 +45,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       final resData = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        customDialog(context, title: 'Success', content: 'Your password has been reset.');
+        customDialog(context,
+            title: 'Success', content: 'Your password has been reset.');
 
         await Future.delayed(const Duration(seconds: 2));
 
@@ -56,7 +59,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         customDialog(context, title: 'Error', content: resData['message']);
       }
     } catch (e) {
-      customDialog(context, title: 'Error', content: 'Something went wrong. Please try again.');
+      customDialog(context,
+          title: 'Error', content: 'Something went wrong. Please try again.');
     } finally {
       setState(() => isLoading = false);
     }
@@ -94,8 +98,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
               TextFormField(
                 controller: passwordController,
                 obscureText: _obscureText,
-                validator: (value) =>
-                    value == null || value.length < 6 ? 'Password must be at least 6 characters' : null,
+                validator: (value) => value == null || value.length < 6
+                    ? 'Password must be at least 6 characters'
+                    : null,
                 decoration: InputDecoration(
                   labelText: 'New Password',
                   prefixIcon: const Icon(Icons.lock_outline),
@@ -107,7 +112,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       setState(() => _obscureText = !_obscureText);
                     },
                   ),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.r)),
                 ),
               ),
               SizedBox(height: 30.h),

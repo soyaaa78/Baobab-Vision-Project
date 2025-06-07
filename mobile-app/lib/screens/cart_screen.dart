@@ -1,6 +1,6 @@
 import 'package:baobab_vision_project/models/productModel.dart';
 import 'package:baobab_vision_project/screens/detail_screen.dart';
-import 'package:baobab_vision_project/screens/checkout_screen.dart';  // <-- Added import
+import 'package:baobab_vision_project/screens/checkout_screen.dart'; // <-- Added import
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,7 +39,8 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    final url = Uri.parse('http://10.0.2.2:3001/api/cart/$userId');
+    final url = Uri.parse(
+        'https://baobab-vision-project.onrender.com/api/cart/$userId');
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -59,7 +60,8 @@ class _CartScreenState extends State<CartScreen> {
         });
 
         // Log cart items to see what data we're working with
-        print('Cart Items: $cartItems'); // Print cart items to check if prodPrice is set
+        print(
+            'Cart Items: $cartItems'); // Print cart items to check if prodPrice is set
 
         print('Total Price: ${getTotalPrice()}');
       } else {
@@ -91,7 +93,8 @@ class _CartScreenState extends State<CartScreen> {
 
     setState(() {});
 
-    final url = Uri.parse('http://10.0.2.2:3001/api/cart/update');
+    final url =
+        Uri.parse('https://baobab-vision-project.onrender.com/api/cart/update');
     final body = json.encode({
       'productId': productId,
       'colorOptionId': colorOptionId,
@@ -100,10 +103,12 @@ class _CartScreenState extends State<CartScreen> {
     });
 
     try {
-      final response = await http.put(url, headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      }, body: body);
+      final response = await http.put(url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: body);
 
       print('Response Status: ${response.statusCode}');
       print('Response Body: ${response.body}');
@@ -132,7 +137,8 @@ class _CartScreenState extends State<CartScreen> {
       // Get the price from product and lensOption
       final productPrice = product['price'] ?? 0.0;
       final lensPrice = lensOption['price'] ?? 0.0;
-      final quantity = item['quantity'] ?? 1; // Default to 1 if quantity is missing
+      final quantity =
+          item['quantity'] ?? 1; // Default to 1 if quantity is missing
 
       // Calculate the total price by adding product and lens price
       final itemTotal = (productPrice + lensPrice) * quantity;
@@ -184,8 +190,9 @@ class _CartScreenState extends State<CartScreen> {
                         orElse: () => {},
                       );
                       final quantity = item['quantity'] ?? 1;
-                      final price =
-                          ((product['price'] ?? 0) + (lensOption['price'] ?? 0)) * quantity;
+                      final price = ((product['price'] ?? 0) +
+                              (lensOption['price'] ?? 0)) *
+                          quantity;
 
                       return GestureDetector(
                         onTap: () {
@@ -199,14 +206,18 @@ class _CartScreenState extends State<CartScreen> {
                                 prodPrice: product['price'].toString(),
                                 numStars: product['numStars'] ?? 5,
                                 quantity: quantity,
-                                description: product['description'] ?? '[no description]',
-                                prodImages: List<String>.from(product['imageUrls'] ?? []),
-                                colorOptions: (product['colorOptions'] as List<dynamic>)
-                                    .map((e) => ColorOption.fromJson(e))
-                                    .toList(),
-                                lensOptions: (product['lensOptions'] as List<dynamic>)
-                                    .map((e) => LensOption.fromJson(e))
-                                    .toList(),
+                                description: product['description'] ??
+                                    '[no description]',
+                                prodImages: List<String>.from(
+                                    product['imageUrls'] ?? []),
+                                colorOptions:
+                                    (product['colorOptions'] as List<dynamic>)
+                                        .map((e) => ColorOption.fromJson(e))
+                                        .toList(),
+                                lensOptions:
+                                    (product['lensOptions'] as List<dynamic>)
+                                        .map((e) => LensOption.fromJson(e))
+                                        .toList(),
                               ),
                             ),
                           );
@@ -214,22 +225,28 @@ class _CartScreenState extends State<CartScreen> {
                         child: CustomHorizontalProductCard(
                           productId: product['_id'],
                           prodName: product['name'],
-                          prodPrice: 'PHP ${price.toStringAsFixed(2)}', // Corrected the PHP formatting here
+                          prodPrice:
+                              'PHP ${price.toStringAsFixed(2)}', // Corrected the PHP formatting here
                           numStars: product['numStars'] ?? 5,
                           quantity: quantity,
-                          description: 'Frame in ${colorOption['name']}, ${lensOption['label']}',
+                          description:
+                              'Frame in ${colorOption['name']}, ${lensOption['label']}',
                           selectedColorName: colorOption['name'],
                           selectedLensLabel: lensOption['label'],
-                          prodImages: List<String>.from(product['imageUrls'] ?? []),
-                          colorOptions: (product['colorOptions'] as List<dynamic>)
-                              .map((e) => ColorOption.fromJson(e))
-                              .toList(),
+                          prodImages:
+                              List<String>.from(product['imageUrls'] ?? []),
+                          colorOptions:
+                              (product['colorOptions'] as List<dynamic>)
+                                  .map((e) => ColorOption.fromJson(e))
+                                  .toList(),
                           lensOptions: (product['lensOptions'] as List<dynamic>)
                               .map((e) => LensOption.fromJson(e))
                               .toList(),
                           isCart: true,
-                          onAdd: () => _updateQuantity(index, quantity + 1), // Increase Quantity
-                          onRemove: () => _updateQuantity(index, quantity - 1), // Decrease Quantity
+                          onAdd: () => _updateQuantity(
+                              index, quantity + 1), // Increase Quantity
+                          onRemove: () => _updateQuantity(
+                              index, quantity - 1), // Decrease Quantity
                         ),
                       );
                     },
@@ -242,7 +259,8 @@ class _CartScreenState extends State<CartScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   CustomText(
-                    text: 'Total: ${getTotalPrice().toStringAsFixed(2)}', // Ensure to format to 2 decimal places
+                    text:
+                        'Total: ${getTotalPrice().toStringAsFixed(2)}', // Ensure to format to 2 decimal places
                     fontSize: ScreenUtil().setSp(20),
                     color: BLACK_COLOR,
                     fontWeight: FontWeight.bold,
@@ -253,14 +271,16 @@ class _CartScreenState extends State<CartScreen> {
                         context,
                         MaterialPageRoute(
                           builder: (context) => CheckoutScreen(
-                            totalAmount: getTotalPrice(), // Pass total amount to checkout
+                            totalAmount:
+                                getTotalPrice(), // Pass total amount to checkout
                           ),
                         ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: BLACK_COLOR,
-                      padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 43.w),
+                      padding: EdgeInsets.symmetric(
+                          vertical: 12.h, horizontal: 43.w),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),

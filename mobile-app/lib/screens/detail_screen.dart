@@ -42,7 +42,8 @@ Future<void> addToCart(
   String lensOptionId,
   String? prescriptionImage,
 ) async {
-  final url = Uri.parse('http://10.0.2.2:3001/api/cart/add');
+  final url =
+      Uri.parse('https://baobab-vision-project.onrender.com/api/cart/add');
 
   final body = json.encode({
     'productId': productId,
@@ -97,13 +98,15 @@ class DetailScreen extends StatefulWidget {
   });
 
   static DetailScreen fromJson(Map<String, dynamic> json) {
-    final List<ColorOption> colorOptionsList = (json['colorOptions'] as List<dynamic>? ?? [])
-        .map((e) => ColorOption.fromJson(e))
-        .toList();
+    final List<ColorOption> colorOptionsList =
+        (json['colorOptions'] as List<dynamic>? ?? [])
+            .map((e) => ColorOption.fromJson(e))
+            .toList();
 
-    final List<LensOption> lensOptionsList = (json['lensOptions'] as List<dynamic>? ?? [])
-        .map((e) => LensOption.fromJson(e))
-        .toList();
+    final List<LensOption> lensOptionsList =
+        (json['lensOptions'] as List<dynamic>? ?? [])
+            .map((e) => LensOption.fromJson(e))
+            .toList();
 
     return DetailScreen(
       productId: json['_id'] ?? '',
@@ -208,7 +211,8 @@ class _DetailScreenState extends State<DetailScreen> {
                           top: ScreenUtil().setHeight(10),
                           right: ScreenUtil().setWidth(10),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
                               color: Colors.yellow[700],
                               borderRadius: BorderRadius.circular(16),
@@ -250,7 +254,9 @@ class _DetailScreenState extends State<DetailScreen> {
                               padding: EdgeInsets.all(2),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: _selectedImageIndex == index ? BLACK_COLOR : Colors.transparent,
+                                  color: _selectedImageIndex == index
+                                      ? BLACK_COLOR
+                                      : Colors.transparent,
                                   width: 2,
                                 ),
                                 borderRadius: BorderRadius.circular(8),
@@ -293,7 +299,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
                 SizedBox(height: ScreenUtil().setHeight(5)),
                 CustomText(
-                  text: 'Color: ${widget.colorOptions[selectedColorIndex].name}',
+                  text:
+                      'Color: ${widget.colorOptions[selectedColorIndex].name}',
                   fontSize: ScreenUtil().setSp(15),
                   fontFamily: 'Montserrat',
                   color: Colors.black,
@@ -302,22 +309,23 @@ class _DetailScreenState extends State<DetailScreen> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: List.generate(widget.colorOptions.length, (index) {
-                      return _colorSwatch(widget.colorOptions[index], index == selectedColorIndex);
+                    children:
+                        List.generate(widget.colorOptions.length, (index) {
+                      return _colorSwatch(widget.colorOptions[index],
+                          index == selectedColorIndex);
                     }),
                   ),
                 ),
                 SizedBox(height: ScreenUtil().setHeight(16)),
                 Text(
-  widget.description,
-  style: TextStyle(
-    fontSize: ScreenUtil().setSp(17),
-    fontFamily: 'Nunito',
-    fontWeight: FontWeight.w600,
-  ),
-  textAlign: TextAlign.justify,
-),
-
+                  widget.description,
+                  style: TextStyle(
+                    fontSize: ScreenUtil().setSp(17),
+                    fontFamily: 'Nunito',
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.justify,
+                ),
                 SizedBox(height: ScreenUtil().setHeight(16)),
                 CustomText(
                   text: 'SELECT LENS TYPE:',
@@ -340,21 +348,32 @@ class _DetailScreenState extends State<DetailScreen> {
                   items: [
                     DropdownMenuItem<String>(
                       enabled: false,
-                      child: Text('BUILT-IN', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                      child: Text('BUILT-IN',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600])),
                     ),
-                    ...widget.lensOptions
-                        .where((o) => o.type == 'builtin')
-                        .map((o) => DropdownMenuItem(value: o.label, child: Text('${o.label} (FREE)'))),
+                    ...widget.lensOptions.where((o) => o.type == 'builtin').map(
+                        (o) => DropdownMenuItem(
+                            value: o.label, child: Text('${o.label} (FREE)'))),
                     DropdownMenuItem<String>(
                       enabled: false,
-                      child: Text('TINTED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                      child: Text('TINTED',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600])),
                     ),
-                    ...widget.lensOptions
-                        .where((o) => o.type == 'tinted')
-                        .map((o) => DropdownMenuItem(value: o.label, child: Text('${o.label} (+₱${o.price.toStringAsFixed(0)})'))),
+                    ...widget.lensOptions.where((o) => o.type == 'tinted').map(
+                        (o) => DropdownMenuItem(
+                            value: o.label,
+                            child: Text(
+                                '${o.label} (+₱${o.price.toStringAsFixed(0)})'))),
                     DropdownMenuItem<String>(
                       enabled: false,
-                      child: Text('SUN ADAPTIVE', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                      child: Text('SUN ADAPTIVE',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600])),
                     ),
                     ...widget.lensOptions
                         .where((o) => o.type == 'adaptive')
@@ -362,7 +381,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               value: o.label,
                               child: SizedBox(
                                 width: double.infinity,
-                                child: Text('${o.label} (+₱${o.price.toStringAsFixed(0)})'),
+                                child: Text(
+                                    '${o.label} (+₱${o.price.toStringAsFixed(0)})'),
                               ),
                             )),
                   ],
@@ -379,7 +399,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 prescriptionFile == null
                     ? GestureDetector(
                         onTap: () async {
-                          FilePickerResult? result = await FilePicker.platform.pickFiles(
+                          FilePickerResult? result =
+                              await FilePicker.platform.pickFiles(
                             type: FileType.custom,
                             allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
                           );
@@ -404,7 +425,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               Text(
                                 'Choose File\nor drop file to upload',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                style: TextStyle(
+                                    color: Colors.grey[600], fontSize: 14),
                               ),
                             ],
                           ),
@@ -446,7 +468,8 @@ class _DetailScreenState extends State<DetailScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => VirtualTryOnScreen()),
+                            MaterialPageRoute(
+                                builder: (context) => VirtualTryOnScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -465,32 +488,31 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                     SizedBox(width: 10),
                     Expanded(
-                      child: CartAnimationButton(
-  label: 'Add to Cart',
-  // When adding to cart
-onPressed: () async {
-  final token = await getAuthToken();
-  if (token != null) {
-    final selectedLens = widget.lensOptions.firstWhere(
-      (option) => option.label == selectedLensType,
-      orElse: () => throw Exception("Invalid lens selected"),
-    );
+                        child: CartAnimationButton(
+                      label: 'Add to Cart',
+                      // When adding to cart
+                      onPressed: () async {
+                        final token = await getAuthToken();
+                        if (token != null) {
+                          final selectedLens = widget.lensOptions.firstWhere(
+                            (option) => option.label == selectedLensType,
+                            orElse: () =>
+                                throw Exception("Invalid lens selected"),
+                          );
 
-    await addToCart(
-      token,
-      widget.productId,
-      1, // Ensure this is set to 1 for first-time addition, adjust if necessary
-      widget.colorOptions[selectedColorIndex].id,
-      selectedLens.id,
-      prescriptionFile?.path ?? null,
-    );
-  } else {
-    print('User is not logged in!');
-  }
-},
-
-)
-                    ),
+                          await addToCart(
+                            token,
+                            widget.productId,
+                            1, // Ensure this is set to 1 for first-time addition, adjust if necessary
+                            widget.colorOptions[selectedColorIndex].id,
+                            selectedLens.id,
+                            prescriptionFile?.path ?? null,
+                          );
+                        } else {
+                          print('User is not logged in!');
+                        }
+                      },
+                    )),
                   ],
                 ),
               ],
@@ -506,7 +528,8 @@ onPressed: () async {
     if (option.type == 'solid') {
       swatch = CircleAvatar(
         radius: 12,
-        backgroundColor: Color(int.parse('0xFF' + option.colors[0].substring(1))),
+        backgroundColor:
+            Color(int.parse('0xFF' + option.colors[0].substring(1))),
       );
     } else if (option.type == 'split') {
       swatch = Container(
@@ -515,7 +538,9 @@ onPressed: () async {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
-            colors: option.colors.map((hex) => Color(int.parse('0xFF' + hex.substring(1)))).toList(),
+            colors: option.colors
+                .map((hex) => Color(int.parse('0xFF' + hex.substring(1))))
+                .toList(),
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

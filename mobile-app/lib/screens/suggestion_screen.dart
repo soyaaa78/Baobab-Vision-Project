@@ -16,19 +16,11 @@ class SuggestionScreen extends StatefulWidget {
 class _SuggestionScreenState extends State<SuggestionScreen> {
   @override
   Widget build(BuildContext context) {
-    List<dynamic> products = [];
-    final rec = widget.recommendedProducts;
-    if (rec != null) {
-      if (rec is List) {
-        products = rec.take(5).toList();
-      } else if (rec is Map) {
-        final recMap = rec as Map;
-        if (recMap.containsKey('recommended') &&
-            recMap['recommended'] is List) {
-          products = (recMap['recommended'] as List).take(5).toList();
-        }
-      }
-    }
+    final List<dynamic> items = widget.recommendedProducts ?? [];
+    final List<dynamic> products = items
+        .where((item) => item != null && item['product'] != null)
+        .map((item) => item['product'])
+        .toList();
 
     return Scaffold(
         backgroundColor: WHITE_COLOR,
