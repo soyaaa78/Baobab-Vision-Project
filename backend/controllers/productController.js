@@ -389,7 +389,7 @@ exports.recommendEyewear = async (req, res) => {
     scoredProducts = scoredProducts
       .filter((item) => item.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 8); // Get top 8 products      .map((item) => item.product);
+      .slice(0, 5); // Get top 5 products
 
     // If no scored products, fall back to face shape matching
     if (scoredProducts.length === 0) {
