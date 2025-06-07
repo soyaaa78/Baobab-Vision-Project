@@ -9,10 +9,13 @@ const bcrypt = require('bcryptjs');
 // Routes
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 const slideshowRoutes = require('./routes/slideShowRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const userProfileRoutes = require('./routes/userProfileRoutes');
+const storageRoutes = require('./routes/storageRoutes');
+const aliveRoute = require('./routes/aliveRoute');
 
 // Models
 const Admin = require('./models/Admin');
@@ -30,10 +33,13 @@ app.use('/userprofileuploads', express.static(path.join(__dirname, 'userprofileu
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/api/slideshow', slideshowRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userProfileRoutes);
+app.use('/api/storage', storageRoutes);
+app.use('/api/alive', aliveRoute);
 
 // Request logger middleware
 app.use((req, res, next) => {
@@ -41,7 +47,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Connect to MongoDB with proper index control
+// MongoDB connection with proper index control
 mongoose.connect(process.env.MONGO_URI, {
   autoIndex: process.env.NODE_ENV !== 'production' // ✅ disables auto-indexing in production
 })
@@ -50,7 +56,6 @@ mongoose.connect(process.env.MONGO_URI, {
   await dropLegacyFirstnameIndex(); // ✅ clean legacy index if it exists
 })
 .catch(err => console.log('❌ MongoDB connection error:', err));
-
 
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
@@ -78,6 +83,7 @@ const seedSuperAdmin = async () => {
 
 seedSuperAdmin();
 
+// Drop legacy firstname index if exists
 const dropLegacyFirstnameIndex = async () => {
   try {
     const indexInfo = await mongoose.connection.db.collection('users').indexInformation({ full: true });

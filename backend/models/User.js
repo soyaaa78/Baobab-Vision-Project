@@ -12,7 +12,8 @@ const userSchema = new mongoose.Schema({
   otpExpiry: { type: Date },
   phone: { type: String, default: '' },
   address: { type: String, default: '' },
-  profileImage: { type: String, default: '' }
+  profileImage: { type: String, default: '' },
+  isDisabled: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model('User', userSchema);

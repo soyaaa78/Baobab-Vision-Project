@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'suggestion_screen.dart';
 import 'package:baobab_vision_project/constants.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class SurveyScreen extends StatefulWidget {
   final String? detectedFaceShape;
@@ -14,16 +16,68 @@ class SurveyScreen extends StatefulWidget {
 }
 
 class _SurveyScreenState extends State<SurveyScreen> {
-  String? lifestyle;
-  String? occasion;
-  String? eyeglassStyle; // Separate variable for eyeglass style dropdown
+  // New survey fields for sunglasses recommendation
+  String? lifestyleActivity;
+  String? uvProtectionImportance;
+  String? personalStyle;
+  String? fitPreference;
+  String? occasionUse;
+  String? colorPreference;
+  bool isLoading = false;
+  String? errorMsg;
+
+  Future<void> getRecommendation() async {
+    setState(() {
+      isLoading = true;
+      errorMsg = null;
+    });
+    try {
+      final response = await http.post(
+        Uri.parse('http://10.0.2.2:3001/api/productRoutes/recommend'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'faceShape': widget.detectedFaceShape,
+          'lifestyleActivity': lifestyleActivity,
+          'uvProtectionImportance': uvProtectionImportance,
+          'personalStyle': personalStyle,
+          'fitPreference': fitPreference,
+          'occasionUse': occasionUse,
+          'colorPreference': colorPreference,
+        }),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final recommended = data['recommended'];
+        // Navigate to SuggestionScreen and pass recommended products
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) =>
+                SuggestionScreen(recommendedProducts: recommended),
+          ),
+        );
+      } else {
+        setState(() {
+          errorMsg = 'Failed to get recommendations.';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        errorMsg = 'Error: ${e.toString()}';
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: WHITE_COLOR,
       appBar: AppBar(
-        title: const Text('Eyewear Recommender'),
+        title: const Text('Sunglasses Recommendation Survey'),
         backgroundColor: WHITE_COLOR,
       ),
       body: Padding(
@@ -33,35 +87,41 @@ class _SurveyScreenState extends State<SurveyScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               CustomText(
-                text: 'Great!',
+                text: 'Perfect!',
                 fontSize: ScreenUtil().setSp(24),
                 fontWeight: FontWeight.bold,
               ),
-              SizedBox(height: ScreenUtil().setHeight(25)),
+              SizedBox(height: ScreenUtil().setHeight(15)),
               CustomText(
-                text: 'Your face has been successfully classified as: ${widget.detectedFaceShape}',
-                fontSize: ScreenUtil().setSp(24),
-                fontWeight: FontWeight.bold,
+                text: 'Face shape detected: ${widget.detectedFaceShape}',
+                fontSize: ScreenUtil().setSp(18),
+                fontWeight: FontWeight.w600,
+                color: Colors.green.shade700,
               ),
               SizedBox(height: ScreenUtil().setHeight(25)),
-              if (widget.detectedFaceShape != null) ...[
-                const SizedBox(height: 20),
-                const Text(
-                  "Now for the personal nitty-gritty stuff.",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-              const SizedBox(height: 20),
               const Text(
-                "What would you say your personal \"style\" is?",
+                "Let's find your perfect sunglasses! Answer a few questions to get personalized recommendations.",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 30),
+
+              // Question 1: Lifestyle & Activity Preferences
+              const Text(
+                "1. What's your primary outdoor activity or lifestyle?",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 10),
               DropdownButton<String>(
-                value: lifestyle,
-                hint: const Text("Select your lifestyle"),
+                value: lifestyleActivity,
+                hint: const Text("Select your primary activity"),
                 isExpanded: true,
                 dropdownColor: WHITE_COLOR,
-                items: ["Minimalist", "Classic", "Bold", "Trendy", "Eccentric"].map((value) {
+                items: [
+                  "Sports/Outdoor Adventures",
+                  "Relaxed Outings",
+                  "Travel/Exploring",
+                  "Fashion/Statement"
+                ].map((value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -69,21 +129,28 @@ class _SurveyScreenState extends State<SurveyScreen> {
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    lifestyle = value;
+                    lifestyleActivity = value;
                   });
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
+
+              // Question 2: UV Protection and Comfort
               const Text(
-                "What kind of occasion is this for?",
+                "2. How important is UV protection for your sunglasses?",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 10),
               DropdownButton<String>(
-                value: occasion,
-                hint: const Text("Select the occasion"),
+                value: uvProtectionImportance,
+                hint: const Text("Select importance level"),
                 isExpanded: true,
                 dropdownColor: WHITE_COLOR,
-                items: ["For the day-to-day", "Work", "Outdoor activities", "Sports", "Partying"].map((value) {
+                items: [
+                  "Very Important",
+                  "Somewhat Important",
+                  "Not Very Important"
+                ].map((value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -91,21 +158,29 @@ class _SurveyScreenState extends State<SurveyScreen> {
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    occasion = value;
+                    uvProtectionImportance = value;
                   });
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
+
+              // Question 3: Personal Style Preferences
               const Text(
-                "What style of eyeglass do you usually go for?",
+                "3. What's your personal style vibe when it comes to sunglasses?",
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
+              const SizedBox(height: 10),
               DropdownButton<String>(
-                value: eyeglassStyle, // Corrected variable
+                value: personalStyle,
                 hint: const Text("Select your style"),
                 isExpanded: true,
                 dropdownColor: WHITE_COLOR,
-                items: ["Casual", "Formal", "Sporty", "Trendy"].map((value) {
+                items: [
+                  "Classic & Timeless",
+                  "Bold & Trendy",
+                  "Sporty & Functional",
+                  "Minimalist"
+                ].map((value) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -113,33 +188,160 @@ class _SurveyScreenState extends State<SurveyScreen> {
                 }).toList(),
                 onChanged: (value) {
                   setState(() {
-                    eyeglassStyle = value; // Updating the correct variable
+                    personalStyle = value;
                   });
                 },
               ),
-              const SizedBox(height: 60),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  SizedBox(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const SuggestionScreen(),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF252525),
-                        foregroundColor: const Color(0xFFFCF7F2),
-                      ),
-                      child: const Text("Get Recommendation"),
+              const SizedBox(height: 25),
+
+              // Question 4: Fit & Comfort
+              const Text(
+                "4. How do you feel about the fit of your sunglasses?",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              DropdownButton<String>(
+                value: fitPreference,
+                hint: const Text("Select your fit preference"),
+                isExpanded: true,
+                dropdownColor: WHITE_COLOR,
+                items: [
+                  "I need a snug fit",
+                  "I prefer a more relaxed, loose fit",
+                  "I like a mix of both"
+                ].map((value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    fitPreference = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 25),
+
+              // Question 5: Occasion/Use Case
+              const Text(
+                "5. When do you mostly wear sunglasses?",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              DropdownButton<String>(
+                value: occasionUse,
+                hint: const Text("Select primary use case"),
+                isExpanded: true,
+                dropdownColor: WHITE_COLOR,
+                items: [
+                  "Daily, All Day Wear",
+                  "Special Occasions/Outings",
+                  "Driving or Commuting",
+                  "Sport/Activity-Specific"
+                ].map((value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    occasionUse = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 25),
+
+              // Question 6: Color Preferences in Accessories
+              const Text(
+                "6. What's your preferred color palette when it comes to accessories?",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              DropdownButton<String>(
+                value: colorPreference,
+                hint: const Text("Select your color preference"),
+                isExpanded: true,
+                dropdownColor: WHITE_COLOR,
+                items: [
+                  "Neutral & Classic",
+                  "Bold & Vibrant",
+                  "Earthy & Natural",
+                  "Metallic & Sleek"
+                ].map((value) {
+                  return DropdownMenuItem<String>(
+                    value: value,
+                    child: Text(value),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    colorPreference = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 30),
+
+              if (errorMsg != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.red.shade200),
+                  ),
+                  child: Text(
+                    errorMsg!,
+                    style: TextStyle(color: Colors.red.shade700),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              if (isLoading)
+                const Center(
+                  child: Column(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 10),
+                      Text("Finding your perfect sunglasses...")
+                    ],
+                  ),
+                ),
+
+              const SizedBox(height: 30),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: (isLoading ||
+                          lifestyleActivity == null ||
+                          uvProtectionImportance == null ||
+                          personalStyle == null ||
+                          fitPreference == null ||
+                          occasionUse == null ||
+                          colorPreference == null)
+                      ? null
+                      : getRecommendation,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF252525),
+                    foregroundColor: const Color(0xFFFCF7F2),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                ],
-              )
+                  child: Text(
+                    isLoading
+                        ? "Getting Recommendations..."
+                        : "Get My Perfect Sunglasses",
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
