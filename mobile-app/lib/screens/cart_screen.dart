@@ -39,7 +39,7 @@ class _CartScreenState extends State<CartScreen> {
       return;
     }
 
-    final url = Uri.parse('http://10.0.2.2:3001/api/cart/$userId');
+    final url = Uri.parse('http://192.168.100.56:3001/api/cart/$userId');
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -91,7 +91,7 @@ class _CartScreenState extends State<CartScreen> {
 
     setState(() {});
 
-    final url = Uri.parse('http://10.0.2.2:3001/api/cart/update');
+    final url = Uri.parse('http://192.168.100.56:3001/api/cart/update');
     final body = json.encode({
       'productId': productId,
       'colorOptionId': colorOptionId,

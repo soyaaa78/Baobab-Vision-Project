@@ -3,6 +3,7 @@ const Order = require("../models/Order");
 const Product = require("../models/Products");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
+const UserCart = require("../models/UserCart");
 
 // Get Order by id or customer
 const order_get = catchAsync(async (req, res, next) => {
@@ -152,9 +153,85 @@ const order_delete = catchAsync(async (req, res, next) => {
     .json({ message: "Order Successfully Deleted", deletedOrder });
 });
 
+const checkoutFromCart = catchAsync(async (req, res, next) => {
+  const userId = req.userId; // from auth middleware
+  const { address, contactNumber, paymentMethod } = req.body;
+
+  if (!paymentMethod) {
+    return next(new AppError("Payment method is required", 400));
+  }
+
+  // 1. Get user's cart
+  const userCart = await UserCart.findOne({ userId }).populate({
+    path: "items.productId",
+    select: "price name",
+  });
+
+  if (!userCart || userCart.items.length === 0) {
+    return next(new AppError("Your cart is empty", 400));
+  }
+
+  // 2. Map cart items into Order's product format
+  const products = userCart.items.map((item) => {
+    const lensPrice = item.productId.lensOptions?.find(
+      (lens) => lens._id.toString() === item.lensOption
+    )?.price || 0;
+
+    const price = item.productId.price + lensPrice;
+
+    return {
+      productId: item.productId._id,
+      quantity: item.quantity,
+      color: item.colorOption,
+      lens: item.lensOption,
+      price: price,
+    };
+  });
+
+  // 3. Calculate total amount
+  const totalAmount = products.reduce(
+    (sum, item) => sum + item.quantity * item.price,
+    0
+  );
+
+  // 4. Create order
+  const newOrder = new Order({
+    customer: userId,
+    products,
+    date: new Date(),
+    address,
+    contactNumber,
+    totalAmount,
+    paymentMethod,
+    status: "pending",
+  });
+
+  await newOrder.save();
+
+  // 5. Update sales count for products
+  for (const item of products) {
+    await Product.findByIdAndUpdate(
+      item.productId,
+      { $inc: { sales: item.quantity } },
+      { new: true }
+    );
+  }
+
+  // 6. Clear the cart after checkout
+  userCart.items = [];
+  await userCart.save();
+
+  return res.status(201).json({
+    message: "Order placed successfully",
+    order: newOrder,
+  });
+});
+
+
 module.exports = {
   order_get,
   order_post,
   order_put,
   order_delete,
+  checkoutFromCart,
 };

@@ -1,11 +1,15 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:baobab_vision_project/screens/cancelled_order_screen.dart';
 import 'package:baobab_vision_project/screens/completed_purchases_screen.dart';
+import 'package:baobab_vision_project/screens/delivery_order_screen.dart';
 import 'package:baobab_vision_project/screens/edit_profile_screen.dart';
 import 'package:baobab_vision_project/screens/privacy_policy_screen.dart';
 import 'package:baobab_vision_project/screens/pending_orders_screen.dart';
 import 'package:baobab_vision_project/screens/processing_orders_screen.dart';
 import 'package:baobab_vision_project/screens/ready_for_pickup_orders_screen.dart';
+import 'package:baobab_vision_project/screens/to_rate_screen.dart';
+import 'package:baobab_vision_project/widgets/cancelled_order_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
@@ -58,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3001/api/user/profile'),
+        Uri.parse('http://192.168.100.56:3001/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -82,7 +86,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (imgPath.startsWith('/')) {
             imgPath = imgPath.substring(1);
           }
-          imgUrl = 'http://10.0.2.2:3001/$imgPath';
+          imgUrl = 'http://192.168.100.56:3001/$imgPath';
           await prefs.setString('profileImageUrl', imgUrl);
         } else {
           await prefs.remove('profileImageUrl');
@@ -154,31 +158,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       MaterialPageRoute(builder: (context) => const EditProfileScreen()),
                     ).then((_) => _fetchAndLoadProfile()); // Refresh after returning
                   }),
+                   _buildSettingsOption(Icons.delivery_dining_sharp, 'Delivery Orders', () {
+                    Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const DeliveryOrdersScreen()),
+  );
+                   }),
                  _buildSettingsOption(Icons.receipt_long, 'Completed Purchases', () {
   Navigator.push(
     context,
     MaterialPageRoute(builder: (context) => const CompletedPurchasesScreen()),
   );
 }),
-
-                  _buildSettingsOption(Icons.lock_outline, 'Privacy Policy', () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
-                    );
-                  }),
+ _buildSettingsOption(Icons.cancel, 'Cancelled Orders', () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const CancelledOrdersScreen()),
+  );
+ }),
                   _buildSettingsOption(Icons.help_outline, 'Help Centre', () {}),
-                  Padding(
-                    padding: EdgeInsets.only(top: 6.h),
-                    child: TextButton(
-                      onPressed: () => _confirmLogout(context),
-                      child: CustomText(
-                        text: 'Logout',
-                        fontSize: 14.sp,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
+                 _buildSettingsOption(
+  Icons.logout,  // use logout icon (or any icon you like)
+  'Logout',
+  () => _confirmLogout(context),
+),
                 ],
               ),
             ),
@@ -230,56 +233,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final orders = [
       {'icon': Icons.payment, 'label': 'Pending', 'screen': const PendingOrdersScreen()},
       {'icon': Icons.shopping_cart, 'label': 'Processing', 'screen': const ProcessingOrdersScreen()},
-      {'icon': Icons.local_shipping, 'label': 'Ready for Pick-up', 'screen': const ReadyForPickupOrdersScreen()},
+      {'icon': Icons.local_shipping, 'label': 'For Pick-up', 'screen': const ReadyForPickupOrdersScreen()},
+      {'icon': Icons.star_border, 'label': 'To Rate', 'screen': const ToRateScreen ()},
     ];
 
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      padding: EdgeInsets.symmetric(horizontal: 10.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: 30.h),
-          CustomText(
-            text: 'My Orders',
-            fontSize: 16.sp,
-            fontWeight: FontWeight.bold,
-            color: BLACK_COLOR,
-          ),
-          const SizedBox.shrink(),
-          GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 6.h,
-            crossAxisSpacing: 6.w,
-            childAspectRatio: 0.95,
-            children: orders.map((order) {
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => order['screen'] as Widget),
-                  );
-                },
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.grey.shade100,
-                      radius: 21.r,
-                      child: Icon(order['icon'] as IconData, color: BLACK_COLOR, size: 18.sp),
-                    ),
-                    SizedBox(height: 3.h),
-                    CustomText(
-                      text: order['label'].toString(),
-                      fontSize: 12.sp,
-                      color: Colors.black,
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
+          Padding(
+  padding: EdgeInsets.only(left: 7.w),
+  child: CustomText(
+    text: 'My Orders',
+    fontSize: 16.sp,
+    fontWeight: FontWeight.bold,
+    color: BLACK_COLOR,
+  ),
+),
+          SizedBox(height: 25.h,),
+          MediaQuery.removePadding(
+  context: context,
+  removeTop: true,
+  child: GridView.count(
+    padding: EdgeInsets.zero,  // important
+    crossAxisCount: 4,
+    shrinkWrap: true,
+    physics: const NeverScrollableScrollPhysics(),
+    mainAxisSpacing: 6.h,
+    crossAxisSpacing: 6.w,
+    childAspectRatio: 0.95,
+    children: orders.map((order) {
+      return InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => order['screen'] as Widget),
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              backgroundColor: Colors.grey.shade100,
+              radius: 21.r,
+              child: Icon(order['icon'] as IconData, color: BLACK_COLOR, size: 18.sp),
+            ),
+            SizedBox(height: 3.h),
+            CustomText(
+              text: order['label'].toString(),
+              fontSize: 12.sp,
+              color: Colors.black,
+            ),
+          ],
+        ),
+      );
+    }).toList(),
+  ),
+)
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:baobab_vision_project/screens/cart_screen.dart';
 import 'package:baobab_vision_project/screens/vto_screen.dart';
+import 'package:baobab_vision_project/screens/reviews_screen.dart';
 import 'package:baobab_vision_project/widgets/cart_animation_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -207,24 +208,91 @@ class _DetailScreenState extends State<DetailScreen> {
                         Positioned(
                           top: ScreenUtil().setHeight(10),
                           right: ScreenUtil().setWidth(10),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.yellow[700],
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.star, color: Colors.white, size: 16),
-                                SizedBox(width: 4),
-                                CustomText(
-                                  text: "${widget.numStars}",
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: ScreenUtil().setSp(14),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.yellow[700],
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                              ],
-                            ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.star, color: Colors.white, size: 16),
+                                    SizedBox(width: 4),
+                                    CustomText(
+                                      text: "${widget.numStars}",
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: ScreenUtil().setSp(14),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  backgroundColor: Colors.yellow[700],
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  minimumSize: Size(70, 28),
+                                ),
+                                onPressed: () {
+ showModalBottomSheet(
+  context: context,
+  isScrollControlled: true,
+  backgroundColor: Colors.transparent,
+  builder: (context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.85,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (context, scrollController) {
+        return Container(
+          decoration: BoxDecoration(
+            color: WHITE_COLOR,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              // Drag handle bar
+              Container(
+                margin: EdgeInsets.symmetric(vertical: 10),
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              // Reviews content with scroll controller
+              Expanded(
+                child: ReviewsScreen(
+                  scrollController: scrollController,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  },
+);
+},
+                                child: Text(
+                                  "Reviews",
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: ScreenUtil().setSp(12),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -262,7 +330,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   height: 60,
                                   width: 60,
                                   fit: BoxFit.cover,
-                                ),
+                                 ),
                               ),
                             ),
                           );
@@ -309,15 +377,14 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
                 SizedBox(height: ScreenUtil().setHeight(16)),
                 Text(
-  widget.description,
-  style: TextStyle(
-    fontSize: ScreenUtil().setSp(17),
-    fontFamily: 'Nunito',
-    fontWeight: FontWeight.w600,
-  ),
-  textAlign: TextAlign.justify,
-),
-
+                  widget.description,
+                  style: TextStyle(
+                    fontSize: ScreenUtil().setSp(17),
+                    fontFamily: 'Nunito',
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.justify,
+                ),
                 SizedBox(height: ScreenUtil().setHeight(16)),
                 CustomText(
                   text: 'SELECT LENS TYPE:',
@@ -466,30 +533,28 @@ class _DetailScreenState extends State<DetailScreen> {
                     SizedBox(width: 10),
                     Expanded(
                       child: CartAnimationButton(
-  label: 'Add to Cart',
-  // When adding to cart
-onPressed: () async {
-  final token = await getAuthToken();
-  if (token != null) {
-    final selectedLens = widget.lensOptions.firstWhere(
-      (option) => option.label == selectedLensType,
-      orElse: () => throw Exception("Invalid lens selected"),
-    );
+                        label: 'Add to Cart',
+                        onPressed: () async {
+                          final token = await getAuthToken();
+                          if (token != null) {
+                            final selectedLens = widget.lensOptions.firstWhere(
+                              (option) => option.label == selectedLensType,
+                              orElse: () => throw Exception("Invalid lens selected"),
+                            );
 
-    await addToCart(
-      token,
-      widget.productId,
-      1, // Ensure this is set to 1 for first-time addition, adjust if necessary
-      widget.colorOptions[selectedColorIndex].id,
-      selectedLens.id,
-      prescriptionFile?.path ?? null,
-    );
-  } else {
-    print('User is not logged in!');
-  }
-},
-
-)
+                            await addToCart(
+                              token,
+                              widget.productId,
+                              1,
+                              widget.colorOptions[selectedColorIndex].id,
+                              selectedLens.id,
+                              prescriptionFile?.path ?? null,
+                            );
+                          } else {
+                            print('User is not logged in!');
+                          }
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -500,7 +565,6 @@ onPressed: () async {
       ),
     );
   }
-
   Widget _colorSwatch(ColorOption option, bool isSelected) {
     Widget swatch;
     if (option.type == 'solid') {

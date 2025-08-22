@@ -57,7 +57,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   try {
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:3001/api/user/profile'),
+      Uri.parse('http://192.168.100.56:3001/api/user/profile'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           }
 
           // Encode URI components to handle spaces and special characters
-          profileImageUrl = 'http://10.0.2.2:3001/' + Uri.encodeFull(imgPath);
+          profileImageUrl = 'http://192.168.100.56:3001/' + Uri.encodeFull(imgPath);
         } else {
           profileImageUrl = null;
         }
@@ -151,7 +151,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isLoading = true);
 
     try {
-      var uri = Uri.parse('http://10.0.2.2:3001/api/user/profile');
+      var uri = Uri.parse('http://192.168.100.56:3001/api/user/profile');
       var request = http.MultipartRequest('PUT', uri);
 
       request.headers['Authorization'] = 'Bearer $token';
