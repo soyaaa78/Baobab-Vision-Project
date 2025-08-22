@@ -46,12 +46,10 @@ const orderSchema = new mongoose.Schema(
     paymentMethod: {
       type: String,
       enum: ["Pay Cash on Pickup", "Gcash"],
-      default: "Pay Cash on Pickup",
     },
     thirdPartyDelivery: {
       type: String,
       enum: ["Lalamove", "J&T Express", "GrabExpress", "Ninja Van", "Xend"],
-      default: "Lalamove",
     },
     status: {
       type: String,
