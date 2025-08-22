@@ -38,11 +38,37 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    paymentMethod: String,
+    deliveryMethod: {
+      type: String,
+      enum: ["Pick Up", "Third-Party Delivery"],
+      default: "Pick Up",
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["Pay Cash on Pickup", "Gcash"],
+      default: "Pay Cash on Pickup",
+    },
+    thirdPartyDelivery: {
+      type: String,
+      enum: ["Lalamove", "J&T Express", "GrabExpress", "Ninja Van", "Xend"],
+      default: "Lalamove",
+    },
     status: {
       type: String,
       enum: ["pending", "preparing", "ready to pick up"],
       default: "pending",
+    },
+    address: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Address",
+    },
+    proofOfPayment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProofOfPayment",
+    },
+    rating: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Rating",
     },
   },
   {

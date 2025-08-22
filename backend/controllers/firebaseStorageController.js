@@ -83,6 +83,12 @@ exports.uploadProductFiles = upload.fields([
   { name: "model3d", maxCount: 1 },
 ]);
 
+// Middleware for proof of payment pictures (images only)
+exports.uploadProofOfPaymentFiles = upload.single("proofOfPayment");
+
+// Middleware for rating pictures (images only)
+exports.uploadRatingPicturesFiles = upload.array("ratingPictures", 10);
+
 // Upload single image
 const uploadSingleImage = async (file, folder, customName = null) => {
   const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -153,6 +159,40 @@ exports.uploadProductImages = catchAsync(async (req, res, next) => {
   } catch (error) {
     console.error("Firebase upload error:", error);
     return next(new AppError("Failed to upload files to storage", 500));
+  }
+});
+
+// Upload proof of payment images
+exports.uploadProofOfPaymentImages = catchAsync(async (req, res, next) => {
+  if (!req.file) {
+    return next(new AppError("No file uploaded", 400));
+  }
+
+  try {
+    const urls = await uploadSingleImage(req.file, "payments/proofs");
+    res
+      .status(200)
+      .json({ message: "Proof of payment uploaded successfully!", urls });
+  } catch (error) {
+    console.error("Firebase upload error (proof of payment):", error);
+    return next(new AppError("Failed to upload proof of payment files", 500));
+  }
+});
+
+// Upload rating pictures
+exports.uploadRatingPictures = catchAsync(async (req, res, next) => {
+  if (!req.files || req.files.length === 0) {
+    return next(new AppError("No files uploaded", 400));
+  }
+
+  try {
+    const urls = await uploadMultipleImages(req.files, "ratings/pictures");
+    res
+      .status(200)
+      .json({ message: "Rating pictures uploaded successfully!", urls });
+  } catch (error) {
+    console.error("Firebase upload error (rating pictures):", error);
+    return next(new AppError("Failed to upload rating pictures", 500));
   }
 });
 

@@ -1,4 +1,3 @@
-const express = require("express");
 const Order = require("../models/Order");
 const Product = require("../models/Products");
 const AppError = require("../utils/appError");
@@ -17,15 +16,24 @@ const order_get = catchAsync(async (req, res, next) => {
   if (id) {
     order = await Order.findById(id)
       .populate("customer", "-password")
-      .populate("products.productId");
+      .populate("products.productId")
+      .populate("address")
+      .populate("proofOfPayment")
+      .populate("rating");
   } else if (customer) {
     order = await Order.find({ customer })
       .populate("customer", "-password")
-      .populate("products.productId");
+      .populate("products.productId")
+      .populate("address")
+      .populate("proofOfPayment")
+      .populate("rating");
   } else if (index) {
     order = await Order.find()
       .populate("customer", "-password")
-      .populate("products.productId");
+      .populate("products.productId")
+      .populate("address")
+      .populate("proofOfPayment")
+      .populate("rating");
   }
 
   if (!order) return next(new AppError("Order not found.", 404));
@@ -38,8 +46,17 @@ const order_get = catchAsync(async (req, res, next) => {
 
 // Create Order
 const order_post = catchAsync(async (req, res, next) => {
-  const { customer, products, address, contactNumber, paymentMethod } =
-    req.body;
+  const {
+    customer,
+    products,
+    address,
+    contactNumber,
+    paymentMethod,
+    deliveryMethod,
+    thirdPartyDelivery,
+    proofOfPayment,
+    rating,
+  } = req.body;
 
   if (!customer || !products)
     return next(new AppError("Cannot create order, missing fields.", 400));
@@ -54,14 +71,34 @@ const order_post = catchAsync(async (req, res, next) => {
     }, 0);
   }
 
+  // Basic validation between delivery fields
+  if (
+    typeof deliveryMethod !== "undefined" &&
+    deliveryMethod === "Third-Party Delivery" &&
+    !thirdPartyDelivery
+  ) {
+    return next(
+      new AppError(
+        "thirdPartyDelivery is required when deliveryMethod is 'Third-Party Delivery'",
+        400
+      )
+    );
+  }
+
   const newOrder = new Order({
     customer,
     products,
     date,
-    address,
+    address, // expecting an Address ObjectId if provided
     contactNumber,
     totalAmount,
     paymentMethod,
+    // Optional new fields
+    deliveryMethod,
+    // Only set thirdPartyDelivery if provided (schema default handles otherwise)
+    ...(thirdPartyDelivery ? { thirdPartyDelivery } : {}),
+    ...(proofOfPayment ? { proofOfPayment } : {}),
+    ...(rating ? { rating } : {}),
   });
   await newOrder.save();
 
@@ -94,6 +131,10 @@ const order_put = catchAsync(async (req, res, next) => {
     totalAmount,
     paymentMethod,
     status,
+    deliveryMethod,
+    thirdPartyDelivery,
+    proofOfPayment,
+    rating,
   } = req.body;
 
   if (!id) return next(new AppError("Order identifier not found", 400));
@@ -104,9 +145,13 @@ const order_put = catchAsync(async (req, res, next) => {
     !date &&
     !address &&
     !contactNumber &&
-    !totalAmount &&
+    typeof totalAmount === "undefined" &&
     !paymentMethod &&
-    !status
+    !status &&
+    !deliveryMethod &&
+    !thirdPartyDelivery &&
+    !proofOfPayment &&
+    !rating
   )
     return next(new AppError("No data to update", 400));
 
@@ -114,14 +159,23 @@ const order_put = catchAsync(async (req, res, next) => {
   if (!order) return next(new AppError("Order not found. Invalid ID.", 404));
 
   let updates = {};
-  if (customer) updates.customer = customer;
-  if (products) updates.products = products;
-  if (date) updates.date = date;
-  if (address) updates.address = address;
-  if (contactNumber) updates.contactNumber = contactNumber;
-  if (totalAmount) updates.totalAmount = totalAmount;
-  if (paymentMethod) updates.paymentMethod = paymentMethod;
-  if (status) updates.status = status;
+  if (typeof customer !== "undefined") updates.customer = customer;
+  if (typeof products !== "undefined") updates.products = products;
+  if (typeof date !== "undefined") updates.date = date;
+  if (typeof address !== "undefined") updates.address = address;
+  if (typeof contactNumber !== "undefined")
+    updates.contactNumber = contactNumber;
+  if (typeof totalAmount !== "undefined") updates.totalAmount = totalAmount;
+  if (typeof paymentMethod !== "undefined")
+    updates.paymentMethod = paymentMethod;
+  if (typeof status !== "undefined") updates.status = status;
+  if (typeof deliveryMethod !== "undefined")
+    updates.deliveryMethod = deliveryMethod;
+  if (typeof thirdPartyDelivery !== "undefined")
+    updates.thirdPartyDelivery = thirdPartyDelivery;
+  if (typeof proofOfPayment !== "undefined")
+    updates.proofOfPayment = proofOfPayment;
+  if (typeof rating !== "undefined") updates.rating = rating;
 
   const updatedOrder = await Order.findByIdAndUpdate(id, updates, {
     new: true,
@@ -155,7 +209,15 @@ const order_delete = catchAsync(async (req, res, next) => {
 
 const checkoutFromCart = catchAsync(async (req, res, next) => {
   const userId = req.userId; // from auth middleware
-  const { address, contactNumber, paymentMethod } = req.body;
+  const {
+    address,
+    contactNumber,
+    paymentMethod,
+    deliveryMethod,
+    thirdPartyDelivery,
+    proofOfPayment,
+    rating,
+  } = req.body;
 
   if (!paymentMethod) {
     return next(new AppError("Payment method is required", 400));
@@ -173,9 +235,10 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
 
   // 2. Map cart items into Order's product format
   const products = userCart.items.map((item) => {
-    const lensPrice = item.productId.lensOptions?.find(
-      (lens) => lens._id.toString() === item.lensOption
-    )?.price || 0;
+    const lensPrice =
+      item.productId.lensOptions?.find(
+        (lens) => lens._id.toString() === item.lensOption
+      )?.price || 0;
 
     const price = item.productId.price + lensPrice;
 
@@ -194,6 +257,20 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
     0
   );
 
+  // Basic validation between delivery fields
+  if (
+    typeof deliveryMethod !== "undefined" &&
+    deliveryMethod === "Third-Party Delivery" &&
+    !thirdPartyDelivery
+  ) {
+    return next(
+      new AppError(
+        "thirdPartyDelivery is required when deliveryMethod is 'Third-Party Delivery'",
+        400
+      )
+    );
+  }
+
   // 4. Create order
   const newOrder = new Order({
     customer: userId,
@@ -204,6 +281,10 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
     totalAmount,
     paymentMethod,
     status: "pending",
+    deliveryMethod,
+    ...(thirdPartyDelivery ? { thirdPartyDelivery } : {}),
+    ...(proofOfPayment ? { proofOfPayment } : {}),
+    ...(rating ? { rating } : {}),
   });
 
   await newOrder.save();
@@ -226,7 +307,6 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
     order: newOrder,
   });
 });
-
 
 module.exports = {
   order_get,
