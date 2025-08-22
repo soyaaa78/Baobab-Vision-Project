@@ -426,7 +426,7 @@ exports.recommendEyewear = async (req, res) => {
     console.error("Error in recommendEyewear:", err);
     res.status(500).json({ message: "Internal server error" });
   }
-};
+};  
 
 exports.getProductStatistics = async (req, res) => {
   try {
