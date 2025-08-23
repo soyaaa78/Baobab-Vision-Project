@@ -309,7 +309,7 @@ const ManageUsersPage = () => {
               >
                 All Orders
               </li>
-              {ROLE !== "admin" && ROLE !== "staff_order" && (
+              {ROLE !== "staff_order" && (
                 <li
                   className={
                     activeTab === "staff" ? "muc-link active" : "muc-link"
@@ -738,7 +738,7 @@ const ManageUsersPage = () => {
                 </div>
               </div>
             )}
-            {activeTab === "staff" && ROLE !== "admin" && (
+            {activeTab === "staff" && (
               <div className="manageusers-tab-content">
                 <Button
                   className="muc-add-users-btn"
@@ -1059,7 +1059,6 @@ const ManageUsersPage = () => {
                                 Product Staff
                               </option>
                               <option value="staff_order">Order Staff</option>
-                              <option value="admin">Administrator</option>
                             </select>
                           </div>
                         </form>
