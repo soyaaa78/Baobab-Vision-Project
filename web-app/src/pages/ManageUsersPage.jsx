@@ -37,6 +37,7 @@ const ManageUsersPage = () => {
     username: "",
     email: "",
     password: "",
+    role: "staff_product", // Default role
   }); // Add status filter state - default to pending
   const [selectedStatus, setSelectedStatus] = useState("pending");
 
@@ -56,6 +57,7 @@ const ManageUsersPage = () => {
         username: "",
         email: "",
         password: "",
+        role: "staff_product",
       });
     }
   };
@@ -246,7 +248,8 @@ const ManageUsersPage = () => {
       !addStaffForm.lastname ||
       !addStaffForm.username ||
       !addStaffForm.email ||
-      !addStaffForm.password
+      !addStaffForm.password ||
+      !addStaffForm.role
     ) {
       alert("Please fill in all fields");
       return;
@@ -1040,6 +1043,24 @@ const ManageUsersPage = () => {
                               required
                               minLength={6}
                             />
+                          </div>
+
+                          <div className="mu-modal-input modal-role">
+                            <label htmlFor="add-role">Role</label>
+                            <select
+                              name="role"
+                              id="add-role"
+                              value={addStaffForm.role}
+                              onChange={handleAddStaffInputChange}
+                              required
+                              className="role-select"
+                            >
+                              <option value="staff_product">
+                                Product Staff
+                              </option>
+                              <option value="staff_order">Order Staff</option>
+                              <option value="admin">Administrator</option>
+                            </select>
                           </div>
                         </form>
                       </div>{" "}
