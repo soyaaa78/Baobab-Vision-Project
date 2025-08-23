@@ -4,9 +4,11 @@ import { useAuth } from "../contexts/AuthContext";
 import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
 import Button from "./Button";
+import Cookies from "js-cookie";
 
 function Navbar() {
   const { logout } = useAuth();
+  const role = Cookies.get("role");
 
   const handleLogout = () => {
     logout();
@@ -25,21 +27,28 @@ function Navbar() {
               Home
             </Link>
           </li>
-          <li>
-            <Link to="catalogue" className="nav-button">
-              Manage Eyeglass Selections
-            </Link>
-          </li>
-          <li>
-            <Link to="statistics" className="nav-button">
-              Statistics
-            </Link>
-          </li>
-          <li>
-            <Link to="manageusers" className="nav-button">
-              Manage Users
-            </Link>
-          </li>{" "}
+          {role !== "staff_order" && (
+            <>
+              <li>
+                <Link to="catalogue" className="nav-button">
+                  Manage Eyeglass Selections
+                </Link>
+              </li>
+              <li>
+                <Link to="statistics" className="nav-button">
+                  Statistics
+                </Link>
+              </li>
+            </>
+          )}
+          {role !== "staff_product" && (
+            <li>
+              <Link to="manageusers" className="nav-button">
+                Manage Users
+              </Link>
+            </li>
+          )}
+
           <Button
             onClick={handleLogout}
             children={

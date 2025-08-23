@@ -13,8 +13,8 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 const ManageUsersPage = () => {
-  const ROLE = Cookies.get("role");
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+  const ROLE = Cookies.get("role");
   const [activeTab, setActiveTab] = useState("users");
   const [modal, setModal] = useState(false);
   const [modalContent, setModalContent] = useState("Add New");
@@ -70,7 +70,6 @@ const ManageUsersPage = () => {
   useEffect(() => {
     const t = Cookies.get("token");
     setToken(t);
-    console.log("[ManageUsersPage] token:", t);
   }, []);
 
   useEffect(() => {
@@ -307,7 +306,7 @@ const ManageUsersPage = () => {
               >
                 All Orders
               </li>
-              {ROLE !== "admin" && (
+              {ROLE !== "admin" && ROLE !== "staff_order" && (
                 <li
                   className={
                     activeTab === "staff" ? "muc-link active" : "muc-link"

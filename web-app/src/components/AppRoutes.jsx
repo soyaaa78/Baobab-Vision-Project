@@ -1,6 +1,7 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./ProtectedRoute";
+import RoleProtectedRoute from "./RoleProtectedRoute";
 import Layout from "./Layout";
 import LoginPage from "../pages/LoginPage";
 import HomePage from "../pages/HomePage";
@@ -10,6 +11,7 @@ import EyeglassCataloguePage from "../pages/eyeglass/EyeglassCataloguePage";
 import EditEyeglassPage from "../pages/eyeglass/EditEyeglassPage";
 import AddEyeglassPage from "../pages/eyeglass/AddEyeglassPage";
 import ManageUsersPage from "../pages/ManageUsersPage";
+import NotFoundPage from "../pages/NotFoundPage";
 
 function AppRoutes() {
   return (
@@ -24,13 +26,50 @@ function AppRoutes() {
         }
       >
         <Route index element={<HomePage />} />
-        <Route path="catalogue" element={<EyeglassCataloguePage />} />
+        <Route
+          path="catalogue"
+          element={
+            <RoleProtectedRoute blockRoles={["staff_order"]}>
+              <EyeglassCataloguePage />
+            </RoleProtectedRoute>
+          }
+        />
         <Route path="eyeglasses/:id" element={<EyeglassPage />} />
-        <Route path="addeyeglasses" element={<AddEyeglassPage />} />
-        <Route path="editeyeglasses/:id" element={<EditEyeglassPage />} />
-        <Route path="statistics" element={<StatisticsPage />} />
-        <Route path="manageusers" element={<ManageUsersPage />} />
+        <Route
+          path="addeyeglasses"
+          element={
+            <RoleProtectedRoute blockRoles={["staff_order"]}>
+              <AddEyeglassPage />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="editeyeglasses/:id"
+          element={
+            <RoleProtectedRoute blockRoles={["staff_order"]}>
+              <EditEyeglassPage />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="statistics"
+          element={
+            <RoleProtectedRoute blockRoles={["staff_order"]}>
+              <StatisticsPage />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="manageusers"
+          element={
+            <RoleProtectedRoute blockRoles={["staff_product"]}>
+              <ManageUsersPage />
+            </RoleProtectedRoute>
+          }
+        />
       </Route>
+      <Route path="/404" element={<NotFoundPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
