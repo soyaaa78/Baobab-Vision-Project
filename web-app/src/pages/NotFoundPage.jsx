@@ -18,7 +18,8 @@ const NotFoundPage = () => {
         <div className="error-code">404</div>
         <h1 className="error-title">Page Not Found</h1>
         <p className="error-message">
-          Looks like you need better vision! The page you're looking for doesn't exist or you don't have permission to access it.
+          Looks like you need better vision! The page you're looking for doesn't
+          exist or you don't have permission to access it.
         </p>
         <div className="error-actions">
           <Link to="/dashboard" className="back-home-btn">
