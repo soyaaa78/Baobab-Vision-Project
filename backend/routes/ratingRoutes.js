@@ -6,6 +6,10 @@ const {
   rating_patch,
   rating_delete,
 } = require("../controllers/ratingController");
+const authenticate = require("../middlewares/authMiddleware");
+
+// all rating routes require auth
+router.use(authenticate);
 
 router.get("/", rating_get);
 router.post("/", rating_post);

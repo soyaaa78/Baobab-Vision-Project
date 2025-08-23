@@ -1,45 +1,127 @@
 import 'package:flutter/material.dart';
+import '../services/api_client.dart';
+import 'dart:convert';
 import '../constants.dart';
-import '../models/productModel.dart';
+// import '../models/productModel.dart';
 import '../widgets/pending_order_card.dart';
 import '../widgets/custom_text.dart';
 
-class PendingOrdersScreen extends StatelessWidget {
+class PendingOrdersScreen extends StatefulWidget {
   const PendingOrdersScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> pendingOrders = [
-      {
-        "productId": "1",
-        "prodName": "Stylish Eyewear",
-        "prodPrice": "1499", // 👈 no peso sign for calculation
-        "numStars": 4,
-        "quantity": 1,
-        "prodImages": [
-          "https://images.unsplash.com/photo-1519682337058-a94d519337bc"
-        ],
-        "selectedColorName": "Black",
-        "selectedLensLabel": "Prescription",
-        "deliveryMethod": "Pick-up order",
-        "paymentMethod": "Gcash",
-      },
-      {
-        "productId": "2",
-        "prodName": "Classic Sunglasses",
-        "prodPrice": "999",
-        "numStars": 5,
-        "quantity": 2,
-        "prodImages": [
-          "https://images.unsplash.com/photo-1503341455253-b2e723bb3dbb"
-        ],
-        "selectedColorName": "Brown",
-        "selectedLensLabel": "Non-prescription",
-        "deliveryMethod": "Pick-up order",
-        "paymentMethod": "Cash",
-      },
-    ];
+  State<PendingOrdersScreen> createState() => _PendingOrdersScreenState();
+}
 
+class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
+  Future<List<Map<String, dynamic>>> fetchPendingOrders() async {
+    final response = await ApiClient.get('/api/orders?status=pending');
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load pending orders');
+    }
+
+    final data = json.decode(response.body);
+    final rawOrders = data is Map<String, dynamic> ? data['order'] : null;
+    if (rawOrders is! List) return [];
+
+    final List<Map<String, dynamic>> flattened = rawOrders
+        .whereType<Map>()
+        .map((o) => Map<String, dynamic>.from(o))
+        .where((order) => order['status']?.toString() == 'pending')
+        .expand<Map<String, dynamic>>((order) {
+      final products = order['products'];
+      if (products is! List) return <Map<String, dynamic>>[];
+
+      return products.map<Map<String, dynamic>>((p) {
+        final product = Map<String, dynamic>.from(p as Map);
+        final productIdRaw = product['productId'];
+        final Map<String, dynamic>? productId = productIdRaw is Map
+            ? Map<String, dynamic>.from(productIdRaw)
+            : null;
+
+        final String prodName = productId?['name']?.toString() ?? '';
+
+        final imageUrls = productId?['imageUrls'];
+        final List<String> prodImages = (imageUrls is List)
+            ? imageUrls.whereType<String>().toList().take(1).toList()
+            : <String>[];
+
+        // Resolve color name
+        String selectedColorName = '';
+        final String? colorId = product['color']?.toString();
+        final colorOptionsRaw = productId?['colorOptions'];
+        if (colorId != null && colorOptionsRaw is List) {
+          final List<Map<String, dynamic>> colorOptions = colorOptionsRaw
+              .whereType<Map>()
+              .map((m) => Map<String, dynamic>.from(m))
+              .toList();
+          final colorObj = colorOptions.firstWhere(
+            (c) => c['_id']?.toString() == colorId,
+            orElse: () => <String, dynamic>{},
+          );
+          if (colorObj.isNotEmpty) {
+            selectedColorName = colorObj['name']?.toString() ?? '';
+          }
+        }
+
+        // Resolve lens label
+        String selectedLensLabel = '';
+        final String? lensId = product['lens']?.toString();
+        final lensOptionsRaw = productId?['lensOptions'];
+        if (lensId != null && lensOptionsRaw is List) {
+          final List<Map<String, dynamic>> lensOptions = lensOptionsRaw
+              .whereType<Map>()
+              .map((m) => Map<String, dynamic>.from(m))
+              .toList();
+          final lensObj = lensOptions.firstWhere(
+            (l) => l['_id']?.toString() == lensId,
+            orElse: () => <String, dynamic>{},
+          );
+          if (lensObj.isNotEmpty) {
+            selectedLensLabel = lensObj['label']?.toString() ?? '';
+          }
+        }
+
+        final productIdForCard = productId?['_id']?.toString() ??
+            (product['productId']?.toString() ?? '');
+        final quantity = product['quantity'] is int
+            ? product['quantity'] as int
+            : int.tryParse(product['quantity']?.toString() ?? '') ?? 1;
+        final prodPrice = product['price']?.toString() ?? '';
+
+        // Rating value if present
+        int numStars = 0;
+        final rating = order['rating'];
+        if (rating is int) {
+          numStars = rating;
+        } else if (rating is Map) {
+          final r = Map<String, dynamic>.from(rating);
+          final candidate = r['numStars'] ?? r['stars'];
+          if (candidate is int) numStars = candidate;
+          if (candidate is String) numStars = int.tryParse(candidate) ?? 0;
+        }
+
+        return {
+          'orderId': order['_id']?.toString() ?? '',
+          'productId': productIdForCard,
+          'prodName': prodName,
+          'prodPrice': prodPrice,
+          'numStars': numStars,
+          'quantity': quantity,
+          'prodImages': prodImages,
+          'selectedColorName': selectedColorName,
+          'selectedLensLabel': selectedLensLabel,
+          'deliveryMethod': order['deliveryMethod']?.toString() ?? '',
+          'paymentMethod': order['paymentMethod']?.toString() ?? '',
+        };
+      });
+    }).toList();
+
+    return flattened;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pending Orders'),
@@ -48,133 +130,182 @@ class PendingOrdersScreen extends StatelessWidget {
         elevation: 1,
       ),
       backgroundColor: WHITE_COLOR,
-      body: pendingOrders.isEmpty
-          ? Center(
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: fetchPendingOrders(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(
+                child: CustomText(
+                    text: 'Error: ${snapshot.error}',
+                    fontSize: 16,
+                    color: Colors.red));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
               child: CustomText(
                 text: 'No pending orders yet.',
                 fontSize: 16,
                 color: Colors.grey,
               ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(12),
-              itemCount: pendingOrders.length,
-              itemBuilder: (context, index) {
-                final product = pendingOrders[index];
-                return PendingOrderCard(
-                  productId: product["productId"] as String,
-                  prodName: product["prodName"] as String,
-                  prodPrice: product["prodPrice"] as String,
-                  numStars: product["numStars"] as int,
-                  quantity: product["quantity"] as int,
-                  prodImages: product["prodImages"] as List<String>,
-                  selectedColorName: product["selectedColorName"] as String,
-                  selectedLensLabel: product["selectedLensLabel"] as String,
-                  deliveryMethod: product["deliveryMethod"] as String,
-                  paymentMethod: product["paymentMethod"] as String,
-                  onCancel: () {
-  showDialog(
-    context: context,
-    builder: (context) {
-      TextEditingController reasonController = TextEditingController();
+            );
+          }
+          final pendingOrders = snapshot.data!;
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: pendingOrders.length,
+            itemBuilder: (context, index) {
+              final product = pendingOrders[index];
+              final orderId = product['orderId']?.toString() ?? '';
 
-      return AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Column(
-          children: [
-            Icon(Icons.cancel, color: Colors.red, size: 40),
-            const SizedBox(height: 8),
-            const Text(
-              "Are you sure you want to cancel this order?",
-              textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: reasonController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText: "Why do you want to cancel this order?",
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "* NOTICE: Your request will be solved in 24 hours",
-              style: TextStyle(fontSize: 12, color: Colors.black,),
-            ),
-          ],
-        ),
-        actionsAlignment: MainAxisAlignment.spaceEvenly,
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context); // close popup
-            },
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.grey[300],
-              minimumSize: const Size(80, 40),
-            ),
-            child: const Text("NO", style: TextStyle(color: Colors.black)),
-          ),
-          TextButton(
-            onPressed: () {
-              // ✅ Require input before submitting
-              if (reasonController.text.trim().isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Please provide a reason before submitting."),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                return; // stop here
-              }
+              return PendingOrderCard(
+                productId: product["productId"]?.toString() ?? '',
+                prodName: product["prodName"]?.toString() ?? '',
+                prodPrice: product["prodPrice"]?.toString() ?? '',
+                numStars: product["numStars"] ?? 0,
+                quantity: product["quantity"] ?? 1,
+                prodImages: List<String>.from(product["prodImages"] ?? []),
+                selectedColorName:
+                    product["selectedColorName"]?.toString() ?? '',
+                selectedLensLabel:
+                    product["selectedLensLabel"]?.toString() ?? '',
+                deliveryMethod: product["deliveryMethod"]?.toString() ?? '',
+                paymentMethod: product["paymentMethod"]?.toString() ?? '',
+                onCancel: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) {
+                      TextEditingController reasonController =
+                          TextEditingController();
+                      return AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: Column(
+                          children: [
+                            Icon(Icons.cancel, color: Colors.red, size: 40),
+                            const SizedBox(height: 8),
+                            const Text(
+                              "Are you sure you want to cancel this order?",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            TextField(
+                              controller: reasonController,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                hintText:
+                                    "Why do you want to cancel this order?",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              "* NOTICE: Your request will be solved in 24 hours",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        actionsAlignment: MainAxisAlignment.spaceEvenly,
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context); // close popup
+                            },
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.grey[300],
+                              minimumSize: const Size(80, 40),
+                            ),
+                            child: const Text("NO",
+                                style: TextStyle(color: Colors.black)),
+                          ),
+                          TextButton(
+                            onPressed: () async {
+                              final reason = reasonController.text.trim();
+                              if (reason.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                        "Please provide a reason before submitting."),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                                return;
+                              }
+                              Navigator.pop(context); // close confirm dialog
 
-              Navigator.pop(context); // close popup
-
-              // Show success message after submission
-              showDialog(
-                context: context,
-                builder: (context) {
-                  return AlertDialog(
-                    title: const Text("Request Sent"),
-                    content: const Text(
-                        "Your cancellation request was sent successfully!"),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text("OK"),
-                      ),
-                    ],
+                              try {
+                                final resp = await ApiClient.putJson(
+                                  '/api/orders',
+                                  {
+                                    'id': orderId,
+                                    'status': 'cancelled_pending',
+                                    // Optional: send reason for auditing, backend may ignore
+                                    'cancellationReason': reason,
+                                  },
+                                );
+                                if (resp.statusCode == 200) {
+                                  // Refresh list
+                                  if (mounted) {
+                                    setState(() {});
+                                  }
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) {
+                                      return AlertDialog(
+                                        title: const Text("Cancelled"),
+                                        content: const Text(
+                                            "Your order was cancelled successfully."),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context),
+                                            child: const Text("OK"),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                } else {
+                                  throw Exception('Failed with status ' +
+                                      resp.statusCode.toString());
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Failed to cancel order: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              minimumSize: const Size(80, 40),
+                            ),
+                            child: const Text("YES",
+                                style: TextStyle(color: Colors.white)),
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
               );
             },
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.black,
-              minimumSize: const Size(80, 40),
-            ),
-            child: const Text("YES", style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      );
-    },
-  );
-},
-
-
-
-                );
-              },
-            ),
+          );
+        },
+      ),
     );
   }
 }

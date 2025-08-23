@@ -32,6 +32,8 @@ const getContentType = (filename) => {
     png: "image/png",
     gif: "image/gif",
     webp: "image/webp",
+    heic: "image/heic",
+    heif: "image/heif",
   };
   return contentTypes[ext] || "application/octet-stream";
 };
@@ -60,18 +62,16 @@ const upload = multer({
         );
       }
     } else {
-      // Allow image files for product and colorway images
-      const allowedTypes = /jpeg|jpg|png|gif|webp/;
-      const extname = allowedTypes.test(
-        file.originalname.toLowerCase().split(".").pop()
-      );
-      const mimetype = /image/.test(file.mimetype);
+      // Allow image files for product and colorway images (including HEIC/HEIF from iOS)
+      const allowedTypes = /jpeg|jpg|png|gif|webp|heic|heif/;
+      const ext = (file.originalname || "").toLowerCase().split(".").pop();
+      const hasAllowedExt = allowedTypes.test(ext || "");
+      const hasImageMime = !!file.mimetype && /image\//.test(file.mimetype);
 
-      if (mimetype && extname) {
+      if (hasAllowedExt || hasImageMime) {
         return cb(null, true);
-      } else {
-        cb(new AppError("Only image files are allowed", 400));
       }
+      cb(new AppError("Only image files are allowed", 400));
     }
   },
 });
@@ -92,7 +92,7 @@ exports.uploadRatingPicturesFiles = upload.array("ratingPictures", 10);
 // Upload single image
 const uploadSingleImage = async (file, folder, customName = null) => {
   const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-  const fileName = customName || `${file.originalname}-${uniqueSuffix}`;
+  const fileName = customName || `${uniqueSuffix}-${file.originalname}`;
   const storageRef = ref(storage, `${folder}/${fileName}`);
   const metadata = {
     contentType: file.mimetype || getContentType(file.originalname),
@@ -162,17 +162,17 @@ exports.uploadProductImages = catchAsync(async (req, res, next) => {
   }
 });
 
-// Upload proof of payment images
+// Upload proof of payment image (single)
 exports.uploadProofOfPaymentImages = catchAsync(async (req, res, next) => {
   if (!req.file) {
     return next(new AppError("No file uploaded", 400));
   }
 
   try {
-    const urls = await uploadSingleImage(req.file, "payments/proofs");
+    const url = await uploadSingleImage(req.file, "payments/proofs");
     res
       .status(200)
-      .json({ message: "Proof of payment uploaded successfully!", urls });
+      .json({ message: "Proof of payment uploaded successfully!", url });
   } catch (error) {
     console.error("Firebase upload error (proof of payment):", error);
     return next(new AppError("Failed to upload proof of payment files", 500));

@@ -3,37 +3,56 @@ const Product = require("../models/Products");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const UserCart = require("../models/UserCart");
+const mongoose = require("mongoose");
+const ProofOfPayment = require("../models/Order/ProofOfPayment");
 
 // Get Order by id or customer
 const order_get = catchAsync(async (req, res, next) => {
-  const { id, customer, index } = req.query;
+  const { id, customer, index, status, deliveryMethod } = req.query;
 
   let order;
-
-  if (!id && !customer && !index)
-    return next(new AppError("Order identifier not found", 400));
+  // Build query object
+  let queryObj = {};
 
   if (id) {
+    // Find by ID
     order = await Order.findById(id)
       .populate("customer", "-password")
       .populate("products.productId")
       .populate("address")
       .populate("proofOfPayment")
       .populate("rating");
-  } else if (customer) {
-    order = await Order.find({ customer })
-      .populate("customer", "-password")
-      .populate("products.productId")
-      .populate("address")
-      .populate("proofOfPayment")
-      .populate("rating");
-  } else if (index) {
-    order = await Order.find()
-      .populate("customer", "-password")
-      .populate("products.productId")
-      .populate("address")
-      .populate("proofOfPayment")
-      .populate("rating");
+  } else {
+    // Build query for list
+    if (customer) queryObj.customer = customer;
+    if (typeof status !== "undefined") {
+      if (Array.isArray(status)) {
+        queryObj.status = { $in: status };
+      } else {
+        queryObj.status = status;
+      }
+    }
+    if (deliveryMethod) queryObj.deliveryMethod = deliveryMethod;
+    // If no id/customer/index, use req.userId if available
+    if (!customer && !index && req.userId) {
+      queryObj.customer = req.userId;
+    }
+    // If index is provided, ignore customer/status and get all
+    if (index) {
+      order = await Order.find()
+        .populate("customer", "-password")
+        .populate("products.productId")
+        .populate("address")
+        .populate("proofOfPayment")
+        .populate("rating");
+    } else {
+      order = await Order.find(queryObj)
+        .populate("customer", "-password")
+        .populate("products.productId")
+        .populate("address")
+        .populate("proofOfPayment")
+        .populate("rating");
+    }
   }
 
   if (!order) return next(new AppError("Order not found.", 404));
@@ -56,6 +75,7 @@ const order_post = catchAsync(async (req, res, next) => {
     thirdPartyDelivery,
     proofOfPayment,
     rating,
+    cancellationReason,
   } = req.body;
 
   if (!customer || !products)
@@ -99,6 +119,7 @@ const order_post = catchAsync(async (req, res, next) => {
     ...(thirdPartyDelivery ? { thirdPartyDelivery } : {}),
     ...(proofOfPayment ? { proofOfPayment } : {}),
     ...(rating ? { rating } : {}),
+    ...(cancellationReason ? { cancellationReason } : {}),
   });
   await newOrder.save();
 
@@ -116,12 +137,13 @@ const order_post = catchAsync(async (req, res, next) => {
 
   return res
     .status(201)
-    .json({ message: "Order Successfully Created", newOrder });
+    .json({ message: "Order Successfully Created", order: newOrder });
 });
 
 // Update Order
 const order_put = catchAsync(async (req, res, next) => {
-  const { id } = req.query;
+  let { id } = req.query;
+  if (!id && req.body && req.body.id) id = req.body.id;
   const {
     customer,
     products,
@@ -135,9 +157,12 @@ const order_put = catchAsync(async (req, res, next) => {
     thirdPartyDelivery,
     proofOfPayment,
     rating,
+    cancellationReason,
   } = req.body;
 
   if (!id) return next(new AppError("Order identifier not found", 400));
+  if (!mongoose.Types.ObjectId.isValid(id))
+    return next(new AppError("Invalid order id format", 400));
 
   if (
     !customer &&
@@ -151,7 +176,8 @@ const order_put = catchAsync(async (req, res, next) => {
     !deliveryMethod &&
     !thirdPartyDelivery &&
     !proofOfPayment &&
-    !rating
+    !rating &&
+    typeof cancellationReason === "undefined"
   )
     return next(new AppError("No data to update", 400));
 
@@ -176,6 +202,8 @@ const order_put = catchAsync(async (req, res, next) => {
   if (typeof proofOfPayment !== "undefined")
     updates.proofOfPayment = proofOfPayment;
   if (typeof rating !== "undefined") updates.rating = rating;
+  if (typeof cancellationReason !== "undefined")
+    updates.cancellationReason = cancellationReason;
 
   const updatedOrder = await Order.findByIdAndUpdate(id, updates, {
     new: true,
@@ -217,6 +245,8 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
     thirdPartyDelivery,
     proofOfPayment,
     rating,
+    proofOfPaymentImage,
+    referenceNumber,
   } = req.body;
 
   if (!paymentMethod) {
@@ -288,6 +318,23 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
   });
 
   await newOrder.save();
+
+  // If a proof image URL and reference are provided (e.g., GCASH), create POP and attach
+  if (proofOfPaymentImage && referenceNumber) {
+    try {
+      const pop = await ProofOfPayment.create({
+        userId: userId,
+        orderId: newOrder._id,
+        proofOfPaymentImage: proofOfPaymentImage,
+        referenceNumber: referenceNumber,
+      });
+      newOrder.proofOfPayment = pop._id;
+      await newOrder.save();
+    } catch (err) {
+      // Do not fail the entire checkout; log and proceed
+      console.error("Failed to attach proof of payment during checkout:", err);
+    }
+  }
 
   // 5. Update sales count for products
   for (const item of products) {

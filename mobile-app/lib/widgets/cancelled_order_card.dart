@@ -29,21 +29,21 @@ class CancelledOrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int total = int.tryParse(prodPrice) != null
-        ? int.parse(prodPrice) * quantity
-        : 0;
-
-    Color statusColor;
-    switch (cancellationStatus.toLowerCase()) {
-      case 'approved':
-        statusColor = Colors.green;
-        break;
-      case 'rejected':
-        statusColor = Colors.red;
-        break;
-      default:
-        statusColor = Colors.orange;
-    }
+    final int total =
+        int.tryParse(prodPrice) != null ? int.parse(prodPrice) * quantity : 0;
+    final String normalized = cancellationStatus.toLowerCase();
+    // Color: cancelled -> red, pending-like -> orange, otherwise grey
+    final Color statusColor =
+        normalized == 'cancelled' ? Colors.red : Colors.orange;
+    // Display:
+    // - cancelled -> 'Cancelled'
+    // - pending cancellation -> 'Pending Cancellation'
+    // - others -> 'Cancelled - <Status>'
+    final String displayText = normalized == 'cancelled'
+        ? 'Cancelled'
+        : (normalized == 'pending cancellation'
+            ? 'Pending Cancellation'
+            : 'Cancelled - $cancellationStatus');
 
     return Card(
       elevation: 3,
@@ -149,7 +149,7 @@ class CancelledOrderCard extends StatelessWidget {
                       Icon(Icons.cancel, size: 18, color: statusColor),
                       const SizedBox(width: 6),
                       Text(
-                        "Cancelled - $cancellationStatus",
+                        displayText,
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: statusColor),
                       ),

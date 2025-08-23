@@ -1,80 +1,171 @@
 import 'package:baobab_vision_project/widgets/pickup_order_card.dart';
 import 'package:flutter/material.dart';
+import '../services/api_client.dart';
+import 'dart:convert';
 import '../constants.dart';
 import '../widgets/custom_text.dart';
 
-class ReadyForPickupOrdersScreen extends StatelessWidget {
+class ReadyForPickupOrdersScreen extends StatefulWidget {
   const ReadyForPickupOrdersScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Updated example list of orders with pickup location and time
-    final orders = [
-      {
-        "productId": "1",
-        "prodName": "Classic Black Eyeglasses",
-        "quantity": 2,
-        "prodPrice": "1200",
-        "prodImages": [
-          "https://example.com/eyeglasses1.jpg"
-        ],
-        "selectedColorName": "Black",
-        "selectedLensLabel": "Clear",
-        "deliveryMethod": "For Pick-up",
-        "paymentMethod": "Cash on Delivery",
-        "pickupLocation": "Baobab Store, Makati City", // new
-        "pickupTime": "Aug 22, 2025, 3:00 PM",         // new
-      },
-      {
-        "productId": "2",
-        "prodName": "Aviator Sunglasses",
-        "quantity": 1,
-        "prodPrice": "1500",
-        "prodImages": [
-          "https://example.com/sunglasses1.jpg"
-        ],
-        "selectedColorName": "Gold",
-        "selectedLensLabel": "Polarized",
-        "deliveryMethod": "For Pick-up",
-        "paymentMethod": "GCash",
-        "pickupLocation": "Baobab Store, Quezon City", // new
-        "pickupTime": "Aug 23, 2025, 11:00 AM",        // new
-      },
-    ];
+  State<ReadyForPickupOrdersScreen> createState() =>
+      _ReadyForPickupOrdersScreenState();
+}
 
+class _ReadyForPickupOrdersScreenState
+    extends State<ReadyForPickupOrdersScreen> {
+  Future<List<Map<String, dynamic>>> fetchReadyForPickupOrders() async {
+    final response = await ApiClient.get('/api/orders?status=ready_to_pickup');
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load orders');
+    }
+
+    final data = json.decode(response.body);
+    final rawOrders = data is Map<String, dynamic> ? data['order'] : null;
+    if (rawOrders is! List) return [];
+
+    final List<Map<String, dynamic>> flattened = rawOrders
+        .whereType<Map>()
+        .map((o) => Map<String, dynamic>.from(o))
+        .where((order) => order['status']?.toString() == 'ready_to_pickup')
+        .expand<Map<String, dynamic>>((order) {
+      final products = order['products'];
+      if (products is! List) return <Map<String, dynamic>>[];
+
+      return products.map<Map<String, dynamic>>((p) {
+        final product = Map<String, dynamic>.from(p as Map);
+        final productIdRaw = product['productId'];
+        final Map<String, dynamic>? productId = productIdRaw is Map
+            ? Map<String, dynamic>.from(productIdRaw)
+            : null;
+
+        final String prodName = productId?['name']?.toString() ?? '';
+
+        final imageUrls = productId?['imageUrls'];
+        final List<String> prodImages = (imageUrls is List)
+            ? imageUrls.whereType<String>().toList().take(1).toList()
+            : <String>[];
+
+        // Resolve color name and value
+        String selectedColorName = '';
+        String selectedColorValue = '';
+        final String? colorId = product['color']?.toString();
+        final colorOptionsRaw = productId?['colorOptions'];
+        if (colorId != null && colorOptionsRaw is List) {
+          final List<Map<String, dynamic>> colorOptions = colorOptionsRaw
+              .whereType<Map>()
+              .map((m) => Map<String, dynamic>.from(m))
+              .toList();
+          final colorObj = colorOptions.firstWhere(
+            (c) => c['_id']?.toString() == colorId,
+            orElse: () => <String, dynamic>{},
+          );
+          if (colorObj.isNotEmpty) {
+            selectedColorName = colorObj['name']?.toString() ?? '';
+            final colors = colorObj['colors'];
+            if (colors is List && colors.isNotEmpty) {
+              final firstColor = colors.first;
+              if (firstColor is String) selectedColorValue = firstColor;
+            }
+          }
+        }
+
+        // Resolve lens label
+        String selectedLensLabel = '';
+        final String? lensId = product['lens']?.toString();
+        final lensOptionsRaw = productId?['lensOptions'];
+        if (lensId != null && lensOptionsRaw is List) {
+          final List<Map<String, dynamic>> lensOptions = lensOptionsRaw
+              .whereType<Map>()
+              .map((m) => Map<String, dynamic>.from(m))
+              .toList();
+          final lensObj = lensOptions.firstWhere(
+            (l) => l['_id']?.toString() == lensId,
+            orElse: () => <String, dynamic>{},
+          );
+          if (lensObj.isNotEmpty) {
+            selectedLensLabel = lensObj['label']?.toString() ?? '';
+          }
+        }
+
+        final productIdForCard = productId?['_id']?.toString() ??
+            (product['productId']?.toString() ?? '');
+        final quantity = product['quantity'] is int
+            ? product['quantity'] as int
+            : int.tryParse(product['quantity']?.toString() ?? '') ?? 1;
+        final prodPrice = product['price']?.toString() ?? '';
+
+        return {
+          'productId': productIdForCard,
+          'prodName': prodName,
+          'quantity': quantity,
+          'prodPrice': prodPrice,
+          'prodImages': prodImages,
+          'selectedColorName': selectedColorName,
+          'selectedColorValue': selectedColorValue,
+          'selectedLensLabel': selectedLensLabel,
+          'deliveryMethod': order['deliveryMethod']?.toString() ?? '',
+          'paymentMethod': order['paymentMethod']?.toString() ?? '',
+          'pickupLocation': order['pickupLocation']?.toString() ?? '',
+          'pickupTime': order['pickupTime']?.toString() ?? '',
+        };
+      });
+    }).toList();
+
+    return flattened;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ready for Pickup Orders'),
         backgroundColor: WHITE_COLOR,
       ),
       backgroundColor: WHITE_COLOR,
-      body: orders.isEmpty
-          ? Center(
+      body: FutureBuilder<List<Map<String, dynamic>>>(
+        future: fetchReadyForPickupOrders(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(
+                child: CustomText(
+                    text: 'Error: ${snapshot.error}',
+                    fontSize: 16,
+                    color: Colors.red));
+          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
               child: CustomText(
                 text: 'No orders ready for pick-up.',
                 fontSize: 16,
                 color: Colors.grey,
               ),
-            )
-          : ListView.builder(
-              itemCount: orders.length,
-              itemBuilder: (context, index) {
-                final order = orders[index];
-                return PickupOrderCard(
-                  productId: order['productId'] as String,
-                  prodName: order['prodName'] as String,
-                  quantity: order['quantity'] as int,
-                  prodPrice: order['prodPrice'] as String,
-                  prodImages: List<String>.from(order['prodImages'] as List),
-                  selectedColorName: order['selectedColorName'] as String,
-                  selectedLensLabel: order['selectedLensLabel'] as String,
-                  deliveryMethod: order['deliveryMethod'] as String,
-                  paymentMethod: order['paymentMethod'] as String,
-                  pickupLocation: order['pickupLocation'] as String, // new
-                  pickupTime: order['pickupTime'] as String,         // new
-                );
-              },
-            ),
+            );
+          }
+          final orders = snapshot.data!;
+          return ListView.builder(
+            itemCount: orders.length,
+            itemBuilder: (context, index) {
+              final order = orders[index];
+              return PickupOrderCard(
+                productId: order['productId']?.toString() ?? '',
+                prodName: order['prodName']?.toString() ?? '',
+                quantity: order['quantity'] ?? 1,
+                prodPrice: order['prodPrice']?.toString() ?? '',
+                prodImages: List<String>.from(order['prodImages'] ?? []),
+                selectedColorName: order['selectedColorName']?.toString() ?? '',
+                selectedLensLabel: order['selectedLensLabel']?.toString() ?? '',
+                deliveryMethod: order['deliveryMethod']?.toString() ?? '',
+                paymentMethod: order['paymentMethod']?.toString() ?? '',
+                pickupLocation: order['pickupLocation']?.toString() ?? '',
+                pickupTime: order['pickupTime']?.toString() ?? '',
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

@@ -1,11 +1,12 @@
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const Rating = require("../models/Order/Rating");
+const Order = require("../models/Order");
 
 // GET Rating
 const rating_get = catchAsync(async (req, res, next) => {
   const { id, userId, orderId, index } = req.query;
-  if (!id && !userId && !orderId && !index)
+  if (!id && !userId && !orderId && !index && !req.userId)
     return next(new AppError("Rating identifier not found", 400));
 
   let result;
@@ -22,7 +23,13 @@ const rating_get = catchAsync(async (req, res, next) => {
       .populate("userId", "-password")
       .populate("orderId");
   } else if (index) {
+    // Index enables admins to list all ratings
     result = await Rating.find()
+      .populate("userId", "-password")
+      .populate("orderId");
+  } else if (req.userId) {
+    // Default to current user's ratings
+    result = await Rating.find({ userId: req.userId })
       .populate("userId", "-password")
       .populate("orderId");
   }
@@ -42,12 +49,31 @@ const rating_post = catchAsync(async (req, res, next) => {
     return next(new AppError("Missing required fields", 400));
   }
 
+  // Ensure user matches authenticated user
+  if (req.userId && userId !== req.userId.toString()) {
+    return next(new AppError("Unauthorized rating user", 403));
+  }
+
+  // Prevent multiple ratings per order
+  const existing = await Rating.findOne({ orderId });
+  if (existing) {
+    return next(new AppError("Order already rated", 409));
+  }
+
   const payload = { userId, orderId, rating, comment };
   if (typeof pictures !== "undefined") {
     payload.pictures = Array.isArray(pictures) ? pictures : [pictures];
   }
 
   const created = await Rating.create(payload);
+
+  // Link rating to Order document
+  try {
+    await Order.findByIdAndUpdate(orderId, { rating: created._id });
+  } catch (e) {
+    // Log and continue without failing response
+    console.error("Failed to attach rating to order", e);
+  }
   return res
     .status(201)
     .json({ message: "Rating Successfully Created", rating: created });
@@ -90,8 +116,24 @@ const rating_delete = catchAsync(async (req, res, next) => {
   const { id } = req.query;
   if (!id) return next(new AppError("Rating identifier not found", 400));
 
+  // Find rating to get the orderId for cleanup
+  const ratingDoc = await Rating.findById(id);
+  if (!ratingDoc) return next(new AppError("Rating not found", 404));
+
   const deleted = await Rating.findByIdAndDelete(id);
   if (!deleted) return next(new AppError("Rating not found", 404));
+
+  // Remove reference from Order if it points to this rating
+  if (ratingDoc.orderId) {
+    try {
+      await Order.updateOne(
+        { _id: ratingDoc.orderId, rating: ratingDoc._id },
+        { $unset: { rating: "" } }
+      );
+    } catch (e) {
+      console.error("Failed to remove rating reference from order", e);
+    }
+  }
 
   return res
     .status(200)

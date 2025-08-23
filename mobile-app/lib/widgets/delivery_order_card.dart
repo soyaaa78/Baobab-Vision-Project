@@ -12,6 +12,7 @@ class DeliveryOrderCard extends StatelessWidget {
   final String deliveryMethod;
   final String paymentMethod;
   final String deliveryStatus; // e.g., Picked Up, In Transit, Delivered
+  final String? thirdPartyDelivery; // e.g., Lalamove, J&T Express
 
   const DeliveryOrderCard({
     super.key,
@@ -25,13 +26,13 @@ class DeliveryOrderCard extends StatelessWidget {
     required this.deliveryMethod,
     required this.paymentMethod,
     required this.deliveryStatus,
+    this.thirdPartyDelivery,
   });
 
   @override
   Widget build(BuildContext context) {
-    final int total = int.tryParse(prodPrice) != null
-        ? int.parse(prodPrice) * quantity
-        : 0;
+    final int total =
+        int.tryParse(prodPrice) != null ? int.parse(prodPrice) * quantity : 0;
 
     // Choose color based on delivery status
     Color statusColor;
@@ -136,11 +137,35 @@ class DeliveryOrderCard extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   // Delivery & Payment
-                  Text(
-                    deliveryMethod,
-                    style: TextStyle(
-                        fontStyle: FontStyle.italic, color: Colors.grey[600]),
-                  ),
+                  (thirdPartyDelivery != null && thirdPartyDelivery!.isNotEmpty)
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 2, horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.blue.shade200),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.local_shipping,
+                                  size: 14, color: Colors.blue),
+                              const SizedBox(width: 4),
+                              Text(
+                                thirdPartyDelivery!,
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.blue),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Text(
+                          deliveryMethod,
+                          style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey[600]),
+                        ),
                   const SizedBox(height: 2),
                   Text(
                     "Payment: $paymentMethod",

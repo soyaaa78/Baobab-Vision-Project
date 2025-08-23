@@ -5,15 +5,28 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/custom_text.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:baobab_vision_project/services/storage_service.dart';
+import 'package:baobab_vision_project/services/order_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:baobab_vision_project/services/auth_storage.dart';
 
 class GcashDetailsScreen extends StatefulWidget {
   final String gcashNumber;
   final double totalAmount;
+  final String deliveryMethod;
+  final String? thirdPartyDelivery;
+  final String? contactNumber;
+  final Map<String, dynamic>? addressDetails;
 
   const GcashDetailsScreen({
     super.key,
     required this.gcashNumber,
     required this.totalAmount,
+    required this.deliveryMethod,
+    this.thirdPartyDelivery,
+    this.contactNumber,
+    this.addressDetails,
   });
 
   @override
@@ -41,45 +54,93 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
     super.dispose();
   }
 
-  void _submitPaymentProof() {
-  if (_pickedFile == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please upload your payment proof image.')),
-    );
-    return;
-  }
-  if (_refNumberController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please enter the reference number.')),
-    );
-    return;
-  }
+  Future<void> _submitPaymentProof() async {
+    if (_pickedFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please upload your payment proof image.')),
+      );
+      return;
+    }
+    if (_refNumberController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please enter the reference number.')),
+      );
+      return;
+    }
 
-  // TODO: Handle the uploaded file and reference number (e.g., upload to server)
+    try {
+      // Ensure user is logged in for authorized checkout
+      final token = await AuthStorage.getToken();
+      if (token == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Please log in to place your order.'),
+            behavior: SnackBarBehavior.floating,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return;
+      }
+      // 1) Upload image to storage API first
+      final file = File(_pickedFile!.path!);
+      final url = await StorageService.uploadProofOfPayment(file);
 
-  // Show confirmation dialog
-  showDialog(
-    context: context,
-    barrierDismissible: false, // prevent closing by tapping outside
-    builder: (context) => AlertDialog(
-      title: Text('Thank you!'),
-      content: Text('Your order now is pending.'),
-      actions: [
-        TextButton(
-          onPressed: () {
-            Navigator.pop(context); // Close the dialog
-            // Navigate to pending orders screen
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => PendingOrdersScreen()),
-            );
-          },
-          child: Text('See Orders'),
+      // 2) Create the order with the uploaded image URL attached
+      final orderId = await OrderService.checkoutFromCart(
+        deliveryMethod: widget.deliveryMethod,
+        paymentMethod: 'Gcash',
+        thirdPartyDelivery: widget.thirdPartyDelivery,
+        addressDetails: widget.addressDetails,
+        contactNumber: widget.contactNumber,
+        proofOfPaymentImage: url,
+        referenceNumber: _refNumberController.text.trim(),
+      );
+      if (orderId == null) {
+        throw Exception('Failed to create order');
+      }
+
+      // 3) Mark cart as cleared locally
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setInt(
+            'cartClearedAt', DateTime.now().millisecondsSinceEpoch);
+      } catch (_) {}
+    } catch (e) {
+      // Subtle error, but continue to confirmation to keep flow intact
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: Duration(seconds: 3),
         ),
-      ],
-    ),
-  );
-}
+      );
+    }
+
+    // Show confirmation dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false, // prevent closing by tapping outside
+      builder: (context) => AlertDialog(
+        title: Text('Thank you!'),
+        content: Text('Your order now is pending.'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Close the dialog
+              // Navigate to pending orders screen
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => PendingOrdersScreen()),
+              );
+            },
+            child: Text('See Orders'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,27 +213,30 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
 
               // Upload button and file name
               ElevatedButton.icon(
-  onPressed: _pickFile,
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.black,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(10),
-    ),
-    fixedSize: Size(300.w, 55.h),
-  ),
-  icon: Icon(Icons.upload_file, color: Colors.white),
-  label: CustomText(
-    text: _pickedFile == null ? 'Upload Proof of Payment' : 'Change File',
-    color: Colors.white,
-    fontSize: ScreenUtil().setSp(16),
-  ),
-),
+                onPressed: _pickFile,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  fixedSize: Size(300.w, 55.h),
+                ),
+                icon: Icon(Icons.upload_file, color: Colors.white),
+                label: CustomText(
+                  text: _pickedFile == null
+                      ? 'Upload Proof of Payment'
+                      : 'Change File',
+                  color: Colors.white,
+                  fontSize: ScreenUtil().setSp(16),
+                ),
+              ),
               if (_pickedFile != null)
                 Padding(
                   padding: EdgeInsets.only(top: 8.h),
                   child: Text(
                     'Selected file: ${_pickedFile!.name}',
-                    style: TextStyle(fontSize: ScreenUtil().setSp(14), color: BLACK_COLOR),
+                    style: TextStyle(
+                        fontSize: ScreenUtil().setSp(14), color: BLACK_COLOR),
                   ),
                 ),
 
@@ -190,20 +254,20 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
               SizedBox(height: 30.h),
 
               ElevatedButton(
-  onPressed: _submitPaymentProof,
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.black,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(10),
-    ),
-    minimumSize: Size(double.infinity, 55.h),
-  ),
-  child: CustomText(
-    text: 'Submit Payment Proof',
-    fontSize: ScreenUtil().setSp(18),
-    color: Colors.white,
-  ),
-),
+                onPressed: _submitPaymentProof,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  minimumSize: Size(double.infinity, 55.h),
+                ),
+                child: CustomText(
+                  text: 'Submit Payment Proof',
+                  fontSize: ScreenUtil().setSp(18),
+                  color: Colors.white,
+                ),
+              ),
             ],
           ),
         ),

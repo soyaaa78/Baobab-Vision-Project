@@ -62,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.100.56:3001/api/user/profile'),
+        Uri.parse('http://10.0.2.2:3001/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -81,7 +81,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         // Save profileImageUrl after prepending base URL if available
         String? imgUrl;
-        if (data['profileImage'] != null && data['profileImage'].toString().isNotEmpty) {
+        if (data['profileImage'] != null &&
+            data['profileImage'].toString().isNotEmpty) {
           String imgPath = data['profileImage'];
           if (imgPath.startsWith('/')) {
             imgPath = imgPath.substring(1);
@@ -136,7 +137,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
       profileImageProvider = NetworkImage(profileImageUrl!);
     } else {
-      profileImageProvider = const AssetImage('assets/images/default_profile_icon.jpg');
+      profileImageProvider =
+          const AssetImage('assets/images/default_profile_icon.jpg');
     }
 
     return Scaffold(
@@ -155,33 +157,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildSettingsOption(Icons.edit, 'View & Edit Profile', () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-                    ).then((_) => _fetchAndLoadProfile()); // Refresh after returning
+                      MaterialPageRoute(
+                          builder: (context) => const EditProfileScreen()),
+                    ).then((_) =>
+                        _fetchAndLoadProfile()); // Refresh after returning
                   }),
-                   _buildSettingsOption(Icons.delivery_dining_sharp, 'Delivery Orders', () {
+                  _buildSettingsOption(
+                      Icons.delivery_dining_sharp, 'Delivery Orders', () {
                     Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const DeliveryOrdersScreen()),
-  );
-                   }),
-                 _buildSettingsOption(Icons.receipt_long, 'Completed Purchases', () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const CompletedPurchasesScreen()),
-  );
-}),
- _buildSettingsOption(Icons.cancel, 'Cancelled Orders', () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const CancelledOrdersScreen()),
-  );
- }),
-                  _buildSettingsOption(Icons.help_outline, 'Help Centre', () {}),
-                 _buildSettingsOption(
-  Icons.logout,  // use logout icon (or any icon you like)
-  'Logout',
-  () => _confirmLogout(context),
-),
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const DeliveryOrdersScreen()),
+                    );
+                  }),
+                  _buildSettingsOption(
+                      Icons.receipt_long, 'Completed Purchases', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              const CompletedPurchasesScreen()),
+                    );
+                  }),
+                  _buildSettingsOption(Icons.cancel, 'Cancelled Orders', () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const CancelledOrdersScreen()),
+                    );
+                  }),
+                  _buildSettingsOption(
+                      Icons.help_outline, 'Help Centre', () {}),
+                  _buildSettingsOption(
+                    Icons.logout, // use logout icon (or any icon you like)
+                    'Logout',
+                    () => _confirmLogout(context),
+                  ),
                 ],
               ),
             ),
@@ -231,10 +242,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildOrdersSection() {
     final orders = [
-      {'icon': Icons.payment, 'label': 'Pending', 'screen': const PendingOrdersScreen()},
-      {'icon': Icons.shopping_cart, 'label': 'Processing', 'screen': const ProcessingOrdersScreen()},
-      {'icon': Icons.local_shipping, 'label': 'For Pick-up', 'screen': const ReadyForPickupOrdersScreen()},
-      {'icon': Icons.star_border, 'label': 'To Rate', 'screen': const ToRateScreen ()},
+      {
+        'icon': Icons.payment,
+        'label': 'Pending',
+        'screen': const PendingOrdersScreen()
+      },
+      {
+        'icon': Icons.shopping_cart,
+        'label': 'Processing',
+        'screen': const ProcessingOrdersScreen()
+      },
+      {
+        'icon': Icons.local_shipping,
+        'label': 'For Pick-up',
+        'screen': const ReadyForPickupOrdersScreen()
+      },
+      {
+        'icon': Icons.star_border,
+        'label': 'To Rate',
+        'screen': const ToRateScreen()
+      },
     ];
 
     return Padding(
@@ -244,54 +271,58 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           SizedBox(height: 30.h),
           Padding(
-  padding: EdgeInsets.only(left: 7.w),
-  child: CustomText(
-    text: 'My Orders',
-    fontSize: 16.sp,
-    fontWeight: FontWeight.bold,
-    color: BLACK_COLOR,
-  ),
-),
-          SizedBox(height: 25.h,),
+            padding: EdgeInsets.only(left: 7.w),
+            child: CustomText(
+              text: 'My Orders',
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+              color: BLACK_COLOR,
+            ),
+          ),
+          SizedBox(
+            height: 25.h,
+          ),
           MediaQuery.removePadding(
-  context: context,
-  removeTop: true,
-  child: GridView.count(
-    padding: EdgeInsets.zero,  // important
-    crossAxisCount: 4,
-    shrinkWrap: true,
-    physics: const NeverScrollableScrollPhysics(),
-    mainAxisSpacing: 6.h,
-    crossAxisSpacing: 6.w,
-    childAspectRatio: 0.95,
-    children: orders.map((order) {
-      return InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => order['screen'] as Widget),
-          );
-        },
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              backgroundColor: Colors.grey.shade100,
-              radius: 21.r,
-              child: Icon(order['icon'] as IconData, color: BLACK_COLOR, size: 18.sp),
+            context: context,
+            removeTop: true,
+            child: GridView.count(
+              padding: EdgeInsets.zero, // important
+              crossAxisCount: 4,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              mainAxisSpacing: 6.h,
+              crossAxisSpacing: 6.w,
+              childAspectRatio: 0.95,
+              children: orders.map((order) {
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => order['screen'] as Widget),
+                    );
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: Colors.grey.shade100,
+                        radius: 21.r,
+                        child: Icon(order['icon'] as IconData,
+                            color: BLACK_COLOR, size: 18.sp),
+                      ),
+                      SizedBox(height: 3.h),
+                      CustomText(
+                        text: order['label'].toString(),
+                        fontSize: 12.sp,
+                        color: Colors.black,
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
             ),
-            SizedBox(height: 3.h),
-            CustomText(
-              text: order['label'].toString(),
-              fontSize: 12.sp,
-              color: Colors.black,
-            ),
-          ],
-        ),
-      );
-    }).toList(),
-  ),
-)
+          )
         ],
       ),
     );
@@ -340,7 +371,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 SharedPreferences prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
                 Navigator.of(dialogContext).pop();
-                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil('/login', (route) => false);
               },
               child: const Text('Log Out', style: TextStyle(color: Colors.red)),
             ),
