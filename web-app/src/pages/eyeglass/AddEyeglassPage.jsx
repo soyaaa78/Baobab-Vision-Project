@@ -5,9 +5,11 @@ import Button from "../../components/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const AddEyeglassPage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+  const [token, setToken] = useState();
   const navigate = useNavigate();
   const handleBack = () => navigate("../catalogue");
   const [productImages, setProductImages] = useState([]);
@@ -18,6 +20,11 @@ const AddEyeglassPage = () => {
 
   const tintedRef = useRef(null);
   const sunAdaptiveRef = useRef(null);
+
+  useEffect(() => {
+    const t = Cookies.get("token");
+    setToken(t);
+  }, []);
 
   const handleToggle = (ref, shouldCheck) => {
     if (ref && ref.current) {
@@ -358,6 +365,7 @@ const AddEyeglassPage = () => {
       const res = await axios.post(`${SERVER_URL}/api/products`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
         },
       });
 

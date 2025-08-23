@@ -13,7 +13,6 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 const ManageUsersPage = () => {
-  const TOKEN = Cookies.get("token");
   const ROLE = Cookies.get("role");
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
   const [activeTab, setActiveTab] = useState("users");
@@ -65,12 +64,22 @@ const ManageUsersPage = () => {
     setExpandedOrder((prev) => (prev === orderId ? null : orderId));
   };
 
+  const [token, setToken] = useState();
+
+  // Load token on mount
   useEffect(() => {
+    const t = Cookies.get("token");
+    setToken(t);
+    console.log("[ManageUsersPage] token:", t);
+  }, []);
+
+  useEffect(() => {
+    if (!token) return; // wait for token
     const fetchStaff = async () => {
       try {
         const response = await axios.get(`${SERVER_URL}/api/admin/staff-list`, {
           headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         setStaffList(response.data);
@@ -82,7 +91,7 @@ const ManageUsersPage = () => {
       try {
         const response = await axios.get(`${SERVER_URL}/api/admin/user-list`, {
           headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${token}`,
           },
         });
         setUserList(response.data);
@@ -96,7 +105,7 @@ const ManageUsersPage = () => {
           `${SERVER_URL}/api/orders?index=true`,
           {
             headers: {
-              Authorization: `Bearer ${TOKEN}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
@@ -110,7 +119,7 @@ const ManageUsersPage = () => {
     fetchStaff();
     fetchUsers();
     fetchOrders();
-  }, [SERVER_URL, TOKEN]);
+  }, [SERVER_URL, token]);
 
   const handleUserAction = async (id, action) => {
     try {
@@ -118,22 +127,22 @@ const ManageUsersPage = () => {
         await axios.put(
           `${SERVER_URL}/api/admin/disable-user/${id}`,
           {},
-          { headers: { Authorization: `Bearer ${TOKEN}` } }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       } else if (action === "Delete") {
         await axios.delete(`${SERVER_URL}/api/admin/delete-user/${id}`, {
-          headers: { Authorization: `Bearer ${TOKEN}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
       } else if (action === "Enable") {
         await axios.put(
           `${SERVER_URL}/api/admin/enable-user/${id}`,
           {},
-          { headers: { Authorization: `Bearer ${TOKEN}` } }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       }
 
       const response = await axios.get(`${SERVER_URL}/api/admin/user-list`, {
-        headers: { Authorization: `Bearer ${TOKEN}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setUserList(response.data);
       toggleAlertModal();
@@ -148,22 +157,22 @@ const ManageUsersPage = () => {
         await axios.put(
           `${SERVER_URL}/api/admin/disable-staff/${id}`,
           {},
-          { headers: { Authorization: `Bearer ${TOKEN}` } }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       } else if (action === "Delete") {
         await axios.delete(`${SERVER_URL}/api/admin/delete-staff/${id}`, {
-          headers: { Authorization: `Bearer ${TOKEN}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
       } else if (action === "Enable") {
         await axios.put(
           `${SERVER_URL}/api/admin/enable-staff/${id}`,
           {},
-          { headers: { Authorization: `Bearer ${TOKEN}` } }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
       }
 
       const response = await axios.get(`${SERVER_URL}/api/admin/staff-list`, {
-        headers: { Authorization: `Bearer ${TOKEN}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setStaffList(response.data);
       toggleAlertModal();
@@ -188,7 +197,7 @@ const ManageUsersPage = () => {
         { status: newStatus },
         {
           headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -196,7 +205,7 @@ const ManageUsersPage = () => {
       // Refresh orders list
       const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
         headers: {
-          Authorization: `Bearer ${TOKEN}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       const orders = response.data.order || response.data;
@@ -211,14 +220,14 @@ const ManageUsersPage = () => {
     try {
       await axios.delete(`${SERVER_URL}/api/orders?id=${orderId}`, {
         headers: {
-          Authorization: `Bearer ${TOKEN}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
       // Refresh orders list
       const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
         headers: {
-          Authorization: `Bearer ${TOKEN}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       const orders = response.data.order || response.data;
@@ -246,12 +255,12 @@ const ManageUsersPage = () => {
 
     try {
       await axios.post(`${SERVER_URL}/api/admin/create-staff`, addStaffForm, {
-        headers: { Authorization: `Bearer ${TOKEN}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       // Refresh staff list
       const response = await axios.get(`${SERVER_URL}/api/admin/staff-list`, {
-        headers: { Authorization: `Bearer ${TOKEN}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       setStaffList(response.data);
 
@@ -267,6 +276,7 @@ const ManageUsersPage = () => {
     }
   }; // Filter orders by selected status
   const getFilteredOrders = () => {
+    if (selectedStatus === "all") return orderList;
     return orderList.filter((order) => order.status === selectedStatus);
   };
 
@@ -386,6 +396,14 @@ const ManageUsersPage = () => {
                       <div className="sort-buttons">
                         {" "}
                         <button
+                          onClick={() => handleStatusChange("all")}
+                          className={`sort-btn ${
+                            selectedStatus === "all" ? "active" : ""
+                          }`}
+                        >
+                          All
+                        </button>
+                        <button
                           onClick={() => handleStatusChange("pending")}
                           className={`sort-btn ${
                             selectedStatus === "pending" ? "active" : ""
@@ -394,22 +412,48 @@ const ManageUsersPage = () => {
                           Pending
                         </button>
                         <button
-                          onClick={() => handleStatusChange("preparing")}
+                          onClick={() => handleStatusChange("processing")}
                           className={`sort-btn ${
-                            selectedStatus === "preparing" ? "active" : ""
+                            selectedStatus === "processing" ? "active" : ""
                           }`}
                         >
-                          Preparing
+                          Processing
                         </button>
                         <button
-                          onClick={() => handleStatusChange("ready to pick up")}
+                          onClick={() => handleStatusChange("ready_to_pickup")}
                           className={`sort-btn ${
-                            selectedStatus === "ready to pick up"
+                            selectedStatus === "ready_to_pickup" ? "active" : ""
+                          }`}
+                        >
+                          Ready to Pick Up
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange("completed")}
+                          className={`sort-btn ${
+                            selectedStatus === "completed" ? "active" : ""
+                          }`}
+                        >
+                          Completed
+                        </button>
+                        <button
+                          onClick={() => handleStatusChange("cancelled")}
+                          className={`sort-btn ${
+                            selectedStatus === "cancelled" ? "active" : ""
+                          }`}
+                        >
+                          Cancelled
+                        </button>
+                        <button
+                          onClick={() =>
+                            handleStatusChange("cancelled_pending")
+                          }
+                          className={`sort-btn ${
+                            selectedStatus === "cancelled_pending"
                               ? "active"
                               : ""
                           }`}
                         >
-                          Ready to Pick Up
+                          Cancelled Pending
                         </button>
                       </div>
                     </div>
@@ -425,6 +469,7 @@ const ManageUsersPage = () => {
                           <th>Products</th>
                           <th>Total Amount</th>
                           <th>Status</th>
+                          <th>Delivery Method</th>
                           <th>Payment Method</th>
                           <th>Actions</th>
                         </tr>
@@ -432,7 +477,7 @@ const ManageUsersPage = () => {
                       <tbody>
                         {orderList.length === 0 ? (
                           <tr>
-                            <td colSpan="9" className="no-data">
+                            <td colSpan="10" className="no-data">
                               No orders found.
                             </td>
                           </tr>
@@ -452,12 +497,31 @@ const ManageUsersPage = () => {
                               switch (status) {
                                 case "pending":
                                   return "status-badge pending";
-                                case "preparing":
-                                  return "status-badge preparing";
-                                case "ready to pick up":
+                                case "processing":
+                                  return "status-badge processing";
+                                case "ready_to_pickup":
                                   return "status-badge ready";
+                                case "completed":
+                                  return "status-badge completed";
+                                case "cancelled":
+                                  return "status-badge cancelled";
+                                case "cancelled_pending":
+                                  return "status-badge cancelled-pending";
                                 default:
                                   return "status-badge default";
+                              }
+                            };
+                            const getStatusLabel = (status) => {
+                              switch (status) {
+                                case "ready_to_pickup":
+                                  return "Ready to Pick Up";
+                                case "cancelled_pending":
+                                  return "Cancelled Pending";
+                                default:
+                                  return (
+                                    status.charAt(0).toUpperCase() +
+                                    status.slice(1)
+                                  );
                               }
                             };
 
@@ -499,14 +563,24 @@ const ManageUsersPage = () => {
                                       className="status-select"
                                     >
                                       <option value="pending">Pending</option>
-                                      <option value="preparing">
-                                        Preparing
+                                      <option value="processing">
+                                        Processing
                                       </option>
-                                      <option value="ready to pick up">
+                                      <option value="ready_to_pickup">
                                         Ready to Pick Up
+                                      </option>
+                                      <option value="completed">
+                                        Completed
+                                      </option>
+                                      <option value="cancelled">
+                                        Cancelled
+                                      </option>
+                                      <option value="cancelled_pending">
+                                        Cancelled Pending
                                       </option>
                                     </select>
                                   </td>
+                                  <td>{order.deliveryMethod || "N/A"}</td>
                                   <td>{order.paymentMethod || "N/A"}</td>
                                   <td>
                                     <button
@@ -526,7 +600,7 @@ const ManageUsersPage = () => {
 
                                 {expandedOrder === order._id && (
                                   <tr className="order-details-row">
-                                    <td colSpan="9">
+                                    <td colSpan="10">
                                       <div className="order-details-panel">
                                         <div className="order-details-grid">
                                           <div className="order-info-section">
@@ -576,7 +650,7 @@ const ManageUsersPage = () => {
                                                     order.status
                                                   )}
                                                 >
-                                                  {order.status}
+                                                  {getStatusLabel(order.status)}
                                                 </span>
                                               </div>
                                             </div>

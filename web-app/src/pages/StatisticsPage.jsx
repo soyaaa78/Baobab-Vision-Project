@@ -5,9 +5,15 @@ import { SalesLineChart } from "../components/charts/SalesLineChart.jsx";
 import { ProductViewsChart } from "../components/charts/ProductViewsChart.jsx";
 import placeholder from "../assets/placeholder.png";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 function StatisticsPage() {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+  const [token, setToken] = useState();
+  useEffect(() => {
+    const t = Cookies.get("token");
+    setToken(t);
+  }, []);
   const [mostBoughtProduct, setMostBoughtProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -46,7 +52,12 @@ function StatisticsPage() {
         setLoading(true);
 
         const orderStatsResponse = await axios.get(
-          `${SERVER_URL}/api/products/order-stats?limit=1`
+          `${SERVER_URL}/api/products/order-stats?limit=1`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
         );
         const { bestSellingProducts } = orderStatsResponse.data.data;
 
@@ -54,7 +65,6 @@ function StatisticsPage() {
           setMostBoughtProduct(bestSellingProducts[0]);
         }
       } catch (err) {
-        console.error("Error fetching data:", err);
         setError("Failed to load statistics");
       } finally {
         setLoading(false);

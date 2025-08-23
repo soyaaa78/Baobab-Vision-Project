@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { useParams } from "react-router";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const EditEyeglassPage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -17,6 +18,13 @@ const EditEyeglassPage = () => {
   const [colorwayImages, setColorwayImages] = useState([]);
   const [eyeglass, setEyeglass] = useState({});
   const [model3dFile, setModel3dFile] = useState(null);
+  
+  const [TOKEN, setToken] = useState();
+  useEffect(() => {
+    const t = Cookies.get("token");
+    setToken(t);
+  }, []);
+
   // Add colorOptions, stock, recommendedFor to form state
   const [form, setForm] = useState({
     name: "",
@@ -55,7 +63,12 @@ const EditEyeglassPage = () => {
   useEffect(() => {
     const fetchEyeglass = async () => {
       try {
-        const response = await axios.get(`${SERVER_URL}/api/products?id=${id}`);
+        const response = await axios.get(
+          `${SERVER_URL}/api/products?id=${id}`,
+          {
+            Authorization: `Bearer ${TOKEN}`,
+          }
+        );
         const data = response.data;
         setEyeglass(data);
         setForm({
@@ -376,7 +389,12 @@ const EditEyeglassPage = () => {
       }
       await axios.put(
         `${SERVER_URL}/api/products?id=${eyeglass._id}`,
-        updatedEyeglass
+        updatedEyeglass,
+        {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        }
       );
       alert("Eyeglass updated successfully!");
       window.location.reload();
@@ -395,7 +413,11 @@ const EditEyeglassPage = () => {
     )
       return;
     try {
-      await axios.delete(`${SERVER_URL}/api/products?id=${eyeglass._id}`);
+      await axios.delete(`${SERVER_URL}/api/products?id=${eyeglass._id}`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
       alert("Eyeglass deleted successfully!");
       navigate("../catalogue");
       return; // Prevent further code execution after navigation

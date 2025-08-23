@@ -4,6 +4,7 @@ import Button from "../../components/Button";
 import "../../styles/eyeglass/EyeglassPage.css";
 import placeholder from "../../assets/placeholder.png";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 const EyeglassPage = () => {
   const { id } = useParams();
@@ -12,11 +13,22 @@ const EyeglassPage = () => {
   const [eyeglass, setEyeglass] = useState(null);
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedLens, setSelectedLens] = useState(0);
-
+  const [TOKEN, setToken] = useState();
+  useEffect(() => {
+    const t = Cookies.get("token");
+    setToken(t);
+  }, []);
   React.useEffect(() => {
     const fetchEyeglass = async () => {
       try {
-        const response = await axios.get(`${SERVER_URL}/api/products?id=${id}`);
+        const response = await axios.get(
+          `${SERVER_URL}/api/products?id=${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+            },
+          }
+        );
         setEyeglass(response.data);
       } catch (error) {
         setEyeglass(null);

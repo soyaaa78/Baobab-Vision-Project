@@ -15,6 +15,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import Cookies from "js-cookie";
 
 ChartJS.register(
   CategoryScale,
@@ -27,6 +28,12 @@ ChartJS.register(
 
 const HomePage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+  const [token, setToken] = useState();
+  useEffect(() => {
+    const t = Cookies.get("token");
+    setToken(t);
+  }, []);
+
   const navigate = useNavigate();
   const handleAdd = () => navigate("/dashboard/addeyeglasses");
   const handleCatalogue = () => navigate("/dashboard/catalogue");
@@ -38,7 +45,11 @@ const HomePage = () => {
   useEffect(() => {
     const fetchEyeglasses = async () => {
       try {
-        const response = await axios.get(`${SERVER_URL}/api/products/for-you`);
+        const response = await axios.get(`${SERVER_URL}/api/products/for-you`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setEyeglasses(response.data);
       } catch (error) {}
     };

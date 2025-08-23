@@ -12,6 +12,7 @@ import {
   faSortUp,
   faSortDown,
 } from "@fortawesome/free-solid-svg-icons";
+import Cookies from "js-cookie";
 
 const EyeglassCataloguePage = () => {
   const navigate = useNavigate();
@@ -25,7 +26,11 @@ const EyeglassCataloguePage = () => {
   const [alertModalContent, setAlertModalContent] = useState("Delete");
   const [itemToDelete, setItemToDelete] = useState(null);
   const [originalEyeglasses, setOriginalEyeglasses] = useState([]);
-
+  const [TOKEN, setToken] = useState();
+  useEffect(() => {
+    const t = Cookies.get("token");
+    setToken(t);
+  }, []);
   const handleAdd = () => navigate("/dashboard/addeyeglasses");
 
   const handleToggleDeleteMode = () => {
@@ -75,7 +80,11 @@ const EyeglassCataloguePage = () => {
   const handleDeleteProduct = async () => {
     if (!itemToDelete) return;
     try {
-      await axios.delete(`${SERVER_URL}/api/products?id=${itemToDelete}`);
+      await axios.delete(`${SERVER_URL}/api/products?id=${itemToDelete}`, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+        },
+      });
       setEyeglasses((prev) => prev.filter((e) => e._id !== itemToDelete));
       alert("Product deleted successfully!");
     } catch (error) {
@@ -89,7 +98,11 @@ const EyeglassCataloguePage = () => {
   useEffect(() => {
     const fetchEyeglasses = async () => {
       try {
-        const response = await axios.get(`${SERVER_URL}/api/products`);
+        const response = await axios.get(`${SERVER_URL}/api/products`, {
+          headers: {
+            Authorization: `Bearer ${TOKEN}`,
+          },
+        });
         const fetchedData = response.data.reverse();
         setOriginalEyeglasses(fetchedData);
         setEyeglasses(fetchedData);
