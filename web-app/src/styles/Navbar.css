@@ -1,17 +1,16 @@
 .navigation {
     width: 100%;
-    padding: 35px 0;
+    padding: 35px 5%;
     border-bottom: 2px solid #252525;
-    /* display: flex;
-    align-items: center; */
 }
+
+
 
 .nav-content {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin: 0 auto;
-    padding: 0 5%;
 }
 
 .nav-logo-wrapper {
@@ -30,6 +29,19 @@
     list-style: none;
 }
 
+.links li .nav-button {
+    color: #252525;
+    text-decoration: none;
+    font-family: 'Red Rose', serif;
+    font-size: 20px;
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    box-sizing: border-box;
+    /* white-space: nowrap; */
+}
+
 .links a {
     color: #252525;
     text-decoration: none;
@@ -37,10 +49,22 @@
     font-size: 20px;
 }
 
-.nav-button {
-    padding: 30px;
-}
-
 .nav-button a:hover {
     text-decoration: underline; /* weirdly doesnt work */
+}
+
+@media (max-width: 1020px) {
+    .nav-logo-wrapper {
+        display: none !important;
+    }
+
+    .links li .nav-button {
+        font-size: 70%;
+    }
+}
+
+@media (max-width: 638px) {
+    .links li .nav-button {
+        font-size: 50%;
+    }
 }

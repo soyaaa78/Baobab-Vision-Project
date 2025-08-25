@@ -1,0 +1,116 @@
+.chart-wrapper {
+    width: 90%;
+    max-width: 600px;
+    min-width: 200px;
+    background-color: white;
+    margin: 10px 0;
+}
+
+#stat-piechart {
+    width: 90%;
+    align-self: center;
+    background-color: transparent;
+}
+
+.statistics-content {
+    height: 100%;
+}
+
+.statistics-bulk {
+    padding: 1.5%;
+    height: 100%;
+    display: grid;
+    gap: 8px;
+    grid-template-rows: 100%;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-areas:
+        "pie line view"
+}
+
+
+.stat-content {
+    
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#view {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.stat-card {
+    background-color: white;
+    width: 90%;
+    min-width: 600px;
+    max-width: 95%;
+    height: 28%;
+    border: 1.8px solid #464646;
+    border-radius: 10px;
+}
+
+.stat-card-content {
+    padding: 5%;
+    display: flex;
+    justify-content: space-between;
+}
+
+.content-pic {
+    
+}
+
+.content-pic img {
+    width: 150px;
+    height: 150px;
+}
+
+#pie {
+    display: flex;
+    justify-content: center;
+}
+
+.piesect,
+.linesect,
+.viewsect {
+    background-color: #f5f5f5;
+    border: 1px solid #c2c2c2;
+    border-radius: 10px;
+}
+
+.piesect {
+    grid-area: pie;
+    /* background-color: red; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.linesect {
+    grid-area: line;
+    /* background-color: goldenrod; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.viewsect {
+    grid-area: view;
+    /* background-color: sienna; */
+
+}
+
+
+.card-header {
+    color: #656565;
+}
+
+.usersect {
+    grid-area: view;
+    /* background-color: chocolate; */
+}
