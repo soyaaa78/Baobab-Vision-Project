@@ -13,7 +13,35 @@ class ToRateScreen extends StatefulWidget {
   State<ToRateScreen> createState() => _ToRateScreenState();
 }
 
-class _ToRateScreenState extends State<ToRateScreen> {
+class _ToRateScreenState extends State<ToRateScreen> with WidgetsBindingObserver {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _future = fetchToRateOrders();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refresh();
+    }
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _future = fetchToRateOrders();
+    });
+  }
+
   Future<List<Map<String, dynamic>>> fetchToRateOrders() async {
     final response = await ApiClient.get('/api/orders?status=completed');
     if (response.statusCode != 200) {
@@ -24,11 +52,38 @@ class _ToRateScreenState extends State<ToRateScreen> {
     final rawOrders = data is Map<String, dynamic> ? data['order'] : null;
     if (rawOrders is! List) return [];
 
+    final nowUtc = DateTime.now().toUtc();
+
     final List<Map<String, dynamic>> flattened = rawOrders
         .whereType<Map>()
         .map((o) => Map<String, dynamic>.from(o))
-        .where((order) => order['status']?.toString() == 'completed')
-        .expand<Map<String, dynamic>>((order) {
+        .where((order) {
+      // Only consider completed orders
+      if (order['status']?.toString() != 'completed') return false;
+
+      // Exclude rated orders from To Rate screen
+      final bool orderRated = order['rating'] != null;
+      if (orderRated) return false;
+
+      // Keep only orders completed within the last 5 days (inclusive)
+      // Prefer updatedAt as completion indicator; fallback to date
+      DateTime? completedAt;
+      final updatedAtStr = order['updatedAt']?.toString();
+      if (updatedAtStr != null) {
+        completedAt = DateTime.tryParse(updatedAtStr)?.toUtc();
+      }
+      if (completedAt == null) {
+        final dateStr = order['date']?.toString();
+        if (dateStr != null) {
+          completedAt = DateTime.tryParse(dateStr)?.toUtc();
+        }
+      }
+
+      if (completedAt == null) return false; // cannot determine completion date
+
+      final diffDays = nowUtc.difference(completedAt).inDays;
+      return diffDays <= 5 && diffDays >= 0;
+    }).expand<Map<String, dynamic>>((order) {
       final String orderId = order['_id']?.toString() ?? '';
       final bool orderRated = order['rating'] != null;
       final products = order['products'];
@@ -144,7 +199,7 @@ class _ToRateScreenState extends State<ToRateScreen> {
       ),
       backgroundColor: WHITE_COLOR,
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchToRateOrders(),
+        future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -164,12 +219,14 @@ class _ToRateScreenState extends State<ToRateScreen> {
             );
           }
           final orders = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              return ToRateOrderCard(
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: orders.length,
+              itemBuilder: (context, index) {
+                final order = orders[index];
+                return ToRateOrderCard(
                 productId: order['productId']?.toString() ?? '',
                 prodName: order['prodName']?.toString() ?? '',
                 numStars: order['numStars'] ?? 0,
@@ -180,8 +237,8 @@ class _ToRateScreenState extends State<ToRateScreen> {
                 selectedLensLabel: order['selectedLensLabel']?.toString() ?? '',
                 deliveryMethod: order['deliveryMethod']?.toString() ?? '',
                 paymentMethod: order['paymentMethod']?.toString() ?? '',
-                onRate: () {
-                  Navigator.push(
+                onRate: () async {
+                  await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (_) => RateInputScreen(
@@ -190,9 +247,11 @@ class _ToRateScreenState extends State<ToRateScreen> {
                       ),
                     ),
                   );
+                  await _refresh();
                 },
               );
-            },
+              },
+            ),
           );
         },
       ),

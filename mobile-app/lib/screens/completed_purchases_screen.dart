@@ -14,7 +14,35 @@ class CompletedPurchasesScreen extends StatefulWidget {
       _CompletedPurchasesScreenState();
 }
 
-class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen> {
+class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen>
+    with WidgetsBindingObserver {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _future = _fetchCompletedOrders();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refresh();
+    }
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _future = _fetchCompletedOrders();
+    });
+  }
   Future<List<Map<String, dynamic>>> _fetchCompletedOrders() async {
     final resp = await ApiClient.get('/api/orders?status=completed');
     if (resp.statusCode != 200) {
@@ -25,11 +53,34 @@ class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen> {
     final rawOrders = data is Map<String, dynamic> ? data['order'] : null;
     if (rawOrders is! List) return [];
 
+    final nowUtc = DateTime.now().toUtc();
+
     final List<Map<String, dynamic>> flattened = rawOrders
         .whereType<Map>()
         .map((o) => Map<String, dynamic>.from(o))
-        .where((order) => order['status']?.toString() == 'completed')
-        .expand<Map<String, dynamic>>((order) {
+        .where((order) {
+      if (order['status']?.toString() != 'completed') return false;
+
+      final bool orderRated = order['rating'] != null;
+      if (orderRated) return true; // always include rated orders
+
+      // For unrated orders, include only if completed more than 5 days ago
+      DateTime? completedAt;
+      final updatedAtStr = order['updatedAt']?.toString();
+      if (updatedAtStr != null) {
+        completedAt = DateTime.tryParse(updatedAtStr)?.toUtc();
+      }
+      if (completedAt == null) {
+        final dateStr = order['date']?.toString();
+        if (dateStr != null) {
+          completedAt = DateTime.tryParse(dateStr)?.toUtc();
+        }
+      }
+      if (completedAt == null) return false;
+
+      final diffDays = nowUtc.difference(completedAt).inDays;
+      return diffDays > 5;
+    }).expand<Map<String, dynamic>>((order) {
       final products = order['products'];
       if (products is! List) return <Map<String, dynamic>>[];
 
@@ -116,7 +167,7 @@ class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen> {
       ),
       backgroundColor: WHITE_COLOR,
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _fetchCompletedOrders(),
+        future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -136,12 +187,14 @@ class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen> {
             );
           }
           final completed = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: completed.length,
-            itemBuilder: (context, index) {
-              final item = completed[index];
-              return CompletedOrderCard(
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: completed.length,
+              itemBuilder: (context, index) {
+                final item = completed[index];
+                return CompletedOrderCard(
                 productId: item['productId']?.toString() ?? '',
                 prodName: item['prodName']?.toString() ?? '',
                 quantity: item['quantity'] ?? 1,
@@ -151,8 +204,9 @@ class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen> {
                 selectedLensLabel: item['selectedLensLabel']?.toString() ?? '',
                 deliveryMethod: item['deliveryMethod']?.toString() ?? '',
                 paymentMethod: item['paymentMethod']?.toString() ?? '',
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),

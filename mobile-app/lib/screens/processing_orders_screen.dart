@@ -12,7 +12,35 @@ class ProcessingOrdersScreen extends StatefulWidget {
   State<ProcessingOrdersScreen> createState() => _ProcessingOrdersScreenState();
 }
 
-class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen> {
+class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen>
+    with WidgetsBindingObserver {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _future = fetchProcessingOrders();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refresh();
+    }
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _future = fetchProcessingOrders();
+    });
+  }
   Future<List<Map<String, dynamic>>> fetchProcessingOrders() async {
     final response = await ApiClient.get('/api/orders?status=processing');
     if (response.statusCode == 200) {
@@ -88,7 +116,7 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen> {
       ),
       backgroundColor: WHITE_COLOR,
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchProcessingOrders(),
+        future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -108,12 +136,14 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen> {
             );
           }
           final orders = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              return ProcessingOrderCard(
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: orders.length,
+              itemBuilder: (context, index) {
+                final order = orders[index];
+                return ProcessingOrderCard(
                 productId: order['productId']?.toString() ?? '',
                 prodName: order['prodName']?.toString() ?? '',
                 quantity: order['quantity'] ?? 1,
@@ -123,8 +153,9 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen> {
                 selectedLensLabel: order['selectedLensLabel']?.toString() ?? '',
                 deliveryMethod: order['deliveryMethod']?.toString() ?? '',
                 paymentMethod: order['paymentMethod']?.toString() ?? '',
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),

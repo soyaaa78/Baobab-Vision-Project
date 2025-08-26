@@ -14,7 +14,34 @@ class ReadyForPickupOrdersScreen extends StatefulWidget {
 }
 
 class _ReadyForPickupOrdersScreenState
-    extends State<ReadyForPickupOrdersScreen> {
+    extends State<ReadyForPickupOrdersScreen> with WidgetsBindingObserver {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _future = fetchReadyForPickupOrders();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refresh();
+    }
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _future = fetchReadyForPickupOrders();
+    });
+  }
   Future<List<Map<String, dynamic>>> fetchReadyForPickupOrders() async {
     final response = await ApiClient.get('/api/orders?status=ready_to_pickup');
     if (response.statusCode != 200) {
@@ -125,7 +152,7 @@ class _ReadyForPickupOrdersScreenState
       ),
       backgroundColor: WHITE_COLOR,
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchReadyForPickupOrders(),
+        future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -145,11 +172,13 @@ class _ReadyForPickupOrdersScreenState
             );
           }
           final orders = snapshot.data!;
-          return ListView.builder(
-            itemCount: orders.length,
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              return PickupOrderCard(
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              itemCount: orders.length,
+              itemBuilder: (context, index) {
+                final order = orders[index];
+                return PickupOrderCard(
                 productId: order['productId']?.toString() ?? '',
                 prodName: order['prodName']?.toString() ?? '',
                 quantity: order['quantity'] ?? 1,
@@ -161,8 +190,9 @@ class _ReadyForPickupOrdersScreenState
                 paymentMethod: order['paymentMethod']?.toString() ?? '',
                 pickupLocation: order['pickupLocation']?.toString() ?? '',
                 pickupTime: order['pickupTime']?.toString() ?? '',
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),

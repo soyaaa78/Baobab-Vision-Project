@@ -299,16 +299,18 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                     fontWeight: FontWeight.bold,
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
+                    onPressed: () async {
+                      await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder: (context) => CheckoutScreen(
-                            totalAmount:
-                                getTotalPrice(), // Pass total amount to checkout
+                            totalAmount: getTotalPrice(),
                           ),
                         ),
                       );
+                      // On return from Checkout, refresh to avoid stale items/duplication
+                      await _checkCartClearedFlag();
+                      await _fetchCart();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: BLACK_COLOR,

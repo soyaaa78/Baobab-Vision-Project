@@ -13,7 +13,35 @@ class DeliveryOrdersScreen extends StatefulWidget {
   State<DeliveryOrdersScreen> createState() => _DeliveryOrdersScreenState();
 }
 
-class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen> {
+class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
+    with WidgetsBindingObserver {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _future = _fetchDeliveryOrders();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refresh();
+    }
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _future = _fetchDeliveryOrders();
+    });
+  }
   Future<List<Map<String, dynamic>>> _fetchDeliveryOrders() async {
     final resp =
         await ApiClient.get('/api/orders?&deliveryMethod=Third-Party Delivery');
@@ -136,7 +164,7 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen> {
       ),
       backgroundColor: WHITE_COLOR,
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _fetchDeliveryOrders(),
+        future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -156,12 +184,14 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen> {
             );
           }
           final deliveryOrders = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: deliveryOrders.length,
-            itemBuilder: (context, index) {
-              final order = deliveryOrders[index];
-              return DeliveryOrderCard(
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: deliveryOrders.length,
+              itemBuilder: (context, index) {
+                final order = deliveryOrders[index];
+                return DeliveryOrderCard(
                 productId: order['productId']?.toString() ?? '',
                 prodName: order['prodName']?.toString() ?? '',
                 quantity: order['quantity'] ?? 1,
@@ -176,8 +206,9 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen> {
                         : order['thirdPartyDelivery']?.toString(),
                 paymentMethod: order['paymentMethod']?.toString() ?? '',
                 deliveryStatus: order['deliveryStatus']?.toString() ?? '',
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),

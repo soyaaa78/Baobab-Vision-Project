@@ -13,7 +13,35 @@ class PendingOrdersScreen extends StatefulWidget {
   State<PendingOrdersScreen> createState() => _PendingOrdersScreenState();
 }
 
-class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
+class _PendingOrdersScreenState extends State<PendingOrdersScreen>
+    with WidgetsBindingObserver {
+  late Future<List<Map<String, dynamic>>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _future = fetchPendingOrders();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _refresh();
+    }
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _future = fetchPendingOrders();
+    });
+  }
   Future<List<Map<String, dynamic>>> fetchPendingOrders() async {
     final response = await ApiClient.get('/api/orders?status=pending');
     if (response.statusCode != 200) {
@@ -131,7 +159,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
       ),
       backgroundColor: WHITE_COLOR,
       body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: fetchPendingOrders(),
+        future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -151,14 +179,16 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
             );
           }
           final pendingOrders = snapshot.data!;
-          return ListView.builder(
-            padding: const EdgeInsets.all(12),
-            itemCount: pendingOrders.length,
-            itemBuilder: (context, index) {
-              final product = pendingOrders[index];
+          return RefreshIndicator(
+            onRefresh: _refresh,
+            child: ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: pendingOrders.length,
+              itemBuilder: (context, index) {
+                final product = pendingOrders[index];
               final orderId = product['orderId']?.toString() ?? '';
 
-              return PendingOrderCard(
+                return PendingOrderCard(
                 productId: product["productId"]?.toString() ?? '',
                 prodName: product["prodName"]?.toString() ?? '',
                 prodPrice: product["prodPrice"]?.toString() ?? '',
@@ -301,8 +331,9 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                     },
                   );
                 },
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),
