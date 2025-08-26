@@ -256,7 +256,8 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
   // 1. Get user's cart
   const userCart = await UserCart.findOne({ userId }).populate({
     path: "items.productId",
-    select: "price name",
+    // Need lensOptions to compute add-on price correctly
+    select: "price name lensOptions",
   });
 
   if (!userCart || userCart.items.length === 0) {
