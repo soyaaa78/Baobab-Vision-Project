@@ -1,5 +1,8 @@
 // controllers/productController.js
+const mongoose = require("mongoose");
 const Product = require("../models/Products");
+const Rating = require("../models/Order/Rating");
+const Order = require("../models/Order");
 const RecommendationStat = require("../models/RecommendationStat");
 const {
   uploadProductFiles,
@@ -426,7 +429,7 @@ exports.recommendEyewear = async (req, res) => {
     console.error("Error in recommendEyewear:", err);
     res.status(500).json({ message: "Internal server error" });
   }
-};  
+};
 
 exports.getProductStatistics = async (req, res) => {
   try {
@@ -471,6 +474,99 @@ exports.getProductStatistics = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+exports.getProductReviews = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  if (!id) return res.status(400).json({ message: "Product id is required" });
+
+  let productObjectId;
+  try {
+    productObjectId = new mongoose.Types.ObjectId(id);
+  } catch (e) {
+    return res.status(400).json({ message: "Invalid product id" });
+  }
+
+  const reviews = await Rating.aggregate([
+    {
+      $lookup: {
+        from: "orders",
+        localField: "orderId",
+        foreignField: "_id",
+        as: "orderLookup",
+      },
+    },
+    { $unwind: "$orderLookup" },
+    {
+      $match: {
+        "orderLookup.products.productId": productObjectId,
+      },
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "userId",
+        foreignField: "_id",
+        as: "userLookup",
+      },
+    },
+    { $unwind: "$userLookup" },
+    { $sort: { createdAt: -1 } },
+    {
+      $project: {
+        _id: 1,
+        rating: 1,
+        comment: 1,
+        pictures: 1,
+        createdAt: 1,
+        user: {
+          username: "$userLookup.username",
+          profileImage: "$userLookup.profileImage",
+        },
+      },
+    },
+  ]);
+
+  // Compute stats from the reviews result
+  const total = reviews.length;
+  if (total === 0) {
+    return res.status(200).json({
+      count: 0,
+      reviews: [],
+      stats: {
+        average: 0,
+        averageRoundedUp1dp: 0,
+        total: 0,
+        distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        withMedia: 0,
+      },
+    });
+  }
+
+  let sum = 0;
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  let withMedia = 0;
+  for (const r of reviews) {
+    const rating = Number(r.rating) || 0;
+    sum += rating;
+    const star = Math.max(1, Math.min(5, Math.round(rating)));
+    distribution[star] += 1;
+    if (Array.isArray(r.pictures) && r.pictures.length > 0) withMedia += 1;
+  }
+  const average = sum / total;
+  const averageRoundedUp1dp = Math.ceil(average * 10) / 10;
+
+  return res.status(200).json({
+    count: total,
+    reviews,
+    stats: {
+      average,
+      averageRoundedUp1dp,
+      total,
+      distribution,
+      withMedia,
+    },
+  });
+});
 
 function getRecommendationMapping({
   faceShape,

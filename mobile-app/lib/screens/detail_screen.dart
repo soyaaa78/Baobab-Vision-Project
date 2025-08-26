@@ -1,4 +1,4 @@
-import 'package:baobab_vision_project/screens/cart_screen.dart';
+// import 'package:baobab_vision_project/screens/cart_screen.dart';
 import 'package:baobab_vision_project/screens/vto_screen.dart';
 import 'package:baobab_vision_project/screens/reviews_screen.dart';
 import 'package:baobab_vision_project/widgets/cart_animation_button.dart';
@@ -11,6 +11,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:baobab_vision_project/services/api_client.dart';
 
 class LensOption {
   final String id;
@@ -98,13 +99,15 @@ class DetailScreen extends StatefulWidget {
   });
 
   static DetailScreen fromJson(Map<String, dynamic> json) {
-    final List<ColorOption> colorOptionsList = (json['colorOptions'] as List<dynamic>? ?? [])
-        .map((e) => ColorOption.fromJson(e))
-        .toList();
+    final List<ColorOption> colorOptionsList =
+        (json['colorOptions'] as List<dynamic>? ?? [])
+            .map((e) => ColorOption.fromJson(e))
+            .toList();
 
-    final List<LensOption> lensOptionsList = (json['lensOptions'] as List<dynamic>? ?? [])
-        .map((e) => LensOption.fromJson(e))
-        .toList();
+    final List<LensOption> lensOptionsList =
+        (json['lensOptions'] as List<dynamic>? ?? [])
+            .map((e) => LensOption.fromJson(e))
+            .toList();
 
     return DetailScreen(
       productId: json['_id'] ?? '',
@@ -132,6 +135,8 @@ class _DetailScreenState extends State<DetailScreen> {
   int selectedColorIndex = 0;
 
   String? selectedLensType;
+  double? _avgRating; // average rating rounded up to 1 decimal from API
+  int _totalReviews = 0;
 
   @override
   void initState() {
@@ -141,12 +146,33 @@ class _DetailScreenState extends State<DetailScreen> {
     if (widget.lensOptions.isNotEmpty) {
       selectedLensType = widget.lensOptions.first.label;
     }
+
+    _fetchRatingStats();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchRatingStats() async {
+    try {
+      final resp =
+          await ApiClient.get('/api/products/${widget.productId}/reviews');
+      if (resp.statusCode == 200) {
+        final data = json.decode(resp.body) as Map<String, dynamic>;
+        final stats = (data['stats'] as Map<String, dynamic>?);
+        final avg = (stats?['averageRoundedUp1dp'] ?? 0).toDouble();
+        final total = (stats?['total'] ?? 0) as int;
+        setState(() {
+          _avgRating = avg;
+          _totalReviews = total;
+        });
+      }
+    } catch (_) {
+      // ignore network errors for badge
+    }
   }
 
   Future<String?> getAuthToken() async {
@@ -212,17 +238,25 @@ class _DetailScreenState extends State<DetailScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.yellow[700],
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.star, color: Colors.white, size: 16),
+                                    Icon(Icons.star,
+                                        color: Colors.white, size: 16),
                                     SizedBox(width: 4),
                                     CustomText(
-                                      text: "${widget.numStars}",
+                                      text: _avgRating != null
+                                          ? _avgRating!.toStringAsFixed(1)
+                                          : (_totalReviews == 0
+                                              ? '0.0'
+                                              : widget.numStars
+                                                  .toDouble()
+                                                  .toStringAsFixed(1)),
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                       fontSize: ScreenUtil().setSp(14),
@@ -233,7 +267,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               SizedBox(width: 6),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
                                   backgroundColor: Colors.yellow[700],
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
@@ -241,48 +276,55 @@ class _DetailScreenState extends State<DetailScreen> {
                                   minimumSize: Size(70, 28),
                                 ),
                                 onPressed: () {
- showModalBottomSheet(
-  context: context,
-  isScrollControlled: true,
-  backgroundColor: Colors.transparent,
-  builder: (context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.85,
-      minChildSize: 0.4,
-      maxChildSize: 0.95,
-      builder: (context, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: WHITE_COLOR,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              // Drag handle bar
-              Container(
-                margin: EdgeInsets.symmetric(vertical: 10),
-                width: 40,
-                height: 5,
-                decoration: BoxDecoration(
-                  color: Colors.grey[400],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-              // Reviews content with scroll controller
-              Expanded(
-                child: ReviewsScreen(
-                  scrollController: scrollController,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  },
-);
-},
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (context) {
+                                      return DraggableScrollableSheet(
+                                        expand: false,
+                                        initialChildSize: 0.85,
+                                        minChildSize: 0.4,
+                                        maxChildSize: 0.95,
+                                        builder: (context, scrollController) {
+                                          return Container(
+                                            decoration: BoxDecoration(
+                                              color: WHITE_COLOR,
+                                              borderRadius:
+                                                  BorderRadius.vertical(
+                                                      top: Radius.circular(20)),
+                                            ),
+                                            child: Column(
+                                              children: [
+                                                // Drag handle bar
+                                                Container(
+                                                  margin: EdgeInsets.symmetric(
+                                                      vertical: 10),
+                                                  width: 40,
+                                                  height: 5,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.grey[400],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10),
+                                                  ),
+                                                ),
+                                                // Reviews content with scroll controller
+                                                Expanded(
+                                                  child: ReviewsScreen(
+                                                    productId: widget.productId,
+                                                    scrollController:
+                                                        scrollController,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          );
+                                        },
+                                      );
+                                    },
+                                  );
+                                },
                                 child: Text(
                                   "Reviews",
                                   style: TextStyle(
@@ -318,7 +360,9 @@ class _DetailScreenState extends State<DetailScreen> {
                               padding: EdgeInsets.all(2),
                               decoration: BoxDecoration(
                                 border: Border.all(
-                                  color: _selectedImageIndex == index ? BLACK_COLOR : Colors.transparent,
+                                  color: _selectedImageIndex == index
+                                      ? BLACK_COLOR
+                                      : Colors.transparent,
                                   width: 2,
                                 ),
                                 borderRadius: BorderRadius.circular(8),
@@ -330,7 +374,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   height: 60,
                                   width: 60,
                                   fit: BoxFit.cover,
-                                 ),
+                                ),
                               ),
                             ),
                           );
@@ -361,7 +405,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
                 SizedBox(height: ScreenUtil().setHeight(5)),
                 CustomText(
-                  text: 'Color: ${widget.colorOptions[selectedColorIndex].name}',
+                  text:
+                      'Color: ${widget.colorOptions[selectedColorIndex].name}',
                   fontSize: ScreenUtil().setSp(15),
                   fontFamily: 'Montserrat',
                   color: Colors.black,
@@ -370,8 +415,10 @@ class _DetailScreenState extends State<DetailScreen> {
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
-                    children: List.generate(widget.colorOptions.length, (index) {
-                      return _colorSwatch(widget.colorOptions[index], index == selectedColorIndex);
+                    children:
+                        List.generate(widget.colorOptions.length, (index) {
+                      return _colorSwatch(widget.colorOptions[index],
+                          index == selectedColorIndex);
                     }),
                   ),
                 ),
@@ -407,21 +454,32 @@ class _DetailScreenState extends State<DetailScreen> {
                   items: [
                     DropdownMenuItem<String>(
                       enabled: false,
-                      child: Text('BUILT-IN', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                      child: Text('BUILT-IN',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600])),
                     ),
-                    ...widget.lensOptions
-                        .where((o) => o.type == 'builtin')
-                        .map((o) => DropdownMenuItem(value: o.label, child: Text('${o.label} (FREE)'))),
+                    ...widget.lensOptions.where((o) => o.type == 'builtin').map(
+                        (o) => DropdownMenuItem(
+                            value: o.label, child: Text('${o.label} (FREE)'))),
                     DropdownMenuItem<String>(
                       enabled: false,
-                      child: Text('TINTED', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                      child: Text('TINTED',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600])),
                     ),
-                    ...widget.lensOptions
-                        .where((o) => o.type == 'tinted')
-                        .map((o) => DropdownMenuItem(value: o.label, child: Text('${o.label} (+₱${o.price.toStringAsFixed(0)})'))),
+                    ...widget.lensOptions.where((o) => o.type == 'tinted').map(
+                        (o) => DropdownMenuItem(
+                            value: o.label,
+                            child: Text(
+                                '${o.label} (+₱${o.price.toStringAsFixed(0)})'))),
                     DropdownMenuItem<String>(
                       enabled: false,
-                      child: Text('SUN ADAPTIVE', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey[600])),
+                      child: Text('SUN ADAPTIVE',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[600])),
                     ),
                     ...widget.lensOptions
                         .where((o) => o.type == 'adaptive')
@@ -429,7 +487,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               value: o.label,
                               child: SizedBox(
                                 width: double.infinity,
-                                child: Text('${o.label} (+₱${o.price.toStringAsFixed(0)})'),
+                                child: Text(
+                                    '${o.label} (+₱${o.price.toStringAsFixed(0)})'),
                               ),
                             )),
                   ],
@@ -446,7 +505,8 @@ class _DetailScreenState extends State<DetailScreen> {
                 prescriptionFile == null
                     ? GestureDetector(
                         onTap: () async {
-                          FilePickerResult? result = await FilePicker.platform.pickFiles(
+                          FilePickerResult? result =
+                              await FilePicker.platform.pickFiles(
                             type: FileType.custom,
                             allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf'],
                           );
@@ -471,7 +531,8 @@ class _DetailScreenState extends State<DetailScreen> {
                               Text(
                                 'Choose File\nor drop file to upload',
                                 textAlign: TextAlign.center,
-                                style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                                style: TextStyle(
+                                    color: Colors.grey[600], fontSize: 14),
                               ),
                             ],
                           ),
@@ -513,7 +574,8 @@ class _DetailScreenState extends State<DetailScreen> {
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => VirtualTryOnScreen()),
+                            MaterialPageRoute(
+                                builder: (context) => VirtualTryOnScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -539,7 +601,8 @@ class _DetailScreenState extends State<DetailScreen> {
                           if (token != null) {
                             final selectedLens = widget.lensOptions.firstWhere(
                               (option) => option.label == selectedLensType,
-                              orElse: () => throw Exception("Invalid lens selected"),
+                              orElse: () =>
+                                  throw Exception("Invalid lens selected"),
                             );
 
                             await addToCart(
@@ -565,12 +628,14 @@ class _DetailScreenState extends State<DetailScreen> {
       ),
     );
   }
+
   Widget _colorSwatch(ColorOption option, bool isSelected) {
     Widget swatch;
     if (option.type == 'solid') {
       swatch = CircleAvatar(
         radius: 12,
-        backgroundColor: Color(int.parse('0xFF' + option.colors[0].substring(1))),
+        backgroundColor:
+            Color(int.parse('0xFF' + option.colors[0].substring(1))),
       );
     } else if (option.type == 'split') {
       swatch = Container(
@@ -579,7 +644,9 @@ class _DetailScreenState extends State<DetailScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: LinearGradient(
-            colors: option.colors.map((hex) => Color(int.parse('0xFF' + hex.substring(1)))).toList(),
+            colors: option.colors
+                .map((hex) => Color(int.parse('0xFF' + hex.substring(1))))
+                .toList(),
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),

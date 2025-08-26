@@ -11,6 +11,7 @@ const {
   getProductStatistics,
   recommendEyewear,
   uploadProductFiles,
+  getProductReviews,
 } = require("../controllers/productController");
 
 // Create product (POST /api/products) - with file upload
@@ -33,6 +34,8 @@ router.get("/face-shape-stats", getFaceShapeStats);
 
 router.get("/order-stats", getProductStatistics);
 
+// Reviews + rating stats for a product
+router.get("/:id/reviews", getProductReviews);
 
 router.put("/", updateProduct);
 

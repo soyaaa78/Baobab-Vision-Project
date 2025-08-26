@@ -1,11 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../widgets/custom_text.dart';
 import '../constants.dart';
+import 'package:baobab_vision_project/services/api_client.dart';
 
 class ReviewsScreen extends StatefulWidget {
   final ScrollController? scrollController;
+  final String productId;
 
-  const ReviewsScreen({super.key, this.scrollController});
+  const ReviewsScreen(
+      {super.key, this.scrollController, required this.productId});
 
   @override
   State<ReviewsScreen> createState() => _ReviewsScreenState();
@@ -14,27 +18,16 @@ class ReviewsScreen extends StatefulWidget {
 class _ReviewsScreenState extends State<ReviewsScreen> {
   String selectedFilter = "All"; // Default filter
   int selectedStar = 0; // For "By Stars" filter (0 = none)
+  List<Map<String, dynamic>> _reviews = [];
+  bool _loading = false;
+  Map<int, int> _starCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+  int _withMedia = 0;
 
-  // Sample reviews
-  final List<Map<String, dynamic>> reviews = [
-    {
-      "profilePic": "https://via.placeholder.com/150",
-      "username": "beverly",
-      "stars": 5,
-      "reviewText": "The product is amazing! Great quality and fast delivery.",
-      "photos": [
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSCK_qA4U1yOMCE2XqBS0m2F3ohYKROqq2u3Q&s",
-        "https://img.lazcdn.com/g/p/981d2288222c65f41fd7ae726e74c5ad.jpg_720x720q80.jpg"
-      ],
-    },
-    {
-      "profilePic": "https://via.placeholder.com/150",
-      "username": "michael",
-      "stars": 4,
-      "reviewText": "Good product but the packaging could be better.",
-      "photos": [],
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchReviewsAndStats();
+  }
 
   String maskUsername(String username) {
     if (username.length <= 2) return username;
@@ -46,11 +39,51 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   // 🔽 Filtered reviews logic
   List<Map<String, dynamic>> get filteredReviews {
     if (selectedFilter == "With Media") {
-      return reviews.where((r) => r["photos"].isNotEmpty).toList();
+      return _reviews.where((r) => (r["photos"] as List).isNotEmpty).toList();
     } else if (selectedFilter == "By Stars" && selectedStar > 0) {
-      return reviews.where((r) => r["stars"] == selectedStar).toList();
+      return _reviews.where((r) => r["stars"] == selectedStar).toList();
     }
-    return reviews;
+    return _reviews;
+  }
+
+  Future<void> _fetchReviewsAndStats() async {
+    setState(() => _loading = true);
+    try {
+      final resp =
+          await ApiClient.get('/api/products/${widget.productId}/reviews');
+      if (resp.statusCode == 200) {
+        final body = json.decode(resp.body) as Map<String, dynamic>;
+        final items =
+            (body['reviews'] as List<dynamic>).cast<Map<String, dynamic>>();
+        _reviews = items.map((r) {
+          final user = r['user'] as Map<String, dynamic>? ?? {};
+          return {
+            'profilePic': (user['profileImage'] as String?)?.isNotEmpty == true
+                ? user['profileImage']
+                : 'https://via.placeholder.com/150',
+            'username': (user['username'] ?? 'user').toString(),
+            'stars': (r['rating'] as num?)?.toInt() ?? 0,
+            'reviewText': r['comment'] ?? '',
+            'photos': List<String>.from(r['pictures'] ?? []),
+          };
+        }).toList();
+        final stats = (body['stats'] as Map<String, dynamic>?);
+        if (stats != null) {
+          _starCounts = {
+            1: (stats['distribution']?['1'] ?? 0) as int,
+            2: (stats['distribution']?['2'] ?? 0) as int,
+            3: (stats['distribution']?['3'] ?? 0) as int,
+            4: (stats['distribution']?['4'] ?? 0) as int,
+            5: (stats['distribution']?['5'] ?? 0) as int,
+          };
+          _withMedia = (stats['withMedia'] ?? 0) as int;
+        }
+      }
+    } catch (_) {
+      // swallow
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -74,12 +107,13 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         controller: widget.scrollController,
         padding: const EdgeInsets.all(16),
         children: [
+          if (_loading) const LinearProgressIndicator(minHeight: 2),
           // 🔽 Sort By row
           Row(
             children: [
               _buildFilterButton("All"),
               const SizedBox(width: 8),
-              _buildFilterButton("With Media"),
+              _buildFilterButton("With Media", badge: _withMedia),
               const SizedBox(width: 8),
               _buildFilterButton("By Stars"),
             ],
@@ -93,8 +127,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: List.generate(5, (i) {
                 int star = 5 - i; // Start from 5 stars down to 1
-                int count =
-                    reviews.where((r) => r["stars"] == star).toList().length;
+                int count = _starCounts[star] ?? 0;
 
                 return GestureDetector(
                   onTap: () {
@@ -104,8 +137,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                   },
                   child: Container(
                     margin: const EdgeInsets.symmetric(vertical: 4),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       color: selectedStar == star
@@ -174,7 +207,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
   }
 
   // 🔽 Custom Filter Button (instead of ChoiceChip)
-  Widget _buildFilterButton(String label) {
+  Widget _buildFilterButton(String label, {int badge = 0}) {
     final bool isSelected = selectedFilter == label;
     return GestureDetector(
       onTap: () {
@@ -188,15 +221,37 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         decoration: BoxDecoration(
           color: isSelected ? Colors.black : Colors.grey[100],
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: isSelected ? Colors.black : Colors.grey[300]!),
+          border:
+              Border.all(color: isSelected ? Colors.black : Colors.grey[300]!),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black,
-            fontWeight: FontWeight.w500,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (badge > 0) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.white : Colors.black,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  badge.toString(),
+                  style: TextStyle(
+                    color: isSelected ? Colors.black : Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              )
+            ]
+          ],
         ),
       ),
     );
