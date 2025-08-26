@@ -42,6 +42,7 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen>
       _future = fetchPendingOrders();
     });
   }
+
   Future<List<Map<String, dynamic>>> fetchPendingOrders() async {
     final response = await ApiClient.get('/api/orders?status=pending');
     if (response.statusCode != 200) {
@@ -186,151 +187,152 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen>
               itemCount: pendingOrders.length,
               itemBuilder: (context, index) {
                 final product = pendingOrders[index];
-              final orderId = product['orderId']?.toString() ?? '';
+                final orderId = product['orderId']?.toString() ?? '';
 
                 return PendingOrderCard(
-                productId: product["productId"]?.toString() ?? '',
-                prodName: product["prodName"]?.toString() ?? '',
-                prodPrice: product["prodPrice"]?.toString() ?? '',
-                numStars: product["numStars"] ?? 0,
-                quantity: product["quantity"] ?? 1,
-                prodImages: List<String>.from(product["prodImages"] ?? []),
-                selectedColorName:
-                    product["selectedColorName"]?.toString() ?? '',
-                selectedLensLabel:
-                    product["selectedLensLabel"]?.toString() ?? '',
-                deliveryMethod: product["deliveryMethod"]?.toString() ?? '',
-                paymentMethod: product["paymentMethod"]?.toString() ?? '',
-                onCancel: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) {
-                      TextEditingController reasonController =
-                          TextEditingController();
-                      return AlertDialog(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        title: Column(
-                          children: [
-                            Icon(Icons.cancel, color: Colors.red, size: 40),
-                            const SizedBox(height: 8),
-                            const Text(
-                              "Are you sure you want to cancel this order?",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextField(
-                              controller: reasonController,
-                              maxLines: 3,
-                              decoration: InputDecoration(
-                                hintText:
-                                    "Why do you want to cancel this order?",
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                  productId: product["productId"]?.toString() ?? '',
+                  prodName: product["prodName"]?.toString() ?? '',
+                  prodPrice: product["prodPrice"]?.toString() ?? '',
+                  numStars: product["numStars"] ?? 0,
+                  quantity: product["quantity"] ?? 1,
+                  prodImages: List<String>.from(product["prodImages"] ?? []),
+                  selectedColorName:
+                      product["selectedColorName"]?.toString() ?? '',
+                  selectedLensLabel:
+                      product["selectedLensLabel"]?.toString() ?? '',
+                  deliveryMethod: product["deliveryMethod"]?.toString() ?? '',
+                  paymentMethod: product["paymentMethod"]?.toString() ?? '',
+                  onCancel: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        TextEditingController reasonController =
+                            TextEditingController();
+                        return AlertDialog(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          title: Column(
+                            children: [
+                              Icon(Icons.cancel, color: Colors.red, size: 40),
+                              const SizedBox(height: 8),
+                              const Text(
+                                "Are you sure you want to cancel this order?",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              TextField(
+                                controller: reasonController,
+                                maxLines: 3,
+                                decoration: InputDecoration(
+                                  hintText:
+                                      "Why do you want to cancel this order?",
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            const Text(
-                              "* NOTICE: Your request will be solved in 24 hours",
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.black,
+                              const SizedBox(height: 12),
+                              const Text(
+                                "* NOTICE: Your request will be solved in 24 hours",
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.black,
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        actionsAlignment: MainAxisAlignment.spaceEvenly,
-                        actions: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context); // close popup
-                            },
-                            style: TextButton.styleFrom(
-                              backgroundColor: Colors.grey[300],
-                              minimumSize: const Size(80, 40),
-                            ),
-                            child: const Text("NO",
-                                style: TextStyle(color: Colors.black)),
+                            ],
                           ),
-                          TextButton(
-                            onPressed: () async {
-                              final reason = reasonController.text.trim();
-                              if (reason.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                        "Please provide a reason before submitting."),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                                return;
-                              }
-                              Navigator.pop(context); // close confirm dialog
+                          actionsAlignment: MainAxisAlignment.spaceEvenly,
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context); // close popup
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.grey[300],
+                                minimumSize: const Size(80, 40),
+                              ),
+                              child: const Text("NO",
+                                  style: TextStyle(color: Colors.black)),
+                            ),
+                            TextButton(
+                              onPressed: () async {
+                                final reason = reasonController.text.trim();
+                                if (reason.isEmpty) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                          "Please provide a reason before submitting."),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                Navigator.pop(context); // close confirm dialog
 
-                              try {
-                                final resp = await ApiClient.putJson(
-                                  '/api/orders',
-                                  {
-                                    'id': orderId,
-                                    'status': 'cancelled_pending',
-                                    // Optional: send reason for auditing, backend may ignore
-                                    'cancellationReason': reason,
-                                  },
-                                );
-                                if (resp.statusCode == 200) {
-                                  // Refresh list
-                                  if (mounted) {
-                                    setState(() {});
-                                  }
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) {
-                                      return AlertDialog(
-                                        title: const Text("Cancelled"),
-                                        content: const Text(
-                                            "Your order was cancelled successfully."),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: const Text("OK"),
-                                          ),
-                                        ],
-                                      );
+                                try {
+                                  final resp = await ApiClient.putJson(
+                                    '/api/orders',
+                                    {
+                                      'id': orderId,
+                                      'status': 'cancelled_pending',
+                                      // Optional: send reason for auditing, backend may ignore
+                                      'cancellationReason': reason,
                                     },
                                   );
-                                } else {
-                                  throw Exception('Failed with status ' +
-                                      resp.statusCode.toString());
+                                  if (resp.statusCode == 200) {
+                                    // Refresh list
+                                    if (mounted) {
+                                      setState(() {});
+                                    }
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) {
+                                        return AlertDialog(
+                                          title: const Text("Cancelled"),
+                                          content: const Text(
+                                              "Your order was cancelled successfully."),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: const Text("OK"),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  } else {
+                                    throw Exception('Failed with status ' +
+                                        resp.statusCode.toString());
+                                  }
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content:
+                                          Text('Failed to cancel order: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
                                 }
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Failed to cancel order: $e'),
-                                    backgroundColor: Colors.red,
-                                  ),
-                                );
-                              }
-                            },
-                            style: TextButton.styleFrom(
-                              backgroundColor: Colors.black,
-                              minimumSize: const Size(80, 40),
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.black,
+                                minimumSize: const Size(80, 40),
+                              ),
+                              child: const Text("YES",
+                                  style: TextStyle(color: Colors.white)),
                             ),
-                            child: const Text("YES",
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
+                          ],
+                        );
+                      },
+                    );
+                  },
                 );
               },
             ),

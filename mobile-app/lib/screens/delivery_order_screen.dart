@@ -42,6 +42,7 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
       _future = _fetchDeliveryOrders();
     });
   }
+
   Future<List<Map<String, dynamic>>> _fetchDeliveryOrders() async {
     final resp =
         await ApiClient.get('/api/orders?&deliveryMethod=Third-Party Delivery');
@@ -192,20 +193,22 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
               itemBuilder: (context, index) {
                 final order = deliveryOrders[index];
                 return DeliveryOrderCard(
-                productId: order['productId']?.toString() ?? '',
-                prodName: order['prodName']?.toString() ?? '',
-                quantity: order['quantity'] ?? 1,
-                prodPrice: order['prodPrice']?.toString() ?? '',
-                prodImages: List<String>.from(order['prodImages'] ?? []),
-                selectedColorName: order['selectedColorName']?.toString() ?? '',
-                selectedLensLabel: order['selectedLensLabel']?.toString() ?? '',
-                deliveryMethod: order['deliveryMethod']?.toString() ?? '',
-                thirdPartyDelivery:
-                    (order['thirdPartyDelivery']?.toString() ?? '').isEmpty
-                        ? null
-                        : order['thirdPartyDelivery']?.toString(),
-                paymentMethod: order['paymentMethod']?.toString() ?? '',
-                deliveryStatus: order['deliveryStatus']?.toString() ?? '',
+                  productId: order['productId']?.toString() ?? '',
+                  prodName: order['prodName']?.toString() ?? '',
+                  quantity: order['quantity'] ?? 1,
+                  prodPrice: order['prodPrice']?.toString() ?? '',
+                  prodImages: List<String>.from(order['prodImages'] ?? []),
+                  selectedColorName:
+                      order['selectedColorName']?.toString() ?? '',
+                  selectedLensLabel:
+                      order['selectedLensLabel']?.toString() ?? '',
+                  deliveryMethod: order['deliveryMethod']?.toString() ?? '',
+                  thirdPartyDelivery:
+                      (order['thirdPartyDelivery']?.toString() ?? '').isEmpty
+                          ? null
+                          : order['thirdPartyDelivery']?.toString(),
+                  paymentMethod: order['paymentMethod']?.toString() ?? '',
+                  deliveryStatus: order['deliveryStatus']?.toString() ?? '',
                 );
               },
             ),

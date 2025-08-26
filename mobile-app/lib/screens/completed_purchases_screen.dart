@@ -43,6 +43,7 @@ class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen>
       _future = _fetchCompletedOrders();
     });
   }
+
   Future<List<Map<String, dynamic>>> _fetchCompletedOrders() async {
     final resp = await ApiClient.get('/api/orders?status=completed');
     if (resp.statusCode != 200) {
@@ -195,15 +196,17 @@ class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen>
               itemBuilder: (context, index) {
                 final item = completed[index];
                 return CompletedOrderCard(
-                productId: item['productId']?.toString() ?? '',
-                prodName: item['prodName']?.toString() ?? '',
-                quantity: item['quantity'] ?? 1,
-                prodPrice: item['prodPrice']?.toString() ?? '',
-                prodImages: List<String>.from(item['prodImages'] ?? []),
-                selectedColorName: item['selectedColorName']?.toString() ?? '',
-                selectedLensLabel: item['selectedLensLabel']?.toString() ?? '',
-                deliveryMethod: item['deliveryMethod']?.toString() ?? '',
-                paymentMethod: item['paymentMethod']?.toString() ?? '',
+                  productId: item['productId']?.toString() ?? '',
+                  prodName: item['prodName']?.toString() ?? '',
+                  quantity: item['quantity'] ?? 1,
+                  prodPrice: item['prodPrice']?.toString() ?? '',
+                  prodImages: List<String>.from(item['prodImages'] ?? []),
+                  selectedColorName:
+                      item['selectedColorName']?.toString() ?? '',
+                  selectedLensLabel:
+                      item['selectedLensLabel']?.toString() ?? '',
+                  deliveryMethod: item['deliveryMethod']?.toString() ?? '',
+                  paymentMethod: item['paymentMethod']?.toString() ?? '',
                 );
               },
             ),

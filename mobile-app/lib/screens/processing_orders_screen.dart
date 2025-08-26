@@ -41,6 +41,7 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen>
       _future = fetchProcessingOrders();
     });
   }
+
   Future<List<Map<String, dynamic>>> fetchProcessingOrders() async {
     final response = await ApiClient.get('/api/orders?status=processing');
     if (response.statusCode == 200) {
@@ -144,15 +145,17 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen>
               itemBuilder: (context, index) {
                 final order = orders[index];
                 return ProcessingOrderCard(
-                productId: order['productId']?.toString() ?? '',
-                prodName: order['prodName']?.toString() ?? '',
-                quantity: order['quantity'] ?? 1,
-                prodPrice: order['prodPrice']?.toString() ?? '',
-                prodImages: List<String>.from(order['prodImages'] ?? []),
-                selectedColorName: order['selectedColorName']?.toString() ?? '',
-                selectedLensLabel: order['selectedLensLabel']?.toString() ?? '',
-                deliveryMethod: order['deliveryMethod']?.toString() ?? '',
-                paymentMethod: order['paymentMethod']?.toString() ?? '',
+                  productId: order['productId']?.toString() ?? '',
+                  prodName: order['prodName']?.toString() ?? '',
+                  quantity: order['quantity'] ?? 1,
+                  prodPrice: order['prodPrice']?.toString() ?? '',
+                  prodImages: List<String>.from(order['prodImages'] ?? []),
+                  selectedColorName:
+                      order['selectedColorName']?.toString() ?? '',
+                  selectedLensLabel:
+                      order['selectedLensLabel']?.toString() ?? '',
+                  deliveryMethod: order['deliveryMethod']?.toString() ?? '',
+                  paymentMethod: order['paymentMethod']?.toString() ?? '',
                 );
               },
             ),

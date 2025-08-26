@@ -13,8 +13,8 @@ class ReadyForPickupOrdersScreen extends StatefulWidget {
       _ReadyForPickupOrdersScreenState();
 }
 
-class _ReadyForPickupOrdersScreenState
-    extends State<ReadyForPickupOrdersScreen> with WidgetsBindingObserver {
+class _ReadyForPickupOrdersScreenState extends State<ReadyForPickupOrdersScreen>
+    with WidgetsBindingObserver {
   late Future<List<Map<String, dynamic>>> _future;
 
   @override
@@ -42,6 +42,7 @@ class _ReadyForPickupOrdersScreenState
       _future = fetchReadyForPickupOrders();
     });
   }
+
   Future<List<Map<String, dynamic>>> fetchReadyForPickupOrders() async {
     final response = await ApiClient.get('/api/orders?status=ready_to_pickup');
     if (response.statusCode != 200) {
@@ -179,17 +180,19 @@ class _ReadyForPickupOrdersScreenState
               itemBuilder: (context, index) {
                 final order = orders[index];
                 return PickupOrderCard(
-                productId: order['productId']?.toString() ?? '',
-                prodName: order['prodName']?.toString() ?? '',
-                quantity: order['quantity'] ?? 1,
-                prodPrice: order['prodPrice']?.toString() ?? '',
-                prodImages: List<String>.from(order['prodImages'] ?? []),
-                selectedColorName: order['selectedColorName']?.toString() ?? '',
-                selectedLensLabel: order['selectedLensLabel']?.toString() ?? '',
-                deliveryMethod: order['deliveryMethod']?.toString() ?? '',
-                paymentMethod: order['paymentMethod']?.toString() ?? '',
-                pickupLocation: order['pickupLocation']?.toString() ?? '',
-                pickupTime: order['pickupTime']?.toString() ?? '',
+                  productId: order['productId']?.toString() ?? '',
+                  prodName: order['prodName']?.toString() ?? '',
+                  quantity: order['quantity'] ?? 1,
+                  prodPrice: order['prodPrice']?.toString() ?? '',
+                  prodImages: List<String>.from(order['prodImages'] ?? []),
+                  selectedColorName:
+                      order['selectedColorName']?.toString() ?? '',
+                  selectedLensLabel:
+                      order['selectedLensLabel']?.toString() ?? '',
+                  deliveryMethod: order['deliveryMethod']?.toString() ?? '',
+                  paymentMethod: order['paymentMethod']?.toString() ?? '',
+                  pickupLocation: order['pickupLocation']?.toString() ?? '',
+                  pickupTime: order['pickupTime']?.toString() ?? '',
                 );
               },
             ),
