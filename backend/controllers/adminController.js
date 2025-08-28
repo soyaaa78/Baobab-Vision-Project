@@ -61,8 +61,13 @@ exports.login = async (req, res) => {
 
 // CREATE STAFF (Super Admin only)
 exports.createStaff = async (req, res) => {
-  const { firstname, lastname, username, email, password, permissions } =
+  const { firstname, lastname, username, email, password, permissions, role } =
     req.body;
+
+  // Only allow creation of staff_product or staff_order roles
+  if (!role || !["staff_product", "staff_order"].includes(role)) {
+    return res.status(400).json({ message: "Invalid staff role" });
+  }
 
   try {
     const existing = await Admin.findOne({ $or: [{ username }, { email }] });
@@ -77,7 +82,7 @@ exports.createStaff = async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      role: "admin",
+      role,
       permissions: permissions || [],
     });
 
@@ -102,7 +107,10 @@ exports.createStaff = async (req, res) => {
 // GET ALL STAFF (Super Admin only)
 exports.getAllStaff = async (req, res) => {
   try {
-    const staff = await Admin.find({ role: "admin" }).select("-password");
+    // Get all staff_product and staff_order roles
+    const staff = await Admin.find({
+      role: { $in: ["staff_product", "staff_order"] },
+    }).select("-password");
     res.status(200).json(staff);
   } catch (err) {
     console.error("Get all staff error:", err);
@@ -127,7 +135,9 @@ exports.updatePermissions = async (req, res) => {
 
   try {
     const staff = await Admin.findById(id);
-    if (!staff) return res.status(404).json({ message: "Staff not found" });
+    if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
 
     staff.permissions = permissions;
     await staff.save();
@@ -237,7 +247,9 @@ exports.deleteUser = async (req, res) => {
 exports.disableStaff = async (req, res) => {
   try {
     const staff = await Admin.findById(req.params.id);
-    if (!staff) return res.status(404).json({ message: "Staff not found" });
+    if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
     staff.isDisabled = true;
     await staff.save();
     res.status(200).json({ message: "Staff disabled" });
@@ -251,7 +263,9 @@ exports.disableStaff = async (req, res) => {
 exports.enableStaff = async (req, res) => {
   try {
     const staff = await Admin.findById(req.params.id);
-    if (!staff) return res.status(404).json({ message: "Staff not found" });
+    if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
     staff.isDisabled = false;
     await staff.save();
     res.status(200).json({ message: "Staff enabled" });
@@ -264,8 +278,11 @@ exports.enableStaff = async (req, res) => {
 // DELETE STAFF
 exports.deleteStaff = async (req, res) => {
   try {
-    const staff = await Admin.findByIdAndDelete(req.params.id);
-    if (!staff) return res.status(404).json({ message: "Staff not found" });
+    const staff = await Admin.findById(req.params.id);
+    if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+    await Admin.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Staff deleted" });
   } catch (err) {
     console.error("Delete staff error:", err);

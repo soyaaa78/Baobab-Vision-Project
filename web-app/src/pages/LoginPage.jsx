@@ -9,6 +9,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 function LoginPage() {
+  const SERVER_URL = import.meta.env.VITE_SERVER_URL;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
@@ -37,7 +38,7 @@ function LoginPage() {
     setSuccess("");
     try {
       const res = await axios.post(
-        "https://baobab-vision-project.onrender.com/api/admin/login",
+        `${SERVER_URL}/api/admin/login`,
         {
           username,
           password,
@@ -73,13 +74,10 @@ function LoginPage() {
     setError("");
     setSuccess("");
     try {
-      const res = await axios.post(
-        "https://baobab-vision-project.onrender.com/api/admin/verify-otp",
-        {
-          email,
-          otp,
-        }
-      );
+      const res = await axios.post(`${SERVER_URL}/api/admin/verify-otp`, {
+        email,
+        otp,
+      });
       login(res.data.token, res.data.role);
       Cookies.remove("pendingEmail");
       setSuccess("Account successfully verified!");
@@ -93,12 +91,9 @@ function LoginPage() {
     setError("");
     setSuccess("");
     try {
-      await axios.post(
-        "https://baobab-vision-project.onrender.com/api/admin/resend-otp",
-        {
-          email,
-        }
-      );
+      await axios.post(`${SERVER_URL}/api/admin/resend-otp`, {
+        email,
+      });
       setSuccess("Verification code resent to your email.");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to resend code.");
