@@ -8,8 +8,8 @@ const AdminSchema = new mongoose.Schema({
   password: String,
   role: {
     type: String,
-    enum: ["super_admin", "admin"],
-    default: "admin",
+    enum: ["super_admin", "staff_product", "staff_order"],
+    default: "staff_product",
   },
   permissions: {
     type: [String],
