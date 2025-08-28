@@ -1,185 +1,526 @@
-#edit-eyeglass {
-    padding: 3% 15%; /* lipat sa container that would contain the grids */
+/* Modern Eyeglass Card Design */
+#eyeglass-page {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 140vh;
+  padding: 2rem;
+  font-family: "Rubik", sans-serif;
 }
 
-.ee-header-wrapper {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* Loading Styles */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 3rem;
 }
 
-.eec-back-btn {
-    margin: 20px 85px;
-    margin-top: 0;
+.loading-spinner {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 2rem;
 }
 
-.edit-eyeglass-bulk {
-    display: grid;
-    grid-template-columns: minmax(400px, 1fr) minmax(400px, 1fr);
-    grid-template-areas: "image details";
-    font-family: 'Red Rose', serif;
+.spinner-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
 }
 
-.ee-image-section {
-    grid-area: 'image';
+.spinner-ring:nth-child(1) {
+  border-top-color: #5e503f;
+  animation-delay: 0s;
 }
 
-.ee-product-image-wrapper {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.spinner-ring:nth-child(2) {
+  border-right-color: #8b7355;
+  animation-delay: -0.3s;
+  width: 85%;
+  height: 85%;
+  top: 7.5%;
+  left: 7.5%;
 }
 
-#product-img {
-    width: 500px;
-    height: 500px;
+.spinner-ring:nth-child(3) {
+  border-bottom-color: #a68b5b;
+  animation-delay: -0.6s;
+  width: 70%;
+  height: 70%;
+  top: 15%;
+  left: 15%;
 }
 
-.ee-product-tertiary-imgs {
-    max-width: 500px;
-    display: flex;
-    justify-content: space-between;
-    /* background-color: lightsalmon; */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-.tertiary-img {
-    width: 30%;
-    height: auto;
+.loading-text h3 {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  font-family: "Red Rose", serif;
 }
 
-/* --------------------------------- */
-/* ----- details section below ----- */
-/* --------------------------------- */
-
-.ee-details-section {
-    grid-area: "details";
+.loading-text p {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 400;
 }
 
-.ee-header-text {
-    font-size: 1.3em;
+.eyeglass-page-content {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.ee-details-body-text {
-    margin-top: 15px;
+/* Back Button */
+.back-btn {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-
-.ee-details-body-text p {
-    font-family: 'Rubik', sans-serif;
+.back-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.edit-eyeglass-button input {
-    background-color: #FCF7F2;
-    border: 1px solid black;
-    border-radius: 3px;
-    margin: 10px 0;
-    padding: 10px 40px;
-    cursor: pointer;
+/* Main Card */
+.eyeglass-card {
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
 }
 
-#top-edit {
-    cursor: pointer;
+/* Card Header */
+.card-header {
+  padding: 1.5rem 2rem 0;
+  display: flex;
+  justify-content: flex-end;
 }
 
-.ee-details-color-selection {
-    margin: 4vh 0;
+.card-actions {
+  display: flex;
+  gap: 0.75rem;
 }
 
-.ee-details-color-selection p {
-    font-family: 'Rubik', sans-serif;
-    color: #858585;
+.action-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #64748b;
 }
 
-.color-indicators {
-    display: flex;
-    justify-content: flex-start;
-    gap: 1%;
+.action-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.colorcircle {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+.action-btn.edit:hover {
+  color: #8b5cf6;
+  border-color: #d8b4fe;
+  background: #faf5ff;
 }
 
-.colorcircle-border {
-    width: 38px;
-    height: 38px;
-    background-color: transparent;
-    border: 2px solid #888888;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+/* Card Body */
+.card-body {
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  /* margin-bottom: 2rem; */
+  align-items: start;
 }
 
-#color1 {
-    background-color: #1E1E1E;
+/* Image Section */
+.image-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-#color2 {
-    background-color: #CDBD86;
+.main-image-container {
+  position: relative;
+  background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+  border-radius: 16px;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-#color3 {
-    background: linear-gradient(-45deg,
-            red,
-            red 50%,
-            blue 50%,
-            blue);
+.main-product-image {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
 }
 
-.blackline {
-    height: 3px;
-    background-color: #1E1E1E;
+.main-image-container:hover .main-product-image {
+  transform: scale(1.05);
 }
 
-.customer-section {
-    margin-top: 15px;
+.image-overlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
 }
 
+.rating {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail-gallery {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.thumbnail-item {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.thumbnail-item:hover {
+  border-color: #5e503f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(94, 80, 63, 0.2);
+}
+
+.thumbnail-item.active {
+  border-color: #5e503f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(94, 80, 63, 0.3);
+  background: #fefbf7;
+}
+
+.thumbnail-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Details Section */
+.details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.product-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.product-name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  font-family: "Red Rose", serif;
+}
+
+.product-badge {
+  background: linear-gradient(135deg, #5e503f 0%, #6d5a47 100%);
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.product-description {
+  color: #64748b;
+  line-height: 1.6;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* Selection Sections */
+.selection-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.required {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* Color Selection */
+.color-selection {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.color-options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.color-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 80px;
+}
+
+.color-option:hover {
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.color-option.selected {
+  border-color: #5e503f;
+  background: #fefbf7;
+  box-shadow: 0 4px 12px rgba(94, 80, 63, 0.2);
+}
+
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.color-name {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  text-align: center;
+}
+
+/* Lens Selection */
+.lens-selection {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.modern-select {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 1rem;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 3rem;
+}
+
+.modern-select:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.modern-select:focus {
+  outline: none;
+  border-color: #5e503f;
+  box-shadow: 0 0 0 3px rgba(94, 80, 63, 0.1);
+}
+
+/* Price Section */
 .price-section {
-    margin: 20px 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  border: 1px solid #e2e8f0;
 }
 
-.price-section p {
-    font-size: 2em;
+.price-container {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
-.required-text-container {
-    display: flex;
-    width: fit-content;
+.currency {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #64748b;
 }
 
-.required-text-container p {
-    font-family: 'Rubik', sans-serif;
-    font-size: 1.3em;
-    font-weight: 500;
+.price {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-family: "Red Rose", serif;
 }
 
-.required-text-container #red {
-    color: red;
+.price-label {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #64748b;
 }
 
-.lens-type-section {
-    margin: 20px 0;
+.price-subtitle {
+  color: #64748b;
+  font-size: 0.875rem;
 }
 
-.ee-dropdown-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
 }
 
-#dropdown {
-    background-color: #FCF7F2;
-    border: 1px solid #858585;
-    border-radius: 3px;
-    padding: 20px 90px;
-    padding-left: 10px;
-    text-align: start;
+.btn-primary,
+.btn-secondary {
+  flex: 1;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
 }
 
-#dropdown p {
-    font-weight: 600;
+.btn-primary {
+  background: linear-gradient(135deg, #5e503f 0%, #6d5a47 100%);
+  color: #ffffff;
+  border-color: #5e503f;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #6d5a47 0%, #7a6354 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(94, 80, 63, 0.3);
+}
+
+.btn-secondary {
+  background: #ffffff;
+  color: #5e503f;
+  border-color: #5e503f;
+}
+
+.btn-secondary:hover {
+  background: #fefbf7;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(94, 80, 63, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .card-body {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .eyeglass-page-content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  #eyeglass-page {
+    padding: 1rem;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+
+  .product-name {
+    font-size: 1.5rem;
+  }
+
+  .price {
+    font-size: 2rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .color-options {
+    justify-content: center;
+  }
 }

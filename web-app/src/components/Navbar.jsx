@@ -27,6 +27,7 @@ function Navbar() {
               Home
             </Link>
           </li>
+
           {role !== "staff_order" && (
             <>
               <li>
@@ -41,12 +42,20 @@ function Navbar() {
               </li>
             </>
           )}
+
           {role !== "staff_product" && (
-            <li>
-              <Link to="manageusers" className="nav-button">
-                Manage Users
-              </Link>
-            </li>
+            <>
+              <li>
+                <Link to="manageusers" className="nav-button">
+                  Manage Users
+                </Link>
+              </li>
+              <li>
+                <Link to="allorders" className="nav-button">
+                  All Orders
+                </Link>
+              </li>
+            </>
           )}
 
           <Button

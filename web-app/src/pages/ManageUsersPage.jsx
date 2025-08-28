@@ -9,6 +9,7 @@ import {
   faSortUp,
   faSortDown,
 } from "@fortawesome/free-solid-svg-icons";
+import { Check, Ban, Trash2 } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
 
@@ -291,6 +292,9 @@ const ManageUsersPage = () => {
     <>
       <div className="page" id="manageusers">
         <div className="manageusers-content">
+          <div className="page-header">
+            <h1>Manage Users</h1>
+          </div>
           <div className="muc-selection-headers">
             <ul>
               <li
@@ -301,14 +305,7 @@ const ManageUsersPage = () => {
               >
                 Users
               </li>
-              <li
-                className={
-                  activeTab === "orders" ? "muc-link active" : "muc-link"
-                }
-                onClick={() => setActiveTab("orders")}
-              >
-                All Orders
-              </li>
+
               {ROLE !== "staff_order" && (
                 <li
                   className={
@@ -364,7 +361,17 @@ const ManageUsersPage = () => {
                                     toggleAlertModal();
                                   }}
                                 >
-                                  {user.isDisabled ? "Enable" : "Disable"}
+                                  {user.isDisabled ? (
+                                    <>
+                                      <Check size={14} />
+                                      Enable
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Ban size={14} />
+                                      Disable
+                                    </>
+                                  )}
                                 </li>
                                 <li
                                   className="action-li delete"
@@ -375,6 +382,7 @@ const ManageUsersPage = () => {
                                     toggleAlertModal();
                                   }}
                                 >
+                                  <Trash2 size={14} />
                                   Delete
                                 </li>
                               </div>
@@ -595,6 +603,7 @@ const ManageUsersPage = () => {
                                         toggleAlertModal();
                                       }}
                                     >
+                                      <Trash2 size={14} />
                                       Delete
                                     </button>
                                   </td>
@@ -791,7 +800,17 @@ const ManageUsersPage = () => {
                                   toggleAlertModal();
                                 }}
                               >
-                                {staff.isDisabled ? "Enable" : "Disable"}
+                                {staff.isDisabled ? (
+                                  <>
+                                    <Check size={14} />
+                                    Enable
+                                  </>
+                                ) : (
+                                  <>
+                                    <Ban size={14} />
+                                    Disable
+                                  </>
+                                )}
                               </li>
                               <li
                                 className="action-li delete"
@@ -801,6 +820,7 @@ const ManageUsersPage = () => {
                                   toggleAlertModal();
                                 }}
                               >
+                                <Trash2 size={14} />
                                 Delete
                               </li>
                             </div>

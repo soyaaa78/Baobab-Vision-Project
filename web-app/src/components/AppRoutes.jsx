@@ -6,12 +6,25 @@ import Layout from "./Layout";
 import LoginPage from "../pages/LoginPage";
 import HomePage from "../pages/HomePage";
 import StatisticsPage from "../pages/StatisticsPage";
+import StaffProductHomePage from "../pages/StaffProductHomePage";
+import StaffOrderHomePage from "../pages/StaffOrderHomePage";
+import Cookies from "js-cookie";
 import EyeglassPage from "../pages/eyeglass/EyeglassPage";
 import EyeglassCataloguePage from "../pages/eyeglass/EyeglassCataloguePage";
 import EditEyeglassPage from "../pages/eyeglass/EditEyeglassPage";
 import AddEyeglassPage from "../pages/eyeglass/AddEyeglassPage";
 import ManageUsersPage from "../pages/ManageUsersPage";
+import AllOrdersPage from "../pages/AllOrdersPage";
 import NotFoundPage from "../pages/NotFoundPage";
+
+// Wrapper to select homepage by role
+const HomePageByRole = () => {
+  const role = Cookies.get("role");
+  if (role === "admin") return <StatisticsPage />;
+  if (role === "staff_product") return <StaffProductHomePage />;
+  if (role === "staff_order") return <StaffOrderHomePage />;
+  return <HomePage />;
+};
 
 function AppRoutes() {
   return (
@@ -25,7 +38,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<HomePage />} />
+        <Route index element={<HomePageByRole />} />
         <Route
           path="catalogue"
           element={
@@ -64,6 +77,14 @@ function AppRoutes() {
           element={
             <RoleProtectedRoute blockRoles={["staff_product"]}>
               <ManageUsersPage />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="allorders"
+          element={
+            <RoleProtectedRoute blockRoles={["staff_product"]}>
+              <AllOrdersPage />
             </RoleProtectedRoute>
           }
         />

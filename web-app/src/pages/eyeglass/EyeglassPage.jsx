@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import Button from "../../components/Button";
 import "../../styles/eyeglass/EyeglassPage.css";
 import placeholder from "../../assets/placeholder.png";
+import { Edit3, ArrowLeft, Star } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
 
@@ -13,6 +14,7 @@ const EyeglassPage = () => {
   const [eyeglass, setEyeglass] = useState(null);
   const [selectedColor, setSelectedColor] = useState(0);
   const [selectedLens, setSelectedLens] = useState(0);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [TOKEN, setToken] = useState();
   useEffect(() => {
     const t = Cookies.get("token");
@@ -38,11 +40,28 @@ const EyeglassPage = () => {
   }, [id, SERVER_URL]);
 
   if (!eyeglass) {
-    return <div>Loading...</div>;
+    return (
+      <div className="page" id="eyeglass-page">
+        <div className="eyeglass-page-content">
+          <div className="loading-container">
+            <div className="loading-spinner">
+              <div className="spinner-ring"></div>
+              <div className="spinner-ring"></div>
+              <div className="spinner-ring"></div>
+            </div>
+            <div className="loading-text">
+              <h3>Loading Product Details</h3>
+              <p>Please wait while we fetch the eyeglass information...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const mainImage = eyeglass.imageUrls?.[0] || placeholder;
-  const tertiaryImages = eyeglass.imageUrls?.slice(1, 4) || [
+  const mainImage = eyeglass.imageUrls?.[selectedImageIndex] || placeholder;
+  const allImages = eyeglass.imageUrls || [
+    placeholder,
     placeholder,
     placeholder,
     placeholder,
@@ -54,106 +73,124 @@ const EyeglassPage = () => {
 
   return (
     <>
-      <div className="page" id="edit-eyeglass">
-        <div className="edit-eyeglass-content">
-          <Button
-            className="eec-back-btn"
-            onClick={() => navigate("../catalogue")}
-            children={<p>Back</p>}
-          />
-          <div className="edit-eyeglass-bulk">
-            <div className="ee-image-section">
-              <div className="ee-product-image-wrapper">
-                <div className="ee-product-main-img">
-                  <img id="product-img" src={mainImage} alt={eyeglass.name} />
-                </div>
-                <div className="ee-product-tertiary-imgs">
-                  {tertiaryImages.map((img, idx) => (
-                    <img
-                      className="tertiary-img"
-                      key={idx}
-                      id={`ti-${idx + 1}`}
-                      src={img}
-                      alt=""
-                    />
-                  ))}
-                </div>
+      <div className="page" id="eyeglass-page">
+        <div className="eyeglass-page-content">
+          <Button className="back-btn" onClick={() => navigate("../catalogue")}>
+            <ArrowLeft size={16} />
+            <span>Back to Catalogue</span>
+          </Button>
+
+          <div className="eyeglass-card">
+            <div className="card-header">
+              <div className="card-actions">
+                <button
+                  className="action-btn edit"
+                  onClick={() =>
+                    navigate(`/dashboard/editeyeglasses/${eyeglass._id}`)
+                  }
+                >
+                  <p>Edit</p>
+                  {/* <Edit3 size={20} /> */}
+                </button>
               </div>
             </div>
-            <div className="ee-details-section">
-              <div className="ee-header-wrapper">
-                <div className="ee-header-text">
-                  <h2>{eyeglass.name}</h2>
-                </div>
-                <div className="edit-eyeglass-button" id="top-edit">
-                  <input
-                    type="button"
-                    value="EDIT"
-                    className="submit-button"
-                    onClick={() =>
-                      navigate(`/dashboard/editeyeglasses/${eyeglass._id}`)
-                    }
+
+            <div className="card-body">
+              <div className="image-section">
+                <div className="main-image-container">
+                  <img
+                    className="main-product-image"
+                    src={mainImage}
+                    alt={eyeglass.name}
                   />
+                  {/* <div className="image-overlay">
+                    <div className="rating">
+                      <Star size={16} fill="currentColor" />
+                      <span>4.8</span>
+                    </div>
+                  </div> */}
                 </div>
-              </div>
-              <div className="ee-details-body-text">
-                <p>{eyeglass.description}</p>
-              </div>
-              <div className="ee-details-color-selection">
-                <div className="color-text">
-                  <p>color: {colorOptions[selectedColor]?.name || "N/A"}</p>
-                </div>
-                <div className="color-indicators">
-                  {colorOptions.map((opt, idx) => (
+
+                <div className="thumbnail-gallery">
+                  {allImages.slice(0, 4).map((img, idx) => (
                     <div
-                      className="colorcircle-border"
                       key={idx}
-                      onClick={() => setSelectedColor(idx)}
-                      style={{
-                        border:
-                          selectedColor === idx ? "2px solid #333" : undefined,
-                      }}
+                      className={`thumbnail-item ${
+                        selectedImageIndex === idx ? "active" : ""
+                      }`}
+                      onClick={() => setSelectedImageIndex(idx)}
                     >
-                      <div
-                        className="colorcircle"
-                        style={{
-                          background: (opt.colors && opt.colors[0]) || "#ccc",
-                        }}
-                      />
+                      <img src={img} alt={`View ${idx + 1}`} />
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="blackline" />
-              <div className="customer-section">
-                <div className="price-section">
-                  <p>₱{eyeglass.price?.toLocaleString() || "0.00"} PHP</p>
+
+              <div className="details-section">
+                <div className="product-header">
+                  <h1 className="product-name">{eyeglass.name}</h1>
+                  <div className="product-badge">Premium</div>
                 </div>
-                <div className="lens-type-section">
-                  <div className="required-text-container">
-                    <p>SELECT LENS TYPE</p>
-                    <p id="red">&nbsp;*</p>
-                  </div>
-                </div>
-                <div className="ee-dropdown-section">
-                  <div className="dropdown-container">
-                    <form>
-                      <select
-                        name="lens"
-                        id="dropdown"
-                        value={selectedLens}
-                        onChange={(e) =>
-                          setSelectedLens(Number(e.target.value))
-                        }
+
+                <p className="product-description">{eyeglass.description}</p>
+
+                <div className="color-selection">
+                  <h3 className="selection-title">Available Colors</h3>
+                  <div className="color-options">
+                    {colorOptions.map((opt, idx) => (
+                      <div
+                        key={idx}
+                        className={`color-option ${
+                          selectedColor === idx ? "selected" : ""
+                        }`}
+                        onClick={() => setSelectedColor(idx)}
+                        title={opt.name}
                       >
-                        {lensOptions.map((opt, idx) => (
-                          <option key={idx} value={idx}>
-                            {opt.label} {opt.price ? `(₱${opt.price})` : ""}
-                          </option>
-                        ))}
-                      </select>
-                    </form>
+                        <div
+                          className="color-swatch"
+                          style={{
+                            background: (opt.colors && opt.colors[0]) || "#ccc",
+                          }}
+                        />
+                        <span className="color-name">{opt.name}</span>
+                      </div>
+                    ))}
                   </div>
+                </div>
+
+                <div className="lens-selection">
+                  <h3 className="selection-title">
+                    Lens Options <span className="required">*</span>
+                  </h3>
+                  <div className="lens-dropdown">
+                    <select
+                      value={selectedLens}
+                      onChange={(e) => setSelectedLens(Number(e.target.value))}
+                      className="modern-select"
+                    >
+                      {lensOptions.map((opt, idx) => (
+                        <option key={idx} value={idx}>
+                          {opt.label} {opt.price ? `(₱${opt.price})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="price-section">
+                  <div className="price-container">
+                    <span className="currency">₱</span>
+                    <span className="price">
+                      {eyeglass.price?.toLocaleString() || "0.00"}
+                    </span>
+                    <span className="price-label">PHP</span>
+                  </div>
+                  <div className="price-subtitle">Inclusive of all taxes</div>
+                </div>
+
+                <div className="action-buttons">
+                  <button className="btn-primary">Add to Cart</button>
+                  <button className="btn-secondary">Buy Now</button>
                 </div>
               </div>
             </div>

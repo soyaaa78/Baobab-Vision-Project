@@ -1224,7 +1224,10 @@ const AddEyeglassPage = () => {
               {/* Color Options Section */}
               <div className="aef-section aef-color-sect">
                 <div className="section-details">
-                  <div className="section-header">
+                  <div
+                    className="section-header"
+                    style={{ marginBottom: "15px" }}
+                  >
                     <h2>Color Options</h2>
                     <p
                       style={{
@@ -1431,7 +1434,7 @@ const AddEyeglassPage = () => {
                                 handleAddColorToOption(optionIndex)
                               }
                               style={{
-                                backgroundColor: "#4CAF50",
+                                backgroundColor: "#252525",
                                 color: "white",
                                 border: "none",
                                 borderRadius: "4px",
@@ -1451,7 +1454,7 @@ const AddEyeglassPage = () => {
                       type="button"
                       onClick={handleAddColorOption}
                       style={{
-                        backgroundColor: "#2196F3",
+                        backgroundColor: "# 252525",
                         color: "white",
                         border: "none",
                         borderRadius: "4px",

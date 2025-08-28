@@ -1,122 +1,122 @@
 .catalogue-content {
-    height: 100%;
+  height: 100%;
 }
 
 .catalogue-bulk {
-    height: 100%;
-    padding: 1.5% 15%;
-    display: flex;
-    flex-direction: column;
+  height: 100vh;
+  padding: 1.5% 15%;
+  display: flex;
+  flex-direction: column;
 }
 
 .topbar {
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .search {
-    background-color: #ffffff;
-    border: 2px solid #474747;
-    width: 100%;
-    max-width: 800px;
-    margin-bottom: 1.5%;
-    padding: 15px;
-    border-radius: 18px;
+  background-color: #ffffff;
+  border: 2px solid #474747;
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 1.5%;
+  padding: 15px;
+  border-radius: 18px;
 }
 
 .options {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .options-cta {
-    display: flex;
+  display: flex;
 }
 
 .options-sorting {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .options-action-buttons {
-    padding: 0;
-    min-width: 100px;
-    min-height: 40px;
-    margin: 0 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: 0.15s ease-in-out;
+  padding: 0;
+  min-width: 100px;
+  min-height: 40px;
+  margin: 0 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.15s ease-in-out;
 }
 
 .active-delete-button {
-    background-color: #6e0d21;
-    color: white;
+  background-color: #6e0d21;
+  color: white;
 }
 
 .options-sort-buttons {
-    margin: 0 5px;
-    padding: 10px 20px;
-    background-color: white;
-    border: 1px solid #888888;
-    color: #252525;
-    /* font color lol */
-    transition: 0.15s linear;
+  margin: 0 5px;
+  padding: 10px 20px;
+  background-color: white;
+  border: 1px solid #888888;
+  color: #252525;
+  /* font color lol */
+  transition: 0.15s linear;
 }
 
 .options-sort-buttons:hover {
-    color: white;
-    background-color: #bd9c80;
+  color: white;
+  background-color: #bd9c80;
 }
 
 .selections {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    background-color: #F5DDB3;
-    border-radius: 18px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  background-color: #f5ddb3;
+  border-radius: 18px;
 }
 
 .selections-grid {
-    width: 100%;
-    margin: 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    flex-direction: row;
-    place-items: center;
+  width: 100%;
+  margin: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  flex-direction: row;
+  place-items: center;
 }
 
 .eyeglass-listing.eyeglass-listing--catalogue {
-    width: 300px;
-    height: 340px;
-    /* make responsive */
-    background-color: transparent;
+  width: 300px;
+  height: 340px;
+  /* make responsive */
+  background-color: transparent;
 }
 
 .eyeglass-listing.eyeglass-listing--catalogue #eyeglass-img {
-    width: 260px;
-    height: 260px;
+  width: 260px;
+  height: 260px;
 }
 
 @media (max-width: 800px) {
-    .options-sorting {
-        display: block;
-    }
+  .options-sorting {
+    display: block;
+  }
 
-    .options-sort-buttons {
-        margin-left: 0;
-    }
+  .options-sort-buttons {
+    margin-left: 0;
+  }
 }
 
 @media (max-width: 500px) {
-    .options-cta {
-        display: block;
-    }
+  .options-cta {
+    display: block;
+  }
 
-    .options-action-buttons {
-        margin: 5px 10px;
-    }
+  .options-action-buttons {
+    margin: 5px 10px;
+  }
 }

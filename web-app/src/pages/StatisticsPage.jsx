@@ -75,9 +75,10 @@ function StatisticsPage() {
   }, [SERVER_URL]);
 
   return (
-    <>
-      <div className="page" id="statistics">
-        <div className="statistics-content">
+    <div className="page" id="statistics">
+      <div className="statistics-layout">
+        {/* Main Content */}
+        <div className="statistics-main">
           <div className="statistics-bulk">
             <div className="piesect">
               <div className="chart-wrapper" id="stat-piechart">
@@ -100,75 +101,73 @@ function StatisticsPage() {
                 </p>
               </div>
             </div>
-            <div className="viewsect">
-              <div className="stat-content" id="view">
-                <div className="stat-card">
-                  <div className="stat-card-content">
-                    <div className="content-text">
-                      <p className="card-header">Most Visited Eyewear</p>
-                      <p>{mostVisitedEyewear.name}</p>
-                      <p>Views: {mostVisitedEyewear.views.toLocaleString()}</p>
-                      <p>Category: {mostVisitedEyewear.category}</p>
-                      <p>Price: ₱{mostVisitedEyewear.price}</p>
-                    </div>
-
-                    <div className="content-pic">
-                      <img
-                        src={mostVisitedEyewear.imageUrl}
-                        alt={mostVisitedEyewear.name}
-                      />
-                    </div>
-                  </div>{" "}
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card-content">
-                    <div className="content-text">
-                      <p className="card-header">Most Bought Product</p>
-                      {loading ? (
-                        <p>Loading...</p>
-                      ) : error ? (
-                        <p>Failed to load</p>
-                      ) : mostBoughtProduct ? (
-                        <>
-                          <p>{mostBoughtProduct.name}</p>
-                          <p>Sales: {mostBoughtProduct.sales}</p>
-                          <p>Price: ₱{mostBoughtProduct.price}</p>
-                        </>
-                      ) : (
-                        <p>No data available</p>
-                      )}
-                    </div>
-                    <div className="content-pic">
-                      <img
-                        src={mostBoughtProduct?.imageUrls?.[0] || placeholder}
-                        alt={mostBoughtProduct?.name || "Product"}
-                      />
-                    </div>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-card-content">
-                    <div className="content-text">
-                      <p className="card-header">Top Rated This Month</p>
-                      <p>{topRatedEyewear.name}</p>
-                      <p>Rating: {topRatedEyewear.rating}/5.0 ⭐</p>
-                      <p>Reviews: {topRatedEyewear.reviews.toLocaleString()}</p>
-                      <p>Price: ₱{topRatedEyewear.price}</p>
-                    </div>
-                    <div className="content-pic">
-                      <img
-                        src={topRatedEyewear.imageUrl}
-                        alt={topRatedEyewear.name}
-                      />
-                    </div>
-                  </div>
-                </div>
+          </div>
+        </div>
+        {/* Sidebar */}
+        <div className="statistics-sidebar">
+          <div className="stat-card">
+            <div className="stat-card-content">
+              <div className="content-text">
+                <p className="card-header">Most Visited Eyewear</p>
+                <p>{mostVisitedEyewear.name}</p>
+                <p>Views: {mostVisitedEyewear.views.toLocaleString()}</p>
+                <p>Category: {mostVisitedEyewear.category}</p>
+                <p>Price: ₱{mostVisitedEyewear.price}</p>
+              </div>
+              <div className="content-pic">
+                <img
+                  src={mostVisitedEyewear.imageUrl}
+                  alt={mostVisitedEyewear.name}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-card-content">
+              <div className="content-text">
+                <p className="card-header">Most Bought Product</p>
+                {loading ? (
+                  <p>Loading...</p>
+                ) : error ? (
+                  <p>Failed to load</p>
+                ) : mostBoughtProduct ? (
+                  <>
+                    <p>{mostBoughtProduct.name}</p>
+                    <p>Sales: {mostBoughtProduct.sales}</p>
+                    <p>Price: ₱{mostBoughtProduct.price}</p>
+                  </>
+                ) : (
+                  <p>No data available</p>
+                )}
+              </div>
+              <div className="content-pic">
+                <img
+                  src={mostBoughtProduct?.imageUrls?.[0] || placeholder}
+                  alt={mostBoughtProduct?.name || "Product"}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="stat-card">
+            <div className="stat-card-content">
+              <div className="content-text">
+                <p className="card-header">Top Rated This Month</p>
+                <p>{topRatedEyewear.name}</p>
+                <p>Rating: {topRatedEyewear.rating}/5.0 ⭐</p>
+                <p>Reviews: {topRatedEyewear.reviews.toLocaleString()}</p>
+                <p>Price: ₱{topRatedEyewear.price}</p>
+              </div>
+              <div className="content-pic">
+                <img
+                  src={topRatedEyewear.imageUrl}
+                  alt={topRatedEyewear.name}
+                />
               </div>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
