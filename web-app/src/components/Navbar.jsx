@@ -52,7 +52,7 @@ function Navbar() {
               </li>
               <li>
                 <Link to="allorders" className="nav-button">
-                  All Orders
+                  Manage Orders
                 </Link>
               </li>
             </>

@@ -5,6 +5,24 @@ const catchAsync = require("../utils/catchAsync");
 const UserCart = require("../models/UserCart");
 const mongoose = require("mongoose");
 const ProofOfPayment = require("../models/Order/ProofOfPayment");
+const crypto = require("crypto");
+
+// Generate a user-friendly, unique orderId (e.g., ORD-20250829-3F9A2C)
+const generateOrderId = async () => {
+  const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
+  const now = new Date();
+  const yyyymmdd = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(
+    now.getDate()
+  )}`;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const rand = crypto.randomBytes(3).toString("hex").toUpperCase();
+    const candidate = `BV-${yyyymmdd}-${rand}`;
+    const exists = await Order.exists({ orderId: candidate });
+    if (!exists) return candidate;
+  }
+  throw new Error("Failed to generate a unique orderId after several attempts");
+};
 
 // Get Order by id or customer
 const order_get = catchAsync(async (req, res, next) => {
@@ -82,6 +100,14 @@ const order_post = catchAsync(async (req, res, next) => {
     return next(new AppError("Cannot create order, missing fields.", 400));
   const date = Date.now();
 
+  // Generate friendly orderId
+  let orderId;
+  try {
+    orderId = await generateOrderId();
+  } catch (e) {
+    return next(new AppError("Could not generate order id", 500));
+  }
+
   let totalAmount = 0;
   if (Array.isArray(products)) {
     totalAmount = products.reduce((sum, item) => {
@@ -106,6 +132,7 @@ const order_post = catchAsync(async (req, res, next) => {
   }
 
   const newOrder = new Order({
+    orderId,
     customer,
     products,
     date,
@@ -303,7 +330,16 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
   }
 
   // 4. Create order
+  // Generate friendly orderId
+  let orderId;
+  try {
+    orderId = await generateOrderId();
+  } catch (e) {
+    return next(new AppError("Could not generate order id", 500));
+  }
+
   const newOrder = new Order({
+    orderId,
     customer: userId,
     products,
     date: new Date(),

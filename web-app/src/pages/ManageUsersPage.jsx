@@ -542,7 +542,8 @@ const ManageUsersPage = () => {
                                   className="order-row"
                                 >
                                   <td className="order-id">
-                                    {order._id.slice(-8)}...
+                                    {order.orderId ||
+                                      `${order._id.slice(-8)}...`}
                                   </td>
                                   <td>{orderDate}</td>
                                   <td>{customerName}</td>
