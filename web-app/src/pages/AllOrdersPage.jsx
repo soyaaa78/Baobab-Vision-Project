@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import ToastContainer from "../components/ToastContainer";
+import { showToast } from "../services/toastService";
 import Button from "../components/Button";
 import ProofOfPaymentModal from "../components/ProofOfPaymentModal";
 import CancellationModal from "../components/CancellationModal";
@@ -27,6 +29,28 @@ const AllOrdersPage = () => {
   const [selectedCancellationOrder, setSelectedCancellationOrder] =
     useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  // Helpers
+  const getOrderLabel = (order) =>
+    order?.orderId || `Order ${order?._id?.slice(-8)}`;
+  const statusLabel = (s) => {
+    switch (s) {
+      case "pending":
+        return "pending";
+      case "processing":
+        return "processing";
+      case "ready_to_pickup":
+        return "ready to pick up";
+      case "completed":
+        return "completed";
+      case "cancelled":
+        return "cancelled";
+      case "cancelled_pending":
+        return "cancellation pending";
+      default:
+        return s;
+    }
+  };
 
   useEffect(() => {
     const t = Cookies.get("token");
@@ -72,13 +96,30 @@ const AllOrdersPage = () => {
       });
       const orders = response.data.order || response.data;
       setOrderList(Array.isArray(orders) ? orders : [orders]);
+      const ord = (Array.isArray(orders) ? orders : [orders]).find(
+        (o) => o._id === orderId
+      );
+      showToast({
+        type: "success",
+        message: `${getOrderLabel(ord)} has been marked as ${statusLabel(
+          newStatus
+        )}.`,
+      });
     } catch (error) {
       console.error("Error updating order status:", error);
+      showToast({
+        type: "error",
+        message: "Failed to update the order status. Please try again.",
+      });
     }
   };
 
   const deleteOrder = async (orderId) => {
     try {
+      // capture label before deletion
+      const current = orderList.find((o) => o._id === orderId);
+      const label = getOrderLabel(current);
+
       await axios.delete(`${SERVER_URL}/api/orders?id=${orderId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -92,8 +133,13 @@ const AllOrdersPage = () => {
       const orders = response.data.order || response.data;
       setOrderList(Array.isArray(orders) ? orders : [orders]);
       setAlertModal(false);
+      showToast({ type: "success", message: `${label} has been deleted.` });
     } catch (error) {
       console.error("Error deleting order:", error);
+      showToast({
+        type: "error",
+        message: "Failed to delete the order. Please try again.",
+      });
     }
   };
 
@@ -133,6 +179,7 @@ const AllOrdersPage = () => {
 
   return (
     <div className="page" id="allorders">
+      <ToastContainer />
       <div className="allorders-header">
         <h1>All Orders</h1>
         <p>Manage and track all customer orders</p>
