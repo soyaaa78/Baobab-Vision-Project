@@ -394,20 +394,6 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           ],
 
           const SizedBox(height: 8),
-
-          // Like & Dislike
-          Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.thumb_up_alt_outlined, size: 20),
-                onPressed: () {},
-              ),
-              IconButton(
-                icon: const Icon(Icons.thumb_down_alt_outlined, size: 20),
-                onPressed: () {},
-              ),
-            ],
-          ),
         ],
       ),
     );
