@@ -65,6 +65,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
             'stars': (r['rating'] as num?)?.toInt() ?? 0,
             'reviewText': r['comment'] ?? '',
             'photos': List<String>.from(r['pictures'] ?? []),
+            'adminResponse': r['adminResponse'] as String?,
+            'respondedAt': r['respondedAt'] as String?,
           };
         }).toList();
         final stats = (body['stats'] as Map<String, dynamic>?);
@@ -198,6 +200,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                   stars: review["stars"],
                   reviewText: review["reviewText"],
                   photos: List<String>.from(review["photos"]),
+                  adminResponse: review["adminResponse"],
+                  respondedAt: review["respondedAt"],
                 ),
               ),
             ),
@@ -264,6 +268,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     required int stars,
     required String reviewText,
     required List<String> photos,
+    String? adminResponse,
+    String? respondedAt,
   }) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -339,6 +345,54 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               ),
             ),
 
+          // Admin response (if any)
+          if (adminResponse != null && adminResponse.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.admin_panel_settings,
+                        size: 16,
+                        color: Colors.blue[600] ?? Colors.blue,
+                      ),
+                      const SizedBox(width: 6),
+                      CustomText(
+                        text: "Admin Response",
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.blue[600] ?? Colors.blue,
+                      ),
+                      if (respondedAt != null) ...[
+                        const SizedBox(width: 8),
+                        CustomText(
+                          text: "• ${_formatDate(respondedAt)}",
+                          fontSize: 12,
+                          color: Colors.blue[500] ?? Colors.blue,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  CustomText(
+                    text: adminResponse,
+                    fontSize: 14,
+                    color: Colors.grey[800] ?? Colors.grey,
+                  ),
+                ],
+              ),
+            ),
+          ],
+
           const SizedBox(height: 8),
 
           // Like & Dislike
@@ -378,5 +432,27 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         ),
       ),
     );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      final now = DateTime.now();
+      final difference = now.difference(date);
+
+      if (difference.inDays > 7) {
+        return "${date.day}/${date.month}/${date.year}";
+      } else if (difference.inDays > 0) {
+        return "${difference.inDays}d ago";
+      } else if (difference.inHours > 0) {
+        return "${difference.inHours}h ago";
+      } else if (difference.inMinutes > 0) {
+        return "${difference.inMinutes}m ago";
+      } else {
+        return "Just now";
+      }
+    } catch (e) {
+      return dateString;
+    }
   }
 }

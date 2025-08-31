@@ -12,6 +12,7 @@ class CancelledOrderCard extends StatelessWidget {
   final String deliveryMethod;
   final String paymentMethod;
   final String cancellationStatus; // e.g., Pending, Approved, Rejected
+  final String cancellationReason; // Reason for cancellation
 
   const CancelledOrderCard({
     super.key,
@@ -25,6 +26,7 @@ class CancelledOrderCard extends StatelessWidget {
     required this.deliveryMethod,
     required this.paymentMethod,
     required this.cancellationStatus,
+    this.cancellationReason = '',
   });
 
   @override
@@ -155,6 +157,40 @@ class CancelledOrderCard extends StatelessWidget {
                       ),
                     ],
                   ),
+
+                  // Cancellation Reason (if available)
+                  if (cancellationReason.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Cancellation Reason:",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[700],
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            cancellationReason,
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
