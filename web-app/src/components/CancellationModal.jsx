@@ -4,6 +4,7 @@ import {
   faXmark,
   faCommentDots,
   faBoxOpen,
+  faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 
 const CancellationModal = ({ isOpen, onClose, order, onUpdateStatus }) => {
@@ -160,11 +161,24 @@ const CancellationModal = ({ isOpen, onClose, order, onUpdateStatus }) => {
                   icon={faCommentDots}
                   className="section-leading-icon"
                 />
-                Cancellation Reason
+                {order.declineReason
+                  ? "Payment Decline Reason"
+                  : "Cancellation Reason"}
               </h3>
             </div>
             <div className="reason-content">
-              {order.cancellationReason ? (
+              {order.declineReason ? (
+                <>
+                  <div className="admin-decline-badge">
+                    <FontAwesomeIcon
+                      icon={faShieldAlt}
+                      className="admin-icon"
+                    />
+                    Admin Payment Decline
+                  </div>
+                  <p className="reason-text">{order.declineReason}</p>
+                </>
+              ) : order.cancellationReason ? (
                 <p className="reason-text">{order.cancellationReason}</p>
               ) : (
                 <p className="no-reason">No reason provided</p>

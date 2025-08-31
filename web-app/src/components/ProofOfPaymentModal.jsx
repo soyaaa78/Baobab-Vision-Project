@@ -64,7 +64,7 @@ const ProofOfPaymentModal = ({
     setIsProcessing(true);
     try {
       await onUpdateStatus(order._id, "cancelled", {
-        cancellationReason: declineReason.trim(),
+        declineReason: declineReason.trim(),
       });
       handleClose();
     } catch (error) {

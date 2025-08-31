@@ -100,8 +100,9 @@ const AllOrdersPage = () => {
         (o) => o._id === orderId
       );
       const reasonSuffix =
-        newStatus === "cancelled" && extra?.cancellationReason
-          ? ` Reason: ${extra.cancellationReason}`
+        newStatus === "cancelled" &&
+        (extra?.cancellationReason || extra?.declineReason)
+          ? ` Reason: ${extra.cancellationReason || extra.declineReason}`
           : "";
       showToast({
         type: "success",

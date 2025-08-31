@@ -94,6 +94,7 @@ const order_post = catchAsync(async (req, res, next) => {
     proofOfPayment,
     rating,
     cancellationReason,
+    declineReason,
   } = req.body;
 
   if (!customer || !products)
@@ -147,6 +148,7 @@ const order_post = catchAsync(async (req, res, next) => {
     ...(proofOfPayment ? { proofOfPayment } : {}),
     ...(rating ? { rating } : {}),
     ...(cancellationReason ? { cancellationReason } : {}),
+    ...(declineReason ? { declineReason } : {}),
   });
   await newOrder.save();
 
@@ -185,6 +187,7 @@ const order_put = catchAsync(async (req, res, next) => {
     proofOfPayment,
     rating,
     cancellationReason,
+    declineReason,
   } = req.body;
 
   if (!id) return next(new AppError("Order identifier not found", 400));
@@ -204,7 +207,8 @@ const order_put = catchAsync(async (req, res, next) => {
     !thirdPartyDelivery &&
     !proofOfPayment &&
     !rating &&
-    typeof cancellationReason === "undefined"
+    typeof cancellationReason === "undefined" &&
+    typeof declineReason === "undefined"
   )
     return next(new AppError("No data to update", 400));
 
@@ -231,6 +235,8 @@ const order_put = catchAsync(async (req, res, next) => {
   if (typeof rating !== "undefined") updates.rating = rating;
   if (typeof cancellationReason !== "undefined")
     updates.cancellationReason = cancellationReason;
+  if (typeof declineReason !== "undefined")
+    updates.declineReason = declineReason;
 
   const updatedOrder = await Order.findByIdAndUpdate(id, updates, {
     new: true,

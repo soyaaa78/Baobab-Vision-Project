@@ -97,6 +97,14 @@ class _CancelledOrdersScreenState extends State<CancelledOrdersScreen> {
             : int.tryParse(product['quantity']?.toString() ?? '') ?? 1;
         final prodPrice = product['price']?.toString() ?? '';
 
+        // Handle both user cancellation and admin decline reasons
+        final userCancellation = order['cancellationReason']?.toString() ?? '';
+        final adminDecline = order['declineReason']?.toString() ?? '';
+        final reasonText =
+            adminDecline.isNotEmpty ? adminDecline : userCancellation;
+        final reasonType =
+            adminDecline.isNotEmpty ? 'Admin Declined' : 'User Cancelled';
+
         return {
           'productId': productIdForCard,
           'prodName': prodName,
@@ -108,6 +116,8 @@ class _CancelledOrdersScreenState extends State<CancelledOrdersScreen> {
           'deliveryMethod': order['deliveryMethod']?.toString() ?? '',
           'paymentMethod': order['paymentMethod']?.toString() ?? '',
           'cancellationStatus': cancellationStatus,
+          'cancellationReason': reasonText,
+          'reasonType': reasonType,
         };
       });
     }).toList();
@@ -161,6 +171,9 @@ class _CancelledOrdersScreenState extends State<CancelledOrdersScreen> {
                 paymentMethod: order['paymentMethod']?.toString() ?? '',
                 cancellationStatus:
                     order['cancellationStatus']?.toString() ?? '',
+                cancellationReason:
+                    order['cancellationReason']?.toString() ?? '',
+                reasonType: order['reasonType']?.toString() ?? '',
               );
             },
           );

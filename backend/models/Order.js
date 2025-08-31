@@ -74,6 +74,10 @@ const orderSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    declineReason: {
+      type: String,
+      trim: true,
+    },
     address: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Address",

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../constants.dart';
 
 class CancelledOrderCard extends StatelessWidget {
   final String productId;
@@ -13,6 +12,8 @@ class CancelledOrderCard extends StatelessWidget {
   final String paymentMethod;
   final String cancellationStatus; // e.g., Pending, Approved, Rejected
   final String cancellationReason; // Reason for cancellation
+  final String
+      reasonType; // Type of reason: 'Admin Declined' or 'User Cancelled'
 
   const CancelledOrderCard({
     super.key,
@@ -27,6 +28,7 @@ class CancelledOrderCard extends StatelessWidget {
     required this.paymentMethod,
     required this.cancellationStatus,
     this.cancellationReason = '',
+    this.reasonType = '',
   });
 
   @override
@@ -164,20 +166,43 @@ class CancelledOrderCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                        color: reasonType == 'Admin Declined'
+                            ? Colors.red[50]
+                            : Colors.grey[100],
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.grey[300]!),
+                        border: Border.all(
+                            color: reasonType == 'Admin Declined'
+                                ? Colors.red[200]!
+                                : Colors.grey[300]!),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            "Cancellation Reason:",
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[700],
-                              fontSize: 12,
-                            ),
+                          Row(
+                            children: [
+                              Icon(
+                                reasonType == 'Admin Declined'
+                                    ? Icons.admin_panel_settings
+                                    : Icons.person,
+                                size: 14,
+                                color: reasonType == 'Admin Declined'
+                                    ? Colors.red[600]
+                                    : Colors.grey[600],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                reasonType == 'Admin Declined'
+                                    ? "Payment Declined by Admin:"
+                                    : "Cancellation Reason:",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: reasonType == 'Admin Declined'
+                                      ? Colors.red[700]
+                                      : Colors.grey[700],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           Text(
