@@ -12,6 +12,9 @@ const ProofOfPaymentModal = ({
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showDeclineForm, setShowDeclineForm] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [reasonError, setReasonError] = useState("");
 
   const handleImageLoad = () => {
     setImageLoading(false);
@@ -25,6 +28,9 @@ const ProofOfPaymentModal = ({
   const handleClose = () => {
     setImageLoading(true);
     setImageError(false);
+    setShowDeclineForm(false);
+    setDeclineReason("");
+    setReasonError("");
     onClose();
   };
 
@@ -42,15 +48,27 @@ const ProofOfPaymentModal = ({
     }
   };
 
-  const handleDeclinePayment = async () => {
+  const handleDeclinePayment = () => {
+    // Show decline reason form instead of immediately cancelling
+    setShowDeclineForm(true);
+  };
+
+  const handleSubmitCancellation = async () => {
     if (!order || isProcessing) return;
+    if (!declineReason.trim()) {
+      setReasonError("Please provide a reason for declining the payment.");
+      return;
+    }
+    setReasonError("");
 
     setIsProcessing(true);
     try {
-      await onUpdateStatus(order._id, "cancelled");
+      await onUpdateStatus(order._id, "cancelled", {
+        cancellationReason: declineReason.trim(),
+      });
       handleClose();
     } catch (error) {
-      console.error("Error declining payment:", error);
+      console.error("Error submitting cancellation:", error);
     } finally {
       setIsProcessing(false);
     }
@@ -130,22 +148,97 @@ const ProofOfPaymentModal = ({
               <h3>Payment Verification</h3>
               <p>Review the payment proof and take action</p>
             </div>
-            <div className="action-buttons-group">
-              <button
-                className="accept-payment-btn"
-                onClick={handleAcceptPayment}
-                disabled={isProcessing}
-              >
-                {isProcessing ? "Processing..." : "Accept Payment"}
-              </button>
-              <button
-                className="decline-payment-btn"
-                onClick={handleDeclinePayment}
-                disabled={isProcessing}
-              >
-                {isProcessing ? "Processing..." : "Decline Payment"}
-              </button>
-            </div>
+            {!showDeclineForm ? (
+              <div className="action-buttons-group">
+                <button
+                  className="accept-payment-btn"
+                  onClick={handleAcceptPayment}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? "Processing..." : "Accept Payment"}
+                </button>
+                <button
+                  className="decline-payment-btn"
+                  onClick={handleDeclinePayment}
+                  disabled={isProcessing}
+                >
+                  Decline Payment
+                </button>
+              </div>
+            ) : (
+              <div className="decline-form">
+                <div className="decline-form-header">
+                  <h4>Decline Payment</h4>
+                  <p>
+                    Please provide a clear reason for declining this payment.
+                    This will be visible to the customer.
+                  </p>
+                </div>
+                <div className="form-field">
+                  <label htmlFor="decline-reason" className="form-label">
+                    Reason for Declining Payment{" "}
+                    <span className="required">*</span>
+                  </label>
+                  <textarea
+                    id="decline-reason"
+                    className={`form-textarea ${reasonError ? "error" : ""}`}
+                    placeholder="e.g., Payment amount doesn't match, invalid receipt, suspicious transaction..."
+                    value={declineReason}
+                    onChange={(e) => setDeclineReason(e.target.value)}
+                    rows={4}
+                    maxLength={500}
+                  />
+                  <div className="form-helper">
+                    <span
+                      className={`char-count ${
+                        declineReason.length > 450 ? "warning" : ""
+                      }`}
+                    >
+                      {declineReason.length}/500
+                    </span>
+                  </div>
+                  {reasonError && (
+                    <div className="form-error" role="alert">
+                      <span className="error-icon">⚠️</span>
+                      {reasonError}
+                    </div>
+                  )}
+                </div>
+                <div className="decline-form-actions">
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setShowDeclineForm(false);
+                      setDeclineReason("");
+                      setReasonError("");
+                    }}
+                    disabled={isProcessing}
+                    type="button"
+                  >
+                    <span className="btn-icon">←</span>
+                    Back
+                  </button>
+                  <button
+                    className="btn btn-danger"
+                    onClick={handleSubmitCancellation}
+                    disabled={isProcessing || !declineReason.trim()}
+                    type="button"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <span className="btn-spinner"></span>
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <span className="btn-icon">✕</span>
+                        Submit Cancellation
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

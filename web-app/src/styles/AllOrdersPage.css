@@ -977,40 +977,329 @@
   transform: translateY(-1px);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .proof-payment-modal-container {
-    padding: 0.5rem;
-  }
+/* Payment Action Section Styles */
+.payment-action-section {
+  flex-shrink: 0;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  padding: 2rem;
+  order: 3;
+}
 
-  .proof-payment-modal-content {
-    height: 95vh;
-    max-height: none;
-    border-radius: 12px;
-  }
+.action-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
 
-  .proof-payment-modal-header {
-    padding: 1.5rem;
-  }
+.action-header h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+}
 
-  .header-content h2 {
-    font-size: 1.5rem;
-  }
+.action-header p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
 
-  .proof-payment-modal-body {
-    padding: 1.5rem;
-    gap: 1.5rem;
-  }
+.action-buttons-group {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
 
-  .detail-item {
+.accept-payment-btn,
+.decline-payment-btn {
+  flex: 1;
+  min-width: 160px;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.accept-payment-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+}
+
+.accept-payment-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px 0 rgba(16, 185, 129, 0.6);
+}
+
+.decline-payment-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+}
+
+.decline-payment-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px 0 rgba(239, 68, 68, 0.6);
+}
+
+.accept-payment-btn:disabled,
+.decline-payment-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Enhanced Decline Form Styles */
+.decline-form {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 1rem;
+  animation: slideInDown 0.3s ease-out;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.decline-form-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.decline-form-header h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.decline-form-header h4::before {
+  content: "⚠️";
+  font-size: 1.25rem;
+}
+
+.decline-form-header p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.form-field {
+  margin-bottom: 1.5rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.form-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-textarea.error {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.form-textarea.error:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.form-textarea::placeholder {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.form-helper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.char-count {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.char-count.warning {
+  color: #f59e0b;
+}
+
+.form-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.error-icon {
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+
+.decline-form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 140px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-secondary {
+  background: #f8fafc;
+  color: #374151;
+  border: 2px solid #e2e8f0;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px 0 rgba(239, 68, 68, 0.6);
+}
+
+.btn-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.btn-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design for Decline Form */
+@media (max-width: 640px) {
+  .decline-form-actions {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
   }
 
-  .detail-value {
-    text-align: left;
-    font-size: 0.875rem;
+  .btn {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .action-buttons-group {
+    flex-direction: column;
+  }
+
+  .accept-payment-btn,
+  .decline-payment-btn {
+    min-width: auto;
+    width: 100%;
   }
 }
 

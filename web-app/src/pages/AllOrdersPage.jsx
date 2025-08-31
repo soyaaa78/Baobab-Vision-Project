@@ -78,11 +78,11 @@ const AllOrdersPage = () => {
     fetchOrders();
   }, [SERVER_URL, token]);
 
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = async (orderId, newStatus, extra = {}) => {
     try {
       await axios.put(
         `${SERVER_URL}/api/orders?id=${orderId}`,
-        { status: newStatus },
+        { status: newStatus, ...extra },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -99,11 +99,15 @@ const AllOrdersPage = () => {
       const ord = (Array.isArray(orders) ? orders : [orders]).find(
         (o) => o._id === orderId
       );
+      const reasonSuffix =
+        newStatus === "cancelled" && extra?.cancellationReason
+          ? ` Reason: ${extra.cancellationReason}`
+          : "";
       showToast({
         type: "success",
         message: `${getOrderLabel(ord)} has been marked as ${statusLabel(
           newStatus
-        )}.`,
+        )}.${reasonSuffix}`,
       });
     } catch (error) {
       console.error("Error updating order status:", error);

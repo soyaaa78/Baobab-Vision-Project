@@ -38,7 +38,11 @@ const Toast = ({ toast, index, onClose }) => {
       role="status"
     >
       <span className="toast-message">{toast.message}</span>
-      <button className="toast-close" onClick={handleManualClose} aria-label="Close">
+      <button
+        className="toast-close"
+        onClick={handleManualClose}
+        aria-label="Close"
+      >
         ×
       </button>
     </div>
