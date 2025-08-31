@@ -15,6 +15,7 @@ import EditEyeglassPage from "../pages/eyeglass/EditEyeglassPage";
 import AddEyeglassPage from "../pages/eyeglass/AddEyeglassPage";
 import ManageUsersPage from "../pages/ManageUsersPage";
 import AllOrdersPage from "../pages/AllOrdersPage";
+import ManageReviewsPage from "../pages/ManageReviewsPage";
 import NotFoundPage from "../pages/NotFoundPage";
 
 // Wrapper to select homepage by role
@@ -85,6 +86,14 @@ function AppRoutes() {
           element={
             <RoleProtectedRoute blockRoles={["staff_product"]}>
               <AllOrdersPage />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="reviews"
+          element={
+            <RoleProtectedRoute blockRoles={["staff_product"]}>
+              <ManageReviewsPage />
             </RoleProtectedRoute>
           }
         />

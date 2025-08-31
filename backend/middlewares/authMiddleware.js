@@ -14,6 +14,10 @@ const authenticateUser = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback");
     // Add the user ID to the request object
     req.userId = decoded.id;
+    // If token contains a role (e.g., admin/staff token), expose it for downstream checks
+    if (decoded && decoded.role) {
+      req.user = decoded; // { id, role }
+    }
 
     // Continue to the next middleware or route handler
     next();

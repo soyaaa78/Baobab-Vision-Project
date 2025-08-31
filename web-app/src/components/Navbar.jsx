@@ -55,6 +55,11 @@ function Navbar() {
                   Manage Orders
                 </Link>
               </li>
+              <li>
+                <Link to="reviews" className="nav-button">
+                  Manage Reviews
+                </Link>
+              </li>
             </>
           )}
 
