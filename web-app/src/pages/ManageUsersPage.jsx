@@ -12,6 +12,7 @@ import {
 import { Check, Ban, Trash2 } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { showToast } from "../services/toastService";
 
 const ManageUsersPage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -252,7 +253,11 @@ const ManageUsersPage = () => {
       !addStaffForm.password ||
       !addStaffForm.role
     ) {
-      alert("Please fill in all fields");
+      showToast({
+        message: "Please fill in all fields",
+        type: "error",
+        duration: 3000,
+      });
       return;
     }
 
@@ -267,14 +272,36 @@ const ManageUsersPage = () => {
       });
       setStaffList(response.data);
 
+      // Reset form
+      setAddStaffForm({
+        firstname: "",
+        lastname: "",
+        username: "",
+        email: "",
+        password: "",
+        role: "staff_product",
+      });
+
       toggleModal();
-      alert("Staff member added successfully!");
+      showToast({
+        message: "Staff member added successfully!",
+        type: "success",
+        duration: 3000,
+      });
     } catch (error) {
       console.error("Add staff error:", error);
       if (error.response?.data?.message) {
-        alert(error.response.data.message);
+        showToast({
+          message: error.response.data.message,
+          type: "error",
+          duration: 4000,
+        });
       } else {
-        alert("Failed to add staff member");
+        showToast({
+          message: "Failed to add staff member",
+          type: "error",
+          duration: 4000,
+        });
       }
     }
   }; // Filter orders by selected status

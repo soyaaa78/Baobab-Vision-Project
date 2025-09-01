@@ -1221,6 +1221,55 @@ const AddEyeglassPage = () => {
                 </div>
               </div>
 
+              {/* Additional Product Fields Section */}
+              <div className="aef-section aef-additional-sect">
+                <div className="section-details">
+                  <div className="section-header">
+                    <h2>Additional Product Information</h2>
+                  </div>
+                  <div className="aef-additional-fields">
+                    <div className="additional-field-group">
+                      <label htmlFor="stock" className="field-label">
+                        Stock Quantity
+                      </label>
+                      <input
+                        type="number"
+                        id="stock"
+                        name="stock"
+                        min="0"
+                        placeholder="Enter stock quantity"
+                        value={form.stock}
+                        onChange={handleInputChange}
+                        className="stock-input"
+                      />
+                    </div>
+
+                    <div className="additional-field-group checkbox-group">
+                      <div className="checkbox-container">
+                        <input
+                          type="checkbox"
+                          id="recommendedFor"
+                          name="recommendedFor"
+                          checked={form.recommendedFor}
+                          onChange={handleInputChange}
+                          className="custom-checkbox"
+                        />
+                        <label
+                          htmlFor="recommendedFor"
+                          className="checkbox-label"
+                        >
+                          Recommended Product
+                        </label>
+                      </div>
+                      <p className="field-description">
+                        Mark this product as recommended to feature it
+                        prominently
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Color Options Section */}
               <div className="aef-section aef-color-sect">
                 <div className="section-details">
@@ -1450,80 +1499,12 @@ const AddEyeglassPage = () => {
                       </div>
                     ))}
 
-                    <button
-                      type="button"
+                    <Button
+                      className="add-color-option-btn"
                       onClick={handleAddColorOption}
-                      style={{
-                        backgroundColor: "# 252525",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        padding: "10px 15px",
-                        cursor: "pointer",
-                        fontSize: "0.9em",
-                        marginTop: "10px",
-                      }}
                     >
                       + Add Color Option
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Additional Product Fields Section */}
-              <div className="aef-section aef-additional-sect">
-                <div className="section-details">
-                  <div className="section-header">
-                    <h2>Additional Product Information</h2>
-                  </div>{" "}
-                  <div
-                    className="aef-sect-fields"
-                    style={{
-                      display: "flex",
-                      gap: "20px",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <div className="bsdf-input" style={{ flex: "1" }}>
-                      <label htmlFor="stock">Stock Quantity</label>
-                      <input
-                        type="number"
-                        id="stock"
-                        name="stock"
-                        min="0"
-                        placeholder="0"
-                        value={form.stock}
-                        onChange={handleInputChange}
-                        style={{
-                          width: "100%",
-                          padding: "8px",
-                          border: "1px solid #ccc",
-                          borderRadius: "4px",
-                          marginTop: "5px",
-                        }}
-                      />
-                    </div>
-
-                    <div
-                      className="bsdf-input"
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        marginTop: "20px",
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        id="recommendedFor"
-                        name="recommendedFor"
-                        checked={form.recommendedFor}
-                        onChange={handleInputChange}
-                      />
-                      <label htmlFor="recommendedFor">
-                        Recommended Product
-                      </label>
-                    </div>
+                    </Button>
                   </div>
                 </div>
               </div>

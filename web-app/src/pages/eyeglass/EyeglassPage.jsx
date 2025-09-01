@@ -261,11 +261,6 @@ const EyeglassPage = () => {
                   </div>
                   <div className="price-subtitle">Inclusive of all taxes</div>
                 </div>
-
-                <div className="action-buttons">
-                  <button className="btn-primary">Add to Cart</button>
-                  <button className="btn-secondary">Buy Now</button>
-                </div>
               </div>
             </div>
           </div>

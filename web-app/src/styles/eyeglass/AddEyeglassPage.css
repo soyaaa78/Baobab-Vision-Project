@@ -43,7 +43,9 @@ h6 {
   grid-template-areas:
     "basic"
     "image"
-    "category";
+    "category"
+    "additional"
+    "color";
 }
 
 .add-eyeglass-form p,
@@ -72,6 +74,14 @@ label {
 
 .aef-category-sect {
   grid-area: category;
+}
+
+.aef-additional-sect {
+  grid-area: additional;
+}
+
+.aef-color-sect {
+  grid-area: color;
 }
 
 .section-details {
@@ -284,11 +294,13 @@ label {
 
 @media (min-width: 800px) {
   .add-eyeglass-form {
-    grid-template-columns: repeat(auto-fit, minmax(45%, 1fr));
-    grid-template-rows: repeat(2, auto);
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto auto;
     grid-template-areas:
       "basic image"
-      "category category";
+      "category category"
+      "additional additional"
+      "color color";
   }
 
   .csdc-lens-categorization {
@@ -380,5 +392,111 @@ label[required]::after {
 @media (max-width: 768px) {
   .bsd-lower {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Add Color Option Button Styling */
+.add-color-option-btn {
+  margin-top: 15px;
+  padding: 12px 24px !important;
+  font-size: 14px !important;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.add-color-option-btn:hover {
+  background-color: #1a1a1a !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Additional Product Information Section */
+.aef-additional-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.additional-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field-label {
+  font-weight: 600;
+  color: #2a383d;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.stock-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: "Rubik", sans-serif;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.stock-input:focus {
+  outline: none;
+  border-color: #2a383d;
+  box-shadow: 0 0 0 3px rgba(42, 56, 61, 0.1);
+}
+
+.stock-input::placeholder {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.checkbox-group {
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 10px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.custom-checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: #2a383d;
+  cursor: pointer;
+}
+
+.checkbox-label {
+  font-weight: 500;
+  color: #2a383d;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 0;
+}
+
+.field-description {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+  font-style: italic;
+}
+
+/* Responsive design for additional fields */
+@media (max-width: 768px) {
+  .aef-additional-fields {
+    gap: 20px;
+    padding: 16px;
   }
 }
