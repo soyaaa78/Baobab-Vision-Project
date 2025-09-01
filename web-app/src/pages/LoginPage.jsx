@@ -118,7 +118,11 @@ function LoginPage() {
       <div className="login-left">
         <div className="gradient-overlay">
           <div className="logo-section">
-            <h1 className="logo-text">BAOBAB VISION</h1>
+            <img
+              src={baobablogo}
+              alt="Baobab Vision Logo"
+              className="logo-image"
+            />
             <p className="logo-description">
               Heya, bud. Ready to take on the world?
             </p>
