@@ -3,7 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import baobablogo from "../assets/bvfull.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faEye,
+  faEyeSlash,
+  faUser,
+  faLock,
+} from "@fortawesome/free-solid-svg-icons";
+import {
+  faFacebookF,
+  faTwitter,
+  faInstagram,
+  faLinkedinIn,
+} from "@fortawesome/free-brands-svg-icons";
 import "../styles/LoginPage.css";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -17,6 +28,7 @@ function LoginPage() {
   const [step, setStep] = useState("login");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { login, isAuthenticated, loading } = useAuth();
   const [passVisibility, setPassVisibility] = useState(true);
@@ -101,65 +113,60 @@ function LoginPage() {
   };
 
   return (
-    <>
-      <div className="page" id="login">
-        <div className="login-header">
-          <img src={baobablogo} className="logo" alt="Baobab Vision" />
-        </div>
-
-        <div className="main-body">
-          <div className="yellowbox-text mobile-only">
-            <h1>{step === "login" ? "Staff Login" : "Email Verification"}</h1>
-            <p>
-              {step === "login"
-                ? "Heya, bud. Ready to take on the world?"
-                : `OTP has been sent to ${email}.`}
+    <div className="login-container">
+      {/* Left Side - Gradient Background */}
+      <div className="login-left">
+        <div className="gradient-overlay">
+          <div className="logo-section">
+            <h1 className="logo-text">BAOBAB VISION</h1>
+            <p className="logo-description">
+              Heya, bud. Ready to take on the world?
             </p>
           </div>
+        </div>
+      </div>
 
-          <div className="yellowbox desktop-only">
-            <div className="yellowbox-text">
-              <h1>{step === "login" ? "Staff Login" : "Email Verification"}</h1>
-              <p>
-                {step === "login"
-                  ? "Heya, bud. Ready to take on the world?"
-                  : `OTP has been sent to ${email}.`}
-              </p>
-            </div>
-          </div>
+      {/* Right Side - Sign In Form */}
+      <div className="login-right">
+        <div className="form-container">
+          <h2 className="form-title">SIGN IN</h2>
 
           {step === "login" ? (
-            <form className="input-fields" onSubmit={handleLogin}>
-              <input
-                type="text"
-                id="uname"
-                name="username"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
-              <div className="password-wrapper">
+            <form onSubmit={handleLogin} className="login-form">
+              <div className="input-group">
+                <FontAwesomeIcon icon={faUser} className="input-icon" />
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  className="form-input"
+                />
+              </div>
+
+              <div className="input-group">
+                <FontAwesomeIcon icon={faLock} className="input-icon" />
                 <input
                   type={passVisibility ? "password" : "text"}
-                  id="pass"
-                  name="password"
                   placeholder="Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  className="form-input"
                 />
-                <div className="eye-icon" onClick={togglePasswordVisibility}>
+                <div
+                  className="password-toggle"
+                  onClick={togglePasswordVisibility}
+                >
                   <FontAwesomeIcon icon={passVisibility ? faEye : faEyeSlash} />
                 </div>
               </div>
-              <div className="submit-container">
-                <input
-                  type="submit"
-                  value="SIGN IN"
-                  className="submit-button"
-                />
-              </div>
+
+              <button type="submit" className="login-btn">
+                LOGIN
+              </button>
+
               {(error || success) && (
                 <div className="form-message-box">
                   {error && <p className="form-error">{error}</p>}
@@ -168,36 +175,30 @@ function LoginPage() {
               )}
             </form>
           ) : (
-            <form className="input-fields" onSubmit={handleVerify}>
-              <input
-                type="text"
-                id="otp"
-                name="otp"
-                placeholder="Enter 6-digit OTP"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                maxLength={6}
-                required
-              />
-              <div className="submit-container">
+            <form onSubmit={handleVerify} className="login-form">
+              <div className="input-group">
                 <input
-                  type="submit"
-                  value="VERIFY"
-                  className="submit-button"
-                  id="otp-verify"
+                  type="text"
+                  placeholder="Enter 6-digit OTP"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  maxLength={6}
+                  required
+                  className="form-input"
                 />
               </div>
-              <div className="submit-container">
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  className="submit-button"
-                  id="otp-resend"
-                  style={{ marginTop: "10px" }}
-                >
-                  Resend Verification Code
-                </button>
-              </div>
+
+              <button type="submit" className="login-btn">
+                VERIFY
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                className="resend-btn"
+              >
+                Resend Verification Code
+              </button>
 
               {(error || success) && (
                 <div className="form-message-box">
@@ -209,7 +210,7 @@ function LoginPage() {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
