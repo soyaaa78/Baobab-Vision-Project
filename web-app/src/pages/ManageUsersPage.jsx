@@ -347,33 +347,6 @@ const ManageUsersPage = () => {
                             <td>
                               <div className="td-action">
                                 <li
-                                  className={`action-li ${
-                                    user.isDisabled ? "enable" : "disable"
-                                  }`}
-                                  onClick={() => {
-                                    setSelectedUser(user._id);
-                                    setSelectedAction(
-                                      user.isDisabled ? "Enable" : "Disable"
-                                    );
-                                    setAlertModalContent(
-                                      user.isDisabled ? "Enable" : "Disable"
-                                    );
-                                    toggleAlertModal();
-                                  }}
-                                >
-                                  {user.isDisabled ? (
-                                    <>
-                                      <Check size={14} />
-                                      Enable
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Ban size={14} />
-                                      Disable
-                                    </>
-                                  )}
-                                </li>
-                                <li
                                   className="action-li delete"
                                   onClick={() => {
                                     setSelectedUser(user._id);
@@ -785,33 +758,6 @@ const ManageUsersPage = () => {
                           </td>
                           <td>
                             <div className="td-action">
-                              <li
-                                className={`action-li ${
-                                  staff.isDisabled ? "enable" : "disable"
-                                }`}
-                                onClick={() => {
-                                  setSelectedStaff(staff._id);
-                                  setSelectedStaffAction(
-                                    staff.isDisabled ? "Enable" : "Disable"
-                                  );
-                                  setAlertModalContent(
-                                    staff.isDisabled ? "Enable" : "Disable"
-                                  );
-                                  toggleAlertModal();
-                                }}
-                              >
-                                {staff.isDisabled ? (
-                                  <>
-                                    <Check size={14} />
-                                    Enable
-                                  </>
-                                ) : (
-                                  <>
-                                    <Ban size={14} />
-                                    Disable
-                                  </>
-                                )}
-                              </li>
                               <li
                                 className="action-li delete"
                                 onClick={() => {

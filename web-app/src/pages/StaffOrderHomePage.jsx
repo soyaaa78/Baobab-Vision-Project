@@ -328,16 +328,9 @@ const StaffOrderHomePage = () => {
                     </div>
                     <div className="user-email">{user.email}</div>
                     <div className="user-date">
-                      Joined {formatDate(user.createdAt)}
-                    </div>
-                  </div>
-                  <div className="user-status">
-                    <div
-                      className={`status-indicator ${
-                        user.isActive ? "active" : "inactive"
-                      }`}
-                    >
-                      {user.isActive ? "Active" : "Inactive"}
+                      {user.createdAt && !isNaN(new Date(user.createdAt))
+                        ? `Joined ${formatDate(user.createdAt)}`
+                        : ""}
                     </div>
                   </div>
                 </div>

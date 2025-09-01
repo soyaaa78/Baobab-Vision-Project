@@ -20,6 +20,24 @@ const EyeglassPage = () => {
     const t = Cookies.get("token");
     setToken(t);
   }, []);
+
+  // Log when color selection changes
+  useEffect(() => {
+    if (eyeglass && eyeglass.colorOptions) {
+      console.log("=== COLOR SELECTION CHANGED ===");
+      console.log("Selected color index:", selectedColor);
+      console.log(
+        "Selected color option:",
+        eyeglass.colorOptions[selectedColor]
+      );
+      console.log(
+        "New first image URL:",
+        eyeglass.colorOptions[selectedColor]?.imageUrl
+      );
+      console.log("================================");
+    }
+  }, [selectedColor, eyeglass]);
+
   React.useEffect(() => {
     const fetchEyeglass = async () => {
       try {
@@ -31,6 +49,7 @@ const EyeglassPage = () => {
             },
           }
         );
+        console.log("Eyeglass API response:", response.data);
         setEyeglass(response.data);
       } catch (error) {
         setEyeglass(null);
@@ -59,17 +78,58 @@ const EyeglassPage = () => {
     );
   }
 
-  const mainImage = eyeglass.imageUrls?.[selectedImageIndex] || placeholder;
-  const allImages = eyeglass.imageUrls || [
-    placeholder,
-    placeholder,
-    placeholder,
-    placeholder,
-  ];
+  // Prepare images and color options
   const colorOptions = eyeglass.colorOptions || [];
+
+  // First image should be from selected color option, fallback to first imageUrl or placeholder
+  let firstImage = placeholder;
+  if (colorOptions.length > 0 && colorOptions[selectedColor]?.imageUrl) {
+    firstImage = colorOptions[selectedColor].imageUrl;
+    console.log(
+      `First image set from color option ${selectedColor}:`,
+      firstImage
+    );
+    console.log("Selected color option:", colorOptions[selectedColor]);
+  } else if (eyeglass.imageUrls && eyeglass.imageUrls.length > 0) {
+    // Fallback to first image from imageUrls if color option doesn't have imageUrl
+    firstImage = eyeglass.imageUrls[0];
+    console.log("First image using fallback from imageUrls[0]:", firstImage);
+  } else {
+    console.log("First image using placeholder:", firstImage);
+    console.log("Color options available:", colorOptions.length);
+    console.log("Selected color index:", selectedColor);
+    if (colorOptions.length > 0) {
+      console.log("First color option object:", colorOptions[selectedColor]);
+      console.log(
+        "Available properties in color option:",
+        Object.keys(colorOptions[selectedColor] || {})
+      );
+      console.log("imageurl property:", colorOptions[selectedColor]?.imageurl);
+      console.log("imageUrl property:", colorOptions[selectedColor]?.imageUrl);
+      console.log(
+        "image_url property:",
+        colorOptions[selectedColor]?.image_url
+      );
+      console.log("image property:", colorOptions[selectedColor]?.image);
+    }
+  }
+
+  // Rest of images from data.imageUrls
+  const restImages = eyeglass.imageUrls || [];
+  console.log("Rest images from imageUrls:", restImages);
+
+  // Combine: first image + rest of images
+  const allImages = [firstImage, ...restImages];
+  console.log("All images combined:", allImages);
   const lensOptions = eyeglass.lensOptions || [
     { label: "Built-in UV400 Lenses (FREE)", price: 0, type: "builtin" },
   ];
+
+  // Main image logic: if first image and color selected, tint it
+  let mainImage = allImages[selectedImageIndex] || placeholder;
+
+  // If the first image is selected and a color is selected, apply a color overlay
+  const isFirstImage = selectedImageIndex === 0 && colorOptions[selectedColor];
 
   return (
     <>
@@ -97,22 +157,33 @@ const EyeglassPage = () => {
 
             <div className="card-body">
               <div className="image-section">
-                <div className="main-image-container">
+                <div
+                  className="main-image-container"
+                  style={{ position: "relative" }}
+                >
                   <img
                     className="main-product-image"
                     src={mainImage}
                     alt={eyeglass.name}
+                    style={
+                      isFirstImage
+                        ? {
+                            boxShadow: `0 0 0 6px ${
+                              colorOptions[selectedColor]?.colors?.[0] || "#ccc"
+                            }44`,
+                            background:
+                              colorOptions[selectedColor]?.colors?.[0] ||
+                              undefined,
+                            borderRadius: "12px",
+                            transition: "box-shadow 0.3s, background 0.3s",
+                          }
+                        : {}
+                    }
                   />
-                  {/* <div className="image-overlay">
-                    <div className="rating">
-                      <Star size={16} fill="currentColor" />
-                      <span>4.8</span>
-                    </div>
-                  </div> */}
                 </div>
 
                 <div className="thumbnail-gallery">
-                  {allImages.slice(0, 4).map((img, idx) => (
+                  {allImages.map((img, idx) => (
                     <div
                       key={idx}
                       className={`thumbnail-item ${
@@ -143,7 +214,10 @@ const EyeglassPage = () => {
                         className={`color-option ${
                           selectedColor === idx ? "selected" : ""
                         }`}
-                        onClick={() => setSelectedColor(idx)}
+                        onClick={() => {
+                          setSelectedColor(idx);
+                          setSelectedImageIndex(0); // Reset to first image when color changes
+                        }}
                         title={opt.name}
                       >
                         <div

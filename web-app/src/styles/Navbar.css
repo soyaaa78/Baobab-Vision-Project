@@ -1,70 +1,85 @@
 .navigation {
-    width: 100%;
-    padding: 35px 5%;
-    border-bottom: 2px solid #252525;
+  width: 100%;
+  padding: 35px 5%;
+  border-bottom: 2px solid #252525;
 }
 
-
-
 .nav-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 auto;
 }
 
 .nav-logo-wrapper {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .links {
-    padding: 0;
-    margin: 0;
-    width: 100%;
-    display: flex;
-    justify-content: space-evenly;
-    gap: 10px;
-    list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-evenly;
+  gap: 10px;
+  list-style: none;
 }
 
 .links li .nav-button {
-    color: #252525;
-    text-decoration: none;
-    font-family: 'Red Rose', serif;
-    font-size: 20px;
-    display: flex; 
-    align-items: center;
-    justify-content: center;
-    padding: 30px;
-    box-sizing: border-box;
-    /* white-space: nowrap; */
+  color: #252525;
+  text-decoration: none;
+  font-family: "Red Rose", serif;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  box-sizing: border-box;
+  /* white-space: nowrap; */
+  transition: background 0.2s, color 0.2s, border-bottom 0.2s;
 }
 
 .links a {
-    color: #252525;
-    text-decoration: none;
-    font-family: 'Red Rose', serif;
-    font-size: 20px;
+  color: #252525;
+  text-decoration: none;
+  font-family: "Red Rose", serif;
+  font-size: 20px;
 }
 
-.nav-button a:hover {
-    text-decoration: underline; /* weirdly doesnt work */
+.links li .nav-button:hover,
+.links li .nav-button:focus {
+  background: #eab676;
+  color: #252525;
+  text-decoration: none;
+  border-radius: 8px;
+  outline: none;
+  box-shadow: 0 2px 8px #25252522;
+}
+
+.links li .nav-button:hover {
+  background: #eab67684;
+}
+
+.links li .nav-button:active {
+  background: #eab676;
+  color: #252525;
+  border-radius: 8px;
 }
 
 @media (max-width: 1020px) {
-    .nav-logo-wrapper {
-        display: none !important;
-    }
+  .nav-logo-wrapper {
+    display: none !important;
+  }
 
-    .links li .nav-button {
-        font-size: 70%;
-    }
+  .links li .nav-button {
+    font-size: 70%;
+  }
 }
 
 @media (max-width: 638px) {
-    .links li .nav-button {
-        font-size: 50%;
-    }
+  .links li .nav-button {
+    font-size: 50%;
+  }
 }
