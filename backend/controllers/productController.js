@@ -518,6 +518,8 @@ exports.getProductReviews = catchAsync(async (req, res, next) => {
         comment: 1,
         pictures: 1,
         createdAt: 1,
+        adminResponse: 1,
+        respondedAt: 1,
         user: {
           username: "$userLookup.username",
           profileImage: "$userLookup.profileImage",

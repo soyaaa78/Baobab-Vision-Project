@@ -2,6 +2,7 @@ const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const Rating = require("../models/Order/Rating");
 const Order = require("../models/Order");
+const Admin = require("../models/Admin");
 
 // GET Rating
 const rating_get = catchAsync(async (req, res, next) => {
@@ -95,6 +96,20 @@ const rating_patch = catchAsync(async (req, res, next) => {
   if (Object.prototype.hasOwnProperty.call(req.body, "pictures")) {
     const pics = req.body.pictures;
     updates.pictures = Array.isArray(pics) ? pics : [pics];
+  }
+
+  // Admin response support
+  if (Object.prototype.hasOwnProperty.call(req.body, "adminResponse")) {
+    // Only allow admins/staff to set adminResponse. Basic check: presence of req.user from adminAuth or role from token.
+    // If coming from user auth middleware, req.userId is set (user token). If coming from admin auth, req.user.role exists.
+    const isAdminOrStaff =
+      req.user?.role &&
+      ["super_admin", "staff_product", "staff_order"].includes(req.user.role);
+    if (!isAdminOrStaff) {
+      return next(new AppError("Only staff can respond to ratings", 403));
+    }
+    updates.adminResponse = req.body.adminResponse;
+    updates.respondedAt = new Date();
   }
 
   if (Object.keys(updates).length === 0)

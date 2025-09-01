@@ -272,7 +272,10 @@ const StaffOrderHomePage = () => {
                 <div key={order._id} className="order-item">
                   <div className="order-info">
                     <div className="order-id">
-                      #{order._id.slice(-8).toUpperCase()}
+                      #
+                      {(
+                        order.orderId || `${order._id.slice(-8)}...`
+                      ).toUpperCase()}
                     </div>
                     <div className="customer-name">
                       {order.customer?.firstName} {order.customer?.lastName}

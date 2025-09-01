@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from "react";
+import ToastContainer from "../components/ToastContainer";
+import { showToast } from "../services/toastService";
 import Button from "../components/Button";
+import ProofOfPaymentModal from "../components/ProofOfPaymentModal";
+import CancellationModal from "../components/CancellationModal";
+import DeleteOrderModal from "../components/DeleteOrderModal";
 import "../styles/AllOrdersPage.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
@@ -17,6 +22,35 @@ const AllOrdersPage = () => {
   const [alertModalContent, setAlertModalContent] = useState("Delete");
   const [selectedStatus, setSelectedStatus] = useState("pending");
   const [token, setToken] = useState();
+  const [proofOfPaymentModal, setProofOfPaymentModal] = useState(false);
+  const [selectedProofOfPayment, setSelectedProofOfPayment] = useState(null);
+  const [selectedProofOrder, setSelectedProofOrder] = useState(null);
+  const [cancellationModal, setCancellationModal] = useState(false);
+  const [selectedCancellationOrder, setSelectedCancellationOrder] =
+    useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  // Helpers
+  const getOrderLabel = (order) =>
+    order?.orderId || `Order ${order?._id?.slice(-8)}`;
+  const statusLabel = (s) => {
+    switch (s) {
+      case "pending":
+        return "pending";
+      case "processing":
+        return "processing";
+      case "ready_to_pickup":
+        return "ready to pick up";
+      case "completed":
+        return "completed";
+      case "cancelled":
+        return "cancelled";
+      case "cancelled_pending":
+        return "cancellation pending";
+      default:
+        return s;
+    }
+  };
 
   useEffect(() => {
     const t = Cookies.get("token");
@@ -44,11 +78,11 @@ const AllOrdersPage = () => {
     fetchOrders();
   }, [SERVER_URL, token]);
 
-  const updateOrderStatus = async (orderId, newStatus) => {
+  const updateOrderStatus = async (orderId, newStatus, extra = {}) => {
     try {
       await axios.put(
         `${SERVER_URL}/api/orders?id=${orderId}`,
-        { status: newStatus },
+        { status: newStatus, ...extra },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -62,13 +96,35 @@ const AllOrdersPage = () => {
       });
       const orders = response.data.order || response.data;
       setOrderList(Array.isArray(orders) ? orders : [orders]);
+      const ord = (Array.isArray(orders) ? orders : [orders]).find(
+        (o) => o._id === orderId
+      );
+      const reasonSuffix =
+        newStatus === "cancelled" &&
+        (extra?.cancellationReason || extra?.declineReason)
+          ? ` Reason: ${extra.cancellationReason || extra.declineReason}`
+          : "";
+      showToast({
+        type: "success",
+        message: `${getOrderLabel(ord)} has been marked as ${statusLabel(
+          newStatus
+        )}.${reasonSuffix}`,
+      });
     } catch (error) {
       console.error("Error updating order status:", error);
+      showToast({
+        type: "error",
+        message: "Failed to update the order status. Please try again.",
+      });
     }
   };
 
   const deleteOrder = async (orderId) => {
     try {
+      // capture label before deletion
+      const current = orderList.find((o) => o._id === orderId);
+      const label = getOrderLabel(current);
+
       await axios.delete(`${SERVER_URL}/api/orders?id=${orderId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -82,8 +138,13 @@ const AllOrdersPage = () => {
       const orders = response.data.order || response.data;
       setOrderList(Array.isArray(orders) ? orders : [orders]);
       setAlertModal(false);
+      showToast({ type: "success", message: `${label} has been deleted.` });
     } catch (error) {
       console.error("Error deleting order:", error);
+      showToast({
+        type: "error",
+        message: "Failed to delete the order. Please try again.",
+      });
     }
   };
 
@@ -100,8 +161,30 @@ const AllOrdersPage = () => {
     setExpandedOrder((prev) => (prev === orderId ? null : orderId));
   };
 
+  // Compute next status in lifecycle
+  const getNextStatus = (current) => {
+    const flow = ["pending", "processing", "ready_to_pickup", "completed"];
+    const i = flow.indexOf(current);
+    if (i === -1 || i === flow.length - 1) return null;
+    return flow[i + 1];
+  };
+
+  const getProgressLabel = (current) => {
+    switch (current) {
+      case "pending":
+        return "Mark as Processing";
+      case "processing":
+        return "Mark as Ready to Pick Up";
+      case "ready_to_pickup":
+        return "Mark as Completed";
+      default:
+        return "Progress";
+    }
+  };
+
   return (
     <div className="page" id="allorders">
+      <ToastContainer />
       <div className="allorders-header">
         <h1>All Orders</h1>
         <p>Manage and track all customer orders</p>
@@ -186,14 +269,18 @@ const AllOrdersPage = () => {
             </tr>
           </thead>
           <tbody>
-            {orderList.length === 0 ? (
-              <tr>
-                <td colSpan="10" className="no-data">
-                  No orders found.
-                </td>
-              </tr>
-            ) : (
-              getFilteredOrders().map((order) => {
+            {(() => {
+              const filtered = getFilteredOrders();
+              if (filtered.length === 0) {
+                return (
+                  <tr>
+                    <td colSpan="10" className="no-data">
+                      No orders found.
+                    </td>
+                  </tr>
+                );
+              }
+              return filtered.map((order) => {
                 const orderDate = new Date(
                   order.date || order.createdAt
                 ).toLocaleDateString();
@@ -209,7 +296,7 @@ const AllOrdersPage = () => {
                       className="order-row"
                     >
                       <td className="order-id-cell">
-                        {order._id.slice(-8)}...
+                        {order.orderId || `${order._id.slice(-8)}...`}
                       </td>
                       <td>{orderDate}</td>
                       <td>{customerName}</td>
@@ -244,22 +331,71 @@ const AllOrdersPage = () => {
                           </option>
                         </select>
                       </td>
-                      <td>{order.deliveryMethod || "N/A"}</td>
+                      <td>
+                        {order.deliveryMethod === "Third-Party Delivery" &&
+                        order.thirdPartyDelivery
+                          ? `Third-Party Delivery (${order.thirdPartyDelivery})`
+                          : order.deliveryMethod || "N/A"}
+                      </td>
                       <td>{order.paymentMethod || "N/A"}</td>
                       <td>
-                        <button
-                          className="delete-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedOrder(order._id);
-                            setSelectedAction("Delete");
-                            setAlertModalContent("Delete");
-                            setAlertModal(true);
-                          }}
-                        >
-                          <Trash2 size={16} />
-                          Delete
-                        </button>
+                        <div className="action-buttons">
+                          {order.proofOfPayment && (
+                            <button
+                              className="proof-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedProofOfPayment(order.proofOfPayment);
+                                setSelectedProofOrder(order);
+                                setProofOfPaymentModal(true);
+                              }}
+                            >
+                              View Proof
+                            </button>
+                          )}
+                          {order.status === "cancelled_pending" && (
+                            <button
+                              className="cancellation-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCancellationOrder(order);
+                                setCancellationModal(true);
+                              }}
+                            >
+                              View Cancellation
+                            </button>
+                          )}
+                          {(() => {
+                            const next = getNextStatus(order.status);
+                            if (!next) return null; // hide default
+                            const label = getProgressLabel(order.status);
+                            return (
+                              <button
+                                className="proof-btn"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateOrderStatus(order._id, next);
+                                }}
+                                title={label}
+                              >
+                                {label}
+                              </button>
+                            );
+                          })()}
+                          <button
+                            className="delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedOrder(order._id);
+                              setSelectedAction("Delete");
+                              setSelectedProofOrder(order); // reuse for modal summary
+                              setDeleteModalOpen(true);
+                            }}
+                          >
+                            <Trash2 size={16} />
+                            Delete
+                          </button>
+                        </div>
                       </td>
                     </tr>
 
@@ -279,22 +415,26 @@ const AllOrdersPage = () => {
                                   Order Details
                                 </h4>
                                 <div className="detail-list">
-                                  <div className="detail-item">
-                                    <span className="detail-label">
-                                      Address:
-                                    </span>
-                                    <span className="detail-value">
-                                      {order.address || "N/A"}
-                                    </span>
-                                  </div>
-                                  <div className="detail-item">
-                                    <span className="detail-label">
-                                      Contact:
-                                    </span>
-                                    <span className="detail-value">
-                                      {order.contactNumber || "N/A"}
-                                    </span>
-                                  </div>
+                                  {order.address && (
+                                    <div className="detail-item">
+                                      <span className="detail-label">
+                                        Address:
+                                      </span>
+                                      <span className="detail-value">
+                                        {`${order.address.addressDetails}, ${order.address.barangay}, ${order.address.city}, ${order.address.province}, ${order.address.region} ${order.address.postalCode}`}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {order.contactNumber && (
+                                    <div className="detail-item">
+                                      <span className="detail-label">
+                                        Contact:
+                                      </span>
+                                      <span className="detail-value">
+                                        {order.contactNumber || "N/A"}
+                                      </span>
+                                    </div>
+                                  )}
                                   <div className="detail-item">
                                     <span className="detail-label">
                                       Order Date:
@@ -303,6 +443,18 @@ const AllOrdersPage = () => {
                                       {new Date(
                                         order.date || order.createdAt
                                       ).toLocaleString()}
+                                    </span>
+                                  </div>
+                                  <div className="detail-item">
+                                    <span className="detail-label">
+                                      Delivery Method:
+                                    </span>
+                                    <span className="detail-value">
+                                      {order.deliveryMethod ===
+                                        "Third-Party Delivery" &&
+                                      order.thirdPartyDelivery
+                                        ? `Third-Party Delivery (${order.thirdPartyDelivery})`
+                                        : order.deliveryMethod || "N/A"}
                                     </span>
                                   </div>
                                   <div className="detail-item">
@@ -326,35 +478,52 @@ const AllOrdersPage = () => {
                                   Products ({order.products?.length || 0})
                                 </h4>
                                 <div className="products-list">
-                                  {order.products?.map((product, idx) => (
-                                    <div key={idx} className="product-card">
-                                      <div className="product-info">
-                                        <div className="product-details">
-                                          <p className="product-name">
-                                            {product.productId?.name ||
-                                              "Unknown Product"}
-                                          </p>
-                                          <p className="product-spec">
-                                            Color: {product.color}
-                                          </p>
-                                          <p className="product-spec">
-                                            Lens: {product.lens}
-                                          </p>
-                                        </div>
-                                        <div className="product-pricing">
-                                          <p className="product-qty">
-                                            Qty: {product.quantity}
-                                          </p>
-                                          <p className="product-price">
-                                            ₱{product.price}
-                                          </p>
-                                          <p className="product-total">
-                                            ₱{product.price * product.quantity}
-                                          </p>
+                                  {order.products?.map((product, idx) => {
+                                    // Find color and lens options
+                                    const selectedColor =
+                                      product.productId?.colorOptions?.find(
+                                        (color) => color._id === product.color
+                                      );
+                                    const selectedLens =
+                                      product.productId?.lensOptions?.find(
+                                        (lens) => lens._id === product.lens
+                                      );
+
+                                    return (
+                                      <div key={idx} className="product-card">
+                                        <div className="product-info">
+                                          <div className="product-details">
+                                            <p className="product-name">
+                                              {product.productId?.name ||
+                                                "Unknown Product"}
+                                            </p>
+                                            <p className="product-spec">
+                                              Color:{" "}
+                                              {selectedColor?.name ||
+                                                "Unknown Color"}
+                                            </p>
+                                            <p className="product-spec">
+                                              Lens:{" "}
+                                              {selectedLens?.label ||
+                                                "Unknown Lens"}
+                                            </p>
+                                          </div>
+                                          <div className="product-pricing">
+                                            <p className="product-qty">
+                                              Qty: {product.quantity}
+                                            </p>
+                                            <p className="product-price">
+                                              ₱{product.price}
+                                            </p>
+                                            <p className="product-total">
+                                              ₱
+                                              {product.price * product.quantity}
+                                            </p>
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  )) || (
+                                    );
+                                  }) || (
                                     <p className="no-products">
                                       No products found
                                     </p>
@@ -369,6 +538,55 @@ const AllOrdersPage = () => {
                                   </div>
                                 </div>
                               </div>
+                              {order.rating && (
+                                <div className="rating-section">
+                                  <h4 className="section-title">
+                                    Customer Feedback
+                                  </h4>
+                                  <div className="detail-list">
+                                    <div className="detail-item">
+                                      <span className="detail-label">
+                                        Rating:
+                                      </span>
+                                      <span className="detail-value">
+                                        {order.rating.rating}/5
+                                      </span>
+                                    </div>
+                                    {order.rating.comment && (
+                                      <div className="detail-item">
+                                        <span className="detail-label">
+                                          Comment:
+                                        </span>
+                                        <span className="detail-value">
+                                          {order.rating.comment}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  {Array.isArray(order.rating.pictures) &&
+                                    order.rating.pictures.length > 0 && (
+                                      <div className="rating-pictures">
+                                        {order.rating.pictures.map(
+                                          (url, idx) => (
+                                            <a
+                                              key={idx}
+                                              href={url}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              className="rating-picture-link"
+                                            >
+                                              <img
+                                                src={url}
+                                                alt={`rating-${idx + 1}`}
+                                                className="rating-picture"
+                                              />
+                                            </a>
+                                          )
+                                        )}
+                                      </div>
+                                    )}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -376,65 +594,39 @@ const AllOrdersPage = () => {
                     )}
                   </React.Fragment>
                 );
-              })
-            )}
+              });
+            })()}
           </tbody>
         </table>
       </div>
 
-      {/* Alert Modal for Delete */}
-      <div className={`alert-modal-container ${alertModal ? "active" : ""}`}>
-        <div className={`modal-overlay ${alertModal ? "active" : ""}`} />
-        <div className={`alert-modal-content ${alertModal ? "active" : ""}`}>
-          <div className="alert-modal-content-header">
-            <h2>Delete Order</h2>
-            <li
-              className="action-li close"
-              onClick={() => setAlertModal(false)}
-            >
-              <FontAwesomeIcon icon={faXmark} />
-            </li>
-          </div>
-          <div className="alert-modal-content-body">
-            <div className="amcb-delete">
-              <p>
-                You are about to <b>delete</b> this order.
-              </p>
-              <br />
-              <p>
-                Deletion of orders is permanent. This action is
-                <b>
-                  <u> NOT reversible</u>
-                </b>{" "}
-                — once deleted, it is gone forever.
-              </p>
-            </div>
-            <div className="amcb-continue-cta">
-              <p>
-                <i>Continue?</i>
-              </p>
-              <Button
-                onClick={() => {
-                  if (selectedOrder && selectedAction === "Delete") {
-                    deleteOrder(selectedOrder);
-                  }
-                }}
-                children={alertModalContent}
-                className="button-component--alert alert-delete"
-              />
-              <Button
-                onClick={() => setAlertModal(false)}
-                className="button-component--alert"
-                children={
-                  <div>
-                    <p>Cancel</p>
-                  </div>
-                }
-              />
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Delete Order Modal */}
+      <DeleteOrderModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        order={selectedProofOrder}
+        onDelete={async (id) => {
+          await deleteOrder(id);
+          setDeleteModalOpen(false);
+        }}
+      />
+
+      {/* Proof of Payment Modal */}
+      <ProofOfPaymentModal
+        isOpen={proofOfPaymentModal}
+        onClose={() => setProofOfPaymentModal(false)}
+        proofOfPayment={selectedProofOfPayment}
+        order={selectedProofOrder}
+        onUpdateStatus={updateOrderStatus}
+      />
+
+      {/* Cancellation Modal */}
+      <CancellationModal
+        isOpen={cancellationModal}
+        onClose={() => setCancellationModal(false)}
+        order={selectedCancellationOrder}
+        onUpdateStatus={updateOrderStatus}
+      />
     </div>
   );
 };
