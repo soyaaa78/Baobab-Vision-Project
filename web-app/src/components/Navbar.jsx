@@ -63,6 +63,12 @@ function Navbar() {
             </>
           )}
 
+          <li>
+            <Link to="profile" className="nav-button">
+              Profile
+            </Link>
+          </li>
+
           <Button
             onClick={handleLogout}
             children={

@@ -1,40 +1,45 @@
 const mongoose = require("mongoose");
 
-const AdminSchema = new mongoose.Schema({
-  firstname: { type: String, required: true },
-  lastname: { type: String, required: true },
-  username: { type: String, unique: true },
-  email: { type: String, unique: true },
-  password: String,
-  role: {
-    type: String,
-    enum: ["super_admin", "staff_product", "staff_order"],
-    default: "staff_product",
+const AdminSchema = new mongoose.Schema(
+  {
+    firstname: { type: String, required: true },
+    lastname: { type: String, required: true },
+    username: { type: String, unique: true },
+    email: { type: String, unique: true },
+    password: String,
+    role: {
+      type: String,
+      enum: ["super_admin", "staff_product", "staff_order"],
+      default: "staff_product",
+    },
+    permissions: {
+      type: [String],
+      default: [],
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    otp: {
+      type: String,
+      default: null,
+    },
+    otpExpiry: {
+      type: Date,
+      default: null,
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    isDisabled: {
+      type: Boolean,
+      default: false,
+    },
   },
-  permissions: {
-    type: [String],
-    default: [],
-  },
-  isVerified: {
-    type: Boolean,
-    default: false,
-  },
-  otp: {
-    type: String,
-    default: null,
-  },
-  otpExpiry: {
-    type: Date,
-    default: null,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  isDisabled: {
-    type: Boolean,
-    default: false,
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 module.exports = mongoose.model("Admin", AdminSchema);

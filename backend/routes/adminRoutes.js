@@ -28,7 +28,6 @@ router.get(
   adminController.getAllStaff
 );
 
-
 router.put(
   "/permissions/:id",
   adminAuth.verifyToken,
@@ -37,6 +36,15 @@ router.put(
 );
 router.post("/verify-otp", adminController.verifyStaffOtp);
 router.post("/resend-otp", adminController.resendOtp);
+
+// Staff profile routes
+router.get("/profile", adminAuth.verifyToken, adminController.getStaffProfile);
+router.put(
+  "/change-password",
+  adminAuth.verifyToken,
+  adminController.changePassword
+);
+
 router.get("/user-list", adminAuth.verifyToken, adminController.getAllUsers);
 
 router.put(

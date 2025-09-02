@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Button from "../components/Button";
+import ConfirmationModal from "../components/ConfirmationModal";
 import "../styles/ManageUsersPage.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -20,16 +21,18 @@ const ManageUsersPage = () => {
   const [activeTab, setActiveTab] = useState("users");
   const [modal, setModal] = useState(false);
   const [modalContent, setModalContent] = useState("Add New");
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertModalContent, setAlertModalContent] = useState("Disable");
+  const [confirmationModal, setConfirmationModal] = useState({
+    isOpen: false,
+    action: "",
+    itemType: "",
+    itemName: "",
+    onConfirm: null,
+  });
+  const [actionLoading, setActionLoading] = useState(false);
   const [dropdown, setDropdown] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [userList, setUserList] = useState([]);
   const [orderList, setOrderList] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedAction, setSelectedAction] = useState(null);
-  const [selectedStaff, setSelectedStaff] = useState(null);
-  const [selectedStaffAction, setSelectedStaffAction] = useState(null);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
 
@@ -42,6 +45,34 @@ const ManageUsersPage = () => {
     role: "staff_product", // Default role
   }); // Add status filter state - default to pending
   const [selectedStatus, setSelectedStatus] = useState("pending");
+
+  const openConfirmationModal = (
+    action,
+    itemType,
+    itemName,
+    onConfirm,
+    userDetails = null
+  ) => {
+    setConfirmationModal({
+      isOpen: true,
+      action,
+      itemType,
+      itemName,
+      onConfirm,
+      userDetails,
+    });
+  };
+
+  const closeConfirmationModal = () => {
+    setConfirmationModal({
+      isOpen: false,
+      action: "",
+      itemType: "",
+      itemName: "",
+      onConfirm: null,
+    });
+    setActionLoading(false);
+  };
 
   const toggleAlertModal = () => {
     setAlertModal((prev) => !prev);
@@ -125,36 +156,36 @@ const ManageUsersPage = () => {
   }, [SERVER_URL, token]);
 
   const handleUserAction = async (id, action) => {
+    setActionLoading(true);
     try {
-      if (action === "Disable") {
-        await axios.put(
-          `${SERVER_URL}/api/admin/disable-user/${id}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else if (action === "Delete") {
+      if (action === "Delete") {
         await axios.delete(`${SERVER_URL}/api/admin/delete-user/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-      } else if (action === "Enable") {
-        await axios.put(
-          `${SERVER_URL}/api/admin/enable-user/${id}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
       }
 
       const response = await axios.get(`${SERVER_URL}/api/admin/user-list`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUserList(response.data);
-      toggleAlertModal();
+      closeConfirmationModal();
+      showToast({
+        message: `User ${action.toLowerCase()}d successfully`,
+        type: "success",
+      });
     } catch (error) {
       console.error(`${action} user error:`, error);
+      showToast({
+        message: `Failed to ${action.toLowerCase()} user`,
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
   const handleStaffAction = async (id, action) => {
+    setActionLoading(true);
     try {
       if (action === "Disable") {
         await axios.put(
@@ -178,9 +209,19 @@ const ManageUsersPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setStaffList(response.data);
-      toggleAlertModal();
+      closeConfirmationModal();
+      showToast({
+        message: `Staff ${action.toLowerCase()}d successfully`,
+        type: "success",
+      });
     } catch (error) {
       console.error(`${action} staff error:`, error);
+      showToast({
+        message: `Failed to ${action.toLowerCase()} staff`,
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -220,6 +261,7 @@ const ManageUsersPage = () => {
 
   // Add function to delete order
   const deleteOrder = async (orderId) => {
+    setActionLoading(true);
     try {
       await axios.delete(`${SERVER_URL}/api/orders?id=${orderId}`, {
         headers: {
@@ -236,9 +278,18 @@ const ManageUsersPage = () => {
       const orders = response.data.order || response.data;
       setOrderList(Array.isArray(orders) ? orders : [orders]);
 
-      toggleAlertModal();
+      closeConfirmationModal();
+      showToast({
+        message: "Order deleted successfully",
+        type: "success",
+      });
     } catch (error) {
       console.error("Error deleting order:", error);
+      showToast({
+        message: "Failed to delete order",
+        type: "error",
+      });
+      setActionLoading(false);
     }
   };
 
@@ -376,17 +427,21 @@ const ManageUsersPage = () => {
                                 <li
                                   className="action-li delete"
                                   onClick={() => {
-                                    setSelectedUser(user._id);
-                                    setSelectedAction("Delete");
-                                    setAlertModalContent("Delete");
-                                    toggleAlertModal();
+                                    openConfirmationModal(
+                                      "Delete",
+                                      "User Account",
+                                      null,
+                                      () =>
+                                        handleUserAction(user._id, "Delete"),
+                                      user
+                                    );
                                   }}
                                 >
                                   <Trash2 size={14} />
                                   Delete
                                 </li>
                               </div>
-                            </td>{" "}
+                            </td>
                           </tr>
                         ))
                       )}
@@ -598,10 +653,14 @@ const ManageUsersPage = () => {
                                       className="action-li delete"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setSelectedOrder(order._id);
-                                        setSelectedAction("Delete");
-                                        setAlertModalContent("Delete");
-                                        toggleAlertModal();
+                                        openConfirmationModal(
+                                          "Delete",
+                                          "Order",
+                                          `Order #${
+                                            order.orderId || order._id.slice(-8)
+                                          }`,
+                                          () => deleteOrder(order._id)
+                                        );
                                       }}
                                     >
                                       <Trash2 size={14} />
@@ -765,13 +824,14 @@ const ManageUsersPage = () => {
                       <th>Email</th>
                       <th>Role</th>
                       <th>Verification Status</th>
+                      <th>Account Status</th>
                       <th>Actions</th>
                     </tr>
                   </thead>{" "}
                   <tbody>
                     {staffList.length === 0 ? (
                       <tr>
-                        <td colSpan="7">No staff found.</td>
+                        <td colSpan="8">No staff found.</td>
                       </tr>
                     ) : (
                       staffList.map((staff) => (
@@ -785,13 +845,62 @@ const ManageUsersPage = () => {
                             {staff.isVerified ? "Verified" : "Unverified"}
                           </td>
                           <td>
+                            <span
+                              className={`status-badge ${
+                                staff.isDisabled ? "disabled" : "active"
+                              }`}
+                            >
+                              {staff.isDisabled ? "Disabled" : "Active"}
+                            </span>
+                          </td>
+                          <td>
                             <div className="td-action">
+                              {staff.isDisabled ? (
+                                <li
+                                  className="action-li enable"
+                                  onClick={() => {
+                                    openConfirmationModal(
+                                      "Enable",
+                                      "Staff Account",
+                                      null,
+                                      () =>
+                                        handleStaffAction(staff._id, "Enable"),
+                                      staff
+                                    );
+                                  }}
+                                >
+                                  <Check size={14} />
+                                  Enable
+                                </li>
+                              ) : (
+                                <li
+                                  className="action-li disable"
+                                  onClick={() => {
+                                    openConfirmationModal(
+                                      "Disable",
+                                      "Staff Account",
+                                      null,
+                                      () =>
+                                        handleStaffAction(staff._id, "Disable"),
+                                      staff
+                                    );
+                                  }}
+                                >
+                                  <Ban size={14} />
+                                  Disable
+                                </li>
+                              )}
                               <li
                                 className="action-li delete"
                                 onClick={() => {
-                                  setSelectedStaff(staff._id);
-                                  setSelectedStaffAction("Delete");
-                                  toggleAlertModal();
+                                  openConfirmationModal(
+                                    "Delete",
+                                    "Staff Account",
+                                    null,
+                                    () =>
+                                      handleStaffAction(staff._id, "Delete"),
+                                    staff
+                                  );
                                 }}
                               >
                                 <Trash2 size={14} />
@@ -806,138 +915,17 @@ const ManageUsersPage = () => {
                 </table>
               </div>
             )}
-            <div
-              className={`alert-modal-container ${alertModal ? "active" : ""}`}
-            >
-              <div className={`modal-overlay ${alertModal ? "active" : ""}`} />
-              <div
-                className={`alert-modal-content ${alertModal ? "active" : ""}`}
-              >
-                {" "}
-                <div className="alert-modal-content-header">
-                  <h2>
-                    {alertModalContent}{" "}
-                    {activeTab === "orders"
-                      ? "Order"
-                      : activeTab === "staff"
-                      ? "Staff Account"
-                      : "User Account"}
-                  </h2>
-                  <li
-                    className="action-li close"
-                    onClick={() => toggleAlertModal()}
-                  >
-                    <FontAwesomeIcon icon={faXmark} />
-                  </li>
-                </div>
-                <div className="alert-modal-content-body">
-                  {alertModalContent === "Disable" && (
-                    <div className="amcb-disable">
-                      <p>
-                        You are about to <b>disable</b> this account.
-                      </p>
-                      <br />
-                      <p>
-                        Disabling this account will render it not usable or
-                        accessible by the user unless re-enabled.
-                      </p>
-                      <br />
-                      <p>
-                        This action is <i>reversible</i> — you can reactivate
-                        the account later if needed.
-                      </p>
-                    </div>
-                  )}{" "}
-                  {alertModalContent === "Delete" && (
-                    <div className="amcb-delete">
-                      <p>
-                        You are about to <b>delete</b> this{" "}
-                        {activeTab === "orders"
-                          ? "order"
-                          : activeTab === "staff"
-                          ? "staff account"
-                          : "user account"}
-                        .
-                      </p>
-                      <br />
-                      <p>
-                        {activeTab === "orders"
-                          ? "Deletion of orders is permanent. This action is"
-                          : "Deletion of accounts is permanent. This action is"}{" "}
-                        <b>
-                          <u>NOT reversible</u>
-                        </b>{" "}
-                        — once deleted, it is gone forever.
-                      </p>
-                    </div>
-                  )}
-                  {alertModalContent === "Enable" && (
-                    <div className="amcb-enable">
-                      <p>
-                        You are about to <b>enable</b> this account.
-                      </p>
-                      <br />
-                      <p>
-                        Enabling this account will allow the user or staff to
-                        log in and access the system again.
-                      </p>
-                      <br />
-                      <p>
-                        This action is <i>reversible</i> — you can disable the
-                        account again if needed.
-                      </p>
-                    </div>
-                  )}
-                  <div className="amcb-continue-cta">
-                    <p>
-                      <i>Continue?</i>
-                    </p>{" "}
-                    <Button
-                      onClick={() => {
-                        if (
-                          activeTab === "users" &&
-                          selectedUser &&
-                          selectedAction
-                        ) {
-                          handleUserAction(selectedUser, selectedAction);
-                        } else if (
-                          activeTab === "staff" &&
-                          selectedStaff &&
-                          selectedStaffAction
-                        ) {
-                          handleStaffAction(selectedStaff, selectedStaffAction);
-                        } else if (
-                          activeTab === "orders" &&
-                          selectedOrder &&
-                          selectedAction === "Delete"
-                        ) {
-                          deleteOrder(selectedOrder);
-                        }
-                      }}
-                      children={alertModalContent}
-                      className={`button-component--alert ${
-                        alertModalContent === "Disable"
-                          ? "alert-disable"
-                          : alertModalContent === "Delete"
-                          ? "alert-delete"
-                          : alertModalContent === "Enable"
-                          ? "alert-enable"
-                          : ""
-                      }`}
-                    />
-                    <Button
-                      onClick={toggleAlertModal}
-                      className="button-component--alert"
-                      children={
-                        <div>
-                          <p>Cancel</p>
-                        </div>
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* New Confirmation Modal */}
+            <ConfirmationModal
+              isOpen={confirmationModal.isOpen}
+              onClose={closeConfirmationModal}
+              onConfirm={confirmationModal.onConfirm}
+              action={confirmationModal.action}
+              itemType={confirmationModal.itemType}
+              itemName={confirmationModal.itemName}
+              userDetails={confirmationModal.userDetails}
+              loading={actionLoading}
+            />
             <div className={`modal-container ${modal ? "active" : ""}`}>
               <div className={`modal-overlay ${modal ? "active" : ""}`} />
               <div className={`modal-content ${modal ? "show" : ""}`}>

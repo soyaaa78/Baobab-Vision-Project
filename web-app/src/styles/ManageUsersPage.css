@@ -213,6 +213,14 @@
   font-weight: 500;
 }
 
+/* Actions column styling */
+.muc-manageusers-table th:last-child,
+.muc-manageusers-table td:last-child {
+  text-align: center;
+  min-width: 180px;
+  padding: 1rem 0.5rem;
+}
+
 /* Verification status styling */
 .verification-status {
   padding: 0.4rem 0.8rem;
@@ -275,14 +283,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 /* Enhanced action buttons */
 .action-li {
   list-style-type: none;
   cursor: pointer;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 6px;
   font-weight: 500;
   font-size: 0.8rem;
@@ -293,8 +302,9 @@
   align-items: center;
   gap: 0.4rem;
   text-decoration: none;
-  min-width: 80px;
+  min-width: 75px;
   justify-content: center;
+  white-space: nowrap;
 }
 
 .action-li.enable {
@@ -766,6 +776,18 @@ button.action-li:hover {
   background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
   color: #ffffff;
   box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
+}
+
+.status-badge.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.status-badge.disabled {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
 }
 
 /* Order details panel */

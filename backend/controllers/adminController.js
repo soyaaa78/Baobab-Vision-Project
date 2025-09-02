@@ -250,8 +250,13 @@ exports.disableStaff = async (req, res) => {
     if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
       return res.status(404).json({ message: "Staff not found" });
     }
-    staff.isDisabled = true;
-    await staff.save();
+
+    await Admin.findByIdAndUpdate(
+      req.params.id,
+      { isDisabled: true },
+      { runValidators: false }
+    );
+
     res.status(200).json({ message: "Staff disabled" });
   } catch (err) {
     console.error("Disable staff error:", err);
@@ -266,8 +271,13 @@ exports.enableStaff = async (req, res) => {
     if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
       return res.status(404).json({ message: "Staff not found" });
     }
-    staff.isDisabled = false;
-    await staff.save();
+
+    await Admin.findByIdAndUpdate(
+      req.params.id,
+      { isDisabled: false },
+      { runValidators: false }
+    );
+
     res.status(200).json({ message: "Staff enabled" });
   } catch (err) {
     console.error("Enable staff error:", err);
@@ -286,6 +296,58 @@ exports.deleteStaff = async (req, res) => {
     res.status(200).json({ message: "Staff deleted" });
   } catch (err) {
     console.error("Delete staff error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// GET STAFF PROFILE
+exports.getStaffProfile = async (req, res) => {
+  try {
+    const staff = await Admin.findById(req.user.id).select(
+      "-password -otp -otpExpiry"
+    );
+    if (!staff) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+    res.status(200).json(staff);
+  } catch (err) {
+    console.error("Get staff profile error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// CHANGE STAFF PASSWORD
+exports.changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const staff = await Admin.findById(req.user.id);
+    if (!staff) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, staff.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 6 characters long" });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    await Admin.findByIdAndUpdate(
+      req.user.id,
+      { password: hashedNewPassword },
+      { runValidators: false }
+    );
+
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.error("Change password error:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

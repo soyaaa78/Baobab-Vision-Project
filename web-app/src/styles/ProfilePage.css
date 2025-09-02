@@ -1,0 +1,402 @@
+.profile-content {
+  height: 100%;
+  padding: 2rem 10%;
+  min-height: calc(100vh - 80px);
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+}
+
+/* Page header */
+.page-header h1 {
+  font-family: "Red Rose", serif;
+  font-size: 2.5rem;
+  color: #1e293b;
+  margin: 0 0 2rem 0;
+  font-weight: 700;
+  text-align: left;
+}
+
+/* Tab Navigation */
+.profile-tabs {
+  margin-bottom: 2rem;
+}
+
+.tab-navigation {
+  display: flex;
+  gap: 0;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+.tab-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 2rem;
+  font-family: "Rubik", sans-serif;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.875rem;
+  min-width: 180px;
+  justify-content: center;
+  margin: 0 0.25rem;
+  position: relative;
+}
+
+.tab-button:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #8b5a3c69;
+  opacity: 0;
+  border-radius: 12px;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.tab-button:hover {
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.tab-button:hover:before {
+  opacity: 0.8;
+}
+
+.tab-button.active {
+  background-color: #8b5a3c;
+  color: #ffffff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(94, 80, 63, 0.3);
+}
+
+/* Tab Content */
+.tab-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Profile Info Section */
+.profile-info-section {
+  width: 100%;
+}
+
+.info-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 2rem 1rem 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.card-header h2 {
+  font-family: "Red Rose", serif;
+  font-size: 1.5rem;
+  color: #1e293b;
+  margin: 0;
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-badge.active {
+  background-color: #10b981;
+  color: white;
+}
+
+.status-badge.disabled {
+  background-color: #ef4444;
+  color: white;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-item label {
+  font-family: "Rubik", sans-serif;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.info-value {
+  font-family: "Rubik", sans-serif;
+  font-size: 1rem;
+  color: #1e293b;
+  font-weight: 500;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.verification-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.verification-badge.verified {
+  background-color: #10b981;
+  color: white;
+}
+
+.verification-badge.unverified {
+  background-color: #f59e0b;
+  color: white;
+}
+
+.role-badge {
+  background: linear-gradient(135deg, #8b5a3c 0%, #a0785d 100%);
+  color: white;
+  font-weight: 600;
+}
+
+/* Password Section */
+.password-section {
+  width: 100%;
+  max-width: 600px;
+}
+
+.password-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.password-card .card-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.password-card .card-header p {
+  color: #64748b;
+  margin: 0;
+  font-family: "Rubik", sans-serif;
+  font-size: 0.875rem;
+}
+
+.password-form {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-family: "Rubik", sans-serif;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  padding-right: 3rem;
+  font-family: "Rubik", sans-serif;
+  font-size: 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.password-input:focus {
+  border-color: #8b5a3c;
+  box-shadow: 0 0 0 3px rgba(139, 90, 60, 0.1);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+  color: #8b5a3c;
+}
+
+.password-hint {
+  font-family: "Rubik", sans-serif;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.change-password-btn {
+  padding: 0.75rem 2rem;
+  font-family: "Rubik", sans-serif;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #8b5a3c 0%, #a0785d 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.change-password-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 90, 60, 0.3);
+}
+
+.change-password-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.change-password-btn.loading {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-content {
+    padding: 1rem 5%;
+  }
+
+  .page-header h1 {
+    font-size: 2rem;
+  }
+
+  .tab-navigation {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .tab-button {
+    min-width: auto;
+    margin: 0;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1.5rem;
+  }
+
+  .password-form {
+    padding: 1.5rem;
+  }
+
+  .card-header {
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-content {
+    padding: 1rem 3%;
+  }
+
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .info-grid {
+    padding: 1rem;
+  }
+
+  .password-form {
+    padding: 1rem;
+  }
+
+  .card-header {
+    padding: 1rem;
+  }
+}

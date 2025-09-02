@@ -16,6 +16,7 @@ import AddEyeglassPage from "../pages/eyeglass/AddEyeglassPage";
 import ManageUsersPage from "../pages/ManageUsersPage";
 import AllOrdersPage from "../pages/AllOrdersPage";
 import ManageReviewsPage from "../pages/ManageReviewsPage";
+import ProfilePage from "../pages/ProfilePage";
 import NotFoundPage from "../pages/NotFoundPage";
 
 // Wrapper to select homepage by role
@@ -97,6 +98,7 @@ function AppRoutes() {
             </RoleProtectedRoute>
           }
         />
+        <Route path="profile" element={<ProfilePage />} />
       </Route>
       <Route path="/404" element={<NotFoundPage />} />
       <Route path="*" element={<NotFoundPage />} />
