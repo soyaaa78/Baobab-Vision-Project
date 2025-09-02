@@ -8,6 +8,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 40px;
   margin: 0 auto;
 }
 
@@ -31,11 +32,11 @@
   color: #252525;
   text-decoration: none;
   font-family: "Red Rose", serif;
-  font-size: 20px;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 30px;
+  padding: 30px 20px;
   box-sizing: border-box;
   /* white-space: nowrap; */
   transition: background 0.2s, color 0.2s, border-bottom 0.2s;
@@ -45,7 +46,7 @@
   color: #252525;
   text-decoration: none;
   font-family: "Red Rose", serif;
-  font-size: 20px;
+  font-size: 16px;
 }
 
 .links li .nav-button:hover,
