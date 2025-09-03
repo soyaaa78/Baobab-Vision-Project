@@ -146,6 +146,28 @@
   box-shadow: 0 0 0 3px rgba(139, 90, 60, 0.1);
 }
 
+.reset-filters-btn {
+  padding: 0.625rem 1rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  height: fit-content;
+}
+
+.reset-filters-btn:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
+.reset-filters-btn:active {
+  transform: translateY(0);
+}
+
 /* Results Summary */
 .results-summary {
   margin-bottom: 1rem;

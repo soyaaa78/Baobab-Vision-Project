@@ -17,6 +17,8 @@ const AuditLogsPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterEventType, setFilterEventType] = useState("all");
   const [filterAction, setFilterAction] = useState("all");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
   const [token, setToken] = useState("");
 
   // Event type options for filtering
@@ -29,6 +31,7 @@ const AuditLogsPage = () => {
     "order",
     "payment",
     "admin",
+    "rating",
   ];
 
   // Common actions for filtering
@@ -107,6 +110,19 @@ const AuditLogsPage = () => {
       filtered = filtered.filter((log) => log.action === filterAction);
     }
 
+    // Filter by date range
+    if (filterDateFrom) {
+      const fromDate = new Date(filterDateFrom);
+      fromDate.setHours(0, 0, 0, 0); // Start of day
+      filtered = filtered.filter((log) => new Date(log.createdAt) >= fromDate);
+    }
+
+    if (filterDateTo) {
+      const toDate = new Date(filterDateTo);
+      toDate.setHours(23, 59, 59, 999); // End of day
+      filtered = filtered.filter((log) => new Date(log.createdAt) <= toDate);
+    }
+
     // Search functionality - search across all relevant fields
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -146,7 +162,14 @@ const AuditLogsPage = () => {
     }
 
     return filtered;
-  }, [auditLogs, searchQuery, filterEventType, filterAction]);
+  }, [
+    auditLogs,
+    searchQuery,
+    filterEventType,
+    filterAction,
+    filterDateFrom,
+    filterDateTo,
+  ]);
 
   const handleViewDetails = (log) => {
     setSelectedLog(log);
@@ -173,6 +196,7 @@ const AuditLogsPage = () => {
       order: "#ef4444",
       payment: "#06b6d4",
       admin: "#6b7280",
+      rating: "#8b5a3c",
     };
     return colors[eventType] || "#6b7280";
   };
@@ -191,6 +215,21 @@ const AuditLogsPage = () => {
     };
     return colors[action] || "#6b7280";
   };
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setFilterEventType("all");
+    setFilterAction("all");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+  };
+
+  const hasActiveFilters =
+    searchQuery ||
+    filterEventType !== "all" ||
+    filterAction !== "all" ||
+    filterDateFrom ||
+    filterDateTo;
 
   if (loading) {
     return (
@@ -269,6 +308,43 @@ const AuditLogsPage = () => {
               ))}
             </select>
           </div>
+
+          <div className="filter-group">
+            <label htmlFor="dateFromFilter">
+              <FontAwesomeIcon icon={faFilter} />
+              From Date
+            </label>
+            <input
+              id="dateFromFilter"
+              type="date"
+              value={filterDateFrom}
+              onChange={(e) => setFilterDateFrom(e.target.value)}
+              className="filter-select"
+            />
+          </div>
+
+          <div className="filter-group">
+            <label htmlFor="dateToFilter">
+              <FontAwesomeIcon icon={faFilter} />
+              To Date
+            </label>
+            <input
+              id="dateToFilter"
+              type="date"
+              value={filterDateTo}
+              onChange={(e) => setFilterDateTo(e.target.value)}
+              className="filter-select"
+            />
+          </div>
+
+          {hasActiveFilters && (
+            <div className="filter-group">
+              <label>&nbsp;</label>
+              <button onClick={resetFilters} className="reset-filters-btn">
+                Clear Filters
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -277,6 +353,11 @@ const AuditLogsPage = () => {
         <p>
           Showing {filteredLogs.length} of {auditLogs.length} audit logs
           {searchQuery && ` for "${searchQuery}"`}
+          {(filterEventType !== "all" ||
+            filterAction !== "all" ||
+            filterDateFrom ||
+            filterDateTo) &&
+            ` with applied filters`}
         </p>
       </div>
 
@@ -298,9 +379,7 @@ const AuditLogsPage = () => {
             {filteredLogs.length === 0 ? (
               <tr>
                 <td colSpan="7" className="no-data">
-                  {searchQuery ||
-                  filterEventType !== "all" ||
-                  filterAction !== "all"
+                  {hasActiveFilters
                     ? "No audit logs match your search criteria"
                     : "No audit logs found"}
                 </td>
