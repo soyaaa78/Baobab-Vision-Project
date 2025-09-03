@@ -1,6 +1,14 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faTimes, faUser, faCalendar, faGlobe, faDesktop, faTags, faExchangeAlt } from "@fortawesome/free-solid-svg-icons";
+import {
+  faTimes,
+  faUser,
+  faCalendar,
+  faGlobe,
+  faDesktop,
+  faTags,
+  faExchangeAlt,
+} from "@fortawesome/free-solid-svg-icons";
 import "../styles/AuditLogDetailModal.css";
 
 const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
@@ -92,9 +100,11 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
                 <FontAwesomeIcon icon={faTags} className="info-icon" />
                 <div>
                   <label>Event Type</label>
-                  <span 
+                  <span
                     className="event-type-badge-detail"
-                    style={{ backgroundColor: getEventTypeColor(log.eventType) }}
+                    style={{
+                      backgroundColor: getEventTypeColor(log.eventType),
+                    }}
                   >
                     {log.eventType}
                   </span>
@@ -105,7 +115,7 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
                 <FontAwesomeIcon icon={faExchangeAlt} className="info-icon" />
                 <div>
                   <label>Action</label>
-                  <span 
+                  <span
                     className="action-badge-detail"
                     style={{ backgroundColor: getActionColor(log.action) }}
                   >

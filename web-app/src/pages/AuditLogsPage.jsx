@@ -28,7 +28,7 @@ const AuditLogsPage = () => {
     "staff",
     "order",
     "payment",
-    "admin"
+    "admin",
   ];
 
   // Common actions for filtering
@@ -44,7 +44,7 @@ const AuditLogsPage = () => {
     "approve",
     "decline",
     "update_status",
-    "verify_otp"
+    "verify_otp",
   ];
 
   useEffect(() => {
@@ -84,12 +84,12 @@ const AuditLogsPage = () => {
   // Helper function to get display name for actor
   const getActorDisplayName = (log) => {
     if (!log.actor) return "System";
-    
+
     const actor = log.actor;
     if (actor.firstname && actor.lastname) {
       return `${actor.firstname} ${actor.lastname}`;
     }
-    
+
     return actor.username || actor.email || "Unknown User";
   };
 
@@ -99,18 +99,18 @@ const AuditLogsPage = () => {
 
     // Filter by event type
     if (filterEventType !== "all") {
-      filtered = filtered.filter(log => log.eventType === filterEventType);
+      filtered = filtered.filter((log) => log.eventType === filterEventType);
     }
 
     // Filter by action
     if (filterAction !== "all") {
-      filtered = filtered.filter(log => log.action === filterAction);
+      filtered = filtered.filter((log) => log.action === filterAction);
     }
 
     // Search functionality - search across all relevant fields
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(log => {
+      filtered = filtered.filter((log) => {
         const actorName = getActorDisplayName(log).toLowerCase();
         const eventType = log.eventType?.toLowerCase() || "";
         const action = log.action?.toLowerCase() || "";
@@ -119,8 +119,10 @@ const AuditLogsPage = () => {
         const actorRole = log.actorRole?.toLowerCase() || "";
         const ip = log.ip?.toLowerCase() || "";
         const userAgent = log.userAgent?.toLowerCase() || "";
-        const createdAt = new Date(log.createdAt).toLocaleString().toLowerCase();
-        
+        const createdAt = new Date(log.createdAt)
+          .toLocaleString()
+          .toLowerCase();
+
         // Search in metadata and old/new values
         const metadataStr = JSON.stringify(log.metadata || {}).toLowerCase();
         const oldValuesStr = JSON.stringify(log.oldValues || {}).toLowerCase();
@@ -204,7 +206,7 @@ const AuditLogsPage = () => {
   return (
     <div className="page" id="auditlogs">
       <ToastContainer />
-      
+
       <div className="auditlogs-header">
         <h1>Audit Logs</h1>
         <p>Monitor and track all system activities and user actions</p>
@@ -237,9 +239,11 @@ const AuditLogsPage = () => {
               onChange={(e) => setFilterEventType(e.target.value)}
               className="filter-select"
             >
-              {eventTypes.map(type => (
+              {eventTypes.map((type) => (
                 <option key={type} value={type}>
-                  {type === "all" ? "All Types" : type.charAt(0).toUpperCase() + type.slice(1)}
+                  {type === "all"
+                    ? "All Types"
+                    : type.charAt(0).toUpperCase() + type.slice(1)}
                 </option>
               ))}
             </select>
@@ -256,9 +260,11 @@ const AuditLogsPage = () => {
               onChange={(e) => setFilterAction(e.target.value)}
               className="filter-select"
             >
-              {actions.map(action => (
+              {actions.map((action) => (
                 <option key={action} value={action}>
-                  {action === "all" ? "All Actions" : action.charAt(0).toUpperCase() + action.slice(1)}
+                  {action === "all"
+                    ? "All Actions"
+                    : action.charAt(0).toUpperCase() + action.slice(1)}
                 </option>
               ))}
             </select>
@@ -292,7 +298,9 @@ const AuditLogsPage = () => {
             {filteredLogs.length === 0 ? (
               <tr>
                 <td colSpan="7" className="no-data">
-                  {searchQuery || filterEventType !== "all" || filterAction !== "all" 
+                  {searchQuery ||
+                  filterEventType !== "all" ||
+                  filterAction !== "all"
                     ? "No audit logs match your search criteria"
                     : "No audit logs found"}
                 </td>
@@ -300,27 +308,29 @@ const AuditLogsPage = () => {
             ) : (
               filteredLogs.map((log) => (
                 <tr key={log._id} className="log-row">
-                  <td className="date-cell">
-                    {formatDate(log.createdAt)}
-                  </td>
+                  <td className="date-cell">{formatDate(log.createdAt)}</td>
                   <td className="actor-cell">
                     <div className="actor-info">
-                      <span className="actor-name">{getActorDisplayName(log)}</span>
+                      <span className="actor-name">
+                        {getActorDisplayName(log)}
+                      </span>
                       {log.actorRole && (
                         <span className="actor-role">{log.actorRole}</span>
                       )}
                     </div>
                   </td>
                   <td className="event-type-cell">
-                    <span 
+                    <span
                       className="event-type-badge"
-                      style={{ backgroundColor: getEventTypeColor(log.eventType) }}
+                      style={{
+                        backgroundColor: getEventTypeColor(log.eventType),
+                      }}
                     >
                       {log.eventType}
                     </span>
                   </td>
                   <td className="action-cell">
-                    <span 
+                    <span
                       className="action-badge"
                       style={{ backgroundColor: getActionColor(log.action) }}
                     >
@@ -333,18 +343,15 @@ const AuditLogsPage = () => {
                         <span className="target-model">{log.targetModel}</span>
                         {log.targetId && (
                           <span className="target-id">
-                            {log.targetId.toString().length > 15 
+                            {log.targetId.toString().length > 15
                               ? `${log.targetId.toString().substring(0, 15)}...`
-                              : log.targetId
-                            }
+                              : log.targetId}
                           </span>
                         )}
                       </div>
                     )}
                   </td>
-                  <td className="ip-cell">
-                    {log.ip || "N/A"}
-                  </td>
+                  <td className="ip-cell">{log.ip || "N/A"}</td>
                   <td className="actions-cell">
                     <button
                       onClick={() => handleViewDetails(log)}
