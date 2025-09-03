@@ -249,7 +249,7 @@ const order_put = catchAsync(async (req, res, next) => {
   // Audit: Log staff actions on order updates
   if (
     req.user &&
-    (req.user.role === "super_admin" || req.user.role?.startsWith("staff"))
+    (req.user.role === "system_admin" || req.user.role?.startsWith("staff"))
   ) {
     const oldStatus = order.status;
     const newStatus = updatedOrder.status;
@@ -272,6 +272,11 @@ const order_put = catchAsync(async (req, res, next) => {
       // Special logging for cancellation approval
       if (oldStatus === "cancelled_pending" && newStatus === "cancelled") {
         action = `Cancellation Approved for order ${ordId}`;
+      } else if (
+        oldStatus === "cancelled_pending" &&
+        newStatus === "processing"
+      ) {
+        action = `Cancellation Disapproved for order ${ordId}`;
       }
 
       logEvent(req, {
@@ -307,7 +312,7 @@ const order_delete = catchAsync(async (req, res, next) => {
   // Audit: Log staff order deletion
   if (
     req.user &&
-    (req.user.role === "super_admin" || req.user.role?.startsWith("staff"))
+    (req.user.role === "system_admin" || req.user.role?.startsWith("staff"))
   ) {
     const ordId = deletedOrder.orderId || id;
     logEvent(req, {

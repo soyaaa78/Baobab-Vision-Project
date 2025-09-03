@@ -102,7 +102,7 @@ function AppRoutes() {
         <Route
           path="audit-logs"
           element={
-            <RoleProtectedRoute allowRoles={["super_admin"]}>
+            <RoleProtectedRoute allowRoles={["system_admin"]}>
               <AuditLogsPage />
             </RoleProtectedRoute>
           }

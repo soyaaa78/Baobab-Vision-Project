@@ -4,15 +4,15 @@ const { list } = require("../controllers/auditLogController");
 const adminAuth = require("../middlewares/adminAuthMiddleware");
 
 const isSuperAdmin = (req, res, next) => {
-  if (req.user?.role !== "super_admin") {
+  if (req.user?.role !== "system_admin") {
     return res
       .status(403)
-      .json({ message: "Access denied. Super admin only." });
+      .json({ message: "Access denied. System Admin only." });
   }
   next();
 };
 
-// View logs (Super Admin only)
+// View logs (System Admin only)
 router.get("/", adminAuth.verifyToken, isSuperAdmin, list);
 
 module.exports = router;

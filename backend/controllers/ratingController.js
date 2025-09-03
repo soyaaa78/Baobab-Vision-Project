@@ -99,17 +99,31 @@ const rating_patch = catchAsync(async (req, res, next) => {
     updates.pictures = Array.isArray(pics) ? pics : [pics];
   }
 
+  // Prepare variables for admin response logging similar to order controller style
+  let isAdminOrStaff = false;
+  let prevAdminResponse;
+  const hasAdminResponse = Object.prototype.hasOwnProperty.call(
+    req.body,
+    "adminResponse"
+  );
+
   // Admin response support
-  if (Object.prototype.hasOwnProperty.call(req.body, "adminResponse")) {
-    // Only allow admins/staff to set adminResponse. Basic check: presence of req.user from adminAuth or role from token.
-    // If coming from user auth middleware, req.userId is set (user token). If coming from admin auth, req.user.role exists.
-    const isAdminOrStaff =
+  if (hasAdminResponse) {
+    // Only allow admins/staff to set adminResponse
+    isAdminOrStaff = !!(
       req.user?.role &&
-      ["super_admin", "staff_product", "staff_order"].includes(req.user.role);
+      ["system_admin", "staff_product", "staff_order"].includes(req.user.role)
+    );
     if (!isAdminOrStaff) {
       return next(new AppError("Only staff can respond to ratings", 403));
     }
-    const oldDoc = await Rating.findById(id);
+
+    // Fetch old document to capture previous response for audit trail
+    const oldDoc = await Rating.findById(id).select(
+      "adminResponse orderId userId"
+    );
+    prevAdminResponse = oldDoc?.adminResponse;
+
     updates.adminResponse = req.body.adminResponse;
     updates.respondedAt = new Date();
   }
@@ -123,23 +137,38 @@ const rating_patch = catchAsync(async (req, res, next) => {
   });
   if (!updated) return next(new AppError("Rating not found", 404));
 
-  // If staff responded, log the action
-  if (
-    Object.prototype.hasOwnProperty.call(req.body, "adminResponse") &&
-    req.user?.role
-  ) {
+  // If staff responded/edited, log the action (mirror order controller style: action + old/new values + metadata)
+  if (hasAdminResponse && isAdminOrStaff) {
     try {
+      let action;
+      const newResp = updated.adminResponse ?? "";
+      const oldResp = prevAdminResponse ?? "";
+
+      if (oldResp && !newResp) {
+        action = `Cleared response to rating (${updated._id})`;
+      } else if (!oldResp && newResp) {
+        action = `Responded to rating (${updated._id})`;
+      } else if (oldResp !== newResp) {
+        action = `Edited response to rating (${updated._id})`;
+      } else {
+        action = `Updated response to rating (${updated._id})`;
+      }
+
       logEvent(req, {
-        eventType: "admin",
-        action: `Responded to rating (${updated._id}) for order ${updated.orderId}`,
+        eventType: "rating",
+        action,
         targetModel: "Rating",
         targetId: updated._id,
-        oldValues: { adminResponse: oldDoc?.adminResponse },
+        oldValues: { adminResponse: prevAdminResponse },
         newValues: { adminResponse: updated.adminResponse },
-        metadata: { orderId: updated.orderId, userId: updated.userId },
+        metadata: {
+          orderId: updated.orderId,
+          userId: updated.userId,
+          respondedAt: updated.respondedAt,
+        },
       });
     } catch (e) {
-      // best-effort
+      // best-effort logging; do not block response
     }
   }
 

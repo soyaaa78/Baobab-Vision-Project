@@ -81,7 +81,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// CREATE STAFF (Super Admin only)
+// CREATE STAFF (System Admin only)
 exports.createStaff = async (req, res) => {
   const { firstname, lastname, username, email, password, permissions, role } =
     req.body;
@@ -135,7 +135,7 @@ exports.createStaff = async (req, res) => {
   }
 };
 
-// GET ALL STAFF (Super Admin only)
+// GET ALL STAFF (System Admin only)
 exports.getAllStaff = async (req, res) => {
   try {
     // Get all staff_product and staff_order roles
@@ -159,7 +159,7 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// UPDATE STAFF PERMISSIONS (Super Admin only)
+// UPDATE STAFF PERMISSIONS (System Admin only)
 exports.updatePermissions = async (req, res) => {
   const { id } = req.params;
   const { permissions } = req.body;

@@ -108,8 +108,8 @@ const ProfilePage = () => {
 
   const getRoleDisplayName = (role) => {
     switch (role) {
-      case "super_admin":
-        return "Super Administrator";
+      case "system_admin":
+        return "System Administrator";
       case "staff_product":
         return "Product Staff";
       case "staff_order":

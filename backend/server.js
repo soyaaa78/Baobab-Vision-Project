@@ -80,9 +80,9 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running at http://0.0.0.0:${PORT}`);
 });
 
-// Seed super admin
+// Seed System Admin
 const seedSuperAdmin = async () => {
-  const existing = await Admin.findOne({ role: "super_admin" });
+  const existing = await Admin.findOne({ role: "system_admin" });
   if (existing) return;
 
   const hashedPassword = await bcrypt.hash("superadmin123", 10);
@@ -91,12 +91,12 @@ const seedSuperAdmin = async () => {
     username: "superadmin",
     email: "owner@example.com",
     password: hashedPassword,
-    role: "super_admin",
+    role: "system_admin",
     permissions: ["manage_staff", "manage_permissions"],
   });
 
   await superAdmin.save();
-  console.log("✅ Super admin seeded");
+  console.log("✅ System Admin seeded");
 };
 
 seedSuperAdmin();

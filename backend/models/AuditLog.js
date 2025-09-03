@@ -10,7 +10,7 @@ const AuditLogSchema = new mongoose.Schema(
     },
     actorRole: {
       type: String,
-      enum: ["super_admin", "staff_product", "staff_order"],
+      enum: ["system_admin", "staff_product", "staff_order"],
       required: false,
     },
 
@@ -21,7 +21,16 @@ const AuditLogSchema = new mongoose.Schema(
     // What happened
     eventType: {
       type: String,
-      enum: ["auth", "product", "user", "staff", "order", "payment", "admin"],
+      enum: [
+        "auth",
+        "product",
+        "user",
+        "staff",
+        "order",
+        "payment",
+        "admin",
+        "rating",
+      ],
       required: true,
     },
     action: { type: String, required: true }, // e.g., login, verify_otp, create, update, delete, enable, disable, approve, decline, update_status

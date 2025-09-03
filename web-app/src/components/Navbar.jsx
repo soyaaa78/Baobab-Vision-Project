@@ -63,7 +63,7 @@ function Navbar() {
             </>
           )}
 
-          {role === "super_admin" && (
+          {role === "system_admin" && (
             <li>
               <Link to="audit-logs" className="nav-button">
                 Audit Logs
