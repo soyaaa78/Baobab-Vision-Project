@@ -3,6 +3,8 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../services/sendEmail");
+const { logEvent } = require("../services/auditLogService");
+const crypto = require("crypto");
 
 // LOGIN
 exports.login = async (req, res) => {
@@ -34,6 +36,15 @@ exports.login = async (req, res) => {
         `Your OTP code is: ${otp}`
       );
 
+      // Audit: OTP sent for verification
+      logEvent(req, {
+        eventType: "auth",
+        action: "Staff login verification OTP sent",
+        targetModel: "Admin",
+        targetId: admin._id,
+        metadata: { email: admin.email },
+      });
+
       return res.status(403).json({
         message: "Email not verified. OTP sent.",
         requiresVerification: true,
@@ -42,11 +53,22 @@ exports.login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET || "fallback",
-      { expiresIn: "1h" }
-    );
+    const jti = crypto.randomUUID();
+    const tokenPayload = { id: admin._id, role: admin.role, jti };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || "fallback", {
+      expiresIn: "1h",
+    });
+    // Ensure actor context exists for audit log
+    req.user = { id: admin._id, role: admin.role, jti };
+
+    // Audit: staff login
+    logEvent(req, {
+      eventType: "auth",
+      action: `Staff logged in (${username})`,
+      targetModel: "Admin",
+      targetId: admin._id,
+      metadata: { username },
+    });
 
     return res.status(200).json({
       message: "Login successful",
@@ -87,6 +109,15 @@ exports.createStaff = async (req, res) => {
     });
 
     await staff.save();
+
+    // Audit: add staff account
+    logEvent(req, {
+      eventType: "staff",
+      action: `Created staff account (${username})`,
+      targetModel: "Admin",
+      targetId: staff._id,
+      newValues: { firstname, lastname, username, email, role, permissions },
+    });
 
     await sendEmail(
       staff.email,
@@ -142,6 +173,15 @@ exports.updatePermissions = async (req, res) => {
     staff.permissions = permissions;
     await staff.save();
 
+    // Audit: update staff permissions
+    logEvent(req, {
+      eventType: "staff",
+      action: `Updated staff permissions (${staff.username})`,
+      targetModel: "Admin",
+      targetId: staff._id,
+      newValues: { permissions },
+    });
+
     res.status(200).json({ message: "Permissions updated" });
   } catch (err) {
     console.error("Update permissions error:", err);
@@ -164,13 +204,22 @@ exports.verifyStaffOtp = async (req, res) => {
     admin.otpExpiry = null;
     await admin.save();
 
-    const token = jwt.sign(
-      { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET || "fallback",
-      {
-        expiresIn: "1h",
-      }
-    );
+    const jti = crypto.randomUUID();
+    const tokenPayload = { id: admin._id, role: admin.role, jti };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || "fallback", {
+      expiresIn: "1h",
+    });
+    // Ensure actor context exists for audit log
+    req.user = { id: admin._id, role: admin.role, jti };
+
+    // Audit: staff verification
+    logEvent(req, {
+      eventType: "auth",
+      action: `Staff email verified (${email})`,
+      targetModel: "Admin",
+      targetId: admin._id,
+      metadata: { email },
+    });
 
     return res
       .status(200)
@@ -196,6 +245,14 @@ exports.resendOtp = async (req, res) => {
     await admin.save();
 
     await sendEmail(admin.email, "Verification OTP", `Your new OTP is: ${otp}`);
+    // Audit: resend otp
+    logEvent(req, {
+      eventType: "auth",
+      action: "Staff verification OTP resent",
+      targetModel: "Admin",
+      targetId: admin._id,
+      metadata: { email },
+    });
     res.status(200).json({ message: "OTP resent to email" });
   } catch (err) {
     console.error("Resend OTP error:", err);
@@ -210,6 +267,15 @@ exports.disableUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     user.isDisabled = true;
     await user.save();
+    // Audit: disable user
+    logEvent(req, {
+      eventType: "user",
+      action: `Disabled user account (${
+        user.username || user.email || user._id
+      })`,
+      targetModel: "User",
+      targetId: user._id,
+    });
     res.status(200).json({ message: "User disabled" });
   } catch (err) {
     console.error("Disable user error:", err);
@@ -224,6 +290,15 @@ exports.enableUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     user.isDisabled = false;
     await user.save();
+    // Audit: enable user
+    logEvent(req, {
+      eventType: "user",
+      action: `Enabled user account (${
+        user.username || user.email || user._id
+      })`,
+      targetModel: "User",
+      targetId: user._id,
+    });
     res.status(200).json({ message: "User enabled" });
   } catch (err) {
     console.error("Enable user error:", err);
@@ -236,6 +311,15 @@ exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
+    // Audit: delete user
+    logEvent(req, {
+      eventType: "user",
+      action: `Deleted user account (${
+        user?.username || user?.email || req.params.id
+      })`,
+      targetModel: "User",
+      targetId: req.params.id,
+    });
     res.status(200).json({ message: "User deleted" });
   } catch (err) {
     console.error("Delete user error:", err);
@@ -256,7 +340,13 @@ exports.disableStaff = async (req, res) => {
       { isDisabled: true },
       { runValidators: false }
     );
-
+    // Audit: disable staff
+    logEvent(req, {
+      eventType: "staff",
+      action: `Disabled staff account (${staff.username})`,
+      targetModel: "Admin",
+      targetId: req.params.id,
+    });
     res.status(200).json({ message: "Staff disabled" });
   } catch (err) {
     console.error("Disable staff error:", err);
@@ -277,7 +367,13 @@ exports.enableStaff = async (req, res) => {
       { isDisabled: false },
       { runValidators: false }
     );
-
+    // Audit: enable staff
+    logEvent(req, {
+      eventType: "staff",
+      action: `Enabled staff account (${staff.username})`,
+      targetModel: "Admin",
+      targetId: req.params.id,
+    });
     res.status(200).json({ message: "Staff enabled" });
   } catch (err) {
     console.error("Enable staff error:", err);
@@ -293,6 +389,13 @@ exports.deleteStaff = async (req, res) => {
       return res.status(404).json({ message: "Staff not found" });
     }
     await Admin.findByIdAndDelete(req.params.id);
+    // Audit: delete staff
+    logEvent(req, {
+      eventType: "staff",
+      action: `Deleted staff account (${staff.username})`,
+      targetModel: "Admin",
+      targetId: req.params.id,
+    });
     res.status(200).json({ message: "Staff deleted" });
   } catch (err) {
     console.error("Delete staff error:", err);
@@ -346,8 +449,47 @@ exports.changePassword = async (req, res) => {
     );
 
     res.status(200).json({ message: "Password changed successfully" });
+    // Audit: staff changed password (no sensitive values)
+    logEvent(req, {
+      eventType: "admin",
+      action: "Changed account password",
+      targetModel: "Admin",
+      targetId: req.user.id,
+    });
   } catch (err) {
     console.error("Change password error:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// LOGOUT (invalidate on client; we record the event server-side)
+exports.logout = async (req, res) => {
+  try {
+    // Resolve username for clearer audit message
+    let username = undefined;
+    if (req.user?.id) {
+      try {
+        const staffDoc = await Admin.findById(req.user.id).select(
+          "username email"
+        );
+        if (staffDoc) {
+          username =
+            staffDoc.username || staffDoc.email || staffDoc._id?.toString();
+        }
+      } catch (_) {}
+    }
+
+    // Audit: staff logout
+    logEvent(req, {
+      eventType: "auth",
+      action: `Staff logged out${username ? ` (${username})` : ""}`,
+      targetModel: "Admin",
+      targetId: req.user?.id,
+      metadata: username ? { username } : undefined,
+    });
+    return res.status(200).json({ message: "Logged out" });
+  } catch (err) {
+    console.error("Admin logout error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };

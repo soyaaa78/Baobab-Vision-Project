@@ -63,6 +63,14 @@ function Navbar() {
             </>
           )}
 
+          {role === "super_admin" && (
+            <li>
+              <Link to="audit-logs" className="nav-button">
+                Audit Logs
+              </Link>
+            </li>
+          )}
+
           <li>
             <Link to="profile" className="nav-button">
               Profile

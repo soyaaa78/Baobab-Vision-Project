@@ -37,6 +37,9 @@ router.put(
 router.post("/verify-otp", adminController.verifyStaffOtp);
 router.post("/resend-otp", adminController.resendOtp);
 
+// Logout (for audit only; client should drop token)
+router.post("/logout", adminAuth.verifyToken, adminController.logout);
+
 // Staff profile routes
 router.get("/profile", adminAuth.verifyToken, adminController.getStaffProfile);
 router.put(

@@ -48,12 +48,10 @@ const pop_post = catchAsync(async (req, res, next) => {
     proofOfPaymentImage,
     referenceNumber,
   });
-  return res
-    .status(201)
-    .json({
-      message: "Proof of Payment Successfully Created",
-      proofOfPayment: created,
-    });
+  return res.status(201).json({
+    message: "Proof of Payment Successfully Created",
+    proofOfPayment: created,
+  });
 });
 
 // UPDATE ProofOfPayment
@@ -81,12 +79,10 @@ const pop_patch = catchAsync(async (req, res, next) => {
   });
   if (!updated) return next(new AppError("Proof of Payment not found", 404));
 
-  return res
-    .status(200)
-    .json({
-      message: "Proof of Payment Updated Successfully",
-      proofOfPayment: updated,
-    });
+  return res.status(200).json({
+    message: "Proof of Payment Updated Successfully",
+    proofOfPayment: updated,
+  });
 });
 
 // DELETE ProofOfPayment
@@ -97,12 +93,10 @@ const pop_delete = catchAsync(async (req, res, next) => {
   const deleted = await ProofOfPayment.findByIdAndDelete(id);
   if (!deleted) return next(new AppError("Proof of Payment not found", 404));
 
-  return res
-    .status(200)
-    .json({
-      message: "Proof of Payment Successfully Deleted",
-      proofOfPayment: deleted,
-    });
+  return res.status(200).json({
+    message: "Proof of Payment Successfully Deleted",
+    proofOfPayment: deleted,
+  });
 });
 
 module.exports = { pop_get, pop_post, pop_patch, pop_delete };

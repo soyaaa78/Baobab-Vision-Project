@@ -11,6 +11,7 @@ const {
 } = require("./firebaseStorageController");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
+const { logEvent } = require("../services/auditLogService");
 
 // Use Firebase storage middleware
 exports.uploadProductFiles = uploadProductFiles;
@@ -133,6 +134,14 @@ exports.createProduct = catchAsync(async (req, res, next) => {
     });
 
     await product.save();
+    // Audit: add product
+    logEvent(req, {
+      eventType: "product",
+      action: `Created product (${product.name})`,
+      targetModel: "Product",
+      targetId: product._id,
+      newValues: product.toObject(),
+    });
     res.status(201).json({
       message: "Product created successfully!",
       product,
@@ -202,7 +211,17 @@ exports.addProductToRecommended = async (req, res) => {
     // Update the recommendedFor field
     product.recommendedFor = recommendedFor;
 
+    const oldValues = { recommendedFor: !recommendedFor };
     await product.save();
+    // Audit: recommended toggle
+    logEvent(req, {
+      eventType: "product",
+      action: `Updated product recommendation status (${product.name})`,
+      targetModel: "Product",
+      targetId: product._id,
+      oldValues,
+      newValues: { recommendedFor },
+    });
     res
       .status(200)
       .json({ message: "Product updated to recommended status", product });
@@ -221,6 +240,7 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    const oldValues = product.toObject();
     Object.keys(req.body).forEach((key) => {
       if (req.body[key] !== undefined && req.body[key] !== null) {
         if (key === "colorOptions" && Array.isArray(req.body.colorOptions)) {
@@ -242,6 +262,15 @@ exports.updateProduct = async (req, res) => {
       }
     });
     await product.save();
+    // Audit: edit product
+    logEvent(req, {
+      eventType: "product",
+      action: `Updated product details (${product.name})`,
+      targetModel: "Product",
+      targetId: product._id,
+      oldValues,
+      newValues: product.toObject(),
+    });
     res.status(200).json({ message: "Product updated", product });
   } catch (err) {
     res.status(500).json({ message: "Internal server error", err });
@@ -256,6 +285,14 @@ exports.deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
+    // Audit: delete product
+    logEvent(req, {
+      eventType: "product",
+      action: `Deleted product (${product.name || id})`,
+      targetModel: "Product",
+      targetId: id,
+      oldValues: product,
+    });
     res.status(200).json({ message: "Product deleted", product });
   } catch (err) {
     res.status(500).json({ message: "Internal server error", err });

@@ -3,6 +3,7 @@ const catchAsync = require("../utils/catchAsync");
 const Rating = require("../models/Order/Rating");
 const Order = require("../models/Order");
 const Admin = require("../models/Admin");
+const { logEvent } = require("../services/auditLogService");
 
 // GET Rating
 const rating_get = catchAsync(async (req, res, next) => {
@@ -108,6 +109,7 @@ const rating_patch = catchAsync(async (req, res, next) => {
     if (!isAdminOrStaff) {
       return next(new AppError("Only staff can respond to ratings", 403));
     }
+    const oldDoc = await Rating.findById(id);
     updates.adminResponse = req.body.adminResponse;
     updates.respondedAt = new Date();
   }
@@ -120,6 +122,26 @@ const rating_patch = catchAsync(async (req, res, next) => {
     runValidators: true,
   });
   if (!updated) return next(new AppError("Rating not found", 404));
+
+  // If staff responded, log the action
+  if (
+    Object.prototype.hasOwnProperty.call(req.body, "adminResponse") &&
+    req.user?.role
+  ) {
+    try {
+      logEvent(req, {
+        eventType: "admin",
+        action: `Responded to rating (${updated._id}) for order ${updated.orderId}`,
+        targetModel: "Rating",
+        targetId: updated._id,
+        oldValues: { adminResponse: oldDoc?.adminResponse },
+        newValues: { adminResponse: updated.adminResponse },
+        metadata: { orderId: updated.orderId, userId: updated.userId },
+      });
+    } catch (e) {
+      // best-effort
+    }
+  }
 
   return res
     .status(200)

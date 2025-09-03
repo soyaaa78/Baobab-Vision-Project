@@ -6,6 +6,7 @@ const UserCart = require("../models/UserCart");
 const mongoose = require("mongoose");
 const ProofOfPayment = require("../models/Order/ProofOfPayment");
 const crypto = require("crypto");
+const { logEvent } = require("../services/auditLogService");
 
 // Generate a user-friendly, unique orderId (e.g., ORD-20250829-3F9A2C)
 const generateOrderId = async () => {
@@ -245,6 +246,46 @@ const order_put = catchAsync(async (req, res, next) => {
 
   if (!updatedOrder) return next(new AppError("Order not found", 404));
 
+  // Audit: Log staff actions on order updates
+  if (
+    req.user &&
+    (req.user.role === "super_admin" || req.user.role?.startsWith("staff"))
+  ) {
+    const oldStatus = order.status;
+    const newStatus = updatedOrder.status;
+
+    // Log status updates
+    if (status && oldStatus !== newStatus) {
+      const ordId = updatedOrder.orderId || updatedOrder._id?.toString();
+      let action = `Status Updated to ${newStatus} for order ${ordId}`;
+      const metadata = { oldStatus, newStatus, orderId: ordId };
+
+      // Special logging for payment approval/disapproval
+      if (updatedOrder.paymentMethod === "Gcash") {
+        if (oldStatus === "pending" && newStatus === "processing") {
+          action = `Payment Approved for order ${ordId}`;
+        } else if (oldStatus === "pending" && newStatus === "cancelled") {
+          action = `Payment Disapproved for order ${ordId}`;
+        }
+      }
+
+      // Special logging for cancellation approval
+      if (oldStatus === "cancelled_pending" && newStatus === "cancelled") {
+        action = `Cancellation Approved for order ${ordId}`;
+      }
+
+      logEvent(req, {
+        eventType: "order",
+        action,
+        targetModel: "Order",
+        targetId: updatedOrder._id,
+        oldValues: { status: oldStatus },
+        newValues: { status: newStatus },
+        metadata,
+      });
+    }
+  }
+
   return res
     .status(200)
     .json({ message: "Order Updated Successfully", updatedOrder });
@@ -262,6 +303,22 @@ const order_delete = catchAsync(async (req, res, next) => {
   const deletedOrder = await Order.findByIdAndDelete(id);
 
   if (!deletedOrder) return next(new AppError("Order not found", 404));
+
+  // Audit: Log staff order deletion
+  if (
+    req.user &&
+    (req.user.role === "super_admin" || req.user.role?.startsWith("staff"))
+  ) {
+    const ordId = deletedOrder.orderId || id;
+    logEvent(req, {
+      eventType: "order",
+      action: `Deleted order ${ordId}`,
+      targetModel: "Order",
+      targetId: id,
+      oldValues: deletedOrder.toObject(),
+      metadata: { orderId: ordId },
+    });
+  }
 
   return res
     .status(200)

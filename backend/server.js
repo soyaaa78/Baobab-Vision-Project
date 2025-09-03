@@ -19,6 +19,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const userProfileRoutes = require("./routes/userProfileRoutes");
 const storageRoutes = require("./routes/storageRoutes");
 const aliveRoute = require("./routes/aliveRoute");
+const auditLogRoutes = require("./routes/auditLogRoutes");
 
 // Models
 const Admin = require("./models/Admin");
@@ -32,6 +33,8 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+// trust proxy for correct req.ip behind reverse proxies
+app.set("trust proxy", true);
 
 // Static folders
 app.use("/uploads", express.static("uploads"));
@@ -53,6 +56,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/user", userProfileRoutes);
 app.use("/api/storage", storageRoutes);
 app.use("/api/alive", aliveRoute);
+app.use("/api/audit-logs", auditLogRoutes);
 
 // Request logger middleware
 app.use((req, res, next) => {

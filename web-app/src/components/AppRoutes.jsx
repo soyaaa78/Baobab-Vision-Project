@@ -16,6 +16,7 @@ import AddEyeglassPage from "../pages/eyeglass/AddEyeglassPage";
 import ManageUsersPage from "../pages/ManageUsersPage";
 import AllOrdersPage from "../pages/AllOrdersPage";
 import ManageReviewsPage from "../pages/ManageReviewsPage";
+import AuditLogsPage from "../pages/AuditLogsPage";
 import ProfilePage from "../pages/ProfilePage";
 import NotFoundPage from "../pages/NotFoundPage";
 
@@ -95,6 +96,14 @@ function AppRoutes() {
           element={
             <RoleProtectedRoute blockRoles={["staff_product"]}>
               <ManageReviewsPage />
+            </RoleProtectedRoute>
+          }
+        />
+        <Route
+          path="audit-logs"
+          element={
+            <RoleProtectedRoute allowRoles={["super_admin"]}>
+              <AuditLogsPage />
             </RoleProtectedRoute>
           }
         />
