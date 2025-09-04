@@ -57,7 +57,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:3001/api/user/profile'),
+        Uri.parse(
+            'https://baobab-vision-project.onrender.com/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

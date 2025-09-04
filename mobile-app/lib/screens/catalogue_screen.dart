@@ -23,8 +23,8 @@ class _CatalogueScreenState extends State<CatalogueScreen>
 
   Future<void> fetchProducts() async {
     try {
-      final response =
-          await http.get(Uri.parse('http://10.0.2.2:3001/api/products'));
+      final response = await http.get(
+          Uri.parse('https://baobab-vision-project.onrender.com/api/products'));
       if (response.statusCode == 200) {
         setState(() {
           products = jsonDecode(response.body);
@@ -40,7 +40,7 @@ class _CatalogueScreenState extends State<CatalogueScreen>
 
   Future<void> fetchFilteredProducts(String sortBy, String order) async {
     final uri = Uri.parse(
-        'http://10.0.2.2:3001/api/products?sortBy=$sortBy&order=$order');
+        'https://baobab-vision-project.onrender.com/api/products?sortBy=$sortBy&order=$order');
 
     try {
       final response = await http.get(uri);
@@ -213,7 +213,7 @@ class _CatalogueScreenState extends State<CatalogueScreen>
                       try {
                         final response = await http.post(
                           Uri.parse(
-                              'http://10.0.2.2:3001/api/user/update-preferences/$username'),
+                              'https://baobab-vision-project.onrender.com/api/user/update-preferences/$username'),
                           headers: {'Content-Type': 'application/json'},
                           body: jsonEncode({'productId': productId}),
                         );

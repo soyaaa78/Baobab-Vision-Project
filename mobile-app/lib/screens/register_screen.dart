@@ -36,8 +36,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    var url = Uri.parse('http://10.0.2.2:3001/api/auth/register');
-    
+    var url = Uri.parse(
+        'https://baobab-vision-project.onrender.com/api/auth/register');
+
     var response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},

@@ -6,7 +6,7 @@ import 'auth_storage.dart';
 class ApiClient {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://10.0.2.2:3001',
+    defaultValue: 'https://baobab-vision-project.onrender.com',
   );
 
   static Future<Map<String, String>> _headers({bool json = true}) async {

@@ -51,7 +51,8 @@ class _EmailOtpVerificationScreenState
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:3001/api/auth/verify-email-otp'),
+        Uri.parse(
+            'https://baobab-vision-project.onrender.com/api/auth/verify-email-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': widget.email, 'otp': _otp}),
       );
@@ -66,7 +67,8 @@ class _EmailOtpVerificationScreenState
           await prefs.setString('token', token);
 
           final profileRes = await http.get(
-            Uri.parse('http://10.0.2.2:3001/api/user/profile'),
+            Uri.parse(
+                'https://baobab-vision-project.onrender.com/api/user/profile'),
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
@@ -84,8 +86,8 @@ class _EmailOtpVerificationScreenState
                 profileData['profileImage'].toString().isNotEmpty) {
               String imgPath = profileData['profileImage'];
               if (imgPath.startsWith('/')) imgPath = imgPath.substring(1);
-              await prefs.setString(
-                  'profileImageUrl', 'http://10.0.2.2:3001/$imgPath');
+              await prefs.setString('profileImageUrl',
+                  'https://baobab-vision-project.onrender.com/$imgPath');
             } else {
               await prefs.remove('profileImageUrl');
             }
@@ -108,7 +110,8 @@ class _EmailOtpVerificationScreenState
   Future<void> _resendOtp() async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:3001/api/auth/resend-email-otp'),
+        Uri.parse(
+            'https://baobab-vision-project.onrender.com/api/auth/resend-email-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': widget.email}),
       );

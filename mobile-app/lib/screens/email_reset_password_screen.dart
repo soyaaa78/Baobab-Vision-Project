@@ -14,7 +14,8 @@ class EmailResetPasswordScreen extends StatefulWidget {
   const EmailResetPasswordScreen({super.key, required this.email});
 
   @override
-  State<EmailResetPasswordScreen> createState() => _EmailResetPasswordScreenState();
+  State<EmailResetPasswordScreen> createState() =>
+      _EmailResetPasswordScreenState();
 }
 
 class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
@@ -23,7 +24,8 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
 
   Future<void> verifyOtp() async {
     setState(() => isLoading = true);
-    final url = Uri.parse('http://10.0.2.2:3001/api/auth/verify-otp');
+    final url = Uri.parse(
+        'https://baobab-vision-project.onrender.com/api/auth/verify-otp');
 
     try {
       final response = await http.post(
@@ -53,18 +55,22 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
         );
       } else {
         final resData = jsonDecode(response.body);
-        customDialog(context, title: 'Invalid OTP', content: resData['message'] ?? 'OTP error');
+        customDialog(context,
+            title: 'Invalid OTP', content: resData['message'] ?? 'OTP error');
       }
     } catch (e) {
       print('VERIFY OTP EXCEPTION: $e');
-      customDialog(context, title: 'Error', content: 'Failed to verify. Check your network or try again.');
+      customDialog(context,
+          title: 'Error',
+          content: 'Failed to verify. Check your network or try again.');
     } finally {
       setState(() => isLoading = false);
     }
   }
 
   Future<void> resendOtp() async {
-    final url = Uri.parse('http://10.0.2.2:3001/api/auth/resend-otp');
+    final url = Uri.parse(
+        'https://baobab-vision-project.onrender.com/api/auth/resend-otp');
 
     try {
       final response = await http.post(
@@ -74,7 +80,8 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
       );
 
       print('RESEND OTP RESPONSE: ${response.body}');
-      customDialog(context, title: 'OTP Sent', content: 'A new OTP has been sent to your email.');
+      customDialog(context,
+          title: 'OTP Sent', content: 'A new OTP has been sent to your email.');
     } catch (e) {
       print('RESEND OTP ERROR: $e');
       customDialog(context, title: 'Error', content: 'Failed to resend OTP');
@@ -107,7 +114,10 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
             ),
             Text(
               widget.email,
-              style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w500, color: BLACK_COLOR),
+              style: TextStyle(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.w500,
+                  color: BLACK_COLOR),
             ),
             SizedBox(height: 30.h),
 
@@ -118,7 +128,8 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
               decoration: InputDecoration(
                 labelText: 'Enter OTP',
                 prefixIcon: const Icon(Icons.lock_outline),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8.r)),
               ),
             ),
             SizedBox(height: 30.h),

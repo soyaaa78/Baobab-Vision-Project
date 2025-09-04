@@ -74,15 +74,16 @@ class _ShopScreenState extends State<ShopScreen> {
       firstname = prefs.getString('firstname') ?? 'Guest';
       token = prefs.getString('token') ?? '';
       userId = prefs.getString('userId') ?? '';
-      profileImageUrl = prefs.getString('profileImageUrl'); // Load profile image URL here
+      profileImageUrl =
+          prefs.getString('profileImageUrl'); // Load profile image URL here
       _isLoadingUser = false;
     });
   }
 
   Future<void> fetchSlideshowImages() async {
     try {
-      final response = await http.get(
-          Uri.parse('http://10.0.2.2:3001/api/slideshow/all-images'));
+      final response = await http.get(Uri.parse(
+          'https://baobab-vision-project.onrender.com/api/slideshow/all-images'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -99,8 +100,8 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> fetchRecommendedProducts() async {
     try {
-      final response = await http
-          .get(Uri.parse('http://10.0.2.2:3001/api/products/for-you'));
+      final response = await http.get(Uri.parse(
+          'https://baobab-vision-project.onrender.com/api/products/for-you'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -238,8 +239,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.add_a_photo,
-                              size: 36, color: WHITE_COLOR),
+                          Icon(Icons.add_a_photo, size: 36, color: WHITE_COLOR),
                           SizedBox(height: 8),
                           Text(
                             'Virtual Try-On',
@@ -367,17 +367,15 @@ class _ShopScreenState extends State<ShopScreen> {
                   var product = forYou[index];
 
                   // Safely handling the product image URLs and fallback
-                  List<String> productImages =
-                      (product['imageUrls'] != null &&
-                              product['imageUrls'] is List)
-                          ? List<String>.from(product['imageUrls'])
-                          : [
-                              'https://example.com/fallback-image.jpg'
-                            ]; // Fallback image
+                  List<String> productImages = (product['imageUrls'] != null &&
+                          product['imageUrls'] is List)
+                      ? List<String>.from(product['imageUrls'])
+                      : [
+                          'https://example.com/fallback-image.jpg'
+                        ]; // Fallback image
 
                   return Padding(
-                    padding:
-                        EdgeInsets.only(right: ScreenUtil().setWidth(10)),
+                    padding: EdgeInsets.only(right: ScreenUtil().setWidth(10)),
                     child: CustomVerticalProductCard(
                       prodName: product['name'] ?? 'Unknown',
                       prodSize: '${product['stock']} pcs Available',
@@ -389,14 +387,15 @@ class _ShopScreenState extends State<ShopScreen> {
                       productId: product['_id'] ?? product['productId'] ?? '',
 
                       // ✅ These two were missing
-                      colorOptions: (product['colorOptions'] as List<dynamic>? ??
-                              [])
-                          .map((e) => ColorOption.fromJson(e))
-                          .toList(),
+                      colorOptions:
+                          (product['colorOptions'] as List<dynamic>? ?? [])
+                              .map((e) => ColorOption.fromJson(e))
+                              .toList(),
 
-                      lensOptions: (product['lensOptions'] as List<dynamic>? ?? [])
-                          .map((e) => LensOption.fromJson(e))
-                          .toList(),
+                      lensOptions:
+                          (product['lensOptions'] as List<dynamic>? ?? [])
+                              .map((e) => LensOption.fromJson(e))
+                              .toList(),
 
                       // ✅ Optional defaults if you also added selected fields
                       selectedColorName: (product['colorOptions'] != null &&
