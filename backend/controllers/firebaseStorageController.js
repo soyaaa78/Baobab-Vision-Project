@@ -45,7 +45,7 @@ const upload = multer({
     fileSize: 50 * 1024 * 1024, // 50MB limit for 3D models
   },
   fileFilter: (req, file, cb) => {
-    if (file.fieldname === "model3d") {
+    if (file.fieldname === "model3d" || file.fieldname === "colorwayModels3d") {
       // Allow 3D model files
       const allowedTypes = /usd|usdc|usdz|glb|gltf/;
       const extname = allowedTypes.test(
@@ -80,7 +80,8 @@ const upload = multer({
 exports.uploadProductFiles = upload.fields([
   { name: "productImages", maxCount: 10 },
   { name: "colorwayImages", maxCount: 10 },
-  { name: "model3d", maxCount: 1 },
+  { name: "model3d", maxCount: 1 }, // main/default 3D model
+  { name: "colorwayModels3d", maxCount: 10 }, // per-colorway 3D models (aligned with colorwayImages index)
 ]);
 
 // Middleware for proof of payment pictures (images only)
@@ -88,6 +89,12 @@ exports.uploadProofOfPaymentFiles = upload.single("proofOfPayment");
 
 // Middleware for rating pictures (images only)
 exports.uploadRatingPicturesFiles = upload.array("ratingPictures", 10);
+
+// Middleware for 3D models only (single or multiple per-colorway)
+exports.upload3dFields = upload.fields([
+  { name: "model3d", maxCount: 1 },
+  { name: "colorwayModels3d", maxCount: 10 },
+]);
 
 // Upload single image
 const uploadSingleImage = async (file, folder, customName = null) => {
@@ -193,6 +200,36 @@ exports.uploadRatingPictures = catchAsync(async (req, res, next) => {
   } catch (error) {
     console.error("Firebase upload error (rating pictures):", error);
     return next(new AppError("Failed to upload rating pictures", 500));
+  }
+});
+
+// Upload 3D models (single or multiple) and return URLs
+exports.upload3dModels = catchAsync(async (req, res, next) => {
+  if (!req.files || (!req.files.model3d && !req.files.colorwayModels3d)) {
+    return next(new AppError("No 3D model files uploaded", 400));
+  }
+
+  try {
+    const result = {};
+    if (req.files.model3d && req.files.model3d[0]) {
+      result.model3dUrl = await uploadSingleImage(
+        req.files.model3d[0],
+        "products/models"
+      );
+    }
+    if (req.files.colorwayModels3d && req.files.colorwayModels3d.length > 0) {
+      result.colorwayModelUrls = await uploadMultipleImages(
+        req.files.colorwayModels3d,
+        "products/models"
+      );
+    }
+    return res.status(200).json({
+      message: "3D models uploaded successfully!",
+      ...result,
+    });
+  } catch (error) {
+    console.error("Firebase 3D upload error:", error);
+    return next(new AppError("Failed to upload 3D models", 500));
   }
 });
 

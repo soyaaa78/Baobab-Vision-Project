@@ -7,6 +7,7 @@ const colorOptionSchema = new mongoose.Schema({
   colors: [String], // Hex codes for 'solid' and 'split'
   swatchUrl: String, // For 'swatch' type
   imageUrl: { type: String, required: true }, // Main product image for this color
+  model3dUrl: { type: String }, // Optional 3D model specific to this colorway
 });
 
 const lensOptionSchema = new mongoose.Schema({

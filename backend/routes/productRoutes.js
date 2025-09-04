@@ -12,6 +12,7 @@ const {
   recommendEyewear,
   uploadProductFiles,
   getProductReviews,
+  getProductsWith3DModels,
 } = require("../controllers/productController");
 
 // Create product (POST /api/products) - with file upload
@@ -22,6 +23,9 @@ router.get("/", getAllProducts);
 
 // GET recommended products for "Recommended for You" section (GET /api/products/for-you)
 router.get("/for-you", getRecommendedProducts);
+
+// GET products with 3D models (GET /api/products/models)
+router.get("/models", getProductsWith3DModels);
 
 // Admin adds product to recommended (POST /api/products/recommended)
 router.post("/recommended", addProductToRecommended);
@@ -37,7 +41,7 @@ router.get("/order-stats", getProductStatistics);
 // Reviews + rating stats for a product
 router.get("/:id/reviews", getProductReviews);
 
-router.put("/", updateProduct);
+router.put("/", uploadProductFiles, updateProduct);
 
 router.delete("/", deleteProduct);
 

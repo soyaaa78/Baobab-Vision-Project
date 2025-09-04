@@ -7,6 +7,8 @@ const {
   uploadRatingPictures,
   uploadProofOfPaymentFiles,
   uploadRatingPicturesFiles,
+  upload3dFields,
+  upload3dModels,
 } = require("../controllers/firebaseStorageController");
 
 // Upload product images (POST /api/storage/upload)
@@ -25,6 +27,9 @@ router.post(
   uploadRatingPicturesFiles,
   uploadRatingPictures
 );
+
+// Upload 3D model files (single main or per-colorway) and return URLs
+router.post("/upload/models", upload3dFields, upload3dModels);
 
 // Delete image (DELETE /api/storage/delete)
 router.delete("/delete", deleteImage);

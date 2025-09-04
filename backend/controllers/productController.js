@@ -13,6 +13,55 @@ const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const { logEvent } = require("../services/auditLogService");
 
+// Helper: normalize string for fuzzy name matching
+const normalizeStr = (s) =>
+  (s || "")
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+
+// Helper: map uploaded files to color option indices based on name substring
+// Returns an array where index = file index, value = matched option index
+const mapFilesToOptionsByName = (files, colorOptions = []) => {
+  if (!Array.isArray(files) || !Array.isArray(colorOptions) || !files.length)
+    return [];
+
+  const normOptionNames = colorOptions.map((opt) => normalizeStr(opt?.name));
+  const used = new Set();
+  const mapping = [];
+
+  files.forEach((file, fileIdx) => {
+    const fname = normalizeStr(file?.originalname || "");
+    let matchIdx = -1;
+
+    // Prefer substring match both ways
+    for (let i = 0; i < normOptionNames.length; i++) {
+      if (used.has(i)) continue;
+      const oname = normOptionNames[i];
+      if (!oname) continue;
+      if (fname.includes(oname) || oname.includes(fname)) {
+        matchIdx = i;
+        break;
+      }
+    }
+
+    // Fallback to first unused index
+    if (matchIdx === -1) {
+      for (let i = 0; i < normOptionNames.length; i++) {
+        if (!used.has(i)) {
+          matchIdx = i;
+          break;
+        }
+      }
+    }
+
+    if (matchIdx !== -1) used.add(matchIdx);
+    mapping[fileIdx] = matchIdx; // can be undefined if no options
+  });
+
+  return mapping;
+};
+
 // Use Firebase storage middleware
 exports.uploadProductFiles = uploadProductFiles;
 
@@ -84,6 +133,8 @@ exports.createProduct = catchAsync(async (req, res, next) => {
     let imageUrls = [];
     let colorwayImageUrls = [];
     let model3dUrl = null;
+    let colorwayModels3dUrls = [];
+    let colorwayModelsMap = [];
 
     // Handle uploaded files with Firebase Storage
     if (req.files) {
@@ -103,10 +154,23 @@ exports.createProduct = catchAsync(async (req, res, next) => {
         );
       }
 
-      // Upload 3D model
+      // Upload 3D model (main/default)
       if (req.files.model3d && req.files.model3d.length > 0) {
         model3dUrl = await uploadSingleImageHelper(
           req.files.model3d[0],
+          "products/models"
+        );
+      }
+
+      // Upload per-colorway 3D models (align by index with colorway images/options)
+      if (req.files.colorwayModels3d && req.files.colorwayModels3d.length > 0) {
+        // Build name-based mapping before upload so we can assign URLs correctly after
+        colorwayModelsMap = mapFilesToOptionsByName(
+          req.files.colorwayModels3d,
+          Array.isArray(parsedColorOptions) ? parsedColorOptions : []
+        );
+        colorwayModels3dUrls = await uploadMultipleImagesHelper(
+          req.files.colorwayModels3d,
           "products/models"
         );
       }
@@ -116,6 +180,31 @@ exports.createProduct = catchAsync(async (req, res, next) => {
         .status(400)
         .json({ message: "At least one product image is required" });
     }
+    // If colorOptions provided, merge imageUrl and optional model3d per color
+    // Build a reverse map: optionIndex -> url chosen for that option (first match wins)
+    const optionIndexToModelUrl = {};
+    if (Array.isArray(colorwayModels3dUrls) && colorwayModels3dUrls.length) {
+      colorwayModels3dUrls.forEach((url, fileIdx) => {
+        const optIdx = colorwayModelsMap[fileIdx];
+        if (
+          typeof optIdx === "number" &&
+          optionIndexToModelUrl[optIdx] == null
+        ) {
+          optionIndexToModelUrl[optIdx] = url;
+        }
+      });
+    }
+
+    let mergedColorOptions = Array.isArray(parsedColorOptions)
+      ? parsedColorOptions.map((opt, idx) => ({
+          ...opt,
+          imageUrl:
+            (opt && opt.imageUrl) || colorwayImageUrls[idx] || opt?.imageUrl,
+          // Only assign per-colorway 3D model if a mapped URL exists; avoid index fallback to prevent misassignment
+          model3dUrl: optionIndexToModelUrl[idx] ?? opt?.model3dUrl,
+        }))
+      : [];
+
     const product = new Product({
       name: name.trim(),
       description: description.trim(),
@@ -126,7 +215,7 @@ exports.createProduct = catchAsync(async (req, res, next) => {
       numStars: parseInt(numStars) || 5,
       recommendedFor: recommendedFor === "true" || recommendedFor === true,
       sales: parseInt(sales) || 0,
-      colorOptions: parsedColorOptions,
+      colorOptions: mergedColorOptions,
       lensOptions: parsedLensOptions,
       colorwayImageUrls:
         colorwayImageUrls.length > 0 ? colorwayImageUrls : undefined,
@@ -241,26 +330,103 @@ exports.updateProduct = async (req, res) => {
     }
 
     const oldValues = product.toObject();
-    Object.keys(req.body).forEach((key) => {
+    // Normalize/parse incoming fields (multipart sends JSON fields as strings)
+    const body = { ...req.body };
+    ["colorOptions", "lensOptions", "specs"].forEach((k) => {
+      if (typeof body[k] === "string") {
+        try {
+          body[k] = JSON.parse(body[k]);
+        } catch (e) {
+          // ignore parse error; leave as-is
+        }
+      }
+    });
+
+    Object.keys(body).forEach((key) => {
       if (req.body[key] !== undefined && req.body[key] !== null) {
-        if (key === "colorOptions" && Array.isArray(req.body.colorOptions)) {
-          product.colorOptions = req.body.colorOptions.map((opt) => ({
+        if (key === "colorOptions" && Array.isArray(body.colorOptions)) {
+          product.colorOptions = body.colorOptions.map((opt) => ({
             ...opt,
             _id: opt._id || undefined,
           }));
-        } else if (
-          key === "lensOptions" &&
-          Array.isArray(req.body.lensOptions)
-        ) {
-          product.lensOptions = req.body.lensOptions.map((opt) => ({
+        } else if (key === "lensOptions" && Array.isArray(body.lensOptions)) {
+          product.lensOptions = body.lensOptions.map((opt) => ({
             ...opt,
             _id: opt._id || undefined,
           }));
         } else {
-          product[key] = req.body[key];
+          product[key] = body[key];
         }
       }
     });
+
+    // Handle uploaded files for updates
+    if (req.files) {
+      // Replace main gallery images
+      if (req.files.productImages && req.files.productImages.length > 0) {
+        const urls = await uploadMultipleImagesHelper(
+          req.files.productImages,
+          "products/images"
+        );
+        product.imageUrls = urls;
+      }
+
+      // Replace colorway images
+      if (req.files.colorwayImages && req.files.colorwayImages.length > 0) {
+        const urls = await uploadMultipleImagesHelper(
+          req.files.colorwayImages,
+          "products/colorways"
+        );
+        product.colorwayImageUrls = urls;
+        // Also reflect in colorOptions.imageUrl if aligned
+        if (
+          Array.isArray(product.colorOptions) &&
+          product.colorOptions.length
+        ) {
+          product.colorOptions = product.colorOptions.map((opt, idx) => ({
+            ...opt,
+            imageUrl: urls[idx] || opt.imageUrl,
+          }));
+        }
+      }
+
+      // Replace main 3D model
+      if (req.files.model3d && req.files.model3d.length > 0) {
+        const url = await uploadSingleImageHelper(
+          req.files.model3d[0],
+          "products/models"
+        );
+        product.model3dUrl = url;
+      }
+
+      // Replace/assign per-colorway 3D models; prefer name-based mapping over index
+      if (req.files.colorwayModels3d && req.files.colorwayModels3d.length > 0) {
+        const mapping = mapFilesToOptionsByName(
+          req.files.colorwayModels3d,
+          Array.isArray(product.colorOptions) ? product.colorOptions : []
+        );
+        const urls = await uploadMultipleImagesHelper(
+          req.files.colorwayModels3d,
+          "products/models"
+        );
+        if (
+          Array.isArray(product.colorOptions) &&
+          product.colorOptions.length
+        ) {
+          const byOptionIdx = {};
+          urls.forEach((url, fileIdx) => {
+            const optIdx = mapping[fileIdx];
+            if (typeof optIdx === "number" && byOptionIdx[optIdx] == null) {
+              byOptionIdx[optIdx] = url;
+            }
+          });
+          product.colorOptions = product.colorOptions.map((opt, idx) => ({
+            ...(opt.toObject?.() || opt),
+            model3dUrl: byOptionIdx[idx] || opt.model3dUrl,
+          }));
+        }
+      }
+    }
     await product.save();
     // Audit: edit product
     logEvent(req, {
@@ -511,6 +677,51 @@ exports.getProductStatistics = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+// Get products with 3D models
+exports.getProductsWith3DModels = catchAsync(async (req, res, next) => {
+  try {
+    const products = await Product.find({
+      $or: [
+        { model3dUrl: { $exists: true, $ne: null, $ne: "" } },
+        { "colorOptions.model3dUrl": { $exists: true, $ne: null, $ne: "" } },
+      ],
+    }).select(
+      "name description price imageUrls model3dUrl specs colorOptions lensOptions stock sales numStars"
+    );
+
+    if (products.length === 0) {
+      return res.status(404).json({
+        message: "No products with 3D models found",
+        count: 0,
+        products: [],
+      });
+    }
+
+    // Shape response to include colorway models summary
+    const shaped = products.map((p) => {
+      const doc = p.toObject ? p.toObject() : p;
+      const colorwayModels = Array.isArray(doc.colorOptions)
+        ? doc.colorOptions
+            .map((opt) => ({ name: opt.name, model3dUrl: opt.model3dUrl }))
+            .filter((o) => o.model3dUrl)
+        : [];
+      return { ...doc, colorwayModels };
+    });
+
+    res.status(200).json({
+      message: "Products with 3D models retrieved successfully",
+      count: shaped.length,
+      products: shaped,
+    });
+  } catch (error) {
+    console.error("Error fetching products with 3D models:", error);
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
 
 exports.getProductReviews = catchAsync(async (req, res, next) => {
   const { id } = req.params;
