@@ -20,17 +20,16 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
   }
 
   Future<void> _requestCameraPermission() async {
-    final status = await Permission.camera.status;
-    if (!status.isGranted) {
-      final result = await Permission.camera.request();
-      setState(() {
-        _permissionGranted = result.isGranted;
-      });
-    } else {
-      setState(() {
-        _permissionGranted = true;
-      });
+    final cameraStatus = await Permission.camera.status;
+    PermissionStatus finalCameraStatus = cameraStatus;
+
+    if (!cameraStatus.isGranted) {
+      finalCameraStatus = await Permission.camera.request();
     }
+
+    setState(() {
+      _permissionGranted = finalCameraStatus.isGranted;
+    });
   }
 
   @override
@@ -39,7 +38,8 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
       return Scaffold(
         appBar: AppBar(title: const Text("Virtual Try-On")),
         body: const Center(
-          child: Text("Camera permission is required to use this feature."),
+          child:
+              Text("Camera permission is required to use this feature."),
         ),
       );
     }
@@ -71,9 +71,15 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
           _webViewController = controller;
         },
         onPermissionRequest: (controller, permissionRequest) async {
+          // Only grant camera-related resources (deny mic if requested)
+          final allowed = permissionRequest.resources.where(
+            (r) => r == PermissionResourceType.CAMERA,
+          );
           return PermissionResponse(
-            resources: permissionRequest.resources,
-            action: PermissionResponseAction.GRANT,
+            resources: allowed.toList(),
+            action: allowed.isNotEmpty
+                ? PermissionResponseAction.GRANT
+                : PermissionResponseAction.DENY,
           );
         },
         shouldOverrideUrlLoading: (controller, navigationAction) async {
