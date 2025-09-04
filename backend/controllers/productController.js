@@ -332,18 +332,21 @@ exports.updateProduct = async (req, res) => {
     const oldValues = product.toObject();
     // Normalize/parse incoming fields (multipart sends JSON fields as strings)
     const body = { ...req.body };
-    ["colorOptions", "lensOptions", "specs"].forEach((k) => {
-      if (typeof body[k] === "string") {
-        try {
-          body[k] = JSON.parse(body[k]);
-        } catch (e) {
-          // ignore parse error; leave as-is
+    ["colorOptions", "lensOptions", "specs", "colorwayModelTargets"].forEach(
+      (k) => {
+        if (typeof body[k] === "string") {
+          try {
+            body[k] = JSON.parse(body[k]);
+          } catch (e) {
+            // ignore parse error; leave as-is
+          }
         }
       }
-    });
+    );
 
     Object.keys(body).forEach((key) => {
-      if (req.body[key] !== undefined && req.body[key] !== null) {
+      if (body[key] !== undefined) {
+        // Allow null values through to handle model removal
         if (key === "colorOptions" && Array.isArray(body.colorOptions)) {
           product.colorOptions = body.colorOptions.map((opt) => ({
             ...opt,
@@ -401,10 +404,24 @@ exports.updateProduct = async (req, res) => {
 
       // Replace/assign per-colorway 3D models; prefer name-based mapping over index
       if (req.files.colorwayModels3d && req.files.colorwayModels3d.length > 0) {
-        const mapping = mapFilesToOptionsByName(
-          req.files.colorwayModels3d,
-          Array.isArray(product.colorOptions) ? product.colorOptions : []
-        );
+        // Prefer explicit index mapping when provided by client
+        let mapping = [];
+        const targets = Array.isArray(body.colorwayModelTargets)
+          ? body.colorwayModelTargets
+          : [];
+
+        if (
+          Array.isArray(targets) &&
+          targets.length === req.files.colorwayModels3d.length &&
+          targets.every((n) => Number.isInteger(n) && n >= 0)
+        ) {
+          mapping = targets;
+        } else {
+          mapping = mapFilesToOptionsByName(
+            req.files.colorwayModels3d,
+            Array.isArray(product.colorOptions) ? product.colorOptions : []
+          );
+        }
         const urls = await uploadMultipleImagesHelper(
           req.files.colorwayModels3d,
           "products/models"
@@ -416,7 +433,11 @@ exports.updateProduct = async (req, res) => {
           const byOptionIdx = {};
           urls.forEach((url, fileIdx) => {
             const optIdx = mapping[fileIdx];
-            if (typeof optIdx === "number" && byOptionIdx[optIdx] == null) {
+            if (
+              typeof optIdx === "number" &&
+              optIdx >= 0 &&
+              byOptionIdx[optIdx] == null
+            ) {
               byOptionIdx[optIdx] = url;
             }
           });
