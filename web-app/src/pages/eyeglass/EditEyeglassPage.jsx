@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { useParams } from "react-router";
 import axios from "axios";
+import InfoModal from "../../components/InfoModal";
 import Cookies from "js-cookie";
 
 const EditEyeglassPage = () => {
@@ -17,8 +18,8 @@ const EditEyeglassPage = () => {
   const [productImages, setProductImages] = useState([]);
   const [colorwayImages, setColorwayImages] = useState([]);
   const [eyeglass, setEyeglass] = useState({});
-  const [model3dFile, setModel3dFile] = useState(null);
-  
+  const [colorwayModelFiles, setColorwayModelFiles] = useState([]);
+
   const [TOKEN, setToken] = useState();
   useEffect(() => {
     const t = Cookies.get("token");
@@ -100,13 +101,13 @@ const EditEyeglassPage = () => {
             name: opt.name,
           }))
         );
-        // 3D model file (if present)
-        if (data.model3dUrl) {
-          setModel3dFile({
-            name: data.model3dUrl.split("/").pop(),
-            url: data.model3dUrl,
-          });
-        }
+        setColorwayModelFiles(
+          (data.colorOptions || []).map((opt) =>
+            opt.model3dUrl
+              ? { name: opt.model3dUrl.split("/").pop(), url: opt.model3dUrl }
+              : null
+          )
+        );
       } catch (error) {
         console.error("Error fetching product data:", error);
       }
@@ -149,6 +150,13 @@ const EditEyeglassPage = () => {
   const handleDeleteColorwayImage = (idToRemove) => {
     setColorwayImages((prev) => prev.filter((img) => img.id !== idToRemove));
   };
+  const [modal, setModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    variant: "info",
+    onPrimary: null,
+  });
 
   // --- Handlers for form fields ---
   const handleInputChange = (e) => {
@@ -296,10 +304,18 @@ const EditEyeglassPage = () => {
       };
     });
   };
-  const handleModel3dChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setModel3dFile(file);
+  // 3D model helpers for drag-and-drop per colorway
+  const is3dModelFile = (file) =>
+    !!file && /\.(glb)$/i.test((file.name || "").toLowerCase());
+  const handleColorwayModelDrop = (e, optionIndex) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (file && is3dModelFile(file)) {
+      setColorwayModelFiles((prev) => {
+        const next = [...prev];
+        next[optionIndex] = file;
+        return next;
+      });
     }
   };
 
@@ -338,8 +354,10 @@ const EditEyeglassPage = () => {
   };
 
   // Update handler
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const updatedEyeglass = {};
       if (form.name !== eyeglass.name) updatedEyeglass.name = form.name;
@@ -384,23 +402,81 @@ const EditEyeglassPage = () => {
       ) {
         updatedEyeglass.colorOptions = form.colorOptions || [];
       }
-      if (model3dFile && model3dFile !== eyeglass.model3dUrl) {
-        updatedEyeglass.model3dFile = model3dFile;
+      // Removed: legacy top-level 3D model handling
+      // Pre-upload any new per-colorway 3D files to get URLs, then inject into colorOptions
+      const pendingFiles = (colorwayModelFiles || [])
+        .map((f, idx) => ({ f, idx }))
+        .filter(({ f }) => f instanceof File);
+      if (pendingFiles.length) {
+        const fd = new FormData();
+        const order = [];
+        pendingFiles.forEach(({ f, idx }) => {
+          fd.append("colorwayModels3d", f);
+          order.push(idx);
+        });
+        const uploadRes = await axios.post(
+          `${SERVER_URL}/api/storage/upload/models`,
+          fd,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${TOKEN}`,
+            },
+          }
+        );
+        const urls = uploadRes.data?.colorwayModelUrls || [];
+        const updatedOptions = (
+          updatedEyeglass.colorOptions || form.colorOptions
+        ).map((opt) => ({ ...opt }));
+        order.forEach((optIdx, i) => {
+          if (urls[i]) {
+            updatedOptions[optIdx] = {
+              ...updatedOptions[optIdx],
+              model3dUrl: urls[i],
+            };
+          }
+        });
+        updatedEyeglass.colorOptions = updatedOptions;
       }
+
+      // Build FormData for fields (no 3D files attached here)
+      const formData = new FormData();
+      Object.entries(updatedEyeglass).forEach(([k, v]) => {
+        if (k === "lensOptions" || k === "specs" || k === "colorOptions") {
+          formData.append(k, JSON.stringify(v));
+        } else if (v !== undefined) {
+          formData.append(k, v);
+        }
+      });
+
       await axios.put(
         `${SERVER_URL}/api/products?id=${eyeglass._id}`,
-        updatedEyeglass,
+        formData,
         {
           headers: {
             Authorization: `Bearer ${TOKEN}`,
+            "Content-Type": "multipart/form-data",
           },
         }
       );
-      alert("Eyeglass updated successfully!");
-      window.location.reload();
+      setModal({
+        open: true,
+        title: "Product Updated",
+        message: `"${form.name}" has been updated successfully.`,
+        variant: "success",
+        onPrimary: () => window.location.reload(),
+      });
     } catch (error) {
-      alert("Failed to update eyeglass.");
       console.error(error);
+      const msg = error.response?.data?.message || "Failed to update eyeglass.";
+      setModal({
+        open: true,
+        title: "Update Failed",
+        message: msg,
+        variant: "error",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -418,12 +494,25 @@ const EditEyeglassPage = () => {
           Authorization: `Bearer ${TOKEN}`,
         },
       });
-      alert("Eyeglass deleted successfully!");
-      navigate("../catalogue");
+      setModal({
+        open: true,
+        title: "Product Deleted",
+        message: `"${
+          eyeglass?.name || "Product"
+        }" has been deleted successfully.`,
+        variant: "success",
+        onPrimary: () => navigate("../catalogue"),
+      });
       return; // Prevent further code execution after navigation
     } catch (error) {
-      alert("Failed to delete eyeglass.");
       console.error(error);
+      const msg = error.response?.data?.message || "Failed to delete eyeglass.";
+      setModal({
+        open: true,
+        title: "Delete Failed",
+        message: msg,
+        variant: "error",
+      });
     }
   };
 
@@ -575,46 +664,7 @@ const EditEyeglassPage = () => {
                       </label>
                     </div>
 
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <label>Virtual Try-On 3D Model</label>
-                      <input
-                        type="file"
-                        id="3dmodel"
-                        name="media"
-                        accept=".usd,.usdc,.usdz,.glb,.gltf"
-                        onChange={handleModel3dChange}
-                      />
-                      {model3dFile && (
-                        <div
-                          style={{
-                            marginTop: "8px",
-                            fontSize: "0.85em",
-                            color: "#666",
-                            backgroundColor: "#f5f5f5",
-                            padding: "8px",
-                            borderRadius: "4px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <span>📁 {model3dFile.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => setModel3dFile(null)}
-                            style={{
-                              backgroundColor: "transparent",
-                              border: "none",
-                              color: "#ff4444",
-                              cursor: "pointer",
-                              fontSize: "1.2em",
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    {/* Removed legacy top-level Virtual Try-On 3D Model input */}
                   </div>
                 </div>
               </div>
@@ -1145,6 +1195,90 @@ const EditEyeglassPage = () => {
                             }}
                           />
                         </div>
+                        {/* Per-colorway Virtual Try-On 3D Model */}
+                        <div style={{ marginBottom: "10px" }}>
+                          <label>Virtual Try-On 3D Model (optional)</label>
+                          <div
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) =>
+                              handleColorwayModelDrop(e, optionIndex)
+                            }
+                            style={{
+                              border: "2px dashed #bbb",
+                              borderRadius: "6px",
+                              padding: "12px",
+                              textAlign: "center",
+                              color: "#666",
+                              background: "#fafafa",
+                              cursor: "pointer",
+                            }}
+                            onClick={() =>
+                              document
+                                .getElementById(`edit-cw3d-${optionIndex}`)
+                                ?.click()
+                            }
+                          >
+                            <div style={{ fontSize: "0.9em" }}>
+                              Drag & drop .glb here, or click to browse
+                            </div>
+                            <input
+                              id={`edit-cw3d-${optionIndex}`}
+                              type="file"
+                              accept=".glb"
+                              style={{ display: "none" }}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                if (file && is3dModelFile(file)) {
+                                  setColorwayModelFiles((prev) => {
+                                    const next = [...prev];
+                                    next[optionIndex] = file;
+                                    return next;
+                                  });
+                                }
+                              }}
+                            />
+                          </div>
+                          {colorwayModelFiles[optionIndex] && (
+                            <div
+                              style={{
+                                marginTop: "8px",
+                                fontSize: "0.85em",
+                                color: "#666",
+                                backgroundColor: "#f5f5f5",
+                                padding: "8px",
+                                borderRadius: "4px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                              }}
+                            >
+                              <span>
+                                📁{" "}
+                                {colorwayModelFiles[optionIndex]?.name ||
+                                  colorwayModelFiles[optionIndex]?.url}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setColorwayModelFiles((prev) => {
+                                    const next = [...prev];
+                                    next[optionIndex] = null;
+                                    return next;
+                                  })
+                                }
+                                style={{
+                                  backgroundColor: "transparent",
+                                  border: "none",
+                                  color: "#ff4444",
+                                  cursor: "pointer",
+                                  fontSize: "1.2em",
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                     <button
@@ -1227,12 +1361,19 @@ const EditEyeglassPage = () => {
               {/* Submit Button Only */}
               <div
                 className="csd-post-button-container"
-                style={{ margin: "10px 0 0 0" }}
+                style={{
+                  margin: "10px 0 0 0",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                }}
               >
                 <Button
                   className=""
                   type="submit"
-                  children={<p>Update Eyeglass</p>}
+                  disabled={isSubmitting}
+                  children={
+                    <p>{isSubmitting ? "Updating..." : "Update Eyeglass"}</p>
+                  }
                 />
               </div>
             </form>
@@ -1255,6 +1396,15 @@ const EditEyeglassPage = () => {
           </div>
         </div>
       </div>
+      <InfoModal
+        isOpen={modal.open}
+        onClose={() => setModal((m) => ({ ...m, open: false }))}
+        title={modal.title}
+        message={modal.message}
+        variant={modal.variant}
+        primaryText={modal.onPrimary ? "Continue" : "OK"}
+        onPrimary={modal.onPrimary}
+      />
     </>
   );
 };

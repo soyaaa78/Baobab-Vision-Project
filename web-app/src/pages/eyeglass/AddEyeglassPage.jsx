@@ -5,6 +5,7 @@ import Button from "../../components/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
+import InfoModal from "../../components/InfoModal";
 import Cookies from "js-cookie";
 
 const AddEyeglassPage = () => {
@@ -14,9 +15,10 @@ const AddEyeglassPage = () => {
   const handleBack = () => navigate("../catalogue");
   const [productImages, setProductImages] = useState([]);
   const [colorwayImages, setColorwayImages] = useState([]);
-  const [model3dFile, setModel3dFile] = useState(null);
+  // Removed main 3D model input; using per-colorway models instead
   const [productImageFiles, setProductImageFiles] = useState([]);
   const [colorwayImageFiles, setColorwayImageFiles] = useState([]);
+  const [colorwayModelFiles, setColorwayModelFiles] = useState([]);
 
   const tintedRef = useRef(null);
   const sunAdaptiveRef = useRef(null);
@@ -56,10 +58,18 @@ const AddEyeglassPage = () => {
     setColorwayImageFiles((prev) => [...prev, ...files]);
   };
 
-  const handleModel3dChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setModel3dFile(file);
+  // 3D model helpers for drag-and-drop per colorway
+  const is3dModelFile = (file) =>
+    !!file && /\.(glb)$/i.test((file.name || "").toLowerCase());
+  const handleColorwayModelDrop = (e, optionIndex) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (file && is3dModelFile(file)) {
+      setColorwayModelFiles((prev) => {
+        const next = [...prev];
+        next[optionIndex] = file;
+        return next;
+      });
     }
   };
 
@@ -104,6 +114,13 @@ const AddEyeglassPage = () => {
   // Loading and error states
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [modal, setModal] = useState({
+    open: false,
+    title: "",
+    message: "",
+    variant: "info",
+    onPrimary: null,
+  });
   // --- Handlers for form fields ---
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -206,6 +223,7 @@ const AddEyeglassPage = () => {
         },
       ],
     }));
+    setColorwayModelFiles((prev) => [...prev, null]);
   };
 
   const handleColorOptionChange = (optionIndex, field, value) => {
@@ -274,6 +292,7 @@ const AddEyeglassPage = () => {
       ...prev,
       colorOptions: prev.colorOptions.filter((_, i) => i !== index),
     }));
+    setColorwayModelFiles((prev) => prev.filter((_, i) => i !== index));
   }; // --- Submit handler ---
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -310,7 +329,43 @@ const AddEyeglassPage = () => {
     setIsSubmitting(true);
 
     try {
-      // Create FormData for file upload
+      // First, if any per-colorway 3D files exist, upload them to storage to get URLs
+      const colorOptionsWithModels = form.colorOptions.map((opt) => ({
+        ...opt,
+      }));
+      const cwFiles = colorwayModelFiles;
+      const has3d = Array.isArray(cwFiles) && cwFiles.some((f) => !!f);
+      if (has3d) {
+        const modelFd = new FormData();
+        const indexMap = [];
+        cwFiles.forEach((file, idx) => {
+          if (file) {
+            modelFd.append("colorwayModels3d", file);
+            indexMap.push(idx);
+          }
+        });
+        const uploadRes = await axios.post(
+          `${SERVER_URL}/api/storage/upload/models`,
+          modelFd,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const urls = uploadRes.data?.colorwayModelUrls || [];
+        indexMap.forEach((optIdx, i) => {
+          if (urls[i]) {
+            colorOptionsWithModels[optIdx] = {
+              ...colorOptionsWithModels[optIdx],
+              model3dUrl: urls[i],
+            };
+          }
+        });
+      }
+
+      // Create FormData for product creation (images + JSON fields only)
       const formData = new FormData();
 
       // Add form fields
@@ -346,7 +401,7 @@ const AddEyeglassPage = () => {
         }
       });
       formData.append("lensOptions", JSON.stringify(uniqueLensOptions));
-      formData.append("colorOptions", JSON.stringify(form.colorOptions));
+      formData.append("colorOptions", JSON.stringify(colorOptionsWithModels));
 
       // Add product images
       productImageFiles.forEach((file) => {
@@ -358,35 +413,36 @@ const AddEyeglassPage = () => {
         formData.append("colorwayImages", file);
       });
 
-      // Add 3D model if uploaded
-      if (model3dFile) {
-        formData.append("model3d", model3dFile);
-      }
+      // 3D models are already uploaded; don't append any 3D files here
       const res = await axios.post(`${SERVER_URL}/api/products`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      // Success notification
-      alert("Product added successfully!");
-      navigate("../catalogue");
+      setModal({
+        open: true,
+        title: "Product Added",
+        message: `"${form.name}" has been added successfully.`,
+        variant: "success",
+        onPrimary: () => navigate("../catalogue"),
+      });
     } catch (error) {
       console.error("Error adding product:", error);
-
-      // Better error handling
-      if (error.response?.data?.message) {
-        setSubmitError(error.response.data.message);
-      } else if (error.response?.status === 413) {
-        setSubmitError("Files are too large. Please upload smaller files.");
-      } else if (error.response?.status >= 500) {
-        setSubmitError("Server error. Please try again later.");
-      } else {
-        setSubmitError(
-          "Failed to add product. Please check your files and try again."
-        );
-      }
+      const msg =
+        error.response?.data?.message ||
+        (error.response?.status === 413
+          ? "Files are too large. Please upload smaller files."
+          : error.response?.status >= 500
+          ? "Server error. Please try again later."
+          : "Failed to add product. Please check your files and try again.");
+      setSubmitError(msg);
+      setModal({
+        open: true,
+        title: "Add Product Failed",
+        message: msg,
+        variant: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -530,46 +586,6 @@ const AddEyeglassPage = () => {
                           Add Product
                         </span>
                       </label>
-                    </div>{" "}
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <label>Virtual Try-On 3D Model</label>{" "}
-                      <input
-                        type="file"
-                        id="3dmodel"
-                        name="media"
-                        accept=".usd,.usdc,.usdz,.glb,.gltf"
-                        onChange={handleModel3dChange}
-                      />
-                      {model3dFile && (
-                        <div
-                          style={{
-                            marginTop: "8px",
-                            fontSize: "0.85em",
-                            color: "#666",
-                            backgroundColor: "#f5f5f5",
-                            padding: "8px",
-                            borderRadius: "4px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <span>📁 {model3dFile.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => setModel3dFile(null)}
-                            style={{
-                              backgroundColor: "transparent",
-                              border: "none",
-                              color: "#ff4444",
-                              cursor: "pointer",
-                              fontSize: "1.2em",
-                            }}
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1496,6 +1512,87 @@ const AddEyeglassPage = () => {
                             </button>
                           </div>
                         </div>
+                        <div style={{ marginTop: "10px" }}>
+                          <label>Virtual Try-On 3D Model (optional)</label>
+                          <div
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) =>
+                              handleColorwayModelDrop(e, optionIndex)
+                            }
+                            style={{
+                              border: "2px dashed #bbb",
+                              borderRadius: "6px",
+                              padding: "12px",
+                              textAlign: "center",
+                              color: "#666",
+                              background: "#fafafa",
+                              cursor: "pointer",
+                            }}
+                            onClick={() =>
+                              document
+                                .getElementById(`cw3d-${optionIndex}`)
+                                ?.click()
+                            }
+                          >
+                            <div style={{ fontSize: "0.9em" }}>
+                              Drag & drop .glb here, or click to browse
+                            </div>
+                            <input
+                              id={`cw3d-${optionIndex}`}
+                              type="file"
+                              accept=".glb"
+                              style={{ display: "none" }}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                if (file && is3dModelFile(file)) {
+                                  setColorwayModelFiles((prev) => {
+                                    const next = [...prev];
+                                    next[optionIndex] = file;
+                                    return next;
+                                  });
+                                }
+                              }}
+                            />
+                          </div>
+                          {colorwayModelFiles[optionIndex] && (
+                            <div
+                              style={{
+                                marginTop: "8px",
+                                fontSize: "0.85em",
+                                color: "#666",
+                                backgroundColor: "#f5f5f5",
+                                padding: "8px",
+                                borderRadius: "4px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                              }}
+                            >
+                              <span>
+                                📁 {colorwayModelFiles[optionIndex]?.name}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setColorwayModelFiles((prev) => {
+                                    const next = [...prev];
+                                    next[optionIndex] = null;
+                                    return next;
+                                  })
+                                }
+                                style={{
+                                  backgroundColor: "transparent",
+                                  border: "none",
+                                  color: "#ff4444",
+                                  cursor: "pointer",
+                                  fontSize: "1.2em",
+                                }}
+                              >
+                                ✕
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
 
@@ -1530,7 +1627,11 @@ const AddEyeglassPage = () => {
 
                   <div
                     className="csd-post-button-container"
-                    style={{ margin: "10px 0 0 0" }}
+                    style={{
+                      margin: "10px 0 0 0",
+                      display: "flex",
+                      justifyContent: "flex-end",
+                    }}
                   >
                     <Button
                       className=""
@@ -1548,9 +1649,26 @@ const AddEyeglassPage = () => {
                 </div>
               </div>
             </form>
+            <InfoModal
+              isOpen={modal.open}
+              onClose={() => setModal((m) => ({ ...m, open: false }))}
+              title={modal.title}
+              message={modal.message}
+              variant={modal.variant}
+              primaryText={modal.onPrimary ? "Continue" : "OK"}
+              onPrimary={modal.onPrimary}
+            />
           </div>
         </div>
       </div>
+      <InfoModal
+        isOpen={modal.open}
+        title={modal.title}
+        message={modal.message}
+        variant={modal.variant}
+        onClose={() => setModal((m) => ({ ...m, open: false }))}
+        onPrimary={modal.onPrimary}
+      />
     </>
   );
 };
