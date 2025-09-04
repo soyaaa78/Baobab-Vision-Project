@@ -38,8 +38,7 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
       return Scaffold(
         appBar: AppBar(title: const Text("Virtual Try-On")),
         body: const Center(
-          child:
-              Text("Camera permission is required to use this feature."),
+          child: Text("Camera permission is required to use this feature."),
         ),
       );
     }
