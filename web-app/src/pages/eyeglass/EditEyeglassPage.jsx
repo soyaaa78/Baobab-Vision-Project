@@ -18,6 +18,7 @@ const EditEyeglassPage = () => {
   const [productImages, setProductImages] = useState([]);
   const [colorwayImages, setColorwayImages] = useState([]);
   const [eyeglass, setEyeglass] = useState({});
+  const [originalEyeglass, setOriginalEyeglass] = useState({});
   const [colorwayModelFiles, setColorwayModelFiles] = useState([]);
 
   const [TOKEN, setToken] = useState();
@@ -67,11 +68,14 @@ const EditEyeglassPage = () => {
         const response = await axios.get(
           `${SERVER_URL}/api/products?id=${id}`,
           {
-            Authorization: `Bearer ${TOKEN}`,
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+            },
           }
         );
         const data = response.data;
         setEyeglass(data);
+        setOriginalEyeglass(JSON.parse(JSON.stringify(data))); // Deep copy for comparison
         setForm({
           name: data.name || "",
           description: data.description || "",
@@ -104,7 +108,12 @@ const EditEyeglassPage = () => {
         setColorwayModelFiles(
           (data.colorOptions || []).map((opt) =>
             opt.model3dUrl
-              ? { name: opt.model3dUrl.split("/").pop(), url: opt.model3dUrl }
+              ? {
+                  name: `${data.name} - ${opt.name}.glb`,
+                  url: opt.model3dUrl,
+                  originalUrl: opt.model3dUrl,
+                  rawFile: null,
+                }
               : null
           )
         );
@@ -117,6 +126,82 @@ const EditEyeglassPage = () => {
       fetchEyeglass();
     }
   }, [id]);
+
+  // Check if any changes were made
+  const hasChanges = () => {
+    if (!originalEyeglass.name) return false;
+
+    // Check basic fields
+    if (form.name !== originalEyeglass.name) return true;
+    if (form.description !== originalEyeglass.description) return true;
+    if (form.price !== String(originalEyeglass.price)) return true;
+    if (form.stock !== originalEyeglass.stock) return true;
+    if (form.recommendedFor !== !!originalEyeglass.recommendedFor) return true;
+
+    // Check specs
+    if (
+      JSON.stringify(form.specs.sort()) !==
+      JSON.stringify((originalEyeglass.specs || []).sort())
+    )
+      return true;
+
+    // Check lens options (excluding _id fields for comparison)
+    const cleanLensOptions = (options) =>
+      options.map(({ label, type, price }) => ({ label, type, price }));
+    if (
+      JSON.stringify(cleanLensOptions(form.lensOptions)) !==
+      JSON.stringify(cleanLensOptions(originalEyeglass.lensOptions || []))
+    )
+      return true;
+
+    // Check product images
+    const currentImageUrls = productImages.map((img) => img.url).sort();
+    const originalImageUrls = (originalEyeglass.imageUrls || []).sort();
+    if (JSON.stringify(currentImageUrls) !== JSON.stringify(originalImageUrls))
+      return true;
+
+    // Check color options
+    if (
+      JSON.stringify(form.colorOptions) !==
+      JSON.stringify(originalEyeglass.colorOptions || [])
+    )
+      return true;
+
+    // Check colorway images
+    const currentColorwayData = colorwayImages.map((img) => ({
+      url: img.url,
+      name: img.name,
+    }));
+    const originalColorwayData = (originalEyeglass.colorOptions || []).map(
+      (opt) => ({ url: opt.imageUrl, name: opt.name })
+    );
+    if (
+      JSON.stringify(currentColorwayData) !==
+      JSON.stringify(originalColorwayData)
+    )
+      return true;
+
+    // If any new 3D model file was added, that's a change
+    if (
+      (colorwayModelFiles || []).some(
+        (m) => m && m.rawFile && m.rawFile instanceof File
+      )
+    ) {
+      return true;
+    }
+
+    // Check 3D models (existing URLs vs original)
+    const currentModels = colorwayModelFiles.map(
+      (model) => model?.originalUrl || model?.url || null
+    );
+    const originalModels = (originalEyeglass.colorOptions || []).map(
+      (opt) => opt.model3dUrl || null
+    );
+    if (JSON.stringify(currentModels) !== JSON.stringify(originalModels))
+      return true;
+
+    return false;
+  };
 
   const handleToggle = (ref, shouldCheck) => {
     const checkboxes = ref.current.querySelectorAll('input[type="checkbox"]');
@@ -165,6 +250,23 @@ const EditEyeglassPage = () => {
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
+
+    // Update 3D model display names if product name changed
+    if (name === "name") {
+      setColorwayModelFiles((prev) => {
+        return prev.map((modelFile, index) => {
+          if (modelFile && modelFile.name) {
+            const colorOptionName =
+              form.colorOptions[index]?.name || `Color ${index + 1}`;
+            return {
+              ...modelFile,
+              name: `${value || "Product"} - ${colorOptionName}.glb`,
+            };
+          }
+          return modelFile;
+        });
+      });
+    }
   };
   const handleSpecsChange = (spec) => {
     setForm((prev) => {
@@ -259,6 +361,20 @@ const EditEyeglassPage = () => {
         colorOptions: newColorOptions,
       };
     });
+
+    // Update 3D model display name if the option name changed
+    if (field === "name" && colorwayModelFiles[optionIndex]) {
+      setColorwayModelFiles((prev) => {
+        const next = [...prev];
+        if (next[optionIndex] && next[optionIndex].name) {
+          next[optionIndex] = {
+            ...next[optionIndex],
+            name: `${form.name || "Product"} - ${value}.glb`,
+          };
+        }
+        return next;
+      });
+    }
   };
   const handleColorOptionColorChange = (optionIndex, colorIndex, color) => {
     setForm((prev) => {
@@ -311,9 +427,15 @@ const EditEyeglassPage = () => {
     e.preventDefault();
     const file = e.dataTransfer?.files?.[0];
     if (file && is3dModelFile(file)) {
+      const colorOptionName =
+        form.colorOptions[optionIndex]?.name || `Color ${optionIndex + 1}`;
+      const displayFile = {
+        name: `${form.name || "Product"} - ${colorOptionName}.glb`,
+        rawFile: file,
+      };
       setColorwayModelFiles((prev) => {
         const next = [...prev];
-        next[optionIndex] = file;
+        next[optionIndex] = displayFile;
         return next;
       });
     }
@@ -402,42 +524,35 @@ const EditEyeglassPage = () => {
       ) {
         updatedEyeglass.colorOptions = form.colorOptions || [];
       }
-      // Removed: legacy top-level 3D model handling
-      // Pre-upload any new per-colorway 3D files to get URLs, then inject into colorOptions
+      // Handle colorOptions with 3D models - ensure removals are tracked
+      const updatedColorOptions = form.colorOptions.map((opt, index) => {
+        const modelFile = colorwayModelFiles[index];
+        const result = { ...opt };
+
+        if (modelFile === null) {
+          // Model was explicitly removed
+          result.model3dUrl = null;
+        } else if (modelFile && modelFile.originalUrl) {
+          // Existing model kept
+          result.model3dUrl = modelFile.originalUrl;
+        } else if (modelFile && modelFile.rawFile) {
+          // New model will be uploaded later
+          // Keep existing model3dUrl for now, will be updated after upload
+        }
+
+        return result;
+      });
+
+      // Collect any new model files to append to the main request
       const pendingFiles = (colorwayModelFiles || [])
-        .map((f, idx) => ({ f, idx }))
+        .map((entry, idx) => ({ f: entry?.rawFile, idx }))
         .filter(({ f }) => f instanceof File);
-      if (pendingFiles.length) {
-        const fd = new FormData();
-        const order = [];
-        pendingFiles.forEach(({ f, idx }) => {
-          fd.append("colorwayModels3d", f);
-          order.push(idx);
-        });
-        const uploadRes = await axios.post(
-          `${SERVER_URL}/api/storage/upload/models`,
-          fd,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${TOKEN}`,
-            },
-          }
-        );
-        const urls = uploadRes.data?.colorwayModelUrls || [];
-        const updatedOptions = (
-          updatedEyeglass.colorOptions || form.colorOptions
-        ).map((opt) => ({ ...opt }));
-        order.forEach((optIdx, i) => {
-          if (urls[i]) {
-            updatedOptions[optIdx] = {
-              ...updatedOptions[optIdx],
-              model3dUrl: urls[i],
-            };
-          }
-        });
-        updatedEyeglass.colorOptions = updatedOptions;
-      }
+
+      // Always include colorOptions in update to handle model removals. New models will be handled server-side.
+      updatedEyeglass.colorOptions = updatedColorOptions;
+
+      // Always include colorOptions in update to handle model removals (new models handled server-side)
+      updatedEyeglass.colorOptions = updatedColorOptions;
 
       // Build FormData for fields (no 3D files attached here)
       const formData = new FormData();
@@ -449,13 +564,22 @@ const EditEyeglassPage = () => {
         }
       });
 
+      // Append any new per-colorway 3D model files and their target indices
+      if (pendingFiles.length) {
+        const order = [];
+        pendingFiles.forEach(({ f, idx }) => {
+          formData.append("colorwayModels3d", f);
+          order.push(idx);
+        });
+        formData.append("colorwayModelTargets", JSON.stringify(order));
+      }
+
       await axios.put(
         `${SERVER_URL}/api/products?id=${eyeglass._id}`,
         formData,
         {
           headers: {
             Authorization: `Bearer ${TOKEN}`,
-            "Content-Type": "multipart/form-data",
           },
         }
       );
@@ -1229,9 +1353,18 @@ const EditEyeglassPage = () => {
                               onChange={(e) => {
                                 const file = e.target.files?.[0] || null;
                                 if (file && is3dModelFile(file)) {
+                                  const colorOptionName =
+                                    form.colorOptions[optionIndex]?.name ||
+                                    `Color ${optionIndex + 1}`;
+                                  const displayFile = {
+                                    name: `${
+                                      form.name || "Product"
+                                    } - ${colorOptionName}.glb`,
+                                    rawFile: file,
+                                  };
                                   setColorwayModelFiles((prev) => {
                                     const next = [...prev];
-                                    next[optionIndex] = file;
+                                    next[optionIndex] = displayFile;
                                     return next;
                                   });
                                 }
@@ -1253,16 +1386,16 @@ const EditEyeglassPage = () => {
                               }}
                             >
                               <span>
-                                📁{" "}
+                                File:{" "}
                                 {colorwayModelFiles[optionIndex]?.name ||
-                                  colorwayModelFiles[optionIndex]?.url}
+                                  "Unknown file"}
                               </span>
                               <button
                                 type="button"
                                 onClick={() =>
                                   setColorwayModelFiles((prev) => {
                                     const next = [...prev];
-                                    next[optionIndex] = null;
+                                    next[optionIndex] = null; // explicit removal
                                     return next;
                                   })
                                 }
@@ -1358,41 +1491,109 @@ const EditEyeglassPage = () => {
                 </div>
               </div>
 
-              {/* Submit Button Only */}
+              {/* Action Buttons */}
               <div
                 className="csd-post-button-container"
                 style={{
-                  margin: "10px 0 0 0",
+                  margin: "30px 0 0 0",
                   display: "flex",
-                  justifyContent: "flex-end",
+                  justifyContent: "center",
+                  gap: "16px",
+                  alignItems: "center",
+                  paddingTop: "20px",
+                  borderTop: "1px solid #e5e5e5",
                 }}
               >
-                <Button
-                  className=""
+                <button
                   type="submit"
-                  disabled={isSubmitting}
-                  children={
-                    <p>{isSubmitting ? "Updating..." : "Update Eyeglass"}</p>
-                  }
-                />
+                  disabled={isSubmitting || !hasChanges()}
+                  style={{
+                    background: isSubmitting
+                      ? "#6c757d"
+                      : !hasChanges()
+                      ? "#e9ecef"
+                      : "#28a745",
+                    color: !hasChanges() ? "#6c757d" : "#ffffff",
+                    padding: "12px 28px",
+                    borderRadius: "8px",
+                    border: `2px solid ${
+                      isSubmitting
+                        ? "#6c757d"
+                        : !hasChanges()
+                        ? "#e9ecef"
+                        : "#28a745"
+                    }`,
+                    cursor:
+                      !hasChanges() || isSubmitting ? "not-allowed" : "pointer",
+                    fontSize: "15px",
+                    fontWeight: "600",
+                    fontFamily: "inherit",
+                    transition: "all 0.2s ease-in-out",
+                    boxShadow: !hasChanges()
+                      ? "none"
+                      : "0 2px 4px rgba(40, 167, 69, 0.2)",
+                    minWidth: "140px",
+                    height: "48px",
+                    opacity: !hasChanges() || isSubmitting ? 0.7 : 1,
+                  }}
+                  onMouseEnter={(e) => {
+                    if (hasChanges() && !isSubmitting) {
+                      e.target.style.background = "#218838";
+                      e.target.style.borderColor = "#218838";
+                      e.target.style.transform = "translateY(-1px)";
+                      e.target.style.boxShadow =
+                        "0 4px 8px rgba(40, 167, 69, 0.3)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (hasChanges() && !isSubmitting) {
+                      e.target.style.background = "#28a745";
+                      e.target.style.borderColor = "#28a745";
+                      e.target.style.transform = "translateY(0)";
+                      e.target.style.boxShadow =
+                        "0 2px 4px rgba(40, 167, 69, 0.2)";
+                    }
+                  }}
+                >
+                  {isSubmitting ? "Updating..." : "Update Eyeglass"}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  style={{
+                    background: "#dc3545",
+                    color: "#ffffff",
+                    padding: "12px 28px",
+                    borderRadius: "8px",
+                    border: "2px solid #dc3545",
+                    cursor: "pointer",
+                    fontSize: "15px",
+                    fontWeight: "600",
+                    fontFamily: "inherit",
+                    transition: "all 0.2s ease-in-out",
+                    boxShadow: "0 2px 4px rgba(220, 53, 69, 0.2)",
+                    minWidth: "140px",
+                    height: "48px",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = "#c82333";
+                    e.target.style.borderColor = "#c82333";
+                    e.target.style.transform = "translateY(-1px)";
+                    e.target.style.boxShadow =
+                      "0 4px 8px rgba(220, 53, 69, 0.3)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = "#dc3545";
+                    e.target.style.borderColor = "#dc3545";
+                    e.target.style.transform = "translateY(0)";
+                    e.target.style.boxShadow =
+                      "0 2px 4px rgba(220, 53, 69, 0.2)";
+                  }}
+                >
+                  Delete Eyeglass
+                </button>
               </div>
             </form>
-            <div
-              className="csd-post-button-container"
-              style={{ margin: "10px 0 0 0" }}
-            >
-              <Button
-                className="delete-btn"
-                type="button"
-                onClick={handleDelete}
-                style={{
-                  marginLeft: 12,
-                  background: "#e74c3c",
-                  color: "#fff",
-                }}
-                children={<p>Delete Eyeglass</p>}
-              />
-            </div>
           </div>
         </div>
       </div>
