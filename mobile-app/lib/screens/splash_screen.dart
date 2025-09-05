@@ -11,23 +11,30 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
+    with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
 
-    // Initialize animation controller
-    _controller = AnimationController(
-      duration: const Duration(seconds: 2),
+    // Logo fade & scale controller
+    _logoController = AnimationController(
       vsync: this,
-    )..repeat();
-
-    _animation = Tween<double>(begin: 0.0, end: 2.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.linear),
+      duration: const Duration(seconds: 2),
     );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.easeInOut),
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _logoController, curve: Curves.easeOutBack),
+    );
+
+    _logoController.forward();
 
     // Navigate after 4 seconds
     Timer(const Duration(seconds: 4), () {
@@ -37,7 +44,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _logoController.dispose();
     super.dispose();
   }
 
@@ -45,28 +52,51 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        padding: const EdgeInsets.all(30),
         height: ScreenUtil().screenHeight,
-        color: WHITE_COLOR,
         width: double.infinity,
+        color: WHITE_COLOR,
+        padding: const EdgeInsets.all(30),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/baobab_logo.png'),
-            SizedBox(height: ScreenUtil().setHeight(50)),
-            AnimatedBuilder(
-              animation: _animation,
-              builder: (context, child) {
-                return Transform.rotate(
-                  angle: _animation.value * 2.0 * 3.1415926535,
-                  child: const Icon(
-                    Icons.sync,
-                    size: 40,
-                    color: BLACK_COLOR,
-                  ),
-                );
-              },
+            // Logo fade & scale
+            ScaleTransition(
+              scale: _scaleAnimation,
+              child: FadeTransition(
+                opacity: _fadeAnimation,
+                child: Image.asset(
+                  'assets/images/baobab_logo.png',
+                  height: 120.h,
+                ),
+              ),
+            ),
+            SizedBox(height: 40.h),
+
+            // Modern loading circle
+            SizedBox(
+              height: 40.w,
+              width: 40.w,
+              child: const CircularProgressIndicator(
+                strokeWidth: 3,
+                valueColor: AlwaysStoppedAnimation<Color>(BLACK_COLOR),
+              ),
+            ),
+
+            SizedBox(height: 30.h),
+
+            // Tagline with default font
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: Text(
+                "Vision for All",
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  color: BLACK_COLOR,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 1.2,
+                ),
+              ),
             ),
           ],
         ),

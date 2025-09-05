@@ -192,7 +192,7 @@ class _DetailScreenState extends State<DetailScreen> {
       backgroundColor: WHITE_COLOR,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,42 +213,54 @@ class _DetailScreenState extends State<DetailScreen> {
                               });
                             },
                             itemBuilder: (context, index) {
-                              return Image.network(
-                                allImages[index],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
+                              return ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Image.network(
+                                  allImages[index],
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                ),
                               );
                             },
                           ),
                         ),
                         Positioned(
-                          top: ScreenUtil().setHeight(10),
-                          left: ScreenUtil().setWidth(10),
+                          top: 10,
+                          left: 10,
                           child: InkWell(
                             onTap: () => Navigator.pop(context),
-                            child: Icon(
-                              Icons.keyboard_backspace,
-                              size: ScreenUtil().setSp(40),
+                            borderRadius: BorderRadius.circular(30),
+                            child: Container(
+                              padding: EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.8),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.keyboard_backspace,
+                                size: 28,
+                                color: Colors.black87,
+                              ),
                             ),
                           ),
                         ),
                         Positioned(
-                          top: ScreenUtil().setHeight(10),
-                          right: ScreenUtil().setWidth(10),
+                          top: 10,
+                          right: 10,
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
+                                    horizontal: 10, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: Colors.yellow[700],
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(18),
                                 ),
                                 child: Row(
                                   children: [
                                     Icon(Icons.star,
-                                        color: Colors.white, size: 16),
+                                        color: Colors.white, size: 18),
                                     SizedBox(width: 4),
                                     CustomText(
                                       text: _avgRating != null
@@ -260,21 +272,21 @@ class _DetailScreenState extends State<DetailScreen> {
                                                   .toStringAsFixed(1)),
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
-                                      fontSize: ScreenUtil().setSp(14),
+                                      fontSize: 14.sp,
                                     ),
                                   ],
                                 ),
                               ),
-                              SizedBox(width: 6),
+                              SizedBox(width: 8),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
                                   padding: EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 4),
+                                      horizontal: 12, vertical: 6),
                                   backgroundColor: Colors.yellow[700],
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  minimumSize: Size(70, 28),
+                                  minimumSize: Size(75, 32),
                                 ),
                                 onPressed: () {
                                   showModalBottomSheet(
@@ -293,11 +305,11 @@ class _DetailScreenState extends State<DetailScreen> {
                                               color: WHITE_COLOR,
                                               borderRadius:
                                                   BorderRadius.vertical(
-                                                      top: Radius.circular(20)),
+                                                      top:
+                                                          Radius.circular(20)),
                                             ),
                                             child: Column(
                                               children: [
-                                                // Drag handle bar
                                                 Container(
                                                   margin: EdgeInsets.symmetric(
                                                       vertical: 10),
@@ -310,7 +322,6 @@ class _DetailScreenState extends State<DetailScreen> {
                                                             10),
                                                   ),
                                                 ),
-                                                // Reviews content with scroll controller
                                                 Expanded(
                                                   child: ReviewsScreen(
                                                     productId: widget.productId,
@@ -330,7 +341,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   "Reviews",
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontSize: ScreenUtil().setSp(12),
+                                    fontSize: 13.sp,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -340,7 +351,7 @@ class _DetailScreenState extends State<DetailScreen> {
                         ),
                       ],
                     ),
-                    SizedBox(height: 10),
+                    SizedBox(height: 12),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -357,7 +368,7 @@ class _DetailScreenState extends State<DetailScreen> {
                               });
                             },
                             child: Container(
-                              margin: EdgeInsets.symmetric(horizontal: 5),
+                              margin: EdgeInsets.symmetric(horizontal: 6),
                               padding: EdgeInsets.all(2),
                               decoration: BoxDecoration(
                                 border: Border.all(
@@ -384,35 +395,39 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                   ],
                 ),
-                SizedBox(height: ScreenUtil().setHeight(20)),
+                SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    CustomText(
-                      text: widget.prodName,
-                      color: Colors.black,
-                      fontFamily: 'Montserrat',
-                      fontWeight: FontWeight.w500,
-                      fontSize: ScreenUtil().setSp(24),
+                    Flexible(
+                      child: CustomText(
+                        text: widget.prodName,
+                        color: Colors.black,
+                        fontFamily: 'Montserrat',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 22.sp,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     CustomText(
                       text: widget.prodPrice,
                       color: BLACK_COLOR,
                       fontFamily: 'Montserrat',
                       fontWeight: FontWeight.w800,
-                      fontSize: ScreenUtil().setSp(24),
+                      fontSize: 22.sp,
                     ),
                   ],
                 ),
-                SizedBox(height: ScreenUtil().setHeight(5)),
+                SizedBox(height: 6),
                 CustomText(
                   text:
                       'Color: ${widget.colorOptions[selectedColorIndex].name}',
-                  fontSize: ScreenUtil().setSp(15),
+                  fontSize: 15.sp,
                   fontFamily: 'Montserrat',
-                  color: Colors.black,
+                  color: Colors.black87,
                 ),
-                SizedBox(height: ScreenUtil().setHeight(8)),
+                SizedBox(height: 8),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -423,25 +438,26 @@ class _DetailScreenState extends State<DetailScreen> {
                     }),
                   ),
                 ),
-                SizedBox(height: ScreenUtil().setHeight(16)),
+                SizedBox(height: 16),
                 Text(
                   widget.description,
                   style: TextStyle(
-                    fontSize: ScreenUtil().setSp(17),
+                    fontSize: 16.sp,
                     fontFamily: 'Nunito',
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
+                    height: 1.4,
                   ),
                   textAlign: TextAlign.justify,
                 ),
-                SizedBox(height: ScreenUtil().setHeight(16)),
+                SizedBox(height: 16),
                 CustomText(
                   text: 'SELECT LENS TYPE:',
-                  fontSize: ScreenUtil().setSp(15),
-                  color: Colors.black,
+                  fontSize: 15.sp,
+                  color: Colors.black87,
                   fontFamily: 'Montserrat',
                   fontWeight: FontWeight.w600,
                 ),
-                SizedBox(height: ScreenUtil().setHeight(8)),
+                SizedBox(height: 8),
                 DropdownButton<String>(
                   value: selectedLensType,
                   isExpanded: true,
@@ -494,15 +510,15 @@ class _DetailScreenState extends State<DetailScreen> {
                             )),
                   ],
                 ),
-                SizedBox(height: ScreenUtil().setHeight(16)),
+                SizedBox(height: 16),
                 CustomText(
                   text: 'UPLOAD PHOTO PRESCRIPTION',
-                  fontSize: ScreenUtil().setSp(15),
-                  color: Colors.black,
+                  fontSize: 15.sp,
+                  color: Colors.black87,
                   fontFamily: 'Montserrat',
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
-                SizedBox(height: ScreenUtil().setHeight(8)),
+                SizedBox(height: 8),
                 prescriptionFile == null
                     ? GestureDetector(
                         onTap: () async {
@@ -521,14 +537,16 @@ class _DetailScreenState extends State<DetailScreen> {
                           width: double.infinity,
                           padding: EdgeInsets.symmetric(vertical: 20),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.black),
-                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey[400]!),
+                            borderRadius: BorderRadius.circular(12),
+                            color: Colors.grey[100],
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.upload_file, color: Colors.grey),
-                              SizedBox(height: 8),
+                              Icon(Icons.upload_file,
+                                  color: Colors.grey[700], size: 28),
+                              SizedBox(height: 6),
                               Text(
                                 'Choose File\nor drop file to upload',
                                 textAlign: TextAlign.center,
@@ -542,17 +560,19 @@ class _DetailScreenState extends State<DetailScreen> {
                     : Container(
                         padding: EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black),
-                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.grey[400]!),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.grey[50],
                         ),
                         child: Row(
                           children: [
                             Icon(Icons.insert_drive_file, color: Colors.green),
-                            SizedBox(width: 10),
+                            SizedBox(width: 12),
                             Expanded(
                               child: Text(
                                 prescriptionFile!.name,
-                                style: TextStyle(fontWeight: FontWeight.w600),
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600, fontSize: 14),
                               ),
                             ),
                             IconButton(
@@ -567,7 +587,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           ],
                         ),
                       ),
-                SizedBox(height: ScreenUtil().setHeight(16)),
+                SizedBox(height: 18),
                 Row(
                   children: [
                     Expanded(
@@ -588,12 +608,12 @@ class _DetailScreenState extends State<DetailScreen> {
                         ),
                         child: CustomText(
                           text: 'Virtual Try-on',
-                          fontSize: ScreenUtil().setSp(15),
+                          fontSize: 15.sp,
                           color: Colors.white,
                         ),
                       ),
                     ),
-                    SizedBox(width: 10),
+                    SizedBox(width: 12),
                     Expanded(
                       child: CartAnimationButton(
                         label: 'Add to Cart',

@@ -94,6 +94,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
       backgroundColor: WHITE_COLOR,
       appBar: AppBar(
         backgroundColor: WHITE_COLOR,
+        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.close, color: Colors.black),
           onPressed: () => Navigator.pop(context),
@@ -109,28 +110,35 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         controller: widget.scrollController,
         padding: const EdgeInsets.all(16),
         children: [
-          if (_loading) const LinearProgressIndicator(minHeight: 2),
-          // 🔽 Sort By row
-          Row(
-            children: [
-              _buildFilterButton("All"),
-              const SizedBox(width: 8),
-              _buildFilterButton("With Media", badge: _withMedia),
-              const SizedBox(width: 8),
-              _buildFilterButton("By Stars"),
-            ],
+          if (_loading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 4),
+              child: LinearProgressIndicator(minHeight: 2),
+            ),
+
+          // 🔽 Filter row
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _buildFilterButton("All"),
+                const SizedBox(width: 8),
+                _buildFilterButton("With Media", badge: _withMedia),
+                const SizedBox(width: 8),
+                _buildFilterButton("By Stars"),
+              ],
+            ),
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
 
-          // 🔽 If "By Stars" is selected, show star filter row
+          // 🔽 Star filter row if By Stars
           if (selectedFilter == "By Stars")
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: List.generate(5, (i) {
-                int star = 5 - i; // Start from 5 stars down to 1
+                int star = 5 - i;
                 int count = _starCounts[star] ?? 0;
-
                 return GestureDetector(
                   onTap: () {
                     setState(() {
@@ -142,14 +150,23 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 10),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
                       color: selectedStar == star
                           ? Colors.black
                           : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                           color: selectedStar == star
                               ? Colors.black
                               : Colors.grey[300]!),
+                      boxShadow: selectedStar == star
+                          ? [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ]
+                          : null,
                     ),
                     child: Row(
                       children: [
@@ -175,9 +192,8 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               }),
             ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-          // 🔽 Show count of reviews
           CustomText(
             text: "${filteredReviews.length} Reviews",
             fontSize: 16,
@@ -186,9 +202,13 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
 
           const SizedBox(height: 16),
 
-          // 🔽 Render reviews
+          // 🔽 Reviews list
           if (filteredReviews.isEmpty)
-            const Center(child: Text("No reviews found."))
+            const Center(
+                child: Text(
+              "No reviews found.",
+              style: TextStyle(fontSize: 14, color: Colors.grey),
+            ))
           else
             ...filteredReviews.map(
               (review) => Padding(
@@ -210,23 +230,37 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     );
   }
 
-  // 🔽 Custom Filter Button (instead of ChoiceChip)
   Widget _buildFilterButton(String label, {int badge = 0}) {
     final bool isSelected = selectedFilter == label;
     return GestureDetector(
       onTap: () {
         setState(() {
           selectedFilter = label;
-          if (label != "By Stars") selectedStar = 0; // Reset stars when leaving
+          if (label != "By Stars") selectedStar = 0;
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.black : Colors.grey[100],
-          borderRadius: BorderRadius.circular(20),
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Colors.black, Colors.grey],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          color: isSelected ? null : Colors.grey[100],
+          borderRadius: BorderRadius.circular(30),
           border:
               Border.all(color: isSelected ? Colors.black : Colors.grey[300]!),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3))
+                ]
+              : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -235,13 +269,14 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               label,
               style: TextStyle(
                 color: isSelected ? Colors.white : Colors.black,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
             if (badge > 0) ...[
               const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: isSelected ? Colors.white : Colors.black,
                   borderRadius: BorderRadius.circular(10),
@@ -251,6 +286,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                   style: TextStyle(
                     color: isSelected ? Colors.black : Colors.white,
                     fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
                 ),
               )
@@ -272,11 +308,18 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     String? respondedAt,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[300]!),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[200]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,10 +328,10 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           Row(
             children: [
               CircleAvatar(
-                radius: 20,
+                radius: 22,
                 backgroundImage: NetworkImage(profilePic),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: CustomText(
                   text: maskUsername(username),
@@ -308,7 +351,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
           // Review text
           CustomText(
@@ -316,27 +359,28 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
             fontSize: 14,
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
 
-          // Photos (if any)
+          // Photos
           if (photos.isNotEmpty)
             SizedBox(
-              height: 80,
+              height: 90,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: photos.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   return GestureDetector(
                     onTap: () {
                       _showPhotoViewer(context, photos[index]);
                     },
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                       child: Image.network(
                         photos[index],
-                        width: 80,
-                        height: 80,
+                        width: 90,
+                        height: 90,
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -345,39 +389,34 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               ),
             ),
 
-          // Admin response (if any)
+          // Admin Response
           if (adminResponse != null && adminResponse.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue[200]!),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: BLACK_COLOR!),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(
-                        Icons.admin_panel_settings,
-                        size: 16,
-                        color: Colors.blue[600] ?? Colors.blue,
-                      ),
-                      const SizedBox(width: 6),
+                      const SizedBox(width: 3),
                       CustomText(
-                        text: "Admin Response",
+                        text: "Baobab Eyewear",
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Colors.blue[600] ?? Colors.blue,
+                        color: BLACK_COLOR
                       ),
                       if (respondedAt != null) ...[
                         const SizedBox(width: 8),
                         CustomText(
                           text: "• ${_formatDate(respondedAt)}",
                           fontSize: 12,
-                          color: Colors.blue[500] ?? Colors.blue,
+                          color: BLACK_COLOR,
                         ),
                       ],
                     ],
@@ -392,8 +431,6 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               ),
             ),
           ],
-
-          const SizedBox(height: 8),
         ],
       ),
     );

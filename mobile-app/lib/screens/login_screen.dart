@@ -129,6 +129,7 @@ class _LogInScreenState extends State<LogInScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      /// Logo
                       Center(
                         child: Image.asset(
                           'assets/images/baobab_logo.png',
@@ -150,7 +151,11 @@ class _LogInScreenState extends State<LogInScreen> {
                             color: BLACK_COLOR,
                           ),
                           prefixIcon: const Icon(Icons.person),
-                          border: const OutlineInputBorder(),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
                         ),
                       ),
                       SizedBox(height: 20.h),
@@ -181,28 +186,14 @@ class _LogInScreenState extends State<LogInScreen> {
                               });
                             },
                           ),
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                      SizedBox(height: 25.h),
-
-                      /// Forgot Password Link
-                      Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/forgot-password');
-                          },
-                          child: Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontSize: 14.sp,
-                              decoration: TextDecoration.underline,
-                            ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.r),
                           ),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
                         ),
                       ),
-                      SizedBox(height: 25.h),
+                      SizedBox(height: 30.h),
 
                       /// Login Button
                       CustomInkwellButton(
@@ -211,18 +202,37 @@ class _LogInScreenState extends State<LogInScreen> {
                             login();
                           }
                         },
-                        height: 45.h,
+                        height: 50.h,
                         width: double.infinity,
                         buttonName: 'Login',
                         fontSize: 16.sp,
+                      ),
+                      SizedBox(height: 20.h),
+
+                      /// Forgot Password Link (moved below login button)
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/forgot-password');
+                          },
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: BLACK_COLOR,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                /// Register Link
+                /// Register Link (bottom section)
                 Container(
-                  height: 50.h,
+                  height: 55.h,
                   width: double.infinity,
                   color: BLACK_COLOR,
                   alignment: Alignment.center,

@@ -63,26 +63,60 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       backgroundColor: WHITE_COLOR,
       appBar: AppBar(
-        title: const Text('Forgot Password'),
-        backgroundColor: Theme.of(context).primaryColor,
-        centerTitle: true,
+        backgroundColor: WHITE_COLOR,
         elevation: 0,
+        centerTitle: true,
+        title: Text(
+          'Forgot Password',
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Reset your password',
-              style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.bold),
+            /// Header Illustration or Icon
+            Center(
+              child: Icon(
+                Icons.lock_reset_outlined,
+                size: 80.sp,
+                color: Colors.blueAccent,
+              ),
+            ),
+            SizedBox(height: 20.h),
+
+            /// Title
+            Center(
+              child: Text(
+                'Reset Your Password',
+                style: TextStyle(
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
             ),
             SizedBox(height: 10.h),
-            Text(
-              'Enter your email address below and we’ll send you a one-time password (OTP) to verify your identity.',
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey[700]),
+
+            /// Subtitle
+            Center(
+              child: Text(
+                'Enter your email address below and we’ll send you a one-time password (OTP) to verify your identity.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: Colors.grey[700],
+                  height: 1.5,
+                ),
+              ),
             ),
-            SizedBox(height: 30.h),
+            SizedBox(height: 40.h),
 
             /// Email Input
             Form(
@@ -94,10 +128,46 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ? 'Please enter your email'
                     : null,
                 decoration: InputDecoration(
-                  labelText: 'Email address',
+                  labelText: 'Email Address',
+                  labelStyle: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.grey[700],
+                  ),
                   prefixIcon: const Icon(Icons.email_outlined),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10.r)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: EdgeInsets.symmetric(
+                    vertical: 14.h,
+                    horizontal: 12.w,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: BorderSide(
+                      color: Colors.grey.shade400,
+                      width: 1.2,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(
+                      color: Colors.blueAccent,
+                      width: 1.5,
+                    ),
+                  ),
+                  errorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(
+                      color: Colors.redAccent,
+                      width: 1.2,
+                    ),
+                  ),
+                  focusedErrorBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12.r),
+                    borderSide: const BorderSide(
+                      color: Colors.redAccent,
+                      width: 1.5,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -114,6 +184,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               width: double.infinity,
               buttonName: _isLoading ? 'Sending...' : 'Send OTP',
               fontSize: 16.sp,
+            ),
+            SizedBox(height: 20.h),
+
+            /// Back to Login
+            Center(
+              child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Text(
+                  'Back to Login',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: BLACK_COLOR,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             ),
           ],
         ),

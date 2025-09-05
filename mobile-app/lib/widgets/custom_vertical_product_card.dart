@@ -1,138 +1,172 @@
 import 'package:baobab_vision_project/models/productModel.dart';
-
 import '../widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
 import '../screens/detail_screen.dart';
 
-class CustomVerticalProductCard extends StatelessWidget {
+class CustomVerticalProductCard extends StatefulWidget {
   final String prodName;
-  final String prodSize;
   final String prodPrice;
-  final int numStars;
+  final double numStars;
   final int quantity;
   final String description;
   final List<String> prodImages;
-  final String productId; 
+  final String productId;
   final List<ColorOption> colorOptions;
   final List<LensOption> lensOptions;
-    final String selectedColorName;
+  final String selectedColorName;
   final String selectedLensLabel;
 
-  const CustomVerticalProductCard({
-    super.key,
-    required this.prodName,
-    required this.prodSize,
-    required this.prodPrice,
-    required this.numStars,
-    this.quantity = 1,
-    this.description = '',
-    required this.prodImages,
-    required this.productId,
-    required this.colorOptions, 
-     required this.lensOptions, 
-     required this.selectedColorName,
-    required this.selectedLensLabel,
-  });
+  CustomVerticalProductCard({
+  super.key,
+  required this.prodName,
+  required this.prodPrice,
+  required numStars, // accept int or double
+  this.quantity = 1,
+  this.description = '',
+  required this.prodImages,
+  required this.productId,
+  required this.colorOptions,
+  required this.lensOptions,
+  required this.selectedColorName,
+  required this.selectedLensLabel,
+}) : numStars = numStars.toDouble();  // automatically convert to double
+
+  @override
+  _CustomVerticalProductCardState createState() =>
+      _CustomVerticalProductCardState();
+}
+
+class _CustomVerticalProductCardState extends State<CustomVerticalProductCard> {
+  bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: GestureDetector(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => DetailScreen(
-                productId: productId,
-                prodName: prodName,
-                prodSize: prodSize,
-                prodPrice: prodPrice,
-                numStars: numStars,
-                quantity: quantity,
-                description: description,
-                prodImages: prodImages,
-                colorOptions: colorOptions,
-                lensOptions: lensOptions,
-              ),
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) => setState(() => _isPressed = false),
+      onTapCancel: () => setState(() => _isPressed = false),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailScreen(
+              productId: widget.productId,
+              prodName: widget.prodName,
+              prodSize: '',
+              prodPrice: widget.prodPrice,
+              numStars: widget.numStars.toInt(), // DetailScreen expects int
+              quantity: widget.quantity,
+              description: widget.description,
+              prodImages: widget.prodImages,
+              colorOptions: widget.colorOptions,
+              lensOptions: widget.lensOptions,
             ),
-          );
-        },
-        child: Container(
-          width: ScreenUtil().setWidth(140),  // Adjust width as needed
-          constraints: BoxConstraints(
-            minHeight: ScreenUtil().setHeight(190), // Ensure card height is constrained
-            maxHeight: ScreenUtil().setHeight(190), // Max height
           ),
-          padding: EdgeInsets.symmetric(
-            horizontal: ScreenUtil().setWidth(15),
-            vertical: ScreenUtil().setHeight(15),
+        );
+      },
+      child: AnimatedContainer(
+        duration: Duration(milliseconds: 150),
+        curve: Curves.easeOut,
+        transform: Matrix4.identity()..scale(_isPressed ? 0.96 : 1.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: _isPressed ? 6 : 3,
+              spreadRadius: 0,
+              offset: Offset(0, _isPressed ? 2 : 1),
+            ),
+          ],
+        ),
+        child: Card(
+          color: Colors.white,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
           ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,  // Prevent overflow and limit size
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // 🖼 Dynamic Image Handling (Asset or Network)
-              prodImages[0].startsWith('http')
-    ? Image.network(
-        prodImages[0],  // 👈 first item in the list
-        height: ScreenUtil().setHeight(80),
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            Icon(Icons.broken_image, size: 40),
-      )
-    : Image.asset(
-        prodImages[0],  // 👈 first item in the list
-        height: ScreenUtil().setHeight(80),
-        fit: BoxFit.cover,
-      ),
-
-              SizedBox(height: ScreenUtil().setHeight(5)),
-
-              // 🏷 Product Name
-              CustomText(
-                text: prodName,
-                fontSize: ScreenUtil().setSp(15),
-                color: BLACK_COLOR,
-                fontWeight: FontWeight.w900,
-              ),
-              SizedBox(height: ScreenUtil().setHeight(3)),
-
-              // 📦 Stock Info
-              CustomText(
-                text: prodSize,
-                fontSize: ScreenUtil().setSp(10),
-                color: Colors.black45,
-              ),
-              SizedBox(height: ScreenUtil().setHeight(5)),
-
-              // 💰 Price
-              CustomText(
-                text: prodPrice,
-                fontSize: ScreenUtil().setSp(17),
-                color: BLACK_COLOR,
-              ),
-
-              // ⭐ Star Rating
-              SizedBox(height: 4.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  numStars,
-                  (index) => Icon(Icons.star, size: 12.sp, color: Colors.amber),
+          child: Container(
+            width: ScreenUtil().setWidth(150),
+            constraints: BoxConstraints(
+              minHeight: ScreenUtil().setHeight(200),
+              maxHeight: ScreenUtil().setHeight(200),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: ScreenUtil().setWidth(12),
+              vertical: ScreenUtil().setHeight(12),
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // Image Container
+                Container(
+                  height: ScreenUtil().setHeight(90),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: LinearGradient(
+                      colors: [Colors.grey.shade200, Colors.white],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: widget.prodImages[0].startsWith('http')
+                        ? Image.network(
+                            widget.prodImages[0],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                          )
+                        : Image.asset(widget.prodImages[0], fit: BoxFit.cover),
+                  ),
                 ),
-              ),
-            ],
+                SizedBox(height: ScreenUtil().setHeight(10)),
+
+                // Flexible Product Name
+                Flexible(
+                  child: CustomText(
+                    text: widget.prodName,
+                    fontSize: ScreenUtil().setSp(14),
+                    color: BLACK_COLOR,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Montserrat',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                SizedBox(height: ScreenUtil().setHeight(8)),
+
+                // Price
+                CustomText(
+                  text: widget.prodPrice,
+                  fontSize: ScreenUtil().setSp(12),
+                  color: BLACK_COLOR,
+                  fontWeight: FontWeight.w500,
+                ),
+                SizedBox(height: ScreenUtil().setHeight(8)),
+
+                // Star Rating
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    if (index < widget.numStars.round()) {
+                      return Icon(Icons.star, size: 14.sp, color: Colors.amber);
+                    } else {
+                      return Icon(Icons.star_border, size: 14.sp, color: Colors.grey.shade400);
+                    }
+                  }),
+                ),
+              ],
+            ),
           ),
         ),
       ),

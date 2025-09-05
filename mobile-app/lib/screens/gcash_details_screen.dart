@@ -69,7 +69,6 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
     }
 
     try {
-      // Ensure user is logged in for authorized checkout
       final token = await AuthStorage.getToken();
       if (token == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -81,11 +80,10 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
         );
         return;
       }
-      // 1) Upload image to storage API first
+
       final file = File(_pickedFile!.path!);
       final url = await StorageService.uploadProofOfPayment(file);
 
-      // 2) Create the order with the uploaded image URL attached
       final orderId = await OrderService.checkoutFromCart(
         deliveryMethod: widget.deliveryMethod,
         paymentMethod: 'Gcash',
@@ -99,14 +97,12 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
         throw Exception('Failed to create order');
       }
 
-      // 3) Mark cart as cleared locally
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setInt(
             'cartClearedAt', DateTime.now().millisecondsSinceEpoch);
       } catch (_) {}
     } catch (e) {
-      // Subtle error, but continue to confirmation to keep flow intact
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -118,18 +114,16 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
       );
     }
 
-    // Show confirmation dialog
     showDialog(
       context: context,
-      barrierDismissible: false, // prevent closing by tapping outside
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Text('Thank you!'),
         content: Text('Your order now is pending.'),
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Close the dialog
-              // Navigate to pending orders screen
+              Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => PendingOrdersScreen()),
@@ -148,130 +142,184 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
       backgroundColor: WHITE_COLOR,
       appBar: AppBar(
         backgroundColor: WHITE_COLOR,
-        title: const Text('GCASH Payment'),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'GCASH Payment',
+          style: TextStyle(color: BLACK_COLOR, fontWeight: FontWeight.bold),
+        ),
+        iconTheme: IconThemeData(color: BLACK_COLOR),
       ),
       body: Padding(
-        padding: EdgeInsets.all(20.w),
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 15.h),
         child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CustomText(
-                text: 'Please pay to the following GCASH account:',
-                fontSize: ScreenUtil().setSp(16),
-                fontWeight: FontWeight.bold,
-              ),
-              SizedBox(height: 20.h),
-              CustomText(
-                text: 'Account Name:',
-                fontWeight: FontWeight.bold,
-                fontSize: ScreenUtil().setSp(18),
-              ),
-              CustomText(
-                text: 'Beverly Aniasco',
-                fontSize: ScreenUtil().setSp(18),
-              ),
-              SizedBox(height: 15.h),
-              CustomText(
-                text: 'GCASH Number:',
-                fontWeight: FontWeight.bold,
-                fontSize: ScreenUtil().setSp(18),
-              ),
-              CustomText(
-                text: widget.gcashNumber,
-                fontSize: ScreenUtil().setSp(18),
-              ),
-              SizedBox(height: 15.h),
-              CustomText(
-                text: 'Total Amount to Pay:',
-                fontWeight: FontWeight.bold,
-                fontSize: ScreenUtil().setSp(18),
-              ),
-              CustomText(
-                text: widget.totalAmount.toStringAsFixed(2),
-                fontSize: ScreenUtil().setSp(18),
-                color: BLACK_COLOR,
-                fontWeight: FontWeight.bold,
-              ),
-              SizedBox(height: 30.h),
-
-              // QR Code
-              PrettyQr(
-                data: widget.gcashNumber,
-                size: 200.w,
-                roundEdges: true,
-              ),
-              SizedBox(height: 30.h),
-
-              CustomText(
-                text:
-                    'After payment, please upload your payment proof and enter your reference number for verification.',
-                fontSize: ScreenUtil().setSp(16),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20.h),
-
-              // Upload button and file name
-              ElevatedButton.icon(
-                onPressed: _pickFile,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  fixedSize: Size(300.w, 55.h),
+              // Payment Info Card
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                icon: Icon(Icons.upload_file, color: Colors.white),
-                label: CustomText(
-                  text: _pickedFile == null
-                      ? 'Upload Proof of Payment'
-                      : 'Change File',
-                  color: Colors.white,
-                  fontSize: ScreenUtil().setSp(16),
-                ),
-              ),
-              if (_pickedFile != null)
-                Padding(
-                  padding: EdgeInsets.only(top: 8.h),
-                  child: Text(
-                    'Selected file: ${_pickedFile!.name}',
-                    style: TextStyle(
-                        fontSize: ScreenUtil().setSp(14), color: BLACK_COLOR),
+                margin: EdgeInsets.only(bottom: 25.h),
+                child: Padding(
+                  padding: EdgeInsets.all(20.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CustomText(
+                        text: 'Please pay to the following GCASH account:',
+                        fontSize: ScreenUtil().setSp(16),
+                        fontWeight: FontWeight.bold,
+                      ),
+                      SizedBox(height: 15.h),
+                      _buildInfoRow('Account Name:', 'Beverly Aniasco'),
+                      SizedBox(height: 10.h),
+                      _buildInfoRow('GCASH Number:', widget.gcashNumber),
+                      SizedBox(height: 10.h),
+                      _buildInfoRow(
+                          'Total Amount to Pay:',
+                          widget.totalAmount.toStringAsFixed(2),
+                          isAmount: true),
+                    ],
                   ),
                 ),
+              ),
 
-              SizedBox(height: 20.h),
-
-              // Reference number input
-              TextField(
-                controller: _refNumberController,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
-                  labelText: 'Enter Reference Number',
+              // QR Code Card
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                margin: EdgeInsets.only(bottom: 25.h),
+                child: Padding(
+                  padding: EdgeInsets.all(20.w),
+                  child: Column(
+                    children: [
+                      PrettyQr(
+                        data: widget.gcashNumber,
+                        size: 200.w,
+                        roundEdges: true,
+                      ),
+                      SizedBox(height: 15.h),
+                      CustomText(
+                        text:
+                            'Scan the QR code or pay directly to the GCASH number above.',
+                        fontSize: ScreenUtil().setSp(14),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
               ),
 
-              SizedBox(height: 30.h),
-
-              ElevatedButton(
-                onPressed: _submitPaymentProof,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  minimumSize: Size(double.infinity, 55.h),
+              // Payment Proof Card
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                child: CustomText(
-                  text: 'Submit Payment Proof',
-                  fontSize: ScreenUtil().setSp(18),
-                  color: Colors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(20.w),
+                  child: Column(
+                    children: [
+                      CustomText(
+                        text:
+                            'After payment, upload your proof and enter your reference number.',
+                        fontSize: ScreenUtil().setSp(16),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 20.h),
+
+                      // Upload button and file name
+                      ElevatedButton.icon(
+                        onPressed: _pickFile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          fixedSize: Size(double.infinity, 55.h),
+                        ),
+                        icon: Icon(Icons.upload_file, color: Colors.white),
+                        label: CustomText(
+                          text: _pickedFile == null
+                              ? 'Upload Proof of Payment'
+                              : 'Change File',
+                          color: Colors.white,
+                          fontSize: ScreenUtil().setSp(16),
+                        ),
+                      ),
+                      if (_pickedFile != null)
+                        Padding(
+                          padding: EdgeInsets.only(top: 8.h),
+                          child: Text(
+                            'Selected file: ${_pickedFile!.name}',
+                            style: TextStyle(
+                                fontSize: ScreenUtil().setSp(14),
+                                color: BLACK_COLOR),
+                          ),
+                        ),
+                      SizedBox(height: 20.h),
+
+                      // Reference number input
+                      TextField(
+                        controller: _refNumberController,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          labelText: 'Enter Reference Number',
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 15.w, vertical: 15.h),
+                        ),
+                      ),
+                      SizedBox(height: 25.h),
+
+                      // Submit button
+                      ElevatedButton(
+                        onPressed: _submitPaymentProof,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          minimumSize: Size(double.infinity, 55.h),
+                        ),
+                        child: CustomText(
+                          text: 'Submit Payment Proof',
+                          fontSize: ScreenUtil().setSp(18),
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(String title, String value, {bool isAmount = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        CustomText(
+          text: title,
+          fontWeight: FontWeight.bold,
+          fontSize: ScreenUtil().setSp(16),
+        ),
+        CustomText(
+          text: value,
+          fontSize: ScreenUtil().setSp(16),
+color: isAmount ? BLACK_COLOR : (Colors.grey[800] ?? Colors.grey),
+          fontWeight: isAmount ? FontWeight.bold : FontWeight.normal,
+        ),
+      ],
     );
   }
 }

@@ -93,33 +93,67 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
     return Scaffold(
       backgroundColor: WHITE_COLOR,
       appBar: AppBar(
-        title: const Text('Verify Your Email'),
-        centerTitle: true,
+        backgroundColor: WHITE_COLOR,
         elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
+        centerTitle: true,
+        title: Text(
+          'Verify Your Email',
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 30.h),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            /// Icon Header
+            Icon(
+              Icons.mark_email_read_outlined,
+              size: 80.sp,
+              color: Colors.blueAccent,
+            ),
+            SizedBox(height: 20.h),
+
+            /// Title
             Text(
-              'Check your email',
-              style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.w600),
+              'Check Your Email',
+              style: TextStyle(
+                fontSize: 22.sp,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
             ),
             SizedBox(height: 10.h),
+
+            /// Subtitle
             Text(
-              'We’ve sent an OTP to:',
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey[700]),
+              'We’ve sent a One-Time Password (OTP) to:',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.grey[700],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
             ),
+            SizedBox(height: 6.h),
+
+            /// Email Display
             Text(
               widget.email,
               style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w500,
-                  color: BLACK_COLOR),
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w600,
+                color: BLACK_COLOR,
+              ),
+              textAlign: TextAlign.center,
             ),
-            SizedBox(height: 30.h),
+            SizedBox(height: 40.h),
 
             /// OTP Input
             TextFormField(
@@ -127,9 +161,45 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: 'Enter OTP',
+                labelStyle: TextStyle(
+                  fontSize: 14.sp,
+                  color: Colors.grey[700],
+                ),
                 prefixIcon: const Icon(Icons.lock_outline),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.r)),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 14.h,
+                  horizontal: 12.w,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: BorderSide(
+                    color: Colors.grey.shade400,
+                    width: 1.2,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: const BorderSide(
+                    color: Colors.blueAccent,
+                    width: 1.5,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: const BorderSide(
+                    color: Colors.redAccent,
+                    width: 1.2,
+                  ),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: const BorderSide(
+                    color: Colors.redAccent,
+                    width: 1.5,
+                  ),
+                ),
               ),
             ),
             SizedBox(height: 30.h),
@@ -142,19 +212,17 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
               buttonName: isLoading ? 'Verifying...' : 'Verify OTP',
               fontSize: 16.sp,
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 20.h),
 
-            /// Resend Button
-            Center(
-              child: TextButton(
-                onPressed: resendOtp,
-                child: Text(
-                  'Didn’t get the code? Resend OTP',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+            /// Resend OTP Button
+            TextButton(
+              onPressed: resendOtp,
+              child: Text(
+                'Didn’t get the code? Resend OTP',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: BLACK_COLOR,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),

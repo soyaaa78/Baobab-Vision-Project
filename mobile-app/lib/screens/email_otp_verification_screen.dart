@@ -60,7 +60,6 @@ class _EmailOtpVerificationScreenState
       final res = jsonDecode(response.body);
 
       if (response.statusCode == 200) {
-        // ✅ Now fetch profile after successful verification
         final token = res['token'];
         if (token != null) {
           final prefs = await SharedPreferences.getInstance();
@@ -95,8 +94,7 @@ class _EmailOtpVerificationScreenState
         }
 
         setState(() => _isLoading = false);
-        Navigator.pushReplacementNamed(
-            context, '/home'); // ✅ Safe to navigate now
+        Navigator.pushReplacementNamed(context, '/home');
       } else {
         setState(() => _isLoading = false);
         _showSnackBar(res['message'] ?? 'Invalid or expired OTP');
@@ -139,121 +137,150 @@ class _EmailOtpVerificationScreenState
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: WHITE_COLOR,
-      body: Center(
-        child: Card(
-          elevation: 4,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Account Verification',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: BLACK_COLOR,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Column(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: Card(
+              elevation: 8,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              color: Colors.white,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'Your code was sent to you via email',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.black87,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _maskedEmail(widget.email),
-                      style: theme.textTheme.bodySmall?.copyWith(
+                    const Text(
+                      'Account Verification',
+                      style: TextStyle(
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        color: Colors.black54,
+                        color: BLACK_COLOR,
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // OTP Input Fields
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(6, (index) {
-                    return SizedBox(
-                      width: 40,
-                      child: TextField(
-                        controller: _controllers[index],
-                        focusNode: _focusNodes[index],
-                        maxLength: 1,
-                        keyboardType: TextInputType.number,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 20),
-                        decoration: const InputDecoration(
-                          counterText: '',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: (val) {
-                          if (val.length == 1 && index < 5) {
-                            _focusNodes[index + 1].requestFocus();
-                          } else if (val.isEmpty && index > 0) {
-                            _focusNodes[index - 1].requestFocus();
-                          }
-                        },
-                      ),
-                    );
-                  }),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Verify Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 45,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _verifyOtp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: BLACK_COLOR,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Verify',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
+                    const SizedBox(height: 12),
+                    Column(
+                      children: [
+                        Text(
+                          'Enter the 6-digit code sent to your email',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: Colors.black87,
                           ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Resend
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("Didn't receive code? "),
-                    GestureDetector(
-                      onTap: _resendOtp,
-                      child: const Text(
-                        'Request again',
-                        style: TextStyle(
-                          color: Colors.blue,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
+                          textAlign: TextAlign.center,
                         ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _maskedEmail(widget.email),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+
+                    // ✅ Flexible OTP Input Fields
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: List.generate(6, (index) {
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: TextField(
+                              controller: _controllers[index],
+                              focusNode: _focusNodes[index],
+                              maxLength: 1,
+                              keyboardType: TextInputType.number,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                  fontSize: 22, fontWeight: FontWeight.bold),
+                              decoration: InputDecoration(
+                                counterText: '',
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: Colors.grey, width: 1.5),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                      color: Colors.blue, width: 2),
+                                ),
+                                fillColor: Colors.grey[100],
+                                filled: true,
+                              ),
+                              onChanged: (val) {
+                                if (val.length == 1 && index < 5) {
+                                  _focusNodes[index + 1].requestFocus();
+                                } else if (val.isEmpty && index > 0) {
+                                  _focusNodes[index - 1].requestFocus();
+                                }
+                              },
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // Verify Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton(
+                        onPressed: _isLoading ? null : _verifyOtp,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: BLACK_COLOR,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 5,
+                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(
+                                color: Colors.white)
+                            : const Text(
+                                'Verify',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 18),
+                              ),
                       ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Resend
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Didn't receive code? "),
+                        GestureDetector(
+                          onTap: _resendOtp,
+                          child: const Text(
+                            'Request again',
+                            style: TextStyle(
+                              color: BLACK_COLOR,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

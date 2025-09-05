@@ -1,3 +1,4 @@
+import 'package:baobab_vision_project/constants.dart';
 import 'package:flutter/material.dart';
 
 class CancelledOrderCard extends StatelessWidget {
@@ -36,13 +37,10 @@ class CancelledOrderCard extends StatelessWidget {
     final int total =
         int.tryParse(prodPrice) != null ? int.parse(prodPrice) * quantity : 0;
     final String normalized = cancellationStatus.toLowerCase();
-    // Color: cancelled -> red, pending-like -> orange, otherwise grey
+
     final Color statusColor =
         normalized == 'cancelled' ? Colors.red : Colors.orange;
-    // Display:
-    // - cancelled -> 'Cancelled'
-    // - pending cancellation -> 'Pending Cancellation'
-    // - others -> 'Cancelled - <Status>'
+
     final String displayText = normalized == 'cancelled'
         ? 'Cancelled'
         : (normalized == 'pending cancellation'
@@ -50,6 +48,7 @@ class CancelledOrderCard extends StatelessWidget {
             : 'Cancelled - $cancellationStatus');
 
     return Card(
+      color:Colors.white,
       elevation: 3,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -132,7 +131,7 @@ class CancelledOrderCard extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // Description & Payment
+                  // Delivery & Payment
                   Text(
                     deliveryMethod,
                     style: TextStyle(

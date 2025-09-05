@@ -20,6 +20,8 @@ const userProfileRoutes = require("./routes/userProfileRoutes");
 const storageRoutes = require("./routes/storageRoutes");
 const aliveRoute = require("./routes/aliveRoute");
 const auditLogRoutes = require("./routes/auditLogRoutes");
+const orderCountsRoute = require("./routes/orderCounts");
+
 
 // Models
 const Admin = require("./models/Admin");
@@ -57,6 +59,7 @@ app.use("/api/user", userProfileRoutes);
 app.use("/api/storage", storageRoutes);
 app.use("/api/alive", aliveRoute);
 app.use("/api/audit-logs", auditLogRoutes);
+app.use("/api/order-counts", orderCountsRoute);
 
 // Request logger middleware
 app.use((req, res, next) => {

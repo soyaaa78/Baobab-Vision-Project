@@ -155,7 +155,6 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen>
       appBar: AppBar(
         title: const Text('Pending Orders'),
         backgroundColor: WHITE_COLOR,
-        foregroundColor: Colors.black,
         elevation: 1,
       ),
       backgroundColor: WHITE_COLOR,

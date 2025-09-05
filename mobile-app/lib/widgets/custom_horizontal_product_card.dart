@@ -22,7 +22,7 @@ class CustomHorizontalProductCard extends StatefulWidget {
   final String selectedLensLabel;
   final String btnName;
   final VoidCallback? onAdd;
-  final VoidCallback? onRemove;   // ✅ Added onRemove callback
+  final VoidCallback? onRemove;
 
   CustomHorizontalProductCard({
     super.key,
@@ -40,88 +40,133 @@ class CustomHorizontalProductCard extends StatefulWidget {
     required this.selectedColorName,
     required this.selectedLensLabel,
     this.btnName = 'Check Product',
-    this.onAdd,                 // ✅ Added onAdd callback
-    this.onRemove, 
+    this.onAdd,
+    this.onRemove,
   });
 
   @override
-  State<CustomHorizontalProductCard> createState() => _CustomHorizontalProductCardState();
+  State<CustomHorizontalProductCard> createState() =>
+      _CustomHorizontalProductCardState();
 }
 
-class _CustomHorizontalProductCardState extends State<CustomHorizontalProductCard> {
+class _CustomHorizontalProductCardState
+    extends State<CustomHorizontalProductCard> {
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      margin: EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: Padding(
+    return Material(
+     elevation: 0, // no shadow
+  color: Colors.transparent,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: Colors.grey.shade300, // border color
+            width: 1, // border width
+          ),
+        ),
         padding: EdgeInsets.all(ScreenUtil().setWidth(12)),
+        margin: EdgeInsets.symmetric(vertical: 6.h),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Product Image
             ClipRRect(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               child: Image.network(
                 widget.prodImages[0],
-                width: ScreenUtil().setWidth(80),
-                height: ScreenUtil().setWidth(80),
+                width: 90.w,
+                height: 90.w,
                 fit: BoxFit.cover,
               ),
             ),
-            SizedBox(width: ScreenUtil().setWidth(12)),
+            SizedBox(width: 12.w),
             // Product Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name
+                  // Product Name
                   CustomText(
                     text: widget.prodName,
-                    fontSize: ScreenUtil().setSp(15),
+                    fontSize: 16.sp,
                     fontWeight: FontWeight.w700,
-                    color: Colors.black,
+                    color: Colors.black87,
                   ),
-                  SizedBox(height: 4),
-                  // Description (e.g. Frame in Black, Prescription Lenses)
+                  SizedBox(height: 4.h),
+                  // Description
                   Text(
                     'Frame in ${widget.selectedColorName}, ${widget.selectedLensLabel}',
                     style: TextStyle(
-                      fontSize: ScreenUtil().setSp(13),
-                      color: Colors.black54,
+                      fontSize: 13.sp,
+                      color: Colors.grey[600],
                       height: 1.3,
                     ),
                   ),
-                  SizedBox(height: 6),
-                  // Price + Quantity Controls
+                  SizedBox(height: 8.h),
+                  // Price & Quantity Controls
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       CustomText(
                         text: widget.prodPrice,
-                        fontSize: ScreenUtil().setSp(15),
-                        color: Colors.black,
+                        fontSize: 15.sp,
+                        color: Colors.black87,
                         fontWeight: FontWeight.bold,
                       ),
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: widget.onRemove,  // ✅ Call onRemove callback
-                            child: Icon(Icons.remove, size: 18, color: BLACK_COLOR),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            child: CustomText(
-                              text: '${widget.quantity}',
-                              fontSize: ScreenUtil().setSp(14),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 4.h),
+                        child: Row(
+                          children: [
+                            GestureDetector(
+                              onTap: widget.onRemove,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                padding: EdgeInsets.all(4.w),
+                                child: Icon(Icons.remove, size: 18, color: BLACK_COLOR),
+                              ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: widget.onAdd,  // ✅ Call onAdd callback
-                            child: Icon(Icons.add, size: 18, color: BLACK_COLOR),
-                          ),
-                        ],
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w),
+                              child: CustomText(
+                                text: '${widget.quantity}',
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: widget.onAdd,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black12,
+                                      blurRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                padding: EdgeInsets.all(4.w),
+                                child: Icon(Icons.add, size: 18, color: BLACK_COLOR),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

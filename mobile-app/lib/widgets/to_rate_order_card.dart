@@ -36,23 +36,31 @@ class ToRateOrderCard extends StatelessWidget {
         : 0;
 
     return Card(
-      elevation: 4,
+      elevation: 5,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
       ),
-      margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-      shadowColor: Colors.black12,
-      child: Padding(
+      margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+      shadowColor: Colors.black26,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.grey.shade50],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+        ),
         padding: const EdgeInsets.all(16),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Product Image
             Container(
-              height: 100,
-              width: 100,
+              height: 110,
+              width: 110,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(16),
                 color: Colors.grey[200],
                 image: prodImages.isNotEmpty
                     ? DecorationImage(
@@ -60,6 +68,13 @@ class ToRateOrderCard extends StatelessWidget {
                         fit: BoxFit.cover,
                       )
                     : null,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 6,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: prodImages.isEmpty
                   ? const Icon(Icons.image_not_supported,
@@ -67,9 +82,9 @@ class ToRateOrderCard extends StatelessWidget {
                   : null,
             ),
 
-            const SizedBox(width: 16),
+            const SizedBox(width: 18),
 
-            // Product Details Column
+            // Product Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,7 +94,7 @@ class ToRateOrderCard extends StatelessWidget {
                     prodName,
                     style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 17,
+                        fontSize: 18,
                         color: Colors.black87),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -87,34 +102,42 @@ class ToRateOrderCard extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // Quantity and Total
+                  // Quantity & Total
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Qty: $quantity",
-                          style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.black54)),
-                      Text("₱$total",
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.black87)),
+                      Text(
+                        "Qty: $quantity",
+                        style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[700]),
+                      ),
+                      Text(
+                        "₱$total",
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87),
+                      ),
                     ],
                   ),
 
-                  const Divider(height: 18, thickness: 1, color: Colors.grey),
+                  const Divider(height: 20, thickness: 1, color: Colors.grey),
 
-                  // Color & Lens
+                  // Color
                   Text(
                     "Color: $selectedColorName",
                     style: TextStyle(
-                        fontWeight: FontWeight.w500, color: Colors.black54),
+                        fontWeight: FontWeight.w500, color: Colors.grey[700]),
                   ),
+
+                  const SizedBox(height: 4),
+
+                  // Lens
                   Text(
                     "Lens: $selectedLensLabel",
                     style: TextStyle(
-                        fontWeight: FontWeight.w500, color: Colors.black54),
+                        fontWeight: FontWeight.w500, color: Colors.grey[700]),
                   ),
 
                   const SizedBox(height: 8),
@@ -129,7 +152,7 @@ class ToRateOrderCard extends StatelessWidget {
                   Text(
                     "Payment: $paymentMethod",
                     style: TextStyle(
-                        fontWeight: FontWeight.w500, color: Colors.black54),
+                        fontWeight: FontWeight.w500, color: Colors.grey[800]),
                   ),
 
                   const SizedBox(height: 12),
@@ -137,17 +160,18 @@ class ToRateOrderCard extends StatelessWidget {
                   // Rate Button
                   Align(
                     alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      style: TextButton.styleFrom(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green.shade50,
                         foregroundColor: Colors.green.shade700,
                         padding: const EdgeInsets.symmetric(
-                            vertical: 6, horizontal: 12),
+                            vertical: 8, horizontal: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         textStyle: const TextStyle(
                             fontWeight: FontWeight.w600, fontSize: 14),
+                        elevation: 2,
                       ),
                       onPressed: onRate,
                       icon: const Icon(Icons.star_border, size: 18),
