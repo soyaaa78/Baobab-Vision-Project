@@ -407,27 +407,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           child: Icon(order['icon'] as IconData,
                               color: BLACK_COLOR, size: 20.sp),
                         ),
-                        // Always show badge; update dynamically
-                        Positioned(
-                          top: -6.h,
-                          right: -6.w,
-                          child: Container(
-                            padding: EdgeInsets.all(4.r),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              shape: BoxShape.circle,
-                              border:
-                                  Border.all(color: Colors.white, width: 1.w),
-                            ),
-                            child: Text(
-                              '${order['count']}',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.bold),
+                        if (((order['count'] ?? 0) as int) > 0)
+                          Positioned(
+                            top: -6.h,
+                            right: -6.w,
+                            child: Container(
+                              padding: EdgeInsets.all(4.r),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: Colors.white, width: 1.w),
+                              ),
+                              child: Text(
+                                '${order['count']}',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10.sp,
+                                    fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ),
-                        ),
                       ],
                     ),
                     SizedBox(height: 6.h),
