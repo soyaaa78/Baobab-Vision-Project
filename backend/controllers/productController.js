@@ -245,14 +245,57 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 
 // Get all products with optional sorting
 exports.getAllProducts = async (req, res) => {
-  const { id } = req.query;
+  const { id, sortBy, order = "desc" } = req.query;
   try {
-    let products;
+    // Single product fetch bypasses sorting
     if (id) {
-      products = await Product.findById(id);
-    } else {
-      products = await Product.find();
+      const product = await Product.findById(id);
+      return res.status(200).json(product);
     }
+
+    const dir = order === "asc" ? 1 : -1;
+    let products = [];
+
+    if (!sortBy || !sortBy.trim()) {
+      products = await Product.find();
+      return res.status(200).json(products);
+    }
+
+    switch (sortBy) {
+      case "price": {
+        products = await Product.find().sort({ price: dir });
+        break;
+      }
+      case "top-sales":
+      case "sales": {
+        products = await Product.find().sort({ sales: dir });
+        break;
+      }
+      case "latest": {
+        products = await Product.find().sort({ createdAt: dir });
+        break;
+      }
+      case "popular": {
+        // Popularity heuristic: (sales * weightSales) + (numStars * weightStars)
+        const weightSales = 1; // adjust if needed
+        const weightStars = 10; // amplify star influence
+        const raw = await Product.find();
+        products = raw
+          .map((p) => {
+            const sales = Number(p.sales) || 0;
+            const stars = Number(p.numStars) || 0;
+            const score = sales * weightSales + stars * weightStars;
+            return { p, score };
+          })
+          .sort((a, b) => (dir === 1 ? a.score - b.score : b.score - a.score))
+          .map((x) => ({ ...x.p.toObject(), popularityScore: x.score }));
+        return res.status(200).json(products);
+      }
+      default: {
+        products = await Product.find();
+      }
+    }
+
     res.status(200).json(products);
   } catch (err) {
     console.error("Error fetching products:", err);
@@ -260,23 +303,72 @@ exports.getAllProducts = async (req, res) => {
   }
 };
 
-// Get recommended products
+// Get recommended products with aggregated average rating (fast aggregate vs per-doc lookups)
 exports.getRecommendedProducts = async (req, res) => {
   try {
-    const recommendedProducts = await Product.find({
-      recommendedFor: true, // Only fetch products where recommendedFor is true
-    });
+    // Pull only recommended products first (limit could be added later if needed)
+    const recommendedProducts = await Product.find({ recommendedFor: true });
 
     if (recommendedProducts.length === 0) {
       return res.status(404).json({ message: "No recommended products found" });
     }
 
-    res.status(200).json(recommendedProducts);
+    const productIds = recommendedProducts.map((p) => p._id);
+
+    // Aggregate ratings per product by joining orders and expanding productIds
+    const productRatings = await Rating.aggregate([
+      {
+        $lookup: {
+          from: "orders",
+          localField: "orderId",
+          foreignField: "_id",
+          as: "orderDoc",
+        },
+      },
+      { $unwind: "$orderDoc" },
+      { $match: { "orderDoc.products.productId": { $in: productIds } } },
+      {
+        $project: {
+          rating: 1,
+          productIds: "$orderDoc.products.productId",
+        },
+      },
+      { $unwind: "$productIds" },
+      { $match: { productIds: { $in: productIds } } },
+      {
+        $group: {
+          _id: "$productIds",
+          avgRating: { $avg: "$rating" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const ratingMap = productRatings.reduce((acc, r) => {
+      acc[r._id.toString()] = { avg: r.avgRating, count: r.count };
+      return acc;
+    }, {});
+
+    // Shape response: include averageRating (1dp), ratingCount
+    const shaped = recommendedProducts.map((p) => {
+      const base = p.toObject();
+      const r = ratingMap[p._id.toString()];
+      // If there are ratings, compute rounded 1dp; otherwise expose null to indicate no ratings yet
+      const avg = r ? Math.round(r.avg * 10) / 10 : null;
+      return {
+        ...base,
+        averageRating: avg,
+        ratingCount: r ? r.count : 0,
+      };
+    });
+
+    res.status(200).json(shaped);
   } catch (error) {
     console.error("Error fetching recommended products:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching recommended products", error });
+    res.status(500).json({
+      message: "Error fetching recommended products",
+      error: error.message,
+    });
   }
 };
 

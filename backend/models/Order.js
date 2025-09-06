@@ -56,7 +56,7 @@ const orderSchema = new mongoose.Schema(
     },
     thirdPartyDelivery: {
       type: String,
-      enum: ["Lalamove", "J&T Express", "GrabExpress", "Ninja Van", "Xend"],
+      enum: ["Lalamove", "J&T", "GrabExpress"],
     },
     status: {
       type: String,

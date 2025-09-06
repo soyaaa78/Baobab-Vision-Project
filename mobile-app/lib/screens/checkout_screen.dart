@@ -1,5 +1,6 @@
 import 'package:baobab_vision_project/screens/gcash_details_screen.dart';
 import 'package:baobab_vision_project/screens/pending_orders_screen.dart';
+import 'package:baobab_vision_project/screens/delivery_order_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../constants.dart';
@@ -37,7 +38,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   bool lalamoveSubmitted = false;
 
-  final Map<String, Map<String, Map<String, List<String>>>> philippinesRegions = {
+  final Map<String, Map<String, Map<String, List<String>>>> philippinesRegions =
+      {
     'NCR': {
       'Metro Manila': {
         'Binondo': [
@@ -92,21 +94,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         lalamoveSubmitted = true;
       });
 
-      final addressDetails = {
-        'fullName': nameController.text,
-        'contactNumber': contactController.text,
-        'region': selectedRegion,
-        'province': selectedProvince,
-        'city': selectedCity,
-        'barangay': selectedBarangay,
-        'postalCode': int.tryParse(postalCodeController.text),
-        'addressDetails': streetController.text,
-      };
-
       // Submit order first
       await _submitOrder();
 
-      // Show confirmation instructions dialog instead of navigating to GCash
+      // Show confirmation instructions dialog then redirect to delivery orders screen
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -114,7 +105,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           return AlertDialog(
             title: Text('Order Confirmed'),
             content: Text(
-                'Your order will be delivered via Lalamove. Staff will contact you on your number immediately for further instructions. Note that if you didn\'t answer the call 3 times, the order will be disregarded or cancelled.'),
+              "Your order will be delivered via ${selectedThirdPartyService}. Staff will contact you on your number immediately for further instructions. Note that if you didn't answer the call 3 times, the order will be disregarded or cancelled.",
+            ),
             actions: [
               TextButton(
                 onPressed: () {
@@ -122,10 +114,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => PendingOrdersScreen()),
+                        builder: (context) => const DeliveryOrdersScreen()),
                   );
                 },
-                child: Text('See Orders'),
+                child: Text('See Delivery Orders'),
               ),
             ],
           );
@@ -222,7 +214,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 3))
+        ],
       ),
       child: child,
     );
@@ -247,7 +241,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         hint: Text(hint),
         underline: SizedBox(),
         onChanged: onChanged,
-        items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+        items: items
+            .map((item) => DropdownMenuItem(value: item, child: Text(item)))
+            .toList(),
       ),
     );
   }
@@ -327,6 +323,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           onTap: () {
                             setState(() {
                               selectedDeliveryMethod = 'Lalamove';
+                              selectedThirdPartyService ??= 'Lalamove';
                             });
                           },
                           child: Container(
@@ -528,7 +525,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           selectedCity = null;
                           selectedBarangay = null;
                           cities = val != null
-                              ? philippinesRegions[selectedRegion!]![val]!.keys.toList()
+                              ? philippinesRegions[selectedRegion!]![val]!
+                                  .keys
+                                  .toList()
                               : [];
                           barangays = [];
                         });
@@ -544,7 +543,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           selectedCity = val;
                           selectedBarangay = null;
                           barangays = val != null
-                              ? philippinesRegions[selectedRegion!]![selectedProvince!]![val]!
+                              ? philippinesRegions[selectedRegion!]![
+                                  selectedProvince!]![val]!
                               : [];
                         });
                       },
@@ -603,7 +603,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
                 onPressed: _handleSubmit,
                 child: CustomText(
-                 text: 'Confirm Order - PHP ${widget.totalAmount.toStringAsFixed(2)}',
+                  text:
+                      'Confirm Order - PHP ${widget.totalAmount.toStringAsFixed(2)}',
                   fontSize: ScreenUtil().setSp(18),
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
