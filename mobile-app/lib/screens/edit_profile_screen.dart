@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:async';
 
-import 'package:baobab_vision_project/constants.dart';
 import 'package:baobab_vision_project/widgets/custom_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -17,7 +17,7 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>(); // retained but no hard validation
 
   TextEditingController firstnameController = TextEditingController();
   TextEditingController lastnameController = TextEditingController();
@@ -28,6 +28,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   File? _imageFile;
   String? profileImageUrl;
+
+  static const String _apiBase = 'https://baobab-vision-project.onrender.com';
 
   bool _isLoading = false;
   bool _isEditing = false;
@@ -45,22 +47,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _fetchUserProfile() async {
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
     final token = await _getToken();
     if (token == null) {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
       return;
     }
 
     try {
       final response = await http.get(
-        Uri.parse(
-            'https://baobab-vision-project.onrender.com/api/user/profile'),
+        Uri.parse('$_apiBase/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
-      );
+      ).timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -73,15 +74,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           phoneController.text = data['phone'] ?? '';
           addressController.text = data['address'] ?? '';
 
-          if (data['profileImage'] != null &&
-              data['profileImage'].toString().isNotEmpty) {
-            String imgPath = data['profileImage'].toString();
-            if (imgPath.startsWith('/')) imgPath = imgPath.substring(1);
-            profileImageUrl =
-                'http://192.168.100.56:3001/' + Uri.encodeFull(imgPath);
-          } else {
-            profileImageUrl = null;
-          }
+          profileImageUrl = _normalizeProfileImageUrl(data['profileImage']);
 
           _initialValues = {
             'firstname': firstnameController.text,
@@ -96,11 +89,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       } else {
         print('Failed to fetch profile: ${response.statusCode}');
       }
+    } on TimeoutException {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Request timed out loading profile')),
+        );
+      }
     } catch (e) {
       print('Error fetching profile: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  String? _normalizeProfileImageUrl(dynamic raw) {
+    if (raw == null) return null;
+    String path = raw.toString();
+    if (path.isEmpty) return null;
+    // If already absolute (http/https) return as is
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    if (!path.startsWith('/')) path = '/$path';
+    return '$_apiBase$path';
   }
 
   Future<void> _pickImage() async {
@@ -126,68 +136,101 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    if (!_hasChanges()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No changes detected')),
-      );
-      return;
-    }
-
+    // No required validation; proceed with partial updates of changed fields
     final token = await _getToken();
     if (token == null) return;
 
-    setState(() => _isLoading = true);
+    // Collect only changed fields
+    final Map<String, String> changed = {};
+    if (_initialValues['firstname'] != firstnameController.text) {
+      changed['firstname'] = firstnameController.text;
+    }
+    if (_initialValues['lastname'] != lastnameController.text) {
+      changed['lastname'] = lastnameController.text;
+    }
+    if (_initialValues['email'] != emailController.text) {
+      changed['email'] = emailController.text;
+    }
+    if (_initialValues['username'] != usernameController.text) {
+      changed['username'] = usernameController.text;
+    }
+    if (_initialValues['phone'] != phoneController.text) {
+      changed['phone'] = phoneController.text;
+    }
+    if (_initialValues['address'] != addressController.text) {
+      changed['address'] = addressController.text;
+    }
 
+    if (changed.isEmpty && _imageFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nothing to update')),
+      );
+      setState(() => _isEditing = false);
+      return;
+    }
+
+    if (mounted) setState(() => _isLoading = true);
     try {
-      var uri = Uri.parse('http://192.168.100.56:3001/api/user/profile');
-      var request = http.MultipartRequest('PUT', uri);
-
+      final uri = Uri.parse('$_apiBase/api/user/profile');
+      final request = http.MultipartRequest('PUT', uri);
       request.headers['Authorization'] = 'Bearer $token';
 
-      request.fields['firstname'] = firstnameController.text;
-      request.fields['lastname'] = lastnameController.text;
-      request.fields['email'] = emailController.text;
-      request.fields['username'] = usernameController.text;
-      request.fields['phone'] = phoneController.text;
-      request.fields['address'] = addressController.text;
+      changed.forEach((k, v) => request.fields[k] = v);
 
       if (_imageFile != null) {
         request.files.add(await http.MultipartFile.fromPath(
             'profileImage', _imageFile!.path));
       }
 
-      final response = await request.send();
+      final response =
+          await request.send().timeout(const Duration(seconds: 25));
       final respStr = await response.stream.bytesToString();
-
       if (response.statusCode == 200) {
         final updatedUser = jsonDecode(respStr);
-
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
+          const SnackBar(content: Text('Profile updated')),
         );
-
-        setState(() {
-          _isEditing = false;
-          _imageFile = null;
-          profileImageUrl = updatedUser['profileImage'] ?? profileImageUrl;
-          _initialValues = {
-            'firstname': firstnameController.text,
-            'lastname': lastnameController.text,
-            'email': emailController.text,
-            'username': usernameController.text,
-            'phone': phoneController.text,
-            'address': addressController.text,
-            'profileImage': profileImageUrl ?? '',
-          };
-        });
-        _fetchUserProfile();
+        if (updatedUser is Map<String, dynamic>) {
+          // Update controllers only for returned fields
+          firstnameController.text =
+              updatedUser['firstname'] ?? firstnameController.text;
+          lastnameController.text =
+              updatedUser['lastname'] ?? lastnameController.text;
+          emailController.text = updatedUser['email'] ?? emailController.text;
+          // email & username readonly; still refresh for consistency
+          usernameController.text =
+              updatedUser['username'] ?? usernameController.text;
+          phoneController.text = updatedUser['phone'] ?? phoneController.text;
+          addressController.text =
+              updatedUser['address'] ?? addressController.text;
+          profileImageUrl =
+              _normalizeProfileImageUrl(updatedUser['profileImage']);
+        }
+        if (mounted) {
+          setState(() {
+            _isEditing = false;
+            _imageFile = null;
+            _initialValues = {
+              'firstname': firstnameController.text,
+              'lastname': lastnameController.text,
+              'email': emailController.text,
+              'username': usernameController.text,
+              'phone': phoneController.text,
+              'address': addressController.text,
+              'profileImage': profileImageUrl ?? '',
+            };
+          });
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content:
-                  Text('Failed to update profile: ${response.statusCode}')),
+          SnackBar(content: Text('Update failed (${response.statusCode})')),
+        );
+      }
+    } on TimeoutException {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Update timed out')),
         );
       }
     } catch (e) {
@@ -196,7 +239,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         const SnackBar(content: Text('Error updating profile')),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -226,8 +269,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             decoration: InputDecoration(
               labelText: label,
               labelStyle: TextStyle(
-                  color: Colors.blueGrey.shade900,
-                  fontWeight: FontWeight.w600),
+                  color: Colors.blueGrey.shade900, fontWeight: FontWeight.w600),
               border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14.r),
                   borderSide: BorderSide.none),
@@ -292,8 +334,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     } else if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
       profileImageProvider = NetworkImage(profileImageUrl!);
     } else {
-      profileImageProvider =
-          const AssetImage('assets/images/default_person_icon.png'); // default person icon
+      profileImageProvider = const AssetImage(
+          'assets/images/default_person_icon.png'); // default person icon
     }
 
     return Scaffold(
@@ -406,53 +448,37 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         _buildTextOrField(
                           label: 'First Name',
                           controller: firstnameController,
-                          validator: (val) => val == null || val.isEmpty
-                              ? 'Please enter your first name'
-                              : null,
+                          validator: null,
                         ),
                         _buildTextOrField(
                           label: 'Last Name',
                           controller: lastnameController,
-                          validator: (val) => val == null || val.isEmpty
-                              ? 'Please enter your last name'
-                              : null,
+                          validator: null,
                         ),
                         _buildTextOrField(
                           label: 'Email',
                           controller: emailController,
-                          validator: (val) {
-                            if (val == null || val.isEmpty)
-                              return 'Please enter your email';
-                            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
-                                .hasMatch(val)) return 'Enter a valid email';
-                            return null;
-                          },
+                          validator: null,
                           readOnly: true,
                           enabled: false,
                         ),
                         _buildTextOrField(
                           label: 'Username',
                           controller: usernameController,
-                          validator: (val) => val == null || val.isEmpty
-                              ? 'Please enter your username'
-                              : null,
+                          validator: null,
                           readOnly: true,
                           enabled: false,
                         ),
                         _buildTextOrField(
                           label: 'Mobile Phone Number',
                           controller: phoneController,
-                          validator: (val) => val == null || val.isEmpty
-                              ? 'Please enter your phone number'
-                              : null,
+                          validator: null,
                         ),
                         _buildTextOrField(
                           label: 'Address',
                           controller: addressController,
                           multiline: true,
-                          validator: (val) => val == null || val.isEmpty
-                              ? 'Please enter your address'
-                              : null,
+                          validator: null,
                         ),
                       ],
                     ),

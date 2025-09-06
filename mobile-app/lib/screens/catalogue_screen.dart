@@ -20,6 +20,7 @@ class _CatalogueScreenState extends State<CatalogueScreen>
   List<dynamic> products = [];
   Map<String, double> productRatings = {}; // store average ratings
   Map<String, int> productTotalReviews = {}; // store total reviews
+  List<dynamic> _originalProducts = []; // preserve original fetched list
 
   @override
   bool get wantKeepAlive => true; // keeps the widget alive in PageView
@@ -33,6 +34,7 @@ class _CatalogueScreenState extends State<CatalogueScreen>
         final decodedProducts = jsonDecode(response.body);
         setState(() {
           products = decodedProducts;
+          _originalProducts = List<dynamic>.from(decodedProducts);
         });
         // fetch rating for each product
         for (var product in decodedProducts) {
@@ -48,32 +50,68 @@ class _CatalogueScreenState extends State<CatalogueScreen>
   }
 
   Future<void> fetchFilteredProducts(String sortBy, String order) async {
-    final uri = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/products?sortBy=$sortBy&order=$order');
-    try {
-      final response = await http.get(uri);
-      if (response.statusCode == 200) {
-        final decodedProducts = jsonDecode(response.body);
-        setState(() {
-          products = decodedProducts;
-        });
-        // fetch rating for each product
-        for (var product in decodedProducts) {
-          _fetchRatingStats(product['_id']);
-        }
-        print("Fetched filtered products sorted by $sortBy ($order)");
-      } else {
-        print('Failed to fetch filtered products');
+    // Deprecated: Server-side sorting replaced by client-side sorting for responsiveness.
+    _sortProducts(sortBy, order);
+  }
+
+  void _sortProducts(String sortBy, String order) {
+    setState(() {
+      List<dynamic> list = List<dynamic>.from(_originalProducts);
+
+      int direction(String ord) => ord == 'asc' ? 1 : -1;
+      final dir = direction(order);
+
+      int safeCompare(num a, num b) => a == b ? 0 : (a < b ? -1 : 1);
+
+      switch (sortBy) {
+        case 'price':
+          list.sort((a, b) =>
+              dir *
+              safeCompare((a['price'] ?? 0) as num, (b['price'] ?? 0) as num));
+          break;
+        case 'top-sales':
+          list.sort((a, b) =>
+              dir *
+              safeCompare((a['sales'] ?? 0) as num, (b['sales'] ?? 0) as num));
+          break;
+        case 'latest':
+          list.sort((a, b) {
+            DateTime pa = DateTime.tryParse(a['createdAt'] ?? '') ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+            DateTime pb = DateTime.tryParse(b['createdAt'] ?? '') ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+            return dir * pa.compareTo(pb);
+          });
+          break;
+        case 'popular':
+          // Composite score: sales weight + average rating weight
+          list.sort((a, b) {
+            final aid = a['_id'];
+            final bid = b['_id'];
+            final ar = productRatings[aid]?.toDouble() ??
+                (a['numStars'] ?? 0).toDouble();
+            final br = productRatings[bid]?.toDouble() ??
+                (b['numStars'] ?? 0).toDouble();
+            final asales = (a['sales'] ?? 0) as num;
+            final bsales = (b['sales'] ?? 0) as num;
+            // scoring: rating *10 + sales
+            final ascore = ar * 10 + asales;
+            final bscore = br * 10 + bsales;
+            return dir * safeCompare(ascore, bscore);
+          });
+          break;
+        default:
+          // Unknown -> leave order as original
+          break;
       }
-    } catch (e) {
-      print('Error: $e');
-    }
+
+      products = list;
+    });
   }
 
   Future<void> _fetchRatingStats(String productId) async {
     try {
-      final resp =
-          await ApiClient.get('/api/products/$productId/reviews');
+      final resp = await ApiClient.get('/api/products/$productId/reviews');
       if (resp.statusCode == 200) {
         final data = json.decode(resp.body) as Map<String, dynamic>;
         final stats = (data['stats'] as Map<String, dynamic>?);
@@ -196,9 +234,10 @@ class _CatalogueScreenState extends State<CatalogueScreen>
                                           fontSize: 14.sp)),
                                   onTap: () {
                                     Navigator.pop(context);
-                                    fetchFilteredProducts(
-                                        filter['sortBy'] as String,
-                                        filter['order'] as String);
+                                    _sortProducts(
+                                      filter['sortBy'] as String,
+                                      filter['order'] as String,
+                                    );
                                   },
                                 ))
                             .toList(),
@@ -254,8 +293,7 @@ class _CatalogueScreenState extends State<CatalogueScreen>
                               : 'assets/images/default.png'
                           : 'assets/images/default.png';
 
-                      final avgRating =
-                          productRatings[product['_id']] ?? 0.0;
+                      final avgRating = productRatings[product['_id']] ?? 0.0;
                       final totalReviews =
                           productTotalReviews[product['_id']] ?? 0;
 
@@ -292,11 +330,11 @@ class _CatalogueScreenState extends State<CatalogueScreen>
                                         product['imageUrls'] is List)
                                     ? List<String>.from(product['imageUrls'])
                                     : [imageUrl],
-                                colorOptions:
-                                    (product['colorOptions'] as List<dynamic>? ??
-                                            [])
-                                        .map((e) => ColorOption.fromJson(e))
-                                        .toList(),
+                                colorOptions: (product['colorOptions']
+                                            as List<dynamic>? ??
+                                        [])
+                                    .map((e) => ColorOption.fromJson(e))
+                                    .toList(),
                                 lensOptions:
                                     (product['lensOptions'] as List<dynamic>)
                                         .map((e) => LensOption.fromJson(e))
@@ -373,14 +411,22 @@ class _CatalogueScreenState extends State<CatalogueScreen>
                                       mainAxisAlignment:
                                           MainAxisAlignment.center,
                                       children: List.generate(5, (starIndex) {
-                                        return Icon(
-                                          Icons.star,
-                                          size: 14.sp,
-                                          color: starIndex <
-                                                  avgRating.round()
-                                              ? Colors.amber
-                                              : Colors.grey.shade300,
-                                        );
+                                        final raw = avgRating.clamp(0, 5);
+                                        final remaining = raw - starIndex;
+                                        IconData icon;
+                                        Color color;
+                                        if (remaining >= 1) {
+                                          icon = Icons.star;
+                                          color = Colors.amber;
+                                        } else if (remaining >= 0.5) {
+                                          icon = Icons.star_half;
+                                          color = Colors.amber;
+                                        } else {
+                                          icon = Icons.star_border;
+                                          color = Colors.grey.shade300;
+                                        }
+                                        return Icon(icon,
+                                            size: 14.sp, color: color);
                                       }),
                                     ),
                                     SizedBox(height: 4.h),

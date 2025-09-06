@@ -31,6 +31,19 @@ class _ShopScreenState extends State<ShopScreen> {
 
   String? profileImageUrl;
 
+  // Normalizes legacy relative URLs to absolute, leaves Firebase URLs untouched
+  String _normalizeProfileImageUrl(String? url) {
+    if (url == null || url.isEmpty) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/userprofileuploads/') ||
+        url.startsWith('userprofileuploads/')) {
+      final base = 'https://baobab-vision-project.onrender.com';
+      if (!url.startsWith('/')) url = '/$url';
+      return base + url;
+    }
+    return url;
+  }
+
   late PageController _pageController;
   int _currentPage = 0;
   Timer? _carouselTimer;
@@ -38,11 +51,22 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   void initState() {
     super.initState();
-    _loadUserInfo();
-    fetchSlideshowImages();
     _pageController = PageController(initialPage: _currentPage);
     _startAutoSlide();
-    fetchRecommendedProducts();
+    _loadAllData();
+  }
+
+  Future<void> _loadAllData() async {
+    setState(() {
+      _isLoadingUser = true;
+    });
+    final userFuture = _loadUserInfo();
+    final slideshowFuture = fetchSlideshowImages();
+    final productsFuture = fetchRecommendedProducts();
+    await Future.wait([userFuture, slideshowFuture, productsFuture]);
+    setState(() {
+      _isLoadingUser = false;
+    });
   }
 
   @override
@@ -68,14 +92,52 @@ class _ShopScreenState extends State<ShopScreen> {
 
   Future<void> _loadUserInfo() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-
+    final localToken = prefs.getString('token') ?? '';
     setState(() {
-      firstname = prefs.getString('firstname') ?? 'Guest';
-      token = prefs.getString('token') ?? '';
+      token = localToken;
       userId = prefs.getString('userId') ?? '';
-      profileImageUrl = prefs.getString('profileImageUrl');
-      _isLoadingUser = false;
+      firstname = prefs.getString('firstname') ?? 'Guest';
+      _isLoadingUser = true;
     });
+
+    if (localToken.isEmpty) {
+      setState(() {
+        _isLoadingUser = false;
+      });
+      return;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse(
+            'https://baobab-vision-project.onrender.com/api/user/profile'),
+        headers: {
+          'Authorization': 'Bearer $localToken',
+          'Content-Type': 'application/json',
+        },
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        await prefs.setString('firstname', data['firstname'] ?? '');
+        await prefs.setString('userId', data['_id']?.toString() ?? '');
+        await prefs.setString(
+            'profileImageUrl', data['profileImage']?.toString() ?? '');
+        setState(() {
+          firstname = data['firstname'] ?? 'Guest';
+          userId = data['_id']?.toString() ?? '';
+          profileImageUrl = data['profileImage']?.toString() ?? '';
+          _isLoadingUser = false;
+        });
+      } else {
+        setState(() {
+          _isLoadingUser = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isLoadingUser = false;
+      });
+    }
   }
 
   Future<void> fetchSlideshowImages() async {
@@ -132,7 +194,13 @@ class _ShopScreenState extends State<ShopScreen> {
     ImageProvider profileImageProvider;
 
     if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
-      profileImageProvider = NetworkImage(profileImageUrl!);
+      final normalizedUrl = _normalizeProfileImageUrl(profileImageUrl);
+      if (normalizedUrl.isNotEmpty) {
+        profileImageProvider = NetworkImage(normalizedUrl);
+      } else {
+        profileImageProvider =
+            const AssetImage('assets/images/default_profile_icon.jpg');
+      }
     } else {
       profileImageProvider =
           const AssetImage('assets/images/default_profile_icon.jpg');
@@ -366,20 +434,27 @@ class _ShopScreenState extends State<ShopScreen> {
                 itemCount: forYou.length,
                 itemBuilder: (context, index) {
                   var product = forYou[index];
-                  List<String> productImages =
-                      (product['imageUrls'] != null &&
-                              product['imageUrls'] is List)
-                          ? List<String>.from(product['imageUrls'])
-                          : [
-                              'https://example.com/fallback-image.jpg'
-                            ];
+                  List<String> productImages = (product['imageUrls'] != null &&
+                          product['imageUrls'] is List)
+                      ? List<String>.from(product['imageUrls'])
+                      : ['https://example.com/fallback-image.jpg'];
+                  // Use aggregated averageRating; if null/absent => 0 (unrated); ignore legacy numStars default of 5
+                  final double displayRating = (() {
+                    if (product.containsKey('averageRating')) {
+                      final ar = product['averageRating'];
+                      if (ar == null) return 0.0; // no ratings yet
+                      if (ar is int) return ar.toDouble();
+                      if (ar is double) return ar;
+                    }
+                    return 0.0; // default when no aggregated rating
+                  })();
 
                   return Padding(
                     padding: EdgeInsets.only(right: 12),
                     child: CustomVerticalProductCard(
                       prodName: product['name'] ?? 'Unknown',
                       prodPrice: '${product['price']} PHP',
-                      numStars: product['numStars'] ?? 0,
+                      numStars: displayRating,
                       quantity: product['stock'] ?? 1,
                       description: product['description'] ?? '',
                       prodImages: productImages,

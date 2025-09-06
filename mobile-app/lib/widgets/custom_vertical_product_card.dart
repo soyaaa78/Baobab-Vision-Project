@@ -19,19 +19,19 @@ class CustomVerticalProductCard extends StatefulWidget {
   final String selectedLensLabel;
 
   CustomVerticalProductCard({
-  super.key,
-  required this.prodName,
-  required this.prodPrice,
-  required numStars, // accept int or double
-  this.quantity = 1,
-  this.description = '',
-  required this.prodImages,
-  required this.productId,
-  required this.colorOptions,
-  required this.lensOptions,
-  required this.selectedColorName,
-  required this.selectedLensLabel,
-}) : numStars = numStars.toDouble();  // automatically convert to double
+    super.key,
+    required this.prodName,
+    required this.prodPrice,
+    required numStars, // accept int or double
+    this.quantity = 1,
+    this.description = '',
+    required this.prodImages,
+    required this.productId,
+    required this.colorOptions,
+    required this.lensOptions,
+    required this.selectedColorName,
+    required this.selectedLensLabel,
+  }) : numStars = numStars.toDouble(); // automatically convert to double
 
   @override
   _CustomVerticalProductCardState createState() =>
@@ -122,8 +122,10 @@ class _CustomVerticalProductCardState extends State<CustomVerticalProductCard> {
                         ? Image.network(
                             widget.prodImages[0],
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.broken_image,
+                                size: 40,
+                                color: Colors.grey),
                           )
                         : Image.asset(widget.prodImages[0], fit: BoxFit.cover),
                   ),
@@ -154,17 +156,29 @@ class _CustomVerticalProductCardState extends State<CustomVerticalProductCard> {
                 ),
                 SizedBox(height: ScreenUtil().setHeight(8)),
 
-                // Star Rating
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(5, (index) {
-                    if (index < widget.numStars.round()) {
-                      return Icon(Icons.star, size: 14.sp, color: Colors.amber);
-                    } else {
-                      return Icon(Icons.star_border, size: 14.sp, color: Colors.grey.shade400);
-                    }
-                  }),
-                ),
+                // Star Rating with half-star support
+                Builder(builder: (context) {
+                  final double rawRating = widget.numStars.clamp(0, 5);
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final double remaining = rawRating - index;
+                      IconData icon;
+                      Color color;
+                      if (remaining >= 1) {
+                        icon = Icons.star;
+                        color = Colors.amber;
+                      } else if (remaining >= 0.5) {
+                        icon = Icons.star_half;
+                        color = Colors.amber;
+                      } else {
+                        icon = Icons.star_border;
+                        color = Colors.grey.shade400;
+                      }
+                      return Icon(icon, size: 14.sp, color: color);
+                    }),
+                  );
+                }),
               ],
             ),
           ),

@@ -5,7 +5,6 @@ import 'package:baobab_vision_project/screens/cancelled_order_screen.dart';
 import 'package:baobab_vision_project/screens/completed_purchases_screen.dart';
 import 'package:baobab_vision_project/screens/delivery_order_screen.dart';
 import 'package:baobab_vision_project/screens/edit_profile_screen.dart';
-import 'package:baobab_vision_project/screens/privacy_policy_screen.dart';
 import 'package:baobab_vision_project/screens/pending_orders_screen.dart';
 import 'package:baobab_vision_project/screens/processing_orders_screen.dart';
 import 'package:baobab_vision_project/screens/ready_for_pickup_orders_screen.dart';
@@ -13,9 +12,23 @@ import 'package:baobab_vision_project/screens/to_rate_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
+import '../services/api_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants.dart';
 import '../widgets/custom_text.dart';
+
+// Normalizes legacy relative URLs to absolute, leaves Firebase URLs untouched
+String _normalizeProfileImageUrl(String? url) {
+  if (url == null || url.isEmpty) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/userprofileuploads/') ||
+      url.startsWith('userprofileuploads/')) {
+    final base = 'https://baobab-vision-project.onrender.com';
+    if (!url.startsWith('/')) url = '/$url';
+    return base + url;
+  }
+  return url;
+}
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -101,23 +114,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await prefs.setString('lastname', data['lastname'] ?? '');
         await prefs.setString('email', data['email'] ?? '');
 
-        String? imgUrl;
-        if (data['profileImage'] != null &&
-            data['profileImage'].toString().isNotEmpty) {
-          String imgPath = data['profileImage'];
-          if (imgPath.startsWith('/')) imgPath = imgPath.substring(1);
-          imgUrl = 'http://192.168.100.56:3001/$imgPath';
-          await prefs.setString('profileImageUrl', imgUrl);
-        } else {
-          await prefs.remove('profileImageUrl');
-          imgUrl = null;
-        }
-
         setState(() {
           firstname = data['firstname'] ?? 'User';
           lastname = data['lastname'] ?? '';
           email = data['email'] ?? 'user@example.com';
-          profileImageUrl = imgUrl;
+          profileImageUrl = data['profileImage']?.toString() ?? '';
           _localImageFile = null;
           _isLoading = false;
         });
@@ -131,49 +132,88 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _loadProfileFromPrefs() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      firstname = prefs.getString('firstname') ?? 'User';
-      lastname = prefs.getString('lastname') ?? '';
-      email = prefs.getString('email') ?? 'user@example.com';
-      profileImageUrl = prefs.getString('profileImageUrl');
-      _localImageFile = null;
-    });
-  }
+  // _loadProfileFromPrefs removed; remote fetch is authoritative.
 
-  // Updated: Fetch counts from backend orderCounts endpoint
- Future<void> _fetchOrderCounts() async {
-  final token = await _getToken();
-  if (token == null) return;
+  // Fetch counts by actually retrieving orders per status for accuracy.
+  Future<void> _fetchOrderCounts() async {
+    try {
+      final pendingFuture = _countOrdersByStatus('pending');
+      final processingFuture = _countOrdersByStatus('processing');
+      final readyFuture = _countOrdersByStatus('ready_to_pickup');
+      final toRateFuture = _countToRate();
 
-  try {
-    final response = await http.get(
-      Uri.parse(
-          'https://baobab-vision-project.onrender.com/api/order-counts/'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
+      final results = await Future.wait<int>([
+        pendingFuture,
+        processingFuture,
+        readyFuture,
+        toRateFuture,
+      ]);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      if (!mounted) return;
       setState(() {
         orderCounts = {
-          'pending': data['pending'] ?? 0,
-          'processing': data['processing'] ?? 0,
-          'ready_to_pickup': data['ready_to_pickup'] ?? 0,
-          'to_rate': data['to_rate'] ?? 0,
+          'pending': results[0],
+          'processing': results[1],
+          'ready_to_pickup': results[2],
+          'to_rate': results[3],
         };
       });
-    } else {
-      print('Failed to fetch order counts: ${response.statusCode}');
+    } catch (e) {
+      // Fallback: leave existing counts; log for debugging.
+      print('Failed computing order counts via orders: $e');
     }
-  } catch (e) {
-    print('Error fetching order counts: $e');
   }
-}
+
+  Future<int> _countOrdersByStatus(String status) async {
+    final resp = await ApiClient.get('/api/orders?status=$status');
+    if (resp.statusCode != 200) return 0;
+    final decoded = jsonDecode(resp.body);
+    final raw = decoded is Map<String, dynamic> ? decoded['order'] : null;
+    if (raw is! List) return 0;
+    // Defensive filter if backend returns superset
+    return raw.where((o) {
+      if (o is! Map) return false;
+      final st = o['status']?.toString();
+      return st == status;
+    }).length;
+  }
+
+  // Orders eligible to rate: status completed, no rating, completed within last 5 days
+  Future<int> _countToRate() async {
+    final resp = await ApiClient.get('/api/orders?status=completed');
+    if (resp.statusCode != 200) return 0;
+    final decoded = jsonDecode(resp.body);
+    final raw = decoded is Map<String, dynamic> ? decoded['order'] : null;
+    if (raw is! List) return 0;
+    final nowUtc = DateTime.now().toUtc();
+    int count = 0;
+    for (final o in raw) {
+      if (o is Map) {
+        final status = o['status']?.toString();
+        if (status != 'completed') continue;
+        final rating = o['rating'];
+        if (rating != null) continue;
+        // Only count if completed within last 5 days
+        DateTime? completedAt;
+        final updatedAtStr = o['updatedAt']?.toString();
+        if (updatedAtStr != null) {
+          completedAt = DateTime.tryParse(updatedAtStr)?.toUtc();
+        }
+        if (completedAt == null) {
+          final dateStr = o['date']?.toString();
+          if (dateStr != null) {
+            completedAt = DateTime.tryParse(dateStr)?.toUtc();
+          }
+        }
+        if (completedAt == null) continue;
+        final diffDays = nowUtc.difference(completedAt).inDays;
+        if (diffDays <= 5 && diffDays >= 0) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +222,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_localImageFile != null) {
       profileImageProvider = FileImage(_localImageFile!);
     } else if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
-      profileImageProvider = NetworkImage(profileImageUrl!);
+      final normalizedUrl = _normalizeProfileImageUrl(profileImageUrl);
+      if (normalizedUrl.isNotEmpty) {
+        profileImageProvider = NetworkImage(normalizedUrl);
+      } else {
+        profileImageProvider =
+            const AssetImage('assets/images/default_profile_icon.jpg');
+      }
     } else {
       profileImageProvider =
           const AssetImage('assets/images/default_profile_icon.jpg');
@@ -252,10 +298,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: EdgeInsets.only(top: 60.h, bottom: 16.h),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
               color: Colors.black26, blurRadius: 8.r, offset: Offset(0, 4.h))
