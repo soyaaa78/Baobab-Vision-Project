@@ -1275,8 +1275,17 @@ const EditEyeglassPage = () => {
                               // Smooth diagonal blend
                               bg = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
                             } else if (option.type === "swatch") {
-                              // Soft radial spot of c2 fading into c1
-                              bg = `radial-gradient(circle at 35% 35%, ${c2} 0%, ${c2} 40%, rgba(0,0,0,0) 65%), linear-gradient(135deg, ${c1} 0%, ${c1} 100%)`;
+                              // Glossy swatch: subtle highlight, soft color spot, inner vignette, base fill
+                              bg = [
+                                // highlight glare
+                                `radial-gradient(circle at 28% 22%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%, rgba(255,255,255,0) 40%)`,
+                                // color 2 spot with soft falloff
+                                `radial-gradient(circle at 35% 35%, ${c2} 0%, ${c2} 38%, rgba(0,0,0,0) 62%)`,
+                                // inner shadow/vignette
+                                `radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.14) 78%, rgba(0,0,0,0.22) 100%)`,
+                                // base color fill
+                                `linear-gradient(135deg, ${c1} 0%, ${c1} 100%)`,
+                              ].join(", ");
                             }
                             return (
                               <div
