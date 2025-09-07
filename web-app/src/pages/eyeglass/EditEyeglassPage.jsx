@@ -352,10 +352,29 @@ const EditEyeglassPage = () => {
   const handleColorOptionChange = (optionIndex, field, value) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      newColorOptions[optionIndex] = {
+      const updated = {
         ...newColorOptions[optionIndex],
         [field]: value,
       };
+
+      // Enforce color constraints when type changes
+      if (field === "type") {
+        const colors = Array.isArray(updated.colors)
+          ? [...updated.colors]
+          : ["#000000"];
+        if (value === "solid") {
+          updated.colors = colors.length ? [colors[0]] : ["#000000"];
+        } else if (value === "split" || value === "swatch") {
+          if (colors.length < 2) {
+            const second = colors[0] === "#000000" ? "#ff8800" : "#000000";
+            updated.colors = [colors[0] || "#000000", colors[1] || second];
+          } else if (colors.length > 2) {
+            updated.colors = [colors[0], colors[1]];
+          }
+        }
+      }
+
+      newColorOptions[optionIndex] = updated;
       return {
         ...prev,
         colorOptions: newColorOptions,
@@ -394,30 +413,26 @@ const EditEyeglassPage = () => {
   const handleAddColorToOption = (optionIndex) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      newColorOptions[optionIndex] = {
-        ...newColorOptions[optionIndex],
-        colors: [...newColorOptions[optionIndex].colors, "#000000"],
-      };
-      return {
-        ...prev,
-        colorOptions: newColorOptions,
-      };
+      const opt = newColorOptions[optionIndex];
+      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
+      const type = opt.type;
+      const limit = type === "solid" ? 1 : 2;
+      if (colors.length >= limit) return prev; // do nothing
+      colors.push("#000000");
+      newColorOptions[optionIndex] = { ...opt, colors };
+      return { ...prev, colorOptions: newColorOptions };
     });
   };
   const handleRemoveColorFromOption = (optionIndex, colorIndex) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      const newColors = newColorOptions[optionIndex].colors.filter(
-        (_, i) => i !== colorIndex
-      );
-      newColorOptions[optionIndex] = {
-        ...newColorOptions[optionIndex],
-        colors: newColors,
-      };
-      return {
-        ...prev,
-        colorOptions: newColorOptions,
-      };
+      const opt = newColorOptions[optionIndex];
+      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
+      const min = opt.type === "solid" ? 1 : 2;
+      if (colors.length <= min) return prev; // keep required minimum
+      const newColors = colors.filter((_, i) => i !== colorIndex);
+      newColorOptions[optionIndex] = { ...opt, colors: newColors };
+      return { ...prev, colorOptions: newColorOptions };
     });
   };
   // 3D model helpers for drag-and-drop per colorway
@@ -479,6 +494,35 @@ const EditEyeglassPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const handleUpdate = async (e) => {
     e.preventDefault();
+
+    // Validate color options per type
+    for (const [idx, opt] of form.colorOptions.entries()) {
+      const type = opt.type || "solid";
+      const count = (opt.colors || []).length;
+      if (type === "solid" && count !== 1) {
+        setModal({
+          open: true,
+          title: "Invalid Color Option",
+          message: `Color Option ${
+            idx + 1
+          }: Solid Color requires exactly 1 color.`,
+          variant: "error",
+        });
+        return;
+      }
+      if ((type === "split" || type === "swatch") && count !== 2) {
+        setModal({
+          open: true,
+          title: "Invalid Color Option",
+          message: `Color Option ${idx + 1}: ${
+            type === "split" ? "Split Color" : "Color Swatch"
+          } requires exactly 2 colors.`,
+          variant: "error",
+        });
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     try {
       const updatedEyeglass = {};
@@ -1221,6 +1265,35 @@ const EditEyeglassPage = () => {
                         </div>
                         <div style={{ marginBottom: "10px" }}>
                           <label>Colors:</label>
+                          {/* Preview chip (blended) */}
+                          {(() => {
+                            const c = option.colors || ["#000000"];
+                            const c1 = c[0] || "#000000";
+                            const c2 = c[1] || c1;
+                            let bg = c1;
+                            if (option.type === "split") {
+                              // Smooth diagonal blend
+                              bg = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
+                            } else if (option.type === "swatch") {
+                              // Soft radial spot of c2 fading into c1
+                              bg = `radial-gradient(circle at 35% 35%, ${c2} 0%, ${c2} 40%, rgba(0,0,0,0) 65%), linear-gradient(135deg, ${c1} 0%, ${c1} 100%)`;
+                            }
+                            return (
+                              <div
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: "50%",
+                                  border: "2px solid #ddd",
+                                  marginTop: 8,
+                                  boxShadow:
+                                    "inset 0 0 0 2px rgba(255,255,255,0.6)",
+                                  background: bg,
+                                }}
+                                title={`${option.type} preview`}
+                              />
+                            );
+                          })()}
                           <div
                             style={{
                               display: "flex",
@@ -1255,54 +1328,38 @@ const EditEyeglassPage = () => {
                                     )
                                   }
                                   className="eef-color-remove"
+                                  disabled={
+                                    (option.type === "solid" &&
+                                      option.colors.length <= 1) ||
+                                    ((option.type === "split" ||
+                                      option.type === "swatch") &&
+                                      option.colors.length <= 2)
+                                  }
                                 >
                                   ×
                                 </button>
                               </div>
                             ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleAddColorToOption(optionIndex)
-                              }
-                              style={{
-                                backgroundColor: "#222222",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "4px",
-                                padding: "8px 12px",
-                                cursor: "pointer",
-                                fontSize: "0.8em",
-                              }}
-                            >
-                              + Add Color
-                            </button>
+                            {/* Add Color button removed by request */}
+                          </div>
+                          {/* Helper text for constraints */}
+                          <div
+                            style={{
+                              fontSize: "0.8em",
+                              color: "#777",
+                              marginTop: 6,
+                            }}
+                          >
+                            {option.type === "solid" &&
+                              "Solid: exactly 1 color."}
+                            {option.type === "split" &&
+                              "Split: exactly 2 colors (diagonal preview)."}
+                            {option.type === "swatch" &&
+                              "Swatch: exactly 2 colors (radial preview)."}
                           </div>
                         </div>
-                        <div style={{ marginBottom: "10px" }}>
-                          <label>Image URL:</label>
-                          <input
-                            type="text"
-                            value={option.imageUrl}
-                            onChange={(e) =>
-                              handleColorOptionChange(
-                                optionIndex,
-                                "imageUrl",
-                                e.target.value
-                              )
-                            }
-                            placeholder="Paste image URL or upload below"
-                            style={{
-                              width: "100%",
-                              padding: "8px",
-                              border: "1px solid #ccc",
-                              borderRadius: "4px",
-                              marginTop: "5px",
-                            }}
-                          />
-                        </div>
-                        {/* Per-colorway Virtual Try-On 3D Model */}
-                        <div style={{ marginBottom: "10px" }}>
+                        {/* Virtual Try-On 3D Model */}
+                        <div style={{ marginTop: "10px" }}>
                           <label>Virtual Try-On 3D Model (optional)</label>
                           <div
                             onDragOver={(e) => e.preventDefault()}
@@ -1320,7 +1377,7 @@ const EditEyeglassPage = () => {
                             }}
                             onClick={() =>
                               document
-                                .getElementById(`edit-cw3d-${optionIndex}`)
+                                .getElementById(`cw3d-${optionIndex}`)
                                 ?.click()
                             }
                           >
@@ -1328,7 +1385,7 @@ const EditEyeglassPage = () => {
                               Drag & drop .glb here, or click to browse
                             </div>
                             <input
-                              id={`edit-cw3d-${optionIndex}`}
+                              id={`cw3d-${optionIndex}`}
                               type="file"
                               accept=".glb"
                               style={{ display: "none" }}

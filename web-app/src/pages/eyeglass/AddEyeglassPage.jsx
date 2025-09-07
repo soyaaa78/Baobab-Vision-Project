@@ -229,10 +229,31 @@ const AddEyeglassPage = () => {
   const handleColorOptionChange = (optionIndex, field, value) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      newColorOptions[optionIndex] = {
+      const updated = {
         ...newColorOptions[optionIndex],
         [field]: value,
       };
+
+      // Enforce color constraints on type change
+      if (field === "type") {
+        const colors = Array.isArray(updated.colors)
+          ? [...updated.colors]
+          : ["#000000"];
+        if (value === "solid") {
+          // Exactly one color
+          updated.colors = colors.length ? [colors[0]] : ["#000000"];
+        } else if (value === "split" || value === "swatch") {
+          // Exactly two colors
+          if (colors.length < 2) {
+            const second = colors[0] === "#000000" ? "#ff8800" : "#000000";
+            updated.colors = [colors[0] || "#000000", colors[1] || second];
+          } else if (colors.length > 2) {
+            updated.colors = [colors[0], colors[1]];
+          }
+        }
+      }
+
+      newColorOptions[optionIndex] = updated;
       return {
         ...prev,
         colorOptions: newColorOptions,
@@ -259,31 +280,27 @@ const AddEyeglassPage = () => {
   const handleAddColorToOption = (optionIndex) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      newColorOptions[optionIndex] = {
-        ...newColorOptions[optionIndex],
-        colors: [...newColorOptions[optionIndex].colors, "#000000"],
-      };
-      return {
-        ...prev,
-        colorOptions: newColorOptions,
-      };
+      const opt = newColorOptions[optionIndex];
+      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
+      const type = opt.type;
+      const limit = type === "solid" ? 1 : 2;
+      if (colors.length >= limit) return prev; // do nothing
+      colors.push("#000000");
+      newColorOptions[optionIndex] = { ...opt, colors };
+      return { ...prev, colorOptions: newColorOptions };
     });
   };
 
   const handleRemoveColorFromOption = (optionIndex, colorIndex) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      const newColors = newColorOptions[optionIndex].colors.filter(
-        (_, i) => i !== colorIndex
-      );
-      newColorOptions[optionIndex] = {
-        ...newColorOptions[optionIndex],
-        colors: newColors,
-      };
-      return {
-        ...prev,
-        colorOptions: newColorOptions,
-      };
+      const opt = newColorOptions[optionIndex];
+      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
+      const min = opt.type === "solid" ? 1 : 2;
+      if (colors.length <= min) return prev; // keep required minimum
+      const newColors = colors.filter((_, i) => i !== colorIndex);
+      newColorOptions[optionIndex] = { ...opt, colors: newColors };
+      return { ...prev, colorOptions: newColorOptions };
     });
   };
 
@@ -324,6 +341,26 @@ const AddEyeglassPage = () => {
     if (!form.price || parseFloat(form.price) <= 0) {
       setSubmitError("Please enter a valid price.");
       return;
+    }
+
+    // Validate color options per type
+    for (const [idx, opt] of form.colorOptions.entries()) {
+      const type = opt.type || "solid";
+      const count = (opt.colors || []).length;
+      if (type === "solid" && count !== 1) {
+        setSubmitError(
+          `Color Option ${idx + 1}: Solid Color requires exactly 1 color.`
+        );
+        return;
+      }
+      if ((type === "split" || type === "swatch") && count !== 2) {
+        setSubmitError(
+          `Color Option ${idx + 1}: ${
+            type === "split" ? "Split Color" : "Color Swatch"
+          } requires exactly 2 colors.`
+        );
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -447,7 +484,6 @@ const AddEyeglassPage = () => {
       setIsSubmitting(false);
     }
   };
-
   return (
     <>
       <div className="page" id="add-eyeglass">
@@ -1436,6 +1472,35 @@ const AddEyeglassPage = () => {
                         </div>
                         <div>
                           <label>Colors:</label>
+                          {/* Preview chip */}
+                          {(() => {
+                            const c = option.colors || ["#000000"];
+                            const c1 = c[0] || "#000000";
+                            const c2 = c[1] || c1;
+                            let bg = c1;
+                            if (option.type === "split") {
+                              // Blend smoothly from first to second color
+                              bg = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
+                            } else if (option.type === "swatch") {
+                              // Soft swatch with a blended spot of color 2 on base color 1
+                              bg = `radial-gradient(circle at 35% 35%, ${c2} 0%, ${c2} 40%, rgba(0,0,0,0) 65%), linear-gradient(135deg, ${c1} 0%, ${c1} 100%)`;
+                            }
+                            return (
+                              <div
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: "50%",
+                                  border: "2px solid #ddd",
+                                  marginTop: 8,
+                                  boxShadow:
+                                    "inset 0 0 0 2px rgba(255,255,255,0.6)",
+                                  background: bg,
+                                }}
+                                title={`${option.type} preview`}
+                              />
+                            );
+                          })()}
                           <div
                             style={{
                               display: "flex",
@@ -1470,28 +1535,34 @@ const AddEyeglassPage = () => {
                                     )
                                   }
                                   className="aef-color-remove"
+                                  disabled={
+                                    (option.type === "solid" &&
+                                      option.colors.length <= 1) ||
+                                    ((option.type === "split" ||
+                                      option.type === "swatch") &&
+                                      option.colors.length <= 2)
+                                  }
                                 >
                                   ×
                                 </button>
                               </div>
                             ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleAddColorToOption(optionIndex)
-                              }
-                              style={{
-                                backgroundColor: "#252525",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "4px",
-                                padding: "8px 12px",
-                                cursor: "pointer",
-                                fontSize: "0.8em",
-                              }}
-                            >
-                              + Add Color
-                            </button>
+                            {/* Add Color button removed by request */}
+                          </div>
+                          {/* Helper text for constraints */}
+                          <div
+                            style={{
+                              fontSize: "0.8em",
+                              color: "#777",
+                              marginTop: 6,
+                            }}
+                          >
+                            {option.type === "solid" &&
+                              "Solid: exactly 1 color."}
+                            {option.type === "split" &&
+                              "Split: exactly 2 colors (diagonal preview)."}
+                            {option.type === "swatch" &&
+                              "Swatch: exactly 2 colors (radial preview)."}
                           </div>
                         </div>
                         <div style={{ marginTop: "10px" }}>
