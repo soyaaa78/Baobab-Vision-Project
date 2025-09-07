@@ -1,105 +1,6 @@
-/* Base */
+/* Base tweaks to integrate with audit modal */
 .respond-review-modal {
   font-family: "Rubik", sans-serif;
-}
-
-/* Header */
-.respond-review-modal .modal-header {
-  background: #fff;
-  color: #222;
-  border-bottom: 1px solid #f3f4f6;
-  padding: 20px 24px;
-  border-radius: 12px 12px 0 0;
-  position: relative;
-}
-.respond-review-modal .modal-header .header-content h2 {
-  margin: 0 0 4px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #222;
-  font-family: "Red Rose", serif;
-}
-.respond-review-modal .modal-header .modal-subtitle {
-  margin: 0;
-  color: #6b7280;
-  font-size: 14px;
-}
-.respond-review-modal .close-button {
-  position: absolute;
-  top: 16px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 16px;
-  color: #9ca3af;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.respond-review-modal .close-button:hover {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-/* Body */
-.respond-review-modal .modal-body {
-  padding: 24px;
-  background: #fff;
-}
-
-.respond-review-modal .rating-details {
-  background: #f9fafb;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
-  border: 1px solid #e5e7eb;
-}
-.respond-review-modal .detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
-}
-.respond-review-modal .detail-item:last-child {
-  margin-bottom: 0;
-}
-.respond-review-modal .detail-label {
-  font-weight: 600;
-  color: #6b7280;
-  min-width: 60px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.respond-review-modal .detail-value {
-  color: #111827;
-  font-weight: 500;
-  text-align: right;
-  flex: 1;
-  margin-left: 16px;
-  font-size: 14px;
-}
-
-.respond-review-modal .response-section-header {
-  margin-bottom: 16px;
-}
-.respond-review-modal .response-section-header h4 {
-  margin: 0 0 4px 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #222;
-  font-family: "Red Rose", serif;
-}
-.respond-review-modal .response-section-header p {
-  margin: 0;
-  color: #6b7280;
-  font-size: 14px;
 }
 
 /* Form */
@@ -142,14 +43,7 @@
   font-weight: 500;
 }
 
-/* Footer buttons */
-.respond-review-modal .form-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding-top: 20px;
-  border-top: 1px solid #f3f4f6;
-}
+/* Buttons match global modal footer styles; keep palette */
 .respond-review-modal .btn {
   padding: 10px 20px;
   border-radius: 8px;
@@ -192,12 +86,6 @@
 
 /* Responsive */
 @media (max-width: 640px) {
-  .respond-review-modal .modal-header {
-    padding: 16px;
-  }
-  .respond-review-modal .modal-body {
-    padding: 16px;
-  }
   .respond-review-modal .form-actions {
     flex-direction: column;
   }
