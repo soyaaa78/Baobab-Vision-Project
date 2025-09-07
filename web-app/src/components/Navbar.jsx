@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
@@ -9,6 +9,12 @@ import Cookies from "js-cookie";
 function Navbar() {
   const { logout } = useAuth();
   const role = Cookies.get("role");
+  const location = useLocation();
+
+  // Derive active scope from current URL query
+  const params = new URLSearchParams(location.search);
+  const scope = params.get("scope");
+  const onAllOrders = location.pathname.includes("allorders");
 
   const handleLogout = () => {
     logout();
@@ -50,10 +56,46 @@ function Navbar() {
                   Manage Users
                 </Link>
               </li>
-              <li>
-                <Link to="allorders" className="nav-button">
-                  Manage Orders
-                </Link>
+              <li className="dropdown">
+                <span
+                  className={`nav-button dropdown-toggle ${
+                    onAllOrders ? "active" : ""
+                  }`}
+                >
+                  Manage Orders <span className="caret">▾</span>
+                </span>
+                <ul className="dropdown-menu">
+                  <li>
+                    <Link
+                      to="allorders?scope=pickup"
+                      className={
+                        onAllOrders && scope === "pickup" ? "active" : ""
+                      }
+                    >
+                      Pickup Orders
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="allorders?scope=third"
+                      className={
+                        onAllOrders && scope === "third" ? "active" : ""
+                      }
+                    >
+                      Third Party Orders
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="allorders?scope=cancelled"
+                      className={
+                        onAllOrders && scope === "cancelled" ? "active" : ""
+                      }
+                    >
+                      Cancelled Orders
+                    </Link>
+                  </li>
+                </ul>
               </li>
               <li>
                 <Link to="reviews" className="nav-button">

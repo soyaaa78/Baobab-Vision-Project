@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
+import { useLocation } from "react-router-dom";
 import ToastContainer from "../components/ToastContainer";
 import { showToast } from "../services/toastService";
 import Button from "../components/Button";
@@ -21,7 +22,24 @@ const AllOrdersPage = () => {
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [alertModal, setAlertModal] = useState(false);
   const [alertModalContent, setAlertModalContent] = useState("Delete");
-  const [selectedStatus, setSelectedStatus] = useState("pending");
+  const location = useLocation();
+  const urlScope = useMemo(
+    () => new URLSearchParams(location.search).get("scope"),
+    [location.search]
+  );
+  const headerTitle = useMemo(() => {
+    switch (urlScope) {
+      case "pickup":
+        return "Pickup Orders";
+      case "third":
+        return "Third Party Orders";
+      case "cancelled":
+        return "Cancelled Orders";
+      default:
+        return "All Orders";
+    }
+  }, [urlScope]);
+  const [selectedStatus, setSelectedStatus] = useState("all");
   const [token, setToken] = useState();
   const [proofOfPaymentModal, setProofOfPaymentModal] = useState(false);
   const [selectedProofOfPayment, setSelectedProofOfPayment] = useState(null);
@@ -59,6 +77,11 @@ const AllOrdersPage = () => {
     const t = Cookies.get("token");
     setToken(t);
   }, []);
+
+  // Update browser tab title to match page title
+  useEffect(() => {
+    document.title = headerTitle;
+  }, [headerTitle]);
 
   useEffect(() => {
     if (!token) return;
@@ -152,9 +175,25 @@ const AllOrdersPage = () => {
   };
 
   const getFilteredOrders = () => {
-    if (selectedStatus === "all") return orderList;
-    return orderList.filter((order) => order.status === selectedStatus);
+    let base =
+      selectedStatus === "all"
+        ? orderList
+        : orderList.filter((order) => order.status === selectedStatus);
+    // Scope filter from navbar dropdown
+    if (urlScope === "pickup") {
+      base = base.filter((o) => o.deliveryMethod === "Pick Up");
+    } else if (urlScope === "third") {
+      base = base.filter((o) => o.deliveryMethod === "Third-Party Delivery");
+    } else if (urlScope === "cancelled") {
+      base = base.filter((o) => o.status === "cancelled");
+    }
+    return base;
   };
+
+  // Always default to 'All' when switching scopes or opening the page
+  useEffect(() => {
+    setSelectedStatus("all");
+  }, [urlScope]);
 
   const handleStatusChange = (status) => {
     setSelectedStatus(status);
@@ -189,7 +228,7 @@ const AllOrdersPage = () => {
     <div className="page" id="allorders">
       <ToastContainer />
       <div className="allorders-header">
-        <h1>All Orders</h1>
+        <h1>{headerTitle}</h1>
         <p>Manage and track all customer orders</p>
       </div>
 
@@ -203,46 +242,54 @@ const AllOrdersPage = () => {
           >
             All
           </button>
-          <button
-            onClick={() => handleStatusChange("pending")}
-            className={`filter-btn ${
-              selectedStatus === "pending" ? "active" : ""
-            }`}
-          >
-            Pending
-          </button>
-          <button
-            onClick={() => handleStatusChange("processing")}
-            className={`filter-btn ${
-              selectedStatus === "processing" ? "active" : ""
-            }`}
-          >
-            Processing
-          </button>
-          <button
-            onClick={() => handleStatusChange("ready_to_pickup")}
-            className={`filter-btn ${
-              selectedStatus === "ready_to_pickup" ? "active" : ""
-            }`}
-          >
-            Ready to Pick Up
-          </button>
-          <button
-            onClick={() => handleStatusChange("completed")}
-            className={`filter-btn ${
-              selectedStatus === "completed" ? "active" : ""
-            }`}
-          >
-            Completed
-          </button>
-          <button
-            onClick={() => handleStatusChange("cancelled")}
-            className={`filter-btn ${
-              selectedStatus === "cancelled" ? "active" : ""
-            }`}
-          >
-            Cancelled
-          </button>
+          {/* Hide processing flow filters when viewing Cancelled scope */}
+          {urlScope !== "cancelled" && (
+            <>
+              <button
+                onClick={() => handleStatusChange("pending")}
+                className={`filter-btn ${
+                  selectedStatus === "pending" ? "active" : ""
+                }`}
+              >
+                Pending
+              </button>
+              <button
+                onClick={() => handleStatusChange("processing")}
+                className={`filter-btn ${
+                  selectedStatus === "processing" ? "active" : ""
+                }`}
+              >
+                Processing
+              </button>
+              <button
+                onClick={() => handleStatusChange("ready_to_pickup")}
+                className={`filter-btn ${
+                  selectedStatus === "ready_to_pickup" ? "active" : ""
+                }`}
+              >
+                Ready to Pick Up
+              </button>
+              <button
+                onClick={() => handleStatusChange("completed")}
+                className={`filter-btn ${
+                  selectedStatus === "completed" ? "active" : ""
+                }`}
+              >
+                Completed
+              </button>
+            </>
+          )}
+          {/* Hide Cancelled filter when viewing Pickup/Third scopes */}
+          {urlScope !== "pickup" && urlScope !== "third" && (
+            <button
+              onClick={() => handleStatusChange("cancelled")}
+              className={`filter-btn ${
+                selectedStatus === "cancelled" ? "active" : ""
+              }`}
+            >
+              Cancelled
+            </button>
+          )}
           <button
             onClick={() => handleStatusChange("cancelled_pending")}
             className={`filter-btn ${

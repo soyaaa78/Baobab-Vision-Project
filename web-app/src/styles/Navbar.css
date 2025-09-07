@@ -72,6 +72,68 @@
   background: none;
 }
 
+/* Active state for nav-button (e.g., Manage Orders when on All Orders) */
+.links li .nav-button.active {
+  border-bottom: 2px solid #252525;
+}
+
+/* Dropdown */
+.links li.dropdown {
+  position: relative;
+}
+
+.dropdown-toggle {
+  cursor: default;
+  user-select: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dropdown .caret {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 8px 0;
+  z-index: 50;
+}
+
+.dropdown:hover .dropdown-menu,
+.dropdown:focus-within .dropdown-menu {
+  display: block;
+}
+
+.dropdown-menu li {
+  list-style: none;
+}
+.dropdown-menu a {
+  display: block;
+  padding: 10px 14px;
+  color: #252525;
+  text-decoration: none;
+  font-family: "Red Rose", serif;
+  font-size: 15px;
+}
+.dropdown-menu a:hover {
+  background: #faf6f1;
+}
+.dropdown-menu a.active {
+  background: #f0e9df;
+  font-weight: 600;
+  border-left: 3px solid #252525;
+}
+
 @media (max-width: 1020px) {
   .nav-logo-wrapper {
     display: none !important;
