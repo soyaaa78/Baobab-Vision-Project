@@ -54,6 +54,8 @@
 }
 
 .filter-btn {
+  /* width: 100%; */
+  /* flex: 1; */
   padding: 0.75rem 1.5rem;
   border: 2px solid #e5e7eb;
   background: white;
@@ -64,15 +66,22 @@
   transition: all 0.2s;
 }
 
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+  /* width: 15rem; */
+}
+
 .filter-btn:hover {
   border-color: #d1d5db;
-  background: #f9fafb;
+  background: rgba(34, 34, 34, 0.5);
+  color: #fff;
 }
 
 .filter-btn.active {
-  background: #8b5a3c;
-  color: white;
-  border-color: #8b5a3c;
+  background: #222222;
+  color: #fff;
+  border-color: #222222;
 }
 
 /* Orders Table Container */
@@ -743,17 +752,17 @@
 }
 
 .proof-payment-modal-content {
-  background: white;
-  border-radius: 16px;
+  background: #fff;
+  border-radius: 12px;
   width: 100%;
-  max-width: 900px;
+  max-width: 880px;
   height: 90vh;
-  max-height: 800px;
+  max-height: 780px;
   position: relative;
   z-index: 1001;
-  transform: scale(0.8) translateY(20px);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  transform: scale(0.98) translateY(8px);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 20px 45px -18px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -767,65 +776,65 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 2rem;
-  border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  padding: 20px 24px;
+  border-bottom: 1px solid #f3f4f6;
+  background: #fff;
   flex-shrink: 0;
 }
 
 .header-content h2 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.875rem;
-  font-weight: 700;
-  color: #1e293b;
-  letter-spacing: -0.025em;
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #222222;
+  font-family: "Red Rose", serif;
 }
 
 .modal-subtitle {
   margin: 0;
-  font-size: 0.875rem;
-  color: #64748b;
-  font-weight: 500;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 400;
+  font-family: "Rubik", sans-serif;
 }
 
 .close-button {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 0.75rem;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 4px;
   cursor: pointer;
-  color: #64748b;
+  color: #9ca3af;
   transition: all 0.2s;
-  font-size: 1.125rem;
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 44px;
-  min-height: 44px;
+  width: 32px;
+  height: 32px;
 }
 
 .close-button:hover {
-  background: #e2e8f0;
+  background: #f3f4f6;
   color: #374151;
-  transform: scale(1.05);
 }
 
 .proof-payment-modal-body {
   flex: 1;
   overflow-y: auto;
-  padding: 2rem;
-  padding-bottom: 1rem;
+  padding: 24px;
+  padding-bottom: 16px;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 16px;
   min-height: 0;
 }
 
 .proof-details-section {
-  background: #f8fafc;
-  padding: 1.5rem;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  background: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
   flex-shrink: 0;
   order: 1;
 }
@@ -834,8 +843,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 10px 0;
+  border-bottom: 1px solid #eef2f7;
 }
 
 .detail-item:last-child {
@@ -844,17 +853,18 @@
 
 .detail-label {
   font-weight: 600;
-  color: #374151;
-  font-size: 0.875rem;
+  color: #6b7280;
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .detail-value {
   font-weight: 500;
-  color: #1e293b;
+  color: #111827;
   text-align: right;
-  font-family: "Monaco", "Consolas", monospace;
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
 }
 
 .proof-image-section {
@@ -874,9 +884,10 @@
 
 .image-header h3 {
   margin: 0;
-  font-size: 1.125rem;
+  font-size: 16px;
   font-weight: 600;
-  color: #374151;
+  color: #222;
+  font-family: "Red Rose", serif;
 }
 
 .proof-image-container {
@@ -884,14 +895,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f8fafc;
-  border-radius: 12px;
-  border: 2px dashed #cbd5e1;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 1px dashed #e5e7eb;
   position: relative;
   height: 420px;
   max-height: 420px;
   overflow: hidden;
-  margin-bottom: 2rem;
+  margin-bottom: 24px;
   z-index: 1;
 }
 

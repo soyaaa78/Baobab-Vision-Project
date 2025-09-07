@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import Button from "./Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import "../styles/DeleteOrderModal.css";
 
 const DeleteOrderModal = ({ isOpen, onClose, order, onDelete }) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -27,68 +27,70 @@ const DeleteOrderModal = ({ isOpen, onClose, order, onDelete }) => {
   };
 
   return (
-    <div className={`proof-payment-modal-container ${isOpen ? "active" : ""}`}>
+    <div className={`delete-order-modal-container ${isOpen ? "active" : ""}`}>
       <div
         className={`modal-overlay ${isOpen ? "active" : ""}`}
         onClick={handleClose}
       />
-      <div
-        className={`proof-payment-modal-content ${isOpen ? "active" : ""}`}
-        style={{ maxHeight: "60vh", height: "auto" }}
-      >
-        <div className="proof-payment-modal-header">
-          <div className="header-content">
+      <div className={`delete-order-modal-content ${isOpen ? "active" : ""}`}>
+        <div className="delete-modal-header">
+          <div>
             <h2>Delete Order</h2>
-            <p className="modal-subtitle">This action cannot be undone</p>
+            <p className="delete-modal-subtitle">
+              This action cannot be undone
+            </p>
           </div>
-          <button className="close-button" onClick={handleClose} type="button">
+          <button
+            className="delete-modal-close"
+            onClick={handleClose}
+            type="button"
+          >
             <FontAwesomeIcon icon={faXmark} />
           </button>
         </div>
 
-        <div className="proof-payment-modal-body" style={{ overflowY: "auto" }}>
-          <div className="proof-details-section">
-            <div className="detail-item">
-              <span className="detail-label">Order ID</span>
-              <span className="detail-value">
+        <div className="delete-modal-body">
+          <div className="delete-order-details">
+            <div className="delete-detail-item">
+              <span className="delete-detail-label">Order ID</span>
+              <span className="delete-detail-value">
                 {order.orderId || `${order._id?.slice(-8)}...`}
               </span>
             </div>
-            <div className="detail-item">
-              <span className="detail-label">Customer</span>
-              <span className="detail-value">
+            <div className="delete-detail-item">
+              <span className="delete-detail-label">Customer</span>
+              <span className="delete-detail-value">
                 {order.customer
                   ? `${order.customer.firstname} ${order.customer.lastname}`
                   : "N/A"}
               </span>
             </div>
-            <div className="detail-item">
-              <span className="detail-label">Total Amount</span>
-              <span className="detail-value">₱{order.totalAmount}</span>
+            <div className="delete-detail-item">
+              <span className="delete-detail-label">Total Amount</span>
+              <span className="delete-detail-value">₱{order.totalAmount}</span>
             </div>
           </div>
 
-          <div className="payment-action-section">
-            <div className="action-header">
-              <h3>Confirm Deletion</h3>
-              <p>Permanently delete this order record</p>
-            </div>
-            <div className="action-buttons-group">
-              <button
-                className="decline-payment-btn" // reuse red styling
-                onClick={handleDelete}
-                disabled={isProcessing}
-              >
-                {isProcessing ? "Deleting..." : "Delete Order"}
-              </button>
-              <button
-                className="accept-payment-btn"
-                onClick={handleClose}
-                disabled={isProcessing}
-              >
-                Cancel
-              </button>
-            </div>
+          <div className="delete-confirmation">
+            <h3>Confirm Deletion</h3>
+            <p>Permanently delete this order record</p>
+          </div>
+
+          <div className="delete-action-buttons">
+            <button
+              className="delete-btn-secondary"
+              onClick={handleClose}
+              disabled={isProcessing}
+            >
+              Cancel
+            </button>
+            <button
+              className="delete-btn-primary"
+              onClick={handleDelete}
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Deleting..." : "Delete Order"}
+            </button>
           </div>
         </div>
       </div>

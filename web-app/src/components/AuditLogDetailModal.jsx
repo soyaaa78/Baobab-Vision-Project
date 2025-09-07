@@ -45,6 +45,7 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
   };
 
   const getActionColor = (action) => {
+    const actionLower = action.toLowerCase();
     const colors = {
       create: "#10b981",
       update: "#f59e0b",
@@ -55,8 +56,21 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
       decline: "#ef4444",
       enable: "#10b981",
       disable: "#ef4444",
+      status: "#3b82f6",
+      ready: "#10b981",
+      pickup: "#f59e0b",
+      complete: "#10b981",
+      cancel: "#ef4444",
     };
-    return colors[action] || "#6b7280";
+
+    // Check for keyword matches in the action text
+    for (const [keyword, color] of Object.entries(colors)) {
+      if (actionLower.includes(keyword)) {
+        return color;
+      }
+    }
+
+    return "#6b7280"; // Default gray
   };
 
   const hasChanges = log.oldValues || log.newValues;

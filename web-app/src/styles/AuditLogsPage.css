@@ -328,20 +328,23 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: #8b5a3c;
-  color: white;
+  /* background: #ffffff; */
+  background-color: white;
+  color: black;
   border: none;
   border-radius: 6px;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
+  border: 1px solid #ffffff;
 }
 
 .view-btn:hover {
-  background: #744933;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid #000000;
+  /* background: #2d3a47; */
+  /* transform: translateY(-1px); */
+  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); */
 }
 
 .view-btn:active {

@@ -149,19 +149,22 @@ const ManageReviewsPage = () => {
                       : "—"}
                   </td>
                   <td>
-                    <button
-                      className="filter-btn"
-                      style={{ marginRight: 8 }}
-                      onClick={() => openDetails(r)}
-                    >
-                      View
-                    </button>
-                    <button
-                      className="filter-btn"
-                      onClick={() => openRespond(r)}
-                    >
-                      {r.adminResponse ? "Edit Response" : "Respond"}
-                    </button>
+                    <div className="table-actions ">
+                      <button
+                        className="filter-btn"
+                        style={{ marginRight: 8 }}
+                        onClick={() => openDetails(r)}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="filter-btn"
+                        style={{ flex: 1 }}
+                        onClick={() => openRespond(r)}
+                      >
+                        {r.adminResponse ? "Edit Response" : "Respond"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

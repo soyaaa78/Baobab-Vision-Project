@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import "../../styles/eyeglass/AddEyeglassPage.css";
+import "../../styles/EditEyeglass.css";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -642,10 +642,10 @@ const EditEyeglassPage = () => {
 
   return (
     <>
-      <div className="page" id="add-eyeglass">
-        <div className="add-eyeglass-content">
-          <div className="ae-header">
-            <div className="ae-header-text">
+      <div className="page" id="edit-eyeglass">
+        <div className="edit-eyeglass-content">
+          <div className="ee-header">
+            <div className="ee-header-text">
               <h1>Edit Product</h1>
               <p style={{ color: "#666666" }}>
                 Got the wrong color? A typo in the description, perhaps?
@@ -654,15 +654,15 @@ const EditEyeglassPage = () => {
             <Button className="" onClick={handleBack} children={<p>Back</p>} />
           </div>
 
-          <div className="add-eyeglass-form-container">
-            <form className="add-eyeglass-form" onSubmit={handleUpdate}>
+          <div className="edit-eyeglass-form-container">
+            <form className="edit-eyeglass-form" onSubmit={handleUpdate}>
               {/* Basic Info Section */}
-              <div className="aef-section aef-basic-sect">
+              <div className="eef-section eef-basic-sect">
                 <div className="section-details bsd">
                   <div className="bsd-header">
                     <h2>Basic Info</h2>
                   </div>
-                  <div className="aef-sect-fields bsd-upper">
+                  <div className="eef-sect-fields bsd-upper">
                     <div className="bsdf-input bsdfu-name">
                       <label htmlFor="title">Product Name</label>
                       <input
@@ -692,7 +692,7 @@ const EditEyeglassPage = () => {
                     <h2>Product Price</h2>
                   </div>
 
-                  <div className="aef-sect-fields bsd-lower">
+                  <div className="eef-sect-fields bsd-lower">
                     <div className="bsdf-input bsdfl-price">
                       <label htmlFor="price">Price</label>
                       <input
@@ -711,12 +711,12 @@ const EditEyeglassPage = () => {
               </div>
 
               {/* Product Media Section */}
-              <div className="aef-section aef-image-sect">
+              <div className="eef-section eef-image-sect">
                 <div className="section-details isd">
                   <div className="isd-header">
                     <h2>Product Media</h2>
                   </div>
-                  <div className="aef-sect-fields isd-content">
+                  <div className="eef-sect-fields isd-content">
                     <div>
                       <label>Product Images</label>
                       <div className="isdc-img-grid" id="product-images">
@@ -794,12 +794,12 @@ const EditEyeglassPage = () => {
               </div>
 
               {/* Categories and Specifications Section */}
-              <div className="aef-section aef-category-sect">
+              <div className="eef-section eef-category-sect">
                 <div className="section-details csd">
                   <div className="csd-header">
                     <h2>Categories and Specifications</h2>
                   </div>
-                  <div className="aef-sect-fields csd-content">
+                  <div className="eef-sect-fields csd-content">
                     {/* Face Shape Classification */}
                     <div className="csdc-header">
                       <p style={{ fontFamily: "Rubik" }}>
@@ -971,7 +971,7 @@ const EditEyeglassPage = () => {
                     </div>
 
                     {/* Lens Options Inclusions */}
-                    <div className="aef-sect-fields csd-lower">
+                    <div className="eef-sect-fields csd-lower">
                       <div>
                         <p style={{ fontFamily: "Rubik" }}>
                           Lens Options Inclusions
@@ -989,7 +989,7 @@ const EditEyeglassPage = () => {
                       </div>
                       <div className="csdl-lens-container">
                         {/* Built-in UV400 Lenses (Always included) */}
-                        <div className="aef-sect-fields csd-lens" id="builtin">
+                        <div className="eef-sect-fields csd-lens" id="builtin">
                           <div className="bsdf-input csdfl-lens-options">
                             <label style={{ marginBottom: "10px" }}>
                               <b>
@@ -1009,7 +1009,7 @@ const EditEyeglassPage = () => {
                           </div>
                         </div>
 
-                        <div className="aef-sect-fields csd-lens" id="tinted">
+                        <div className="eef-sect-fields csd-lens" id="tinted">
                           <div
                             className="bsdf-input csdfl-lens-options"
                             // ref={tintedRef} // No longer needed
@@ -1061,7 +1061,7 @@ const EditEyeglassPage = () => {
                           </div>
                         </div>
                         <div
-                          className="aef-sect-fields csd-lens"
+                          className="eef-sect-fields csd-lens"
                           id="sun-adaptive"
                         >
                           <div
@@ -1121,7 +1121,7 @@ const EditEyeglassPage = () => {
               </div>
 
               {/* Color Options Section */}
-              <div className="aef-section aef-color-sect">
+              <div className="eef-section eef-color-sect">
                 <div className="section-details">
                   <div className="section-header">
                     <h2>Color Options</h2>
@@ -1135,7 +1135,7 @@ const EditEyeglassPage = () => {
                       Add color options for this product
                     </p>
                   </div>
-                  <div className="aef-sect-fields">
+                  <div className="eef-sect-fields">
                     {form.colorOptions.map((option, optionIndex) => (
                       <div
                         key={optionIndex}
@@ -1232,11 +1232,7 @@ const EditEyeglassPage = () => {
                             {option.colors.map((color, colorIndex) => (
                               <div
                                 key={colorIndex}
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "5px",
-                                }}
+                                className="eef-color-container"
                               >
                                 <input
                                   type="color"
@@ -1248,12 +1244,7 @@ const EditEyeglassPage = () => {
                                       e.target.value
                                     )
                                   }
-                                  style={{
-                                    width: "40px",
-                                    height: "40px",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                  }}
+                                  className="eef-color-picker"
                                 />
                                 <button
                                   type="button"
@@ -1263,16 +1254,7 @@ const EditEyeglassPage = () => {
                                       colorIndex
                                     )
                                   }
-                                  style={{
-                                    backgroundColor: "#ff4444",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "50%",
-                                    width: "20px",
-                                    height: "20px",
-                                    cursor: "pointer",
-                                    fontSize: "0.7em",
-                                  }}
+                                  className="eef-color-remove"
                                 >
                                   ×
                                 </button>
@@ -1284,7 +1266,7 @@ const EditEyeglassPage = () => {
                                 handleAddColorToOption(optionIndex)
                               }
                               style={{
-                                backgroundColor: "#4CAF50",
+                                backgroundColor: "#222222",
                                 color: "white",
                                 border: "none",
                                 borderRadius: "4px",
@@ -1418,7 +1400,7 @@ const EditEyeglassPage = () => {
                       type="button"
                       onClick={handleAddColorOption}
                       style={{
-                        backgroundColor: "#2196F3",
+                        backgroundColor: "#222222",
                         color: "white",
                         border: "none",
                         borderRadius: "4px",
@@ -1426,6 +1408,7 @@ const EditEyeglassPage = () => {
                         cursor: "pointer",
                         fontSize: "0.9em",
                         marginTop: "10px",
+                        width: "fit-content",
                       }}
                     >
                       + Add Color Option
@@ -1435,13 +1418,13 @@ const EditEyeglassPage = () => {
               </div>
 
               {/* Additional Product Fields Section */}
-              <div className="aef-section aef-additional-sect">
+              <div className="eef-section eef-additional-sect">
                 <div className="section-details">
                   <div className="section-header">
                     <h2>Additional Product Information</h2>
                   </div>
                   <div
-                    className="aef-sect-fields"
+                    className="eef-sect-fields"
                     style={{
                       display: "flex",
                       gap: "20px",
@@ -1492,103 +1475,20 @@ const EditEyeglassPage = () => {
               </div>
 
               {/* Action Buttons */}
-              <div
-                className="csd-post-button-container"
-                style={{
-                  margin: "30px 0 0 0",
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "16px",
-                  alignItems: "center",
-                  paddingTop: "20px",
-                  borderTop: "1px solid #e5e5e5",
-                }}
-              >
+              <div className="eef-submit-container">
                 <button
                   type="submit"
                   disabled={isSubmitting || !hasChanges()}
-                  style={{
-                    background: isSubmitting
-                      ? "#6c757d"
-                      : !hasChanges()
-                      ? "#e9ecef"
-                      : "#28a745",
-                    color: !hasChanges() ? "#6c757d" : "#ffffff",
-                    padding: "12px 28px",
-                    borderRadius: "8px",
-                    border: `2px solid ${
-                      isSubmitting
-                        ? "#6c757d"
-                        : !hasChanges()
-                        ? "#e9ecef"
-                        : "#28a745"
-                    }`,
-                    cursor:
-                      !hasChanges() || isSubmitting ? "not-allowed" : "pointer",
-                    fontSize: "15px",
-                    fontWeight: "600",
-                    fontFamily: "inherit",
-                    transition: "all 0.2s ease-in-out",
-                    boxShadow: !hasChanges()
-                      ? "none"
-                      : "0 2px 4px rgba(40, 167, 69, 0.2)",
-                    minWidth: "140px",
-                    height: "48px",
-                    opacity: !hasChanges() || isSubmitting ? 0.7 : 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (hasChanges() && !isSubmitting) {
-                      e.target.style.background = "#218838";
-                      e.target.style.borderColor = "#218838";
-                      e.target.style.transform = "translateY(-1px)";
-                      e.target.style.boxShadow =
-                        "0 4px 8px rgba(40, 167, 69, 0.3)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (hasChanges() && !isSubmitting) {
-                      e.target.style.background = "#28a745";
-                      e.target.style.borderColor = "#28a745";
-                      e.target.style.transform = "translateY(0)";
-                      e.target.style.boxShadow =
-                        "0 2px 4px rgba(40, 167, 69, 0.2)";
-                    }
-                  }}
+                  className={`eef-submit-btn ${
+                    !hasChanges() || isSubmitting ? "disabled" : ""
+                  }`}
                 >
                   {isSubmitting ? "Updating..." : "Update Eyeglass"}
                 </button>
                 <button
                   type="button"
                   onClick={handleDelete}
-                  style={{
-                    background: "#dc3545",
-                    color: "#ffffff",
-                    padding: "12px 28px",
-                    borderRadius: "8px",
-                    border: "2px solid #dc3545",
-                    cursor: "pointer",
-                    fontSize: "15px",
-                    fontWeight: "600",
-                    fontFamily: "inherit",
-                    transition: "all 0.2s ease-in-out",
-                    boxShadow: "0 2px 4px rgba(220, 53, 69, 0.2)",
-                    minWidth: "140px",
-                    height: "48px",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = "#c82333";
-                    e.target.style.borderColor = "#c82333";
-                    e.target.style.transform = "translateY(-1px)";
-                    e.target.style.boxShadow =
-                      "0 4px 8px rgba(220, 53, 69, 0.3)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = "#dc3545";
-                    e.target.style.borderColor = "#dc3545";
-                    e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow =
-                      "0 2px 4px rgba(220, 53, 69, 0.2)";
-                  }}
+                  className="eef-submit-btn eef-delete-btn"
                 >
                   Delete Eyeglass
                 </button>

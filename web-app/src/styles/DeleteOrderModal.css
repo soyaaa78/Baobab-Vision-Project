@@ -1,0 +1,248 @@
+/* Delete Order Modal - Minimalist Design */
+.delete-order-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  padding: 1rem;
+}
+
+.delete-order-modal-container.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.delete-order-modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  z-index: 1001;
+  transform: scale(0.95) translateY(10px);
+  transition: all 0.2s ease;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.delete-order-modal-content.active {
+  transform: scale(1) translateY(0);
+}
+
+/* Header */
+.delete-modal-header {
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.delete-modal-header h2 {
+  font-family: "Red Rose", serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.delete-modal-subtitle {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0 0 0;
+  font-weight: 400;
+}
+
+.delete-modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.delete-modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Body */
+.delete-modal-body {
+  padding: 24px;
+}
+
+.delete-order-details {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.delete-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.delete-detail-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.delete-detail-item:first-child {
+  padding-top: 0;
+}
+
+.delete-detail-label {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.delete-detail-value {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Confirmation Section */
+.delete-confirmation {
+  margin-bottom: 24px;
+}
+
+.delete-confirmation h3 {
+  font-family: "Red Rose", serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.delete-confirmation p {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Action Buttons */
+.delete-action-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.delete-btn-primary,
+.delete-btn-secondary {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Delete Button (Primary Action) */
+.delete-btn-primary {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+.delete-btn-primary:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.2);
+}
+
+.delete-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Cancel Button (Secondary Action) */
+.delete-btn-secondary {
+  background: transparent;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.delete-btn-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+.delete-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .delete-order-modal-content {
+    max-width: 95%;
+    margin: 0 auto;
+  }
+
+  .delete-modal-header,
+  .delete-modal-body {
+    padding: 20px 16px;
+  }
+
+  .delete-action-buttons {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .delete-btn-primary,
+  .delete-btn-secondary {
+    width: 100%;
+    min-width: auto;
+  }
+}

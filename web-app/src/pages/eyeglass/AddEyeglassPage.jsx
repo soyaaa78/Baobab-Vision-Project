@@ -1447,11 +1447,7 @@ const AddEyeglassPage = () => {
                             {option.colors.map((color, colorIndex) => (
                               <div
                                 key={colorIndex}
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "5px",
-                                }}
+                                className="aef-color-container"
                               >
                                 <input
                                   type="color"
@@ -1463,12 +1459,7 @@ const AddEyeglassPage = () => {
                                       e.target.value
                                     )
                                   }
-                                  style={{
-                                    width: "40px",
-                                    height: "40px",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                  }}
+                                  className="aef-color-picker"
                                 />
                                 <button
                                   type="button"
@@ -1478,16 +1469,7 @@ const AddEyeglassPage = () => {
                                       colorIndex
                                     )
                                   }
-                                  style={{
-                                    backgroundColor: "#ff4444",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "50%",
-                                    width: "20px",
-                                    height: "20px",
-                                    cursor: "pointer",
-                                    fontSize: "0.7em",
-                                  }}
+                                  className="aef-color-remove"
                                 >
                                   ×
                                 </button>

@@ -2,7 +2,7 @@
   height: 100%;
   padding: 2rem 10%;
   min-height: calc(100vh - 80px);
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+  /* background: #f8f9fa; */
 }
 
 /* Page header */
@@ -60,7 +60,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #8b5a3c69;
+  /* background-color: #8b5a3c69; */
   opacity: 0;
   border-radius: 12px;
   transition: opacity 0.3s ease;
@@ -68,6 +68,7 @@
 }
 
 .tab-button:hover {
+  background: rgba(34, 34, 34, 0.5);
   color: #ffffff;
   transform: translateY(-1px);
 }
@@ -77,10 +78,10 @@
 }
 
 .tab-button.active {
-  background-color: #8b5a3c;
+  background-color: #222222;
   color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(94, 80, 63, 0.3);
+  box-shadow: 0 6px 16px rgba(34, 34, 34, 0.15);
 }
 
 /* Tab Content */
@@ -203,9 +204,17 @@
 }
 
 .role-badge {
-  background: linear-gradient(135deg, #8b5a3c 0%, #a0785d 100%);
-  color: white;
-  font-weight: 600;
+  background: #f8fafc;
+  color: #1e293b;
+  font-family: "Rubik", sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 /* Password Section */
@@ -315,18 +324,18 @@
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: linear-gradient(135deg, #8b5a3c 0%, #a0785d 100%);
+  background: #f8b26a;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
 }
-
+/* 
 .change-password-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(139, 90, 60, 0.3);
-}
+} */
 
 .change-password-btn:disabled {
   opacity: 0.6;

@@ -500,3 +500,57 @@ label[required]::after {
     padding: 16px;
   }
 }
+
+/* Color picker styling */
+.aef-color-picker {
+  width: 40px !important;
+  height: 40px !important;
+  border: 2px solid #e5e5e5 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  padding: 0 !important;
+  background: none !important;
+  outline: none !important;
+}
+
+.aef-color-picker::-webkit-color-swatch-wrapper {
+  padding: 0 !important;
+  border: none !important;
+  border-radius: 6px !important;
+}
+
+.aef-color-picker::-webkit-color-swatch {
+  border: none !important;
+  border-radius: 6px !important;
+}
+
+.aef-color-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.aef-color-remove {
+  background: transparent !important;
+  color: #ef4444 !important;
+  border: 1px solid #ef4444 !important;
+  border-radius: 4px !important;
+  width: 20px !important;
+  height: 20px !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: bold !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  line-height: 1 !important;
+}
+
+.aef-color-remove:hover {
+  background: #ef4444 !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2) !important;
+}

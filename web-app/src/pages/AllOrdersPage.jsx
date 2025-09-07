@@ -3,6 +3,7 @@ import ToastContainer from "../components/ToastContainer";
 import { showToast } from "../services/toastService";
 import Button from "../components/Button";
 import ProofOfPaymentModal from "../components/ProofOfPaymentModal";
+import PickupDetailsModal from "../components/PickupDetailsModal";
 import CancellationModal from "../components/CancellationModal";
 import DeleteOrderModal from "../components/DeleteOrderModal";
 import "../styles/AllOrdersPage.css";
@@ -29,6 +30,8 @@ const AllOrdersPage = () => {
   const [selectedCancellationOrder, setSelectedCancellationOrder] =
     useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [pickupModalOpen, setPickupModalOpen] = useState(false);
+  const [pickupTargetOrder, setPickupTargetOrder] = useState(null);
 
   // Helpers
   const getOrderLabel = (order) =>
@@ -369,6 +372,24 @@ const AllOrdersPage = () => {
                             const next = getNextStatus(order.status);
                             if (!next) return null; // hide default
                             const label = getProgressLabel(order.status);
+                            const isProcessingToReady =
+                              order.status === "processing" &&
+                              order.deliveryMethod === "Pick Up";
+                            if (isProcessingToReady) {
+                              return (
+                                <button
+                                  className="proof-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPickupTargetOrder(order);
+                                    setPickupModalOpen(true);
+                                  }}
+                                  title={label}
+                                >
+                                  {label}
+                                </button>
+                              );
+                            }
                             return (
                               <button
                                 className="proof-btn"
@@ -626,6 +647,24 @@ const AllOrdersPage = () => {
         onClose={() => setCancellationModal(false)}
         order={selectedCancellationOrder}
         onUpdateStatus={updateOrderStatus}
+      />
+
+      {/* Pickup Details Modal (Pick Up flow only) */}
+      <PickupDetailsModal
+        isOpen={pickupModalOpen}
+        onClose={() => setPickupModalOpen(false)}
+        order={pickupTargetOrder}
+        onConfirm={async ({ pickupLocation, pickupDateTime }) => {
+          // Don’t touch backend shape: send extra payload, backend can ignore
+          const orderId = pickupTargetOrder?._id;
+          if (!orderId) return;
+          await updateOrderStatus(orderId, "ready_to_pickup", {
+            pickupLocation,
+            pickupDateTime,
+          });
+          setPickupModalOpen(false);
+          setPickupTargetOrder(null);
+        }}
       />
     </div>
   );
