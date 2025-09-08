@@ -542,7 +542,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.054);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -729,6 +729,17 @@
   font-weight: 500;
 }
 
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Enhanced Proof of Payment Modal Styles */
 .proof-payment-modal-container {
   position: fixed;
@@ -744,6 +755,8 @@
   visibility: hidden;
   transition: all 0.3s ease;
   padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
 }
 
 .proof-payment-modal-container.active {
@@ -752,20 +765,21 @@
 }
 
 .proof-payment-modal-content {
-  background: #fff;
+  background: #ffffff;
   border-radius: 12px;
   width: 100%;
-  max-width: 880px;
-  height: 90vh;
-  max-height: 780px;
+  max-width: 800px;
+  max-height: 85vh;
   position: relative;
   z-index: 1001;
-  transform: scale(0.98) translateY(8px);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 20px 45px -18px rgba(0, 0, 0, 0.25);
+  transform: scale(0.95) translateY(20px);
+  transition: all 0.2s ease-out;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  animation: slideUp 0.2s ease-out;
 }
 
 .proof-payment-modal-content.active {
@@ -773,25 +787,25 @@
 }
 
 .proof-payment-modal-header {
+  padding: 20px 24px 16px 24px;
+  border-bottom: 1px solid #f3f4f6;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 20px 24px;
-  border-bottom: 1px solid #f3f4f6;
-  background: #fff;
+  background: white;
   flex-shrink: 0;
 }
 
 .header-content h2 {
-  margin: 0 0 4px 0;
-  font-size: 20px;
+  margin: 0;
+  font-size: 18px;
   font-weight: 600;
-  color: #222222;
+  color: #111827;
   font-family: "Red Rose", serif;
 }
 
 .modal-subtitle {
-  margin: 0;
+  margin: 4px 0 0 0;
   font-size: 14px;
   color: #6b7280;
   font-weight: 400;
@@ -801,17 +815,17 @@
 .close-button {
   background: none;
   border: none;
-  border-radius: 6px;
+  border-radius: 4px;
   padding: 4px;
   cursor: pointer;
   color: #9ca3af;
-  transition: all 0.2s;
-  font-size: 16px;
+  transition: all 0.2s ease;
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
 }
 
 .close-button:hover {
@@ -820,90 +834,60 @@
 }
 
 .proof-payment-modal-body {
-  flex: 1;
-  overflow-y: auto;
   padding: 24px;
-  padding-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .proof-details-section {
-  background: #f9fafb;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  flex-shrink: 0;
-  order: 1;
-}
-
-.detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  border-bottom: 1px solid #eef2f7;
-}
-
-.detail-item:last-child {
-  border-bottom: none;
-}
-
-.detail-label {
-  font-weight: 600;
-  color: #6b7280;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.detail-value {
-  font-weight: 500;
-  color: #111827;
-  text-align: right;
-  font-family: "Rubik", sans-serif;
-  font-size: 14px;
+  margin-bottom: 24px;
 }
 
 .proof-image-section {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  gap: 1rem;
-  order: 2;
-  margin-bottom: 1rem;
+  margin-bottom: 24px;
 }
 
-.image-header {
-  margin-bottom: 1rem;
-  flex-shrink: 0;
+.decline-form-section {
+  margin-bottom: 0;
 }
 
-.image-header h3 {
-  margin: 0;
-  font-size: 16px;
+.section-label {
+  font-size: 13px;
   font-weight: 600;
-  color: #222;
-  font-family: "Red Rose", serif;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin-bottom: 8px;
+  display: block;
+  font-family: "Rubik", sans-serif;
+}
+
+.section-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 16px;
+  font-family: "Rubik", sans-serif;
+}
+
+.section-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 16px;
+  line-height: 1.5;
+  font-family: "Rubik", sans-serif;
 }
 
 .proof-image-container {
-  flex: 0 0 auto;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  border: 1px dashed #e5e7eb;
   position: relative;
-  height: 420px;
-  max-height: 420px;
+  min-height: 300px;
   overflow: hidden;
-  margin-bottom: 24px;
-  z-index: 1;
 }
 
 .proof-image {
@@ -988,181 +972,86 @@
   transform: translateY(-1px);
 }
 
-/* Payment Action Section Styles */
-.payment-action-section {
-  flex-shrink: 0;
-  background: white;
-  border-top: 1px solid #e5e7eb;
-  padding: 2rem;
-  order: 3;
-}
-
-.action-header {
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.action-header h3 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #374151;
-}
-
-.action-header p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
-.action-buttons-group {
+/* Modal Footer Styles */
+.modal-footer {
   display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid #e5e7eb;
+  background: white;
 }
 
-.accept-payment-btn,
-.decline-payment-btn {
-  flex: 1;
-  min-width: 160px;
-  padding: 1rem 1.5rem;
+.btn-cancel {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
   font-weight: 600;
-  font-size: 0.875rem;
-  border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  min-width: 100px;
+  font-family: "Rubik", sans-serif;
 }
 
-.accept-payment-btn {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+.btn-cancel:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
 }
 
-.accept-payment-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px 0 rgba(16, 185, 129, 0.6);
+.btn-primary {
+  background: #f8b26a;
+  color: #fff;
+  border: 1px solid #f8b26a;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  font-family: "Rubik", sans-serif;
 }
 
-.decline-payment-btn {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
+.btn-primary:hover:not(:disabled) {
+  background: #f7a84a;
+  border-color: #f7a84a;
 }
 
-.decline-payment-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px 0 rgba(239, 68, 68, 0.6);
-}
-
-.accept-payment-btn:disabled,
-.decline-payment-btn:disabled {
+.btn-cancel:disabled,
+.btn-primary:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  transform: none;
 }
 
-/* Enhanced Decline Form Styles */
-.decline-form {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 12px;
-  padding: 2rem;
-  margin-top: 1rem;
-  animation: slideInDown 0.3s ease-out;
-}
-
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.decline-form-header {
-  margin-bottom: 1.5rem;
-  text-align: center;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.decline-form-header h4 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #dc2626;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.decline-form-header h4::before {
-  content: "⚠️";
-  font-size: 1.25rem;
-}
-
-.decline-form-header p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #64748b;
-  line-height: 1.5;
-}
-
-.form-field {
-  margin-bottom: 1.5rem;
-}
-
-.form-label {
-  display: block;
-  margin-bottom: 0.75rem;
-  font-weight: 600;
-  color: #374151;
-  font-size: 0.875rem;
-}
-
-.required {
-  color: #dc2626;
-  margin-left: 2px;
-}
+/* Decline Form Section - integrated into main modal body */
 
 .form-textarea {
   width: 100%;
-  min-height: 120px;
-  padding: 1rem;
-  border: 2px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  font-size: 0.875rem;
+  padding: 12px;
+  font-size: 14px;
   line-height: 1.5;
-  font-family: inherit;
+  color: #111827;
+  background: #fff;
   resize: vertical;
-  transition: all 0.2s ease;
-  background: white;
+  min-height: 120px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+  font-family: "Rubik", sans-serif;
 }
 
 .form-textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-color: #f8b26a;
+  box-shadow: 0 0 0 3px rgba(248, 178, 106, 0.1);
 }
 
 .form-textarea.error {
   border-color: #dc2626;
-  background: #fef2f2;
 }
 
 .form-textarea.error:focus {
@@ -1172,159 +1061,53 @@
 
 .form-textarea::placeholder {
   color: #9ca3af;
-  font-style: italic;
 }
 
-.form-helper {
+.char-counter {
   display: flex;
   justify-content: flex-end;
-  margin-top: 0.5rem;
-}
-
-.char-count {
-  font-size: 0.75rem;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.char-count.warning {
-  color: #f59e0b;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #9ca3af;
+  font-family: "Rubik", sans-serif;
 }
 
 .form-error {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  padding: 0.75rem;
+  margin-top: 8px;
+  padding: 8px 12px;
   background: #fef2f2;
   border: 1px solid #fecaca;
   border-radius: 6px;
-  font-size: 0.875rem;
+  font-size: 12px;
   color: #dc2626;
   font-weight: 500;
+  font-family: "Rubik", sans-serif;
 }
 
-.error-icon {
-  flex-shrink: 0;
-  font-size: 1rem;
-}
-
-.decline-form-actions {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #f3f4f6;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.875rem 1.5rem;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 0.875rem;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 140px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none !important;
-}
-
-.btn-secondary {
-  background: #f8fafc;
-  color: #374151;
-  border: 2px solid #e2e8f0;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-}
-
-.btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.39);
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px 0 rgba(239, 68, 68, 0.6);
-}
-
-.btn-icon {
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-.btn-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  flex-shrink: 0;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Responsive Design for Decline Form */
+/* Responsive Design for Proof of Payment Modal */
 @media (max-width: 640px) {
-  .decline-form-actions {
+  .modal-footer {
     flex-direction: column;
   }
 
-  .btn {
+  .btn-cancel,
+  .btn-primary {
     width: 100%;
     min-width: auto;
-  }
-
-  .action-buttons-group {
-    flex-direction: column;
-  }
-
-  .accept-payment-btn,
-  .decline-payment-btn {
-    min-width: auto;
-    width: 100%;
   }
 }
 
 @media (max-width: 480px) {
   .proof-payment-modal-header {
-    padding: 1rem;
+    padding: 16px 20px;
   }
 
   .proof-payment-modal-body {
-    padding: 1rem;
+    padding: 20px;
   }
 
-  .proof-details-section {
-    padding: 1rem;
+  .modal-footer {
+    padding: 16px 20px;
   }
 }
 

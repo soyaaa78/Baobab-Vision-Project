@@ -1,0 +1,394 @@
+/* Modern Login Page Styles - Inspired by reference design */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.login-container {
+  display: flex;
+  height: 100vh;
+  font-family: "Arial", sans-serif;
+}
+
+/* Left Side - Simple Brand Panel */
+.login-left {
+  width: 35%;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.brand-content {
+  text-align: center;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #6366f1;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  font-family: "Arial", sans-serif;
+}
+
+/* Right Side - Form with Gradient Background */
+.login-right {
+  flex: 1;
+  background: linear-gradient(135deg, #eab676 0%, #a9927d 50%, #8b7355 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-right::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #eab676 0%, #a9927d 50%, #8b7355 100%);
+  border-radius: 0 0 0 100px;
+  z-index: 1;
+}
+
+.form-container {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  z-index: 2;
+}
+
+.form-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 8px;
+  text-align: left;
+  font-family: "Arial", sans-serif;
+}
+
+.form-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+/* Form Styles */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 16px;
+  color: #9ca3af;
+  font-size: 16px;
+  z-index: 2;
+}
+
+.form-input {
+  width: 100%;
+  padding: 16px 16px 16px 48px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  background-color: #f9fafb;
+  font-family: "Arial", sans-serif;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #eab676;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(234, 182, 118, 0.1);
+}
+
+.form-input::placeholder {
+  color: #9ca3af;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 16px;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 16px;
+  transition: color 0.3s ease;
+}
+
+.password-toggle:hover {
+  color: #eab676;
+}
+
+/* Form Options */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.checkbox-container input[type="checkbox"] {
+  margin-right: 8px;
+  accent-color: #eab676;
+}
+
+.forgot-password {
+  color: #eab676;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+  color: #a9927d;
+  text-decoration: underline;
+}
+
+/* Buttons */
+.login-btn {
+  background: #6366f1;
+  color: white;
+  border: none;
+  padding: 16px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+  font-family: "Arial", sans-serif;
+}
+
+.login-btn:hover {
+  background: #5048e5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.resend-btn {
+  background: transparent;
+  color: #eab676;
+  border: 2px solid #eab676;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+  font-family: "Arial", sans-serif;
+}
+
+.resend-btn:hover {
+  background: #eab676;
+  color: white;
+}
+
+/* Sign up link */
+.signup-link {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.signup-text {
+  color: #6366f1;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.signup-text:hover {
+  color: #5048e5;
+  text-decoration: underline;
+}
+
+/* Social Login */
+.social-login {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.social-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.social-btn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  font-size: 16px;
+}
+
+.social-btn.facebook {
+  background-color: #1877f2;
+}
+
+.social-btn.facebook:hover {
+  background-color: #166fe5;
+  transform: translateY(-2px);
+}
+
+.social-btn.twitter {
+  background-color: #1da1f2;
+}
+
+.social-btn.twitter:hover {
+  background-color: #1a91da;
+  transform: translateY(-2px);
+}
+
+.social-btn.google {
+  background-color: #dd4b39;
+}
+
+.social-btn.google:hover {
+  background-color: #c23321;
+  transform: translateY(-2px);
+}
+
+/* Message Box */
+.form-message-box {
+  margin-top: 16px;
+}
+
+.form-error,
+.form-success {
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.form-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.form-success {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  .login-left {
+    width: 100%;
+    padding: 20px;
+    min-height: auto;
+  }
+
+  .login-right {
+    flex: 1;
+    padding: 20px;
+    border-radius: 0;
+  }
+
+  .login-right::before {
+    border-radius: 0;
+  }
+
+  .form-container {
+    padding: 30px 20px;
+    max-width: 100%;
+  }
+
+  .form-title {
+    font-size: 24px;
+  }
+
+  .form-options {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-left {
+    padding: 16px;
+  }
+
+  .login-right {
+    padding: 16px;
+  }
+
+  .form-container {
+    padding: 24px 16px;
+  }
+
+  .form-title {
+    font-size: 20px;
+  }
+
+  .social-buttons {
+    gap: 8px;
+  }
+
+  .social-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+  }
+}
