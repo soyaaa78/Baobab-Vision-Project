@@ -219,13 +219,27 @@ const EditEyeglassPage = () => {
     setProductImages((prev) => [...prev, ...newPreviews]);
   };
 
-  const handleColorwayImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    const newPreviews = files.map((file) => ({
-      id: URL.createObjectURL(file),
-      url: URL.createObjectURL(file),
-    }));
-    setColorwayImages((prev) => [...prev, ...newPreviews]);
+  // Per-colorway image drag-and-drop
+  const handleColorwayImageDrop = (e, optionIndex) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setForm((prev) => {
+      const updated = [...prev.colorOptions];
+      updated[optionIndex].imageFile = file;
+      return { ...prev, colorOptions: updated };
+    });
+  };
+
+  // Per-colorway image input change
+  const handleColorwayImageChange = (e, optionIndex) => {
+    const file = e.target.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setForm((prev) => {
+      const updated = [...prev.colorOptions];
+      updated[optionIndex].imageFile = file;
+      return { ...prev, colorOptions: updated };
+    });
   };
 
   const handleDeleteProductImage = (idToRemove) => {
@@ -492,10 +506,12 @@ const EditEyeglassPage = () => {
 
   // Update handler
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    // Validate color options per type
+    // Validate color options
     for (const [idx, opt] of form.colorOptions.entries()) {
       const type = opt.type || "solid";
       const count = (opt.colors || []).length;
@@ -508,6 +524,7 @@ const EditEyeglassPage = () => {
           }: Solid Color requires exactly 1 color.`,
           variant: "error",
         });
+        setIsSubmitting(false);
         return;
       }
       if ((type === "split" || type === "swatch") && count !== 2) {
@@ -519,129 +536,81 @@ const EditEyeglassPage = () => {
           } requires exactly 2 colors.`,
           variant: "error",
         });
+        setIsSubmitting(false);
+        return;
+      }
+      if (!opt.imageFile) {
+        setModal({
+          open: true,
+          title: "Missing Colorway Image",
+          message: `Color Option ${idx + 1}: Image is required.`,
+          variant: "error",
+        });
+        setIsSubmitting(false);
         return;
       }
     }
 
-    setIsSubmitting(true);
+    // Build FormData for all fields and files
+    const formData = new FormData();
+    Object.entries(form).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, value);
+      }
+    });
+
+    // Add product images
+    productImages.forEach((img) => {
+      if (img.file) formData.append("productImages", img.file);
+    });
+
+    // Add colorway images and models
+    form.colorOptions.forEach((opt, idx) => {
+      if (opt.imageFile)
+        formData.append(
+          "colorwayImages",
+          opt.imageFile,
+          `colorway_${idx}_${opt.imageFile.name}`
+        );
+      if (colorwayModelFiles[idx] && colorwayModelFiles[idx].rawFile) {
+        formData.append(
+          "colorwayModels3d",
+          colorwayModelFiles[idx].rawFile,
+          `colorway_${idx}_${colorwayModelFiles[idx].rawFile.name}`
+        );
+      }
+    });
+
+    // Add product ID for update
+    formData.append("id", id);
+
     try {
-      const updatedEyeglass = {};
-      if (form.name !== eyeglass.name) updatedEyeglass.name = form.name;
-      if (form.description !== eyeglass.description)
-        updatedEyeglass.description = form.description;
-      if (form.price !== eyeglass.price.toString()) {
-        updatedEyeglass.price = parseFloat(form.price);
-      }
-
-      // Only include specs and lensOptions if they have changed
-      if (JSON.stringify(form.specs) !== JSON.stringify(eyeglass.specs)) {
-        updatedEyeglass.specs = form.specs || [];
-      }
-      if (
-        JSON.stringify(form.lensOptions) !==
-        JSON.stringify(eyeglass.lensOptions)
-      ) {
-        updatedEyeglass.lensOptions = form.lensOptions || [];
-      }
-      if (form.stock !== eyeglass.stock) updatedEyeglass.stock = form.stock;
-      if (form.recommendedFor !== eyeglass.recommendedFor)
-        updatedEyeglass.recommendedFor = form.recommendedFor;
-
-      const newImageUrls = productImages.map((img) => img.url);
-      if (JSON.stringify(newImageUrls) !== JSON.stringify(eyeglass.imageUrls)) {
-        updatedEyeglass.imageUrls = newImageUrls;
-      }
-      const newColorOptions = colorwayImages.map((img) => ({
-        name: img.name || "",
-        imageUrl: img.url,
-      }));
-      const oldColorOptions = (eyeglass.colorOptions || []).map((opt) => ({
-        name: opt.name || "",
-        imageUrl: opt.imageUrl,
-      }));
-      if (JSON.stringify(newColorOptions) !== JSON.stringify(oldColorOptions)) {
-        updatedEyeglass.colorOptions = newColorOptions;
-      }
-      if (
-        JSON.stringify(form.colorOptions) !==
-        JSON.stringify(eyeglass.colorOptions)
-      ) {
-        updatedEyeglass.colorOptions = form.colorOptions || [];
-      }
-      // Handle colorOptions with 3D models - ensure removals are tracked
-      const updatedColorOptions = form.colorOptions.map((opt, index) => {
-        const modelFile = colorwayModelFiles[index];
-        const result = { ...opt };
-
-        if (modelFile === null) {
-          // Model was explicitly removed
-          result.model3dUrl = null;
-        } else if (modelFile && modelFile.originalUrl) {
-          // Existing model kept
-          result.model3dUrl = modelFile.originalUrl;
-        } else if (modelFile && modelFile.rawFile) {
-          // New model will be uploaded later
-          // Keep existing model3dUrl for now, will be updated after upload
-        }
-
-        return result;
+      await axios.put(`${SERVER_URL}/api/products?id=${id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          "Content-Type": "multipart/form-data",
+        },
       });
-
-      // Collect any new model files to append to the main request
-      const pendingFiles = (colorwayModelFiles || [])
-        .map((entry, idx) => ({ f: entry?.rawFile, idx }))
-        .filter(({ f }) => f instanceof File);
-
-      // Always include colorOptions in update to handle model removals. New models will be handled server-side.
-      updatedEyeglass.colorOptions = updatedColorOptions;
-
-      // Always include colorOptions in update to handle model removals (new models handled server-side)
-      updatedEyeglass.colorOptions = updatedColorOptions;
-
-      // Build FormData for fields (no 3D files attached here)
-      const formData = new FormData();
-      Object.entries(updatedEyeglass).forEach(([k, v]) => {
-        if (k === "lensOptions" || k === "specs" || k === "colorOptions") {
-          formData.append(k, JSON.stringify(v));
-        } else if (v !== undefined) {
-          formData.append(k, v);
-        }
-      });
-
-      // Append any new per-colorway 3D model files and their target indices
-      if (pendingFiles.length) {
-        const order = [];
-        pendingFiles.forEach(({ f, idx }) => {
-          formData.append("colorwayModels3d", f);
-          order.push(idx);
-        });
-        formData.append("colorwayModelTargets", JSON.stringify(order));
-      }
-
-      await axios.put(
-        `${SERVER_URL}/api/products?id=${eyeglass._id}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-          },
-        }
-      );
       setModal({
         open: true,
-        title: "Product Updated",
-        message: `"${form.name}" has been updated successfully.`,
+        title: "Success",
+        message: "Product updated successfully.",
         variant: "success",
-        onPrimary: () => window.location.reload(),
+        onPrimary: handleBack,
       });
-    } catch (error) {
-      console.error(error);
-      const msg = error.response?.data?.message || "Failed to update eyeglass.";
+    } catch (err) {
+      const errorMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to update product.";
       setModal({
         open: true,
-        title: "Update Failed",
-        message: msg,
+        title: "Error",
+        message: errorMsg,
         variant: "error",
+        onPrimary: null,
       });
     } finally {
       setIsSubmitting(false);
@@ -797,39 +766,7 @@ const EditEyeglassPage = () => {
 
                     <div>
                       <label>Colorway Images</label>
-                      <div className="isdc-img-grid" id="colorway-images">
-                        {colorwayImages.map((img, idx) => (
-                          <div key={img.id} className="isdc-img-box">
-                            <img
-                              src={img.url}
-                              alt={img.name || `Colorway ${idx}`}
-                            />
-                            <a
-                              type="button"
-                              className="isd-img-delete-btn fade"
-                              onClick={() => handleDeleteColorwayImage(img.id)}
-                            >
-                              <div className="isd-img-delete-btn-text">
-                                <p>X</p>
-                                <p>Remove</p>
-                              </div>
-                            </a>
-                          </div>
-                        ))}
-                      </div>
-
-                      <label className="isdc-img-upload-box">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleColorwayImageChange}
-                        />
-                        <span>
-                          +<br />
-                          Add Product
-                        </span>
-                      </label>
+                      {/* Colorway images are now handled per colorway option below */}
                     </div>
 
                     {/* Removed legacy top-level Virtual Try-On 3D Model input */}
@@ -1367,7 +1304,60 @@ const EditEyeglassPage = () => {
                               "Swatch: exactly 2 colors (radial preview)."}
                           </div>
                         </div>
-                        {/* Virtual Try-On 3D Model */}
+                        {/* Per-colorway image upload and preview */}
+                        <div style={{ marginBottom: "10px" }}>
+                          <label>
+                            Colorway Image{" "}
+                            <span style={{ color: "red" }}>*</span>
+                          </label>
+                          <div
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) =>
+                              handleColorwayImageDrop(e, optionIndex)
+                            }
+                            style={{
+                              border: "2px dashed #ccc",
+                              padding: "10px",
+                              margin: "10px 0",
+                              borderRadius: "6px",
+                              background: "#fafafa",
+                              textAlign: "center",
+                              cursor: "pointer",
+                            }}
+                            onClick={() =>
+                              document
+                                .getElementById(`cwimg-${optionIndex}`)
+                                ?.click()
+                            }
+                          >
+                            {option.imageFile ? (
+                              <img
+                                src={URL.createObjectURL(option.imageFile)}
+                                alt="Preview"
+                                style={{
+                                  width: "100px",
+                                  height: "100px",
+                                  objectFit: "cover",
+                                  borderRadius: "4px",
+                                  border: "1px solid #ddd",
+                                }}
+                              />
+                            ) : (
+                              <span>
+                                Drag & drop image here, or click to browse
+                              </span>
+                            )}
+                            <input
+                              id={`cwimg-${optionIndex}`}
+                              type="file"
+                              accept="image/*"
+                              style={{ display: "none" }}
+                              onChange={(e) =>
+                                handleColorwayImageChange(e, optionIndex)
+                              }
+                            />
+                          </div>
+                        </div>
                         <div style={{ marginTop: "10px" }}>
                           <label>Virtual Try-On 3D Model (optional)</label>
                           <div
