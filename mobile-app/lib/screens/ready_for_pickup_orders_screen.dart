@@ -124,6 +124,27 @@ class _ReadyForPickupOrdersScreenState extends State<ReadyForPickupOrdersScreen>
             : int.tryParse(product['quantity']?.toString() ?? '') ?? 1;
         final prodPrice = product['price']?.toString() ?? '';
 
+        // Format pickupTime
+        String formattedPickupTime = '';
+        final rawPickupTime = order['pickupTime'];
+        if (rawPickupTime != null && rawPickupTime.toString().isNotEmpty) {
+          try {
+            final dt = DateTime.tryParse(rawPickupTime.toString());
+            if (dt != null) {
+              final localDt = dt.toLocal();
+              final hour = localDt.hour % 12 == 0 ? 12 : localDt.hour % 12;
+              final minute = localDt.minute.toString().padLeft(2, '0');
+              final ampm = localDt.hour >= 12 ? 'PM' : 'AM';
+              formattedPickupTime =
+                  '${localDt.month}/${localDt.day}/${localDt.year} $hour:$minute $ampm';
+              // For more advanced formatting, use DateFormat from intl
+              // formattedPickupTime = DateFormat('MMM d, yyyy h:mm a').format(localDt);
+            }
+          } catch (_) {
+            formattedPickupTime = rawPickupTime.toString();
+          }
+        }
+
         return {
           'productId': productIdForCard,
           'prodName': prodName,
@@ -136,7 +157,7 @@ class _ReadyForPickupOrdersScreenState extends State<ReadyForPickupOrdersScreen>
           'deliveryMethod': order['deliveryMethod']?.toString() ?? '',
           'paymentMethod': order['paymentMethod']?.toString() ?? '',
           'pickupLocation': order['pickupLocation']?.toString() ?? '',
-          'pickupTime': order['pickupTime']?.toString() ?? '',
+          'pickupTime': formattedPickupTime,
         };
       });
     }).toList();

@@ -90,6 +90,13 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Rating",
     },
+    pickupLocation: {
+      type: String,
+      trim: true,
+    },
+    pickupTime: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
