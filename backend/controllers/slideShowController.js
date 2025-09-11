@@ -1,21 +1,23 @@
 const SlideshowImage = require("../models/SlideshowImage");
-const fs = require("fs");
-const path = require("path");
+const { uploadSingleImageHelper } = require("./firebaseStorageController");
 
-// POST new image upload
+// POST new image upload (to Firebase)
 const uploadImage = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded" });
   }
 
   try {
-    // Normalize Windows backslashes to forward slashes for URLs
-    const normalizedPath = req.file.path.replace(/\\/g, "/");
+    // Upload image to Firebase Storage
+    const firebaseUrl = await uploadSingleImageHelper(
+      req.file,
+      "slideshow/images"
+    );
     // Compute next position (append to end)
     const last = await SlideshowImage.findOne().sort({ position: -1 });
     const nextPosition = last ? last.position + 1 : 1;
     const newImage = new SlideshowImage({
-      imagePath: normalizedPath,
+      imagePath: firebaseUrl,
       position: nextPosition,
     });
     await newImage.save();
@@ -37,21 +39,26 @@ const getAllImages = async (req, res) => {
   }
 };
 
-// DELETE image by id (removes file and db record)
+// DELETE image by id (removes from Firebase and db record)
+const {
+  deleteImage: deleteFirebaseImage,
+} = require("./firebaseStorageController");
 const deleteImage = async (req, res) => {
   const { id } = req.params;
   try {
     const doc = await SlideshowImage.findById(id);
     if (!doc) return res.status(404).json({ message: "Image not found" });
 
-    // Attempt to delete file if exists
+    // Delete from Firebase Storage
     if (doc.imagePath) {
-      const filePath = path.resolve(process.cwd(), doc.imagePath);
-      fs.unlink(filePath, (err) => {
-        if (err && err.code !== "ENOENT") {
-          console.warn("Failed to delete image file:", err.message);
-        }
-      });
+      // Use the Firebase controller to delete by URL
+      await deleteFirebaseImage(
+        { body: { imageUrl: doc.imagePath } },
+        {
+          status: () => ({ json: () => {} }),
+        },
+        () => {}
+      );
     }
 
     await SlideshowImage.deleteOne({ _id: id });
