@@ -702,12 +702,11 @@ const AllOrdersPage = () => {
         onClose={() => setPickupModalOpen(false)}
         order={pickupTargetOrder}
         onConfirm={async ({ pickupLocation, pickupDateTime }) => {
-          // Don’t touch backend shape: send extra payload, backend can ignore
           const orderId = pickupTargetOrder?._id;
           if (!orderId) return;
           await updateOrderStatus(orderId, "ready_to_pickup", {
             pickupLocation,
-            pickupDateTime,
+            pickupTime: pickupDateTime,
           });
           setPickupModalOpen(false);
           setPickupTargetOrder(null);
