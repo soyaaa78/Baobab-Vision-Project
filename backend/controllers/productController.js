@@ -67,6 +67,12 @@ exports.uploadProductFiles = uploadProductFiles;
 
 // Create product
 exports.createProduct = catchAsync(async (req, res, next) => {
+  // Staff/admin only
+  if (!req.user || !["system_admin", "staff_product"].includes(req.user.role)) {
+    return res
+      .status(403)
+      .json({ message: "Only staff or admin can create products" });
+  }
   const {
     name,
     description,
@@ -223,14 +229,22 @@ exports.createProduct = catchAsync(async (req, res, next) => {
     });
 
     await product.save();
-    // Audit: add product
-    logEvent(req, {
-      eventType: "product",
-      action: `Created product (${product.name})`,
-      targetModel: "Product",
-      targetId: product._id,
-      newValues: product.toObject(),
-    });
+    try {
+      logEvent(req, {
+        eventType: "product",
+        action: `Created product (${product.name})`,
+        targetModel: "Product",
+        targetId: product._id,
+        oldValues: null,
+        newValues: product.toObject(),
+        metadata: {
+          createdBy: req.user?.id || req.userId,
+        },
+        actor: req.user || null,
+      });
+    } catch (e) {
+      // best-effort logging; do not block response
+    }
     res.status(201).json({
       message: "Product created successfully!",
       product,
@@ -394,15 +408,23 @@ exports.addProductToRecommended = async (req, res) => {
 
     const oldValues = { recommendedFor: !recommendedFor };
     await product.save();
-    // Audit: recommended toggle
-    logEvent(req, {
-      eventType: "product",
-      action: `Updated product recommendation status (${product.name})`,
-      targetModel: "Product",
-      targetId: product._id,
-      oldValues,
-      newValues: { recommendedFor },
-    });
+    // Audit: recommended toggle (ratingController style)
+    try {
+      logEvent(req, {
+        eventType: "product",
+        action: `Updated product recommendation status (${product.name})`,
+        targetModel: "Product",
+        targetId: product._id,
+        oldValues,
+        newValues: { recommendedFor },
+        metadata: {
+          updatedBy: req.user?.id || req.userId,
+        },
+        actor: req.user || null,
+      });
+    } catch (e) {
+      // best-effort logging; do not block response
+    }
     res
       .status(200)
       .json({ message: "Product updated to recommended status", product });
@@ -414,6 +436,12 @@ exports.addProductToRecommended = async (req, res) => {
 
 // Update product by ID
 exports.updateProduct = async (req, res) => {
+  // Staff/admin only
+  if (!req.user || !["system_admin", "staff_product"].includes(req.user.role)) {
+    return res
+      .status(403)
+      .json({ message: "Only staff or admin can update products" });
+  }
   const { id } = req.query;
   try {
     const product = await Product.findById(id);
@@ -541,15 +569,23 @@ exports.updateProduct = async (req, res) => {
       }
     }
     await product.save();
-    // Audit: edit product
-    logEvent(req, {
-      eventType: "product",
-      action: `Updated product details (${product.name})`,
-      targetModel: "Product",
-      targetId: product._id,
-      oldValues,
-      newValues: product.toObject(),
-    });
+    // Audit: edit product (ratingController style)
+    try {
+      logEvent(req, {
+        eventType: "product",
+        action: `Updated product details (${product.name})`,
+        targetModel: "Product",
+        targetId: product._id,
+        oldValues,
+        newValues: product.toObject(),
+        metadata: {
+          updatedBy: req.user?.id || req.userId,
+        },
+        actor: req.user || null,
+      });
+    } catch (e) {
+      // best-effort logging; do not block response
+    }
     res.status(200).json({ message: "Product updated", product });
   } catch (err) {
     res.status(500).json({ message: "Internal server error", err });
@@ -558,20 +594,41 @@ exports.updateProduct = async (req, res) => {
 
 // Delete product by ID
 exports.deleteProduct = async (req, res) => {
+  // Staff/admin only
+  if (!req.user || !["system_admin", "staff_product"].includes(req.user.role)) {
+    return res
+      .status(403)
+      .json({ message: "Only staff or admin can delete products" });
+  }
+  // Staff/admin only
+  if (!req.user || !["system_admin", "staff_product"].includes(req.user.role)) {
+    return res.status(403).json({
+      message: "Only staff or admin can update product recommendation",
+    });
+  }
   const { id } = req.query;
   try {
     const product = await Product.findByIdAndDelete(id);
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
-    // Audit: delete product
-    logEvent(req, {
-      eventType: "product",
-      action: `Deleted product (${product.name || id})`,
-      targetModel: "Product",
-      targetId: id,
-      oldValues: product,
-    });
+    // Audit: delete product (ratingController style)
+    try {
+      logEvent(req, {
+        eventType: "product",
+        action: `Deleted product (${product.name || id})`,
+        targetModel: "Product",
+        targetId: id,
+        oldValues: product,
+        newValues: null,
+        metadata: {
+          deletedBy: req.user?.id || req.userId,
+        },
+        actor: req.user || null,
+      });
+    } catch (e) {
+      // best-effort logging; do not block response
+    }
     res.status(200).json({ message: "Product deleted", product });
   } catch (err) {
     res.status(500).json({ message: "Internal server error", err });

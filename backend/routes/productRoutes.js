@@ -14,9 +14,10 @@ const {
   getProductReviews,
   getProductsWith3DModels,
 } = require("../controllers/productController");
+const authenticate = require("../middlewares/adminAuthMiddleware").verifyToken;
 
 // Create product (POST /api/products) - with file upload
-router.post("/", uploadProductFiles, createProduct);
+router.post("/", authenticate, uploadProductFiles, createProduct);
 
 // GET all products (GET /api/products)
 router.get("/", getAllProducts);
@@ -28,12 +29,12 @@ router.get("/for-you", getRecommendedProducts);
 router.get("/models", getProductsWith3DModels);
 
 // Admin adds product to recommended (POST /api/products/recommended)
-router.post("/recommended", addProductToRecommended);
+router.post("/recommended", authenticate, addProductToRecommended);
 
-// Add recommendation endpoint
+// recommendation endpoint
 router.post("/recommend", recommendEyewear);
 
-// Add face shape statistics endpoint
+// face shape statistics endpoint
 router.get("/face-shape-stats", getFaceShapeStats);
 
 router.get("/order-stats", getProductStatistics);
@@ -41,8 +42,8 @@ router.get("/order-stats", getProductStatistics);
 // Reviews + rating stats for a product
 router.get("/:id/reviews", getProductReviews);
 
-router.put("/", uploadProductFiles, updateProduct);
+router.put("/", authenticate, uploadProductFiles, updateProduct);
 
-router.delete("/", deleteProduct);
+router.delete("/", authenticate, deleteProduct);
 
 module.exports = router;

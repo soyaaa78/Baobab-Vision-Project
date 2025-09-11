@@ -14,15 +14,16 @@ import "../styles/AuditLogDetailModal.css";
 const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
   if (!isOpen || !log) return null;
 
+  // Format date as: Sep 11, 2025, 2:30 PM
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString("en-US", {
+    const d = new Date(dateString);
+    return d.toLocaleString("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      second: "2-digit",
-      timeZoneName: "short",
+      hour12: true,
     });
   };
 
@@ -76,6 +77,34 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
   const hasChanges = log.oldValues || log.newValues;
   const hasMetadata = log.metadata && Object.keys(log.metadata).length > 0;
 
+  // User-friendly labels for event type and action
+  const eventTypeLabels = {
+    auth: "Login/Logout",
+    product: "Product",
+    user: "User",
+    staff: "Staff",
+    order: "Order",
+    payment: "Payment",
+    admin: "Admin",
+    rating: "Rating",
+  };
+  const actionLabels = {
+    create: "Created",
+    update: "Updated",
+    delete: "Deleted",
+    login: "Logged In",
+    logout: "Logged Out",
+    approve: "Approved",
+    decline: "Declined",
+    enable: "Enabled",
+    disable: "Disabled",
+    status: "Status Changed",
+    ready: "Ready",
+    pickup: "Picked Up",
+    complete: "Completed",
+    cancel: "Cancelled",
+  };
+
   return (
     <div className="audit-modal-overlay" onClick={onClose}>
       <div className="audit-modal" onClick={(e) => e.stopPropagation()}>
@@ -94,7 +123,7 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
               <div className="audit-info-item">
                 <FontAwesomeIcon icon={faCalendar} className="info-icon" />
                 <div>
-                  <label>Timestamp</label>
+                  <label>Date & Time</label>
                   <span>{formatDate(log.createdAt)}</span>
                 </div>
               </div>
@@ -102,10 +131,16 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
               <div className="audit-info-item">
                 <FontAwesomeIcon icon={faUser} className="info-icon" />
                 <div>
-                  <label>Actor</label>
+                  <label>User</label>
                   <span>{getActorDisplayName(log)}</span>
                   {log.actorRole && (
-                    <span className="actor-role-detail">({log.actorRole})</span>
+                    <span className="actor-role-detail">
+                      (
+                      {log.actorRole
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (c) => c.toUpperCase())}
+                      )
+                    </span>
                   )}
                 </div>
               </div>
@@ -113,14 +148,14 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
               <div className="audit-info-item">
                 <FontAwesomeIcon icon={faTags} className="info-icon" />
                 <div>
-                  <label>Event Type</label>
+                  <label>Event</label>
                   <span
                     className="event-type-badge-detail"
                     style={{
                       backgroundColor: getEventTypeColor(log.eventType),
                     }}
                   >
-                    {log.eventType}
+                    {eventTypeLabels[log.eventType] || log.eventType}
                   </span>
                 </div>
               </div>
@@ -133,28 +168,13 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
                     className="action-badge-detail"
                     style={{ backgroundColor: getActionColor(log.action) }}
                   >
-                    {log.action}
+                    {actionLabels[log.action] ||
+                      log.action
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (c) => c.toUpperCase())}
                   </span>
                 </div>
               </div>
-
-              {log.targetModel && (
-                <div className="audit-info-item">
-                  <div>
-                    <label>Target Model</label>
-                    <span>{log.targetModel}</span>
-                  </div>
-                </div>
-              )}
-
-              {log.targetId && (
-                <div className="audit-info-item">
-                  <div>
-                    <label>Target ID</label>
-                    <span className="target-id-detail">{log.targetId}</span>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
