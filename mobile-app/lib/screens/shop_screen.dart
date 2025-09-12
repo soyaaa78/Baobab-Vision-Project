@@ -156,9 +156,9 @@ class _ShopScreenState extends State<ShopScreen> {
         });
         setState(() {
           slideshowImages = data
-            .map((item) => item['imagePath']?.toString() ?? '')
-            .where((url) => url.isNotEmpty)
-            .toList();
+              .map((item) => item['imagePath']?.toString() ?? '')
+              .where((url) => url.isNotEmpty)
+              .toList();
         });
       } else {
         print('Failed to load slideshow images');

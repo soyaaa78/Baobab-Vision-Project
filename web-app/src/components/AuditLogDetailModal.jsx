@@ -148,7 +148,7 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
               <div className="audit-info-item">
                 <FontAwesomeIcon icon={faTags} className="info-icon" />
                 <div>
-                  <label>Event</label>
+                  <label>Activity Type</label>
                   <span
                     className="event-type-badge-detail"
                     style={{
@@ -163,7 +163,7 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
               <div className="audit-info-item">
                 <FontAwesomeIcon icon={faExchangeAlt} className="info-icon" />
                 <div>
-                  <label>Action</label>
+                  <label>Activity</label>
                   <span
                     className="action-badge-detail"
                     style={{ backgroundColor: getActionColor(log.action) }}
@@ -193,7 +193,7 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
               <div className="audit-info-item">
                 <FontAwesomeIcon icon={faDesktop} className="info-icon" />
                 <div>
-                  <label>User Agent</label>
+                  <label>Staff's Device</label>
                   <span className="user-agent-text">
                     {log.userAgent || "N/A"}
                   </span>
@@ -202,40 +202,130 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
             </div>
           </div>
 
-          {/* Changes Section */}
-          {hasChanges && (
-            <div className="audit-section">
-              <h3>Changes</h3>
-              <div className="changes-container">
-                {log.oldValues && (
-                  <div className="change-block">
-                    <h4>Previous Values</h4>
-                    <pre className="json-display old-values">
-                      {formatJson(log.oldValues)}
-                    </pre>
-                  </div>
-                )}
+          {/* Changes Section - show only fields that changed in a table, hide columns if all values are None */}
+          {hasChanges &&
+            (() => {
+              const oldVals = log.oldValues || {};
+              const newVals = log.newValues || {};
 
-                {log.newValues && (
-                  <div className="change-block">
-                    <h4>New Values</h4>
-                    <pre className="json-display new-values">
-                      {formatJson(log.newValues)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+              const excludeFields = ["createdAt", "updatedAt", "__v"];
+              const allKeys = Array.from(
+                new Set([...Object.keys(oldVals), ...Object.keys(newVals)])
+              );
 
-          {/* Metadata Section */}
+              // Deep equality check for objects/arrays
+              function isDeepEqual(a, b) {
+                if (a === b) return true;
+                if (typeof a !== typeof b) return false;
+                if (typeof a === "object" && a !== null && b !== null) {
+                  // Array
+                  if (Array.isArray(a) && Array.isArray(b)) {
+                    if (a.length !== b.length) return false;
+                    for (let i = 0; i < a.length; i++) {
+                      if (!isDeepEqual(a[i], b[i])) return false;
+                    }
+                    return true;
+                  }
+                  // Object
+                  const aKeys = Object.keys(a);
+                  const bKeys = Object.keys(b);
+                  if (aKeys.length !== bKeys.length) return false;
+                  for (let k of aKeys) {
+                    if (!isDeepEqual(a[k], b[k])) return false;
+                  }
+                  return true;
+                }
+                // Fallback for primitives
+                return String(a) === String(b);
+              }
+
+              // Only show fields that have changed and are not excluded
+              const changedRows = allKeys
+                .filter((key) => {
+                  if (excludeFields.includes(key)) return false;
+                  if (oldVals[key] === undefined && newVals[key] === undefined)
+                    return false;
+                  if (isDeepEqual(oldVals[key], newVals[key])) return false;
+                  return true;
+                })
+                .map((key) => ({
+                  key,
+                  oldValue:
+                    oldVals[key] === undefined
+                      ? "None"
+                      : typeof oldVals[key] === "object"
+                      ? formatJson(oldVals[key])
+                      : String(oldVals[key]),
+                  newValue:
+                    newVals[key] === undefined
+                      ? "None"
+                      : typeof newVals[key] === "object"
+                      ? formatJson(newVals[key])
+                      : String(newVals[key]),
+                }));
+
+              // Determine if all old or new values are 'None'
+              const allOldNone =
+                changedRows.length > 0 &&
+                changedRows.every((row) => row.oldValue === "None");
+              const allNewNone =
+                changedRows.length > 0 &&
+                changedRows.every((row) => row.newValue === "None");
+
+              if (changedRows.length === 0) return null;
+
+              return (
+                <div className="audit-section">
+                  <h3>Changes</h3>
+                  <div className="changes-table-container">
+                    <table className="changes-table">
+                      <thead>
+                        <tr>
+                          <th>Field</th>
+                          {!allOldNone && <th>Old Value</th>}
+                          {!allNewNone && <th>New Value</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {changedRows.map((row) => (
+                          <tr key={row.key}>
+                            <td>{row.key}</td>
+                            {!allOldNone && <td>{row.oldValue}</td>}
+                            {!allNewNone && <td>{row.newValue}</td>}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            })()}
+
+          {/* Metadata Section - show as table */}
           {hasMetadata && (
             <div className="audit-section">
               <h3>Additional Information</h3>
-              <div className="metadata-container">
-                <pre className="json-display metadata">
-                  {formatJson(log.metadata)}
-                </pre>
+              <div className="metadata-table-container">
+                <table className="metadata-table">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(log.metadata).map(([key, value]) => (
+                      <tr key={key}>
+                        <td>{key}</td>
+                        <td>
+                          {typeof value === "object"
+                            ? formatJson(value)
+                            : String(value)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
@@ -243,7 +333,7 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
           {/* Actor Details if available */}
           {log.actor && (
             <div className="audit-section">
-              <h3>Actor Details</h3>
+              <h3>Staff Details</h3>
               <div className="audit-info-grid">
                 {log.actor.firstname && (
                   <div className="audit-info-item">
