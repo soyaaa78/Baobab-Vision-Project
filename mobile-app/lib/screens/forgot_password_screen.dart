@@ -51,8 +51,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       }
     } catch (e) {
       customDialog(context,
-          title: 'Network Error',
-          content: 'Could not reach the server. Please try again.');
+          title: 'No Internet',
+          content: 'Unexpected error occurred. Please check your connection.');
     } finally {
       setState(() => _isLoading = false);
     }

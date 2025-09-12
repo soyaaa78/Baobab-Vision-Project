@@ -31,10 +31,6 @@ customDialog(BuildContext context, {required String title, required String conte
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            IconButton(
-              icon: Icon(Icons.close, color: Colors.black87),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
           ],
         ),
         content: Text(
@@ -85,13 +81,6 @@ customShowImageDialog(BuildContext context, {required String imageUrl}) {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: IconButton(
-                icon: Icon(Icons.close, color: Colors.black87),
-                onPressed: () => Navigator.of(context).pop(),
-              ),
-            ),
             ClipRRect(
               borderRadius: BorderRadius.circular(16.r),
               child: Container(
@@ -134,10 +123,14 @@ customOptionDialog(
   required String title,
   required String content,
   required Function onYes,
+  String? yesText, // <-- Optional label for the Yes button
 }) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
+      final String yesButtonText = yesText ?? "Yes";
+      final bool singleButtonMode = yesText != null;
+
       return AlertDialog(
         backgroundColor: WHITE_COLOR,
         shape: RoundedRectangleBorder(
@@ -158,10 +151,6 @@ customOptionDialog(
                 color: Colors.black87,
               ),
             ),
-            IconButton(
-              icon: Icon(Icons.close, color: Colors.black87),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
           ],
         ),
         content: CustomText(
@@ -171,21 +160,22 @@ customOptionDialog(
           maxLines: 6,
         ),
         actions: <Widget>[
-          OutlinedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.grey.shade400),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
+          if (!singleButtonMode) // Show "No" only if yesText not provided
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.grey.shade400),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 22.w, vertical: 12.h),
               ),
-              padding: EdgeInsets.symmetric(horizontal: 22.w, vertical: 12.h),
+              child: CustomText(
+                text: 'No',
+                color: Colors.black87,
+                fontSize: 15.sp,
+              ),
             ),
-            child: CustomText(
-              text: 'No',
-              color: Colors.black87,
-              fontSize: 15.sp,
-            ),
-          ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(context).pop();
@@ -199,7 +189,7 @@ customOptionDialog(
               padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 12.h),
             ),
             child: CustomText(
-              text: 'Yes',
+              text: yesButtonText,
               color: WHITE_COLOR,
               fontSize: 15.sp,
               fontWeight: FontWeight.w600,

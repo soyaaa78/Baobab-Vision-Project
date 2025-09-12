@@ -25,6 +25,7 @@ dependencies:
   google_mlkit_face_mesh_detection: ^0.4.1
   camera: ^0.10.5+5
   pretty_qr_code: ^3.5.0
+  connectivity_plus: ^6.0.3
 
 dev_dependencies:
   flutter_test:
