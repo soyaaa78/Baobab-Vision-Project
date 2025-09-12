@@ -7,6 +7,7 @@ import '../constants.dart';
 import '../widgets/custom_text.dart';
 import 'package:baobab_vision_project/services/order_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/custom_dialog.dart'; // ✅ Import your customDialog
 
 class CheckoutScreen extends StatefulWidget {
   final double totalAmount;
@@ -54,7 +55,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           'Barangay 295',
           'Barangay 296'
         ],
-        // ... (rest of your regions as-is)
       },
     },
     'Region 1': {
@@ -97,59 +97,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Submit order first
       await _submitOrder();
 
-      // Show confirmation instructions dialog then redirect to delivery orders screen
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text('Order Confirmed'),
-            content: Text(
-              "Your order will be delivered via ${selectedThirdPartyService}. Staff will contact you on your number immediately for further instructions. Note that if you didn't answer the call 3 times, the order will be disregarded or cancelled.",
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const DeliveryOrdersScreen()),
-                  );
-                },
-                child: Text('See Delivery Orders'),
-              ),
-            ],
-          );
-        },
+      // ✅ Use customDialog
+      customDialog(
+        context,
+        title: "Order Confirmed",
+        content:
+            "Your order will be delivered via ${selectedThirdPartyService}. Staff will contact you on your number immediately for further instructions. Note that if you didn't answer the call 3 times, the order will be disregarded or cancelled.",
       );
+
+      // After closing dialog, navigate
+      Future.delayed(Duration(milliseconds: 4000), () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+              builder: (context) => const DeliveryOrdersScreen()),
+        );
+      });
     } else {
       // Pick Up flow
       if (selectedPaymentMethod == 'Pay Cash') {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Order Confirmed'),
-              content: Text(
-                  'Please pay the exact total amount of cash upon pickup.'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => PendingOrdersScreen()),
-                    );
-                  },
-                  child: Text('See Orders'),
-                ),
-              ],
-            );
-          },
+        // ✅ Use customDialog
+        customDialog(
+          context,
+          title: "Order Confirmed",
+          content: "Please pay the exact total amount of cash upon pickup.",
         );
+
+        // After closing dialog, navigate
+        Future.delayed(Duration(milliseconds: 7000), () {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => PendingOrdersScreen()),
+          );
+        });
+
         _submitOrder();
       } else if (selectedPaymentMethod == 'GCASH') {
         Navigator.push(

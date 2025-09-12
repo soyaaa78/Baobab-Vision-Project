@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:connectivity_plus/connectivity_plus.dart'; // ✅ Added
 
 import '../constants.dart';
 import '../widgets/custom_inkwell_button.dart';
 import '../widgets/custom_text.dart';
+import '../widgets/custom_dialog.dart'; // ✅ Import custom_dialog
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -37,68 +39,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_isPrivacyAccepted) {
-      showErrorDialog('You must accept the Data Privacy Policy to continue.');
+      customDialog(context,
+          title: 'Failed',
+          content: 'You must accept the Data Privacy Policy to continue.');
       return;
     }
 
     if (passwordController.text != confirmpasswordController.text) {
-      showErrorDialog('Passwords do not match.');
+      customDialog(context,
+          title: 'Failed', content: 'Passwords do not match.');
       return;
     }
 
-    var url = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/auth/register');
-
-    var response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'firstname': firstnameController.text,
-        'lastname': lastnameController.text,
-        'email': emailController.text,
-        'username': usernameController.text,
-        'password': passwordController.text,
-      }),
-    );
-
-    var resData = json.decode(response.body);
-    if (response.statusCode == 201) {
-      // Show success dialog before navigating
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Success'),
-          content: const Text('Your account has been registered successfully.'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context); // Close the dialog
-                Navigator.pushReplacementNamed(context, '/login'); // Go to login
-              },
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      showErrorDialog(resData['message']);
+    // ✅ Check internet connection first
+    var connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult == ConnectivityResult.none) {
+      customDialog(context,
+          title: 'No Internet',
+          content:
+              'No internet connection. Please check your connection and try again.');
+      return;
     }
-  }
 
-  void showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Failed'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          )
-        ],
-      ),
-    );
+    try {
+      var url = Uri.parse(
+          'https://baobab-vision-project.onrender.com/api/auth/register');
+
+      var response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'firstname': firstnameController.text,
+          'lastname': lastnameController.text,
+          'email': emailController.text,
+          'username': usernameController.text,
+          'password': passwordController.text,
+        }),
+      );
+
+      var resData = json.decode(response.body);
+      if (response.statusCode == 201) {
+        // ✅ Use customDialog for success
+        customDialog(
+          context,
+          title: 'Success',
+          content: 'Your account has been registered successfully.',
+        );
+
+        // Navigate to login after a short delay
+        Future.delayed(const Duration(milliseconds: 600), () {
+          Navigator.pushReplacementNamed(context, '/login');
+        });
+      } else {
+        customDialog(context, title: 'Failed', content: resData['message']);
+      }
+    } catch (e) {
+      customDialog(context,
+          title: 'Network Connection',
+          content: 'Something went wrong. Please try again later.');
+    }
   }
 
   // Password strength checker
@@ -282,7 +281,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _isObscureConfirmPassword,
                   toggleObscure: () {
                     setState(() {
-                      _isObscureConfirmPassword = !_isObscureConfirmPassword;
+                      _isObscureConfirmPassword =
+                          !_isObscureConfirmPassword;
                     });
                   },
                   validator: (value) {
@@ -310,25 +310,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: const Text("Data Privacy Policy"),
-                              content: const SingleChildScrollView(
-                                child: Text(
+                          customDialog(context,
+                              title: "Data Privacy Policy",
+                              content:
                                   "By registering, you agree to our Data Privacy Policy. "
                                   "Your personal data will be collected and processed in compliance "
-                                  "with applicable laws.",
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text("Close"),
-                                )
-                              ],
-                            ),
-                          );
+                                  "with applicable laws.");
                         },
                         child: const Text.rich(
                           TextSpan(

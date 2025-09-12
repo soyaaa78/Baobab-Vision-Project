@@ -5,6 +5,7 @@ import 'package:baobab_vision_project/screens/cancelled_order_screen.dart';
 import 'package:baobab_vision_project/screens/completed_purchases_screen.dart';
 import 'package:baobab_vision_project/screens/delivery_order_screen.dart';
 import 'package:baobab_vision_project/screens/edit_profile_screen.dart';
+import 'package:baobab_vision_project/screens/faqs_screen.dart';
 import 'package:baobab_vision_project/screens/pending_orders_screen.dart';
 import 'package:baobab_vision_project/screens/processing_orders_screen.dart';
 import 'package:baobab_vision_project/screens/ready_for_pickup_orders_screen.dart';
@@ -279,7 +280,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     );
                   }),
                   _buildSettingsOption(
-                      Icons.help_outline, 'Help Centre', () {}),
+                      Icons.help_outline, 'FAQs', () {
+                        Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => FaqsScreen()),
+                    );
+                      }),
                   _buildSettingsOption(
                     Icons.logout,
                     'Logout',
