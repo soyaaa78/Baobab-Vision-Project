@@ -292,7 +292,7 @@ const AuditLogsPage = () => {
             <FontAwesomeIcon icon={faSearch} className="search-icon" />
             <input
               type="text"
-              placeholder="Search audit logs (actor, event, action, target, IP, etc.)"
+              placeholder="Search audit logs (staff, event, activity, target, IP, etc.)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
@@ -401,9 +401,9 @@ const AuditLogsPage = () => {
           <thead>
             <tr>
               <th>Date & Time</th>
-              <th>Actor</th>
-              <th>Event Type</th>
-              <th>Action</th>
+              <th>Staff</th>
+              <th>Activity Type</th>
+              <th>Activity</th>
               <th>IP Address</th>
               <th>Actions</th>
             </tr>
