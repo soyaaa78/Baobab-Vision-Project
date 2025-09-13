@@ -31,12 +31,11 @@ require("./models/Order/Rating");
 
 const PORT = process.env.PORT || 3001;
 
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173"; // fallback for local dev
 const app = express();
 
 app.use(
   cors({
-    origin: CLIENT_URL,
+    origin: [process.env.CLIENT_URL, "http://localhost:5173"],
     credentials: true, // allow cookies/auth headers if needed
   })
 );
