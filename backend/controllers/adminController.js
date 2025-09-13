@@ -11,6 +11,7 @@ exports.login = async (req, res) => {
   const { username, password } = req.body;
   try {
     const admin = await Admin.findOne({ username });
+
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
     const isMatch = await bcrypt.compare(password, admin.password);
@@ -25,10 +26,14 @@ exports.login = async (req, res) => {
     }
 
     if (!admin.isVerified) {
+      // Only update OTP fields, not the whole document
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       admin.otp = otp;
       admin.otpExpiry = Date.now() + 5 * 60 * 1000;
-      await admin.save();
+      await Admin.updateOne(
+        { _id: admin._id },
+        { $set: { otp: admin.otp, otpExpiry: admin.otpExpiry } }
+      );
 
       await sendEmail(
         admin.email,
@@ -199,10 +204,11 @@ exports.verifyStaffOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    admin.isVerified = true;
-    admin.otp = null;
-    admin.otpExpiry = null;
-    await admin.save();
+    // Only update relevant fields, do not save incomplete document
+    await Admin.updateOne(
+      { _id: admin._id },
+      { $set: { isVerified: true, otp: null, otpExpiry: null } }
+    );
 
     const jti = crypto.randomUUID();
     const tokenPayload = { id: admin._id, role: admin.role, jti };
