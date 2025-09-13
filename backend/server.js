@@ -33,15 +33,15 @@ const PORT = process.env.PORT || 3001;
 
 const app = express();
 
+app.use(express.json());
+// trust proxy for correct req.ip behind reverse proxies
+app.set("trust proxy", true);
 app.use(
   cors({
     origin: [process.env.CLIENT_URL, "http://localhost:5173"],
     credentials: true, // allow cookies/auth headers if needed
   })
 );
-app.use(express.json());
-// trust proxy for correct req.ip behind reverse proxies
-app.set("trust proxy", true);
 
 // Static folders
 app.use("/uploads", express.static("uploads"));
