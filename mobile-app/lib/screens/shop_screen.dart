@@ -147,8 +147,18 @@ class _ShopScreenState extends State<ShopScreen> {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
+        // Sort by position, fallback to createdAt if position is missing
+        data.sort((a, b) {
+          final posA = a['position'] ?? 0;
+          final posB = b['position'] ?? 0;
+          if (posA != posB) return posA.compareTo(posB);
+          return (a['createdAt'] ?? '').compareTo(b['createdAt'] ?? '');
+        });
         setState(() {
-          slideshowImages = data.map((item) => item.toString()).toList();
+          slideshowImages = data
+              .map((item) => item['imagePath']?.toString() ?? '')
+              .where((url) => url.isNotEmpty)
+              .toList();
         });
       } else {
         print('Failed to load slideshow images');
