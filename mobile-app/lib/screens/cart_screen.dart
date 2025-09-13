@@ -41,7 +41,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
     if (token == null || userId == null) return;
 
     final url = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/cart/$userId');
+        'https://baobab-vision-project-peox.onrender.com/api/cart/$userId');
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -108,8 +108,8 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
 
     setState(() {});
 
-    final url =
-        Uri.parse('https://baobab-vision-project.onrender.com/api/cart/update');
+    final url = Uri.parse(
+        'https://baobab-vision-project-peox.onrender.com/api/cart/update');
     final body = json.encode({
       'productId': productId,
       'colorOptionId': colorOptionId,
@@ -205,66 +205,77 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
                           quantity;
 
                       return Padding(
-  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
-  child: Material(
-    elevation: 0, // remove purple shadow
-    color: Colors.transparent,
-    child: InkWell(
-  borderRadius: BorderRadius.circular(15),
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => DetailScreen(
-          productId: product['_id'],
-          prodName: product['name'],
-          prodSize: '', // or provide a size if available
-          prodPrice: (product['price'] ?? 0).toString(),
-          numStars: product['numStars'] ?? 5,
-          quantity: quantity,
-          description:
-              product['description'] ?? 'No description',
-          prodImages: List<String>.from(product['imageUrls'] ?? []),
-          colorOptions: (product['colorOptions'] as List<dynamic>)
-              .map((e) => ColorOption.fromJson(e))
-              .toList(),
-          lensOptions: (product['lensOptions'] as List<dynamic>)
-              .map((e) => LensOption.fromJson(e))
-              .toList(),
-        ),
-      ),
-    );
-  },
-  child: Container(
-    decoration: BoxDecoration(
-      color: WHITE_COLOR,
-      borderRadius: BorderRadius.circular(15),
-    ),
-    child: CustomHorizontalProductCard(
-      productId: product['_id'],
-      prodName: product['name'],
-      prodPrice: 'PHP ${price.toStringAsFixed(2)}',
-      numStars: product['numStars'] ?? 5,
-      quantity: quantity,
-      description:
-          'Frame in ${colorOption['name']}, ${lensOption['label']}',
-      selectedColorName: colorOption['name'],
-      selectedLensLabel: lensOption['label'],
-      prodImages: List<String>.from(product['imageUrls'] ?? []),
-      colorOptions: (product['colorOptions'] as List<dynamic>)
-          .map((e) => ColorOption.fromJson(e))
-          .toList(),
-      lensOptions: (product['lensOptions'] as List<dynamic>)
-          .map((e) => LensOption.fromJson(e))
-          .toList(),
-      isCart: true,
-      onAdd: () => _updateQuantity(index, quantity + 1),
-      onRemove: () => _updateQuantity(index, quantity - 1),
-    ),
-  ),
-),
-  ),
-);
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 16.w, vertical: 6.h),
+                        child: Material(
+                          elevation: 0, // remove purple shadow
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(15),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DetailScreen(
+                                    productId: product['_id'],
+                                    prodName: product['name'],
+                                    prodSize:
+                                        '', // or provide a size if available
+                                    prodPrice:
+                                        (product['price'] ?? 0).toString(),
+                                    numStars: product['numStars'] ?? 5,
+                                    quantity: quantity,
+                                    description: product['description'] ??
+                                        'No description',
+                                    prodImages: List<String>.from(
+                                        product['imageUrls'] ?? []),
+                                    colorOptions: (product['colorOptions']
+                                            as List<dynamic>)
+                                        .map((e) => ColorOption.fromJson(e))
+                                        .toList(),
+                                    lensOptions: (product['lensOptions']
+                                            as List<dynamic>)
+                                        .map((e) => LensOption.fromJson(e))
+                                        .toList(),
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: WHITE_COLOR,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: CustomHorizontalProductCard(
+                                productId: product['_id'],
+                                prodName: product['name'],
+                                prodPrice: 'PHP ${price.toStringAsFixed(2)}',
+                                numStars: product['numStars'] ?? 5,
+                                quantity: quantity,
+                                description:
+                                    'Frame in ${colorOption['name']}, ${lensOption['label']}',
+                                selectedColorName: colorOption['name'],
+                                selectedLensLabel: lensOption['label'],
+                                prodImages: List<String>.from(
+                                    product['imageUrls'] ?? []),
+                                colorOptions:
+                                    (product['colorOptions'] as List<dynamic>)
+                                        .map((e) => ColorOption.fromJson(e))
+                                        .toList(),
+                                lensOptions:
+                                    (product['lensOptions'] as List<dynamic>)
+                                        .map((e) => LensOption.fromJson(e))
+                                        .toList(),
+                                isCart: true,
+                                onAdd: () =>
+                                    _updateQuantity(index, quantity + 1),
+                                onRemove: () =>
+                                    _updateQuantity(index, quantity - 1),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
                     },
                   ),
           ),

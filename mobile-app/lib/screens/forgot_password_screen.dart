@@ -23,7 +23,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> sendOtp() async {
     setState(() => _isLoading = true);
     final url = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/auth/request-otp');
+        'https://baobab-vision-project-peox.onrender.com/api/auth/request-otp');
 
     try {
       final response = await http.post(
