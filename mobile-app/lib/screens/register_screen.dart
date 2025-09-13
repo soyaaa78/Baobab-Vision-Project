@@ -63,7 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       var url = Uri.parse(
-          'https://baobab-vision-project.onrender.com/api/auth/register');
+          'https://baobab-vision-project-peox.onrender.com/api/auth/register');
 
       var response = await http.post(
         url,
@@ -281,8 +281,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   obscureText: _isObscureConfirmPassword,
                   toggleObscure: () {
                     setState(() {
-                      _isObscureConfirmPassword =
-                          !_isObscureConfirmPassword;
+                      _isObscureConfirmPassword = !_isObscureConfirmPassword;
                     });
                   },
                   validator: (value) {

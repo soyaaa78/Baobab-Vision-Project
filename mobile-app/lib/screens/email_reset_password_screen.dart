@@ -59,7 +59,7 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
   Future<void> verifyOtp() async {
     setState(() => isLoading = true);
     final url = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/auth/verify-otp');
+        'https://baobab-vision-project-peox.onrender.com/api/auth/verify-otp');
 
     try {
       final response = await http.post(
@@ -104,7 +104,7 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
 
   Future<void> resendOtp() async {
     final url = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/auth/resend-otp');
+        'https://baobab-vision-project-peox.onrender.com/api/auth/resend-otp');
 
     try {
       final response = await http.post(

@@ -37,7 +37,7 @@ class _ShopScreenState extends State<ShopScreen> {
     if (url.startsWith('http://') || url.startsWith('https://')) return url;
     if (url.startsWith('/userprofileuploads/') ||
         url.startsWith('userprofileuploads/')) {
-      final base = 'https://baobab-vision-project.onrender.com';
+      final base = 'https://baobab-vision-project-peox.onrender.com';
       if (!url.startsWith('/')) url = '/$url';
       return base + url;
     }
@@ -110,7 +110,7 @@ class _ShopScreenState extends State<ShopScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://baobab-vision-project.onrender.com/api/user/profile'),
+            'https://baobab-vision-project-peox.onrender.com/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $localToken',
           'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> fetchSlideshowImages() async {
     try {
       final response = await http.get(Uri.parse(
-          'https://baobab-vision-project.onrender.com/api/slideshow/all-images'));
+          'https://baobab-vision-project-peox.onrender.com/api/slideshow/all-images'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -171,7 +171,7 @@ class _ShopScreenState extends State<ShopScreen> {
   Future<void> fetchRecommendedProducts() async {
     try {
       final response = await http.get(Uri.parse(
-          'https://baobab-vision-project.onrender.com/api/products/for-you'));
+          'https://baobab-vision-project-peox.onrender.com/api/products/for-you'));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);

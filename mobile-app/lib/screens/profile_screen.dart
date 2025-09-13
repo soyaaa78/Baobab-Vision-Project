@@ -24,7 +24,7 @@ String _normalizeProfileImageUrl(String? url) {
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   if (url.startsWith('/userprofileuploads/') ||
       url.startsWith('userprofileuploads/')) {
-    final base = 'https://baobab-vision-project.onrender.com';
+    final base = 'https://baobab-vision-project-peox.onrender.com';
     if (!url.startsWith('/')) url = '/$url';
     return base + url;
   }
@@ -99,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://baobab-vision-project.onrender.com/api/user/profile'),
+            'https://baobab-vision-project-peox.onrender.com/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -279,14 +279,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           builder: (context) => const CancelledOrdersScreen()),
                     );
                   }),
-                  _buildSettingsOption(
-                      Icons.help_outline, 'FAQs', () {
-                        Navigator.push(
+                  _buildSettingsOption(Icons.help_outline, 'FAQs', () {
+                    Navigator.push(
                       context,
-                      MaterialPageRoute(
-                          builder: (context) => FaqsScreen()),
+                      MaterialPageRoute(builder: (context) => FaqsScreen()),
                     );
-                      }),
+                  }),
                   _buildSettingsOption(
                     Icons.logout,
                     'Logout',
