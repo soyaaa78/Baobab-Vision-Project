@@ -14,9 +14,208 @@
 /* Left Side - Baobab Vision Brand Background */
 .login-left {
   width: 35vw;
-  background: #ffbd6e;
+  background: #2d291c;
   position: relative;
   overflow: hidden;
+}
+
+/* Diagonal decorative stripes */
+.hero-stripes {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2; /* above slideshow, below overlay content */
+  overflow: hidden;
+}
+
+.hero-stripes .stripe {
+  position: absolute;
+  width: 200%;
+
+  left: -50%;
+  height: 190px;
+  transform: rotate(-32deg);
+  border-radius: 8px;
+  will-change: transform;
+  transition: transform 1.2s ease;
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.18));
+  /* background: #171717; */
+  background: linear-gradient(
+    90deg,
+    #ffd885 0%,
+    #ffc341 55%rgba (255, 179, 38, 0.548) 26 100%
+  );
+  overflow: hidden; /* contain scrolling text */
+}
+
+.hero-stripes .stripe-mid {
+  top: 27%;
+  height: 160px;
+  background: linear-gradient(90deg, #ffe9bc 0%, #ffd165 55%, #ffb938 100%);
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.16));
+}
+
+.hero-stripes .stripe-accent {
+  top: 40%;
+  height: 135px;
+  background: linear-gradient(90deg, #fff4d8 0%, #ffdf8f 50%, #ffb938 100%);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.14));
+}
+
+.hero-stripes .stripe-main {
+  top: 15%;
+}
+.hero-stripes .stripe-bottom {
+  top: 35%;
+}
+.hero-stripes .stripe.single {
+  height: 130px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-stripes .stripe:hover {
+    transform: rotate(-32deg) translateY(-4px);
+  }
+}
+
+/* Stripe marquee (pure CSS loop) */
+.stripe-marquee {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.stripe-marquee-track {
+  display: flex;
+  width: fit-content;
+  animation: stripe-marquee 38s linear infinite;
+}
+.stripe-marquee-track.reverse {
+  animation: stripe-marquee-reverse 38s linear infinite;
+}
+.stripe-marquee-text {
+  font-family: "Red Rose", "Rubik", sans-serif;
+  font-weight: 600;
+  font-size: 3rem;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  padding: 0 2.5rem;
+  color: #3b2a10;
+  opacity: 0.6;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+}
+@keyframes stripe-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+@keyframes stripe-marquee-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@media (max-width: 1400px) {
+  .stripe-marquee-text {
+    font-size: 2rem;
+  }
+}
+@media (max-width: 1100px) {
+  .stripe-marquee-text {
+    font-size: 1.75rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stripe-marquee-track,
+  .stripe-marquee-track.reverse {
+    animation: none;
+  }
+}
+
+/* remove unused mid/accent variants from simplified design */
+
+/* Improve legibility on very bright mid/accent stripes */
+.stripe.stripe-mid .stripe-parallax {
+  mix-blend-mode: normal;
+}
+.stripe.stripe-accent .stripe-parallax {
+  mix-blend-mode: normal;
+  opacity: 0.55;
+}
+
+/* (Removed old responsive sizing rules for previous JS scroller) */
+
+@media (max-width: 900px) {
+  .hero-stripes {
+    display: none;
+  } /* reduce noise on tighter layouts */
+}
+
+/* Subtle gradient mask so text fades at edges */
+.stripe.single::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 189, 110, 0) 0%,
+    rgba(255, 189, 110, 0.8) 15%,
+    rgba(255, 189, 110, 0.8) 85%,
+    rgba(255, 189, 110, 0) 100%
+  );
+  mix-blend-mode: soft-light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stripe-scroller {
+    animation: none !important;
+  }
+}
+
+/* Slideshow background */
+.login-left-slideshow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.login-bg-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.1;
+  transform: scale(1.06);
+  transition: opacity 1.2s ease, transform 7s linear;
+  /* Convert images to black & white while keeping slight depth */
+  filter: grayscale(100%) brightness(0.7) contrast(1.5);
+}
+
+.login-bg-slide.active {
+  opacity: 0.4;
+  transform: scale(1);
+  z-index: 1;
+}
+
+.login-left-overlay {
+  position: absolute;
+  inset: 0;
+  /* backdrop-filter: blur(2px); */
+  /* Slightly lighter overlay since the image is dimmed */
+  background: #ffff9415;
+  z-index: 1; /* keep overlay under stripes for richer yellow; stripes supply structure */
 }
 
 .gradient-overlay {
@@ -27,6 +226,7 @@
   justify-content: space-between;
   padding: 60px;
   color: white;
+  z-index: 5; /* above slides + stripes */
 }
 
 .logo-section {
@@ -104,11 +304,45 @@
 
 .form-container {
   background: white;
-  padding: 60px;
+  padding: 34px 60px 56px; /* reduced top padding to bring brand to top */
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   width: 100%;
   max-width: 450px;
+}
+
+/* Brand block inside form */
+.brand-floating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  text-align: center;
+  /* margin-bottom: 22px; */
+}
+.brand-floating-logo {
+  width: 210px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 2px auto 20px;
+  /* margin-bottom: 3rem; */
+}
+.brand-floating-tagline {
+  font-family: "Red Rose", sans-serif;
+  font-size: 0.95rem;
+  color: #2a383d;
+  letter-spacing: 0.25px;
+  margin: 0;
+  opacity: 0.85;
+}
+@media (max-width: 540px) {
+  .form-brand-logo {
+    width: 170px;
+  }
+  .form-brand-tagline {
+    font-size: 0.9rem;
+  }
 }
 
 .form-title {
@@ -207,24 +441,31 @@
 
 /* Buttons */
 .login-btn {
-  background: #eab676;
-  color: white;
+  background: #171717;
+  color: #ffffff;
   border: none;
   padding: 15px;
   border-radius: 8px;
-  font-size: 1.1rem;
-  font-weight: bold;
+  font-size: 1.05rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.3s ease;
   margin-top: 20px;
-  letter-spacing: 1px;
+  letter-spacing: 0.75px;
   font-family: "Rubik", sans-serif;
+  box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.4);
 }
 
 .login-btn:hover {
-  background: #a9927d;
+  background: #000000;
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(234, 182, 118, 0.3);
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55),
+    0 4px 10px -2px rgba(0, 0, 0, 0.35);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.45);
 }
 
 .resend-btn {
