@@ -22,7 +22,6 @@ const aliveRoute = require("./routes/aliveRoute");
 const auditLogRoutes = require("./routes/auditLogRoutes");
 const orderCountsRoute = require("./routes/orderCounts");
 
-
 // Models
 const Admin = require("./models/Admin");
 // Ensure these models are registered for population
@@ -31,9 +30,16 @@ require("./models/Order/ProofOfPayment");
 require("./models/Order/Rating");
 
 const PORT = process.env.PORT || 3001;
+
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173"; // fallback for local dev
 const app = express();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: CLIENT_URL,
+    credentials: true, // allow cookies/auth headers if needed
+  })
+);
 app.use(express.json());
 // trust proxy for correct req.ip behind reverse proxies
 app.set("trust proxy", true);
