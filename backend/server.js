@@ -38,7 +38,7 @@ app.use(express.json());
 app.set("trust proxy", true);
 app.use(
   cors({
-    origin: [process.env.CLIENT_URL, "http://localhost:5173"],
+    origin: [process.env.CLIENT_URL, "https://next-webar-tryon.vercel.app", "http://localhost:5173"],
     credentials: true, // allow cookies/auth headers if needed
   })
 );
