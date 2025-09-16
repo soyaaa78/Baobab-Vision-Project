@@ -95,9 +95,11 @@ const AllOrdersPage = () => {
             },
           }
         );
-  const ordersRaw = response.data.order || response.data;
-  const orders = Array.isArray(ordersRaw) ? [...ordersRaw].reverse() : [ordersRaw];
-  setOrderList(orders);
+        const ordersRaw = response.data.order || response.data;
+        const orders = Array.isArray(ordersRaw)
+          ? [...ordersRaw].reverse()
+          : [ordersRaw];
+        setOrderList(orders);
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
@@ -122,7 +124,9 @@ const AllOrdersPage = () => {
         },
       });
       let ordersRaw = response.data.order || response.data;
-      let orders = Array.isArray(ordersRaw) ? [...ordersRaw].reverse() : [ordersRaw];
+      let orders = Array.isArray(ordersRaw)
+        ? [...ordersRaw].reverse()
+        : [ordersRaw];
       // Move the updated order to the top of its new status group (in reversed list)
       const updatedIdx = orders.findIndex((o) => o._id === orderId);
       if (updatedIdx !== -1) {
@@ -170,9 +174,11 @@ const AllOrdersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-  const ordersRaw = response.data.order || response.data;
-  const orders = Array.isArray(ordersRaw) ? [...ordersRaw].reverse() : [ordersRaw];
-  setOrderList(orders);
+      const ordersRaw = response.data.order || response.data;
+      const orders = Array.isArray(ordersRaw)
+        ? [...ordersRaw].reverse()
+        : [ordersRaw];
+      setOrderList(orders);
       setAlertModal(false);
       showToast({ type: "success", message: `${label} has been deleted.` });
     } catch (error) {
