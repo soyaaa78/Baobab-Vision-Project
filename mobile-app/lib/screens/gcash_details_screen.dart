@@ -37,6 +37,7 @@ class GcashDetailsScreen extends StatefulWidget {
 class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
   PlatformFile? _pickedFile;
   final TextEditingController _refNumberController = TextEditingController();
+  bool _isSubmitting = false;
 
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(
@@ -56,6 +57,7 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
   }
 
   Future<void> _submitPaymentProof() async {
+    if (_isSubmitting) return;
     if (_pickedFile == null) {
       customDialog(
         context,
@@ -73,6 +75,10 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
       return;
     }
 
+    setState(() {
+      _isSubmitting = true;
+    });
+
     try {
       final token = await AuthStorage.getToken();
       if (token == null) {
@@ -81,6 +87,9 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
           title: "Not Logged In",
           content: "Please log in to place your order.",
         );
+        setState(() {
+          _isSubmitting = false;
+        });
         return;
       }
 
@@ -111,8 +120,15 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
         title: "Error",
         content: e.toString().replaceFirst('Exception: ', ''),
       );
+      setState(() {
+        _isSubmitting = false;
+      });
       return;
     }
+
+    setState(() {
+      _isSubmitting = false;
+    });
 
     // Success Dialog with single "See Orders" button
     customOptionDialog(
@@ -171,8 +187,7 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
                       SizedBox(height: 10.h),
                       _buildInfoRow('GCASH Number:', widget.gcashNumber),
                       SizedBox(height: 10.h),
-                      _buildInfoRow(
-                          'Total Amount to Pay:',
+                      _buildInfoRow('Total Amount to Pay:',
                           widget.totalAmount.toStringAsFixed(2),
                           isAmount: true),
                     ],
@@ -275,7 +290,7 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
 
                       // Submit button
                       ElevatedButton(
-                        onPressed: _submitPaymentProof,
+                        onPressed: _isSubmitting ? null : _submitPaymentProof,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
@@ -283,11 +298,32 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
                           ),
                           minimumSize: Size(double.infinity, 55.h),
                         ),
-                        child: CustomText(
-                          text: 'Submit Payment Proof',
-                          fontSize: ScreenUtil().setSp(18),
-                          color: Colors.white,
-                        ),
+                        child: _isSubmitting
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                      strokeWidth: 2.5,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  CustomText(
+                                    text: 'Submitting...',
+                                    fontSize: ScreenUtil().setSp(18),
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              )
+                            : CustomText(
+                                text: 'Submit Payment Proof',
+                                fontSize: ScreenUtil().setSp(18),
+                                color: Colors.white,
+                              ),
                       ),
                     ],
                   ),

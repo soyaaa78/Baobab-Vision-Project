@@ -95,8 +95,9 @@ const AllOrdersPage = () => {
             },
           }
         );
-        const orders = response.data.order || response.data;
-        setOrderList(Array.isArray(orders) ? orders : [orders]);
+  const ordersRaw = response.data.order || response.data;
+  const orders = Array.isArray(ordersRaw) ? [...ordersRaw].reverse() : [ordersRaw];
+  setOrderList(orders);
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
@@ -120,11 +121,19 @@ const AllOrdersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const orders = response.data.order || response.data;
-      setOrderList(Array.isArray(orders) ? orders : [orders]);
-      const ord = (Array.isArray(orders) ? orders : [orders]).find(
-        (o) => o._id === orderId
-      );
+      let ordersRaw = response.data.order || response.data;
+      let orders = Array.isArray(ordersRaw) ? [...ordersRaw].reverse() : [ordersRaw];
+      // Move the updated order to the top of its new status group (in reversed list)
+      const updatedIdx = orders.findIndex((o) => o._id === orderId);
+      if (updatedIdx !== -1) {
+        const [updatedOrder] = orders.splice(updatedIdx, 1);
+        // Find the first index with the same status, or top if none
+        let insertIdx = orders.findIndex((o) => o.status === newStatus);
+        if (insertIdx === -1) insertIdx = 0;
+        orders.splice(insertIdx, 0, updatedOrder);
+      }
+      setOrderList(orders);
+      const ord = orders.find((o) => o._id === orderId);
       const reasonSuffix =
         newStatus === "cancelled" &&
         (extra?.cancellationReason || extra?.declineReason)
@@ -161,8 +170,9 @@ const AllOrdersPage = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      const orders = response.data.order || response.data;
-      setOrderList(Array.isArray(orders) ? orders : [orders]);
+  const ordersRaw = response.data.order || response.data;
+  const orders = Array.isArray(ordersRaw) ? [...ordersRaw].reverse() : [ordersRaw];
+  setOrderList(orders);
       setAlertModal(false);
       showToast({ type: "success", message: `${label} has been deleted.` });
     } catch (error) {
