@@ -80,6 +80,7 @@
     "send": "^0.19.0",
     "serve-static": "^1.16.2",
     "setprototypeof": "^1.2.0",
+    "sib-api-v3-sdk": "^8.5.0",
     "side-channel": "^1.1.0",
     "side-channel-list": "^1.0.0",
     "side-channel-map": "^1.0.1",
