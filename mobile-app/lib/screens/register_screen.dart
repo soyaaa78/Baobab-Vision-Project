@@ -63,7 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       var url = Uri.parse(
-          'https://baobab-vision-project-peox.onrender.com/api/auth/register');
+          'https://baobab-vision-project-0234.onrender.com/api/auth/register');
 
       var response = await http.post(
         url,

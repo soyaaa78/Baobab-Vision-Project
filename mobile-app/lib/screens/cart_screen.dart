@@ -41,7 +41,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
     if (token == null || userId == null) return;
 
     final url = Uri.parse(
-        'https://baobab-vision-project-peox.onrender.com/api/cart/$userId');
+        'https://baobab-vision-project-0234.onrender.com/api/cart/$userId');
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -109,7 +109,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
     setState(() {});
 
     final url = Uri.parse(
-        'https://baobab-vision-project-peox.onrender.com/api/cart/update');
+        'https://baobab-vision-project-0234.onrender.com/api/cart/update');
     final body = json.encode({
       'productId': productId,
       'colorOptionId': colorOptionId,

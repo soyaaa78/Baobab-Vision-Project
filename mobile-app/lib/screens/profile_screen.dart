@@ -24,7 +24,7 @@ String _normalizeProfileImageUrl(String? url) {
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   if (url.startsWith('/userprofileuploads/') ||
       url.startsWith('userprofileuploads/')) {
-    final base = 'https://baobab-vision-project-peox.onrender.com';
+    final base = 'https://baobab-vision-project-0234.onrender.com';
     if (!url.startsWith('/')) url = '/$url';
     return base + url;
   }
@@ -99,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://baobab-vision-project-peox.onrender.com/api/user/profile'),
+            'https://baobab-vision-project-0234.onrender.com/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

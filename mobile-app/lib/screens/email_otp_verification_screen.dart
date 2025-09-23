@@ -57,7 +57,7 @@ class _EmailOtpVerificationScreenState
     try {
       final response = await http.post(
         Uri.parse(
-            'https://baobab-vision-project-peox.onrender.com/api/auth/verify-email-otp'),
+            'https://baobab-vision-project-0234.onrender.com/api/auth/verify-email-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': widget.email, 'otp': _otp}),
       );
@@ -72,7 +72,7 @@ class _EmailOtpVerificationScreenState
 
           final profileRes = await http.get(
             Uri.parse(
-                'https://baobab-vision-project-peox.onrender.com/api/user/profile'),
+                'https://baobab-vision-project-0234.onrender.com/api/user/profile'),
             headers: {
               'Authorization': 'Bearer $token',
               'Content-Type': 'application/json',
@@ -91,7 +91,7 @@ class _EmailOtpVerificationScreenState
               String imgPath = profileData['profileImage'];
               if (imgPath.startsWith('/')) imgPath = imgPath.substring(1);
               await prefs.setString('profileImageUrl',
-                  'https://baobab-vision-project-peox.onrender.com/$imgPath');
+                  'https://baobab-vision-project-0234.onrender.com/$imgPath');
             } else {
               await prefs.remove('profileImageUrl');
             }
@@ -114,7 +114,7 @@ class _EmailOtpVerificationScreenState
     try {
       final response = await http.post(
         Uri.parse(
-            'https://baobab-vision-project-peox.onrender.com/api/auth/resend-email-otp'),
+            'https://baobab-vision-project-0234.onrender.com/api/auth/resend-email-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': widget.email}),
       );
