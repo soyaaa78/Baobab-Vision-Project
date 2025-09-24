@@ -683,7 +683,7 @@ exports.recommendEyewear = async (req, res) => {
     // Score and filter products based on recommendations
     let scoredProducts = products.map((product) => {
       let score = 0;
-      let reasons = []; // Check face shape compatibility (product should be suitable for user's face shape)
+      let reasons = [];
       const normalizedFaceShape = faceShape
         .toLowerCase()
         .replace(/ shape$/, "")
@@ -702,13 +702,10 @@ exports.recommendEyewear = async (req, res) => {
         reasons.push(`Suitable for face shape (+10): ${normalizedFaceShape}`);
       }
 
-      // Check frame shape recommendations (product's frame shape should match recommended shapes)
       recommendations.frameShapes.forEach((recommendedShape) => {
         const shapeMatch = product.specs.some((spec) => {
           const specLower = spec.toLowerCase();
           const recommendedLower = recommendedShape.toLowerCase();
-
-          // Match frame_shape_X patterns
           return (
             specLower.startsWith("frame_") &&
             (specLower.includes(recommendedLower.replace(" ", "_")) ||
@@ -723,14 +720,12 @@ exports.recommendEyewear = async (req, res) => {
                 specLower.includes("rectangle")))
           );
         });
-
         if (shapeMatch) {
           score += 8;
           reasons.push(`Frame shape match (+8): ${recommendedShape}`);
         }
       });
 
-      // Check color recommendations
       if (product.colorOptions && product.colorOptions.length > 0) {
         recommendations.frameColors.forEach((recommendedColor) => {
           const colorMatch = product.colorOptions.some(
@@ -747,10 +742,9 @@ exports.recommendEyewear = async (req, res) => {
             reasons.push(`Color match (+6): ${recommendedColor}`);
           }
         });
-      } // Check additional specs compatibility (lifestyle, style preferences, etc.)
+      }
       product.specs.forEach((spec) => {
         const specLower = spec.toLowerCase();
-        // Only check specs that aren't face_ or frame_ prefixed
         if (!specLower.startsWith("face_") && !specLower.startsWith("frame_")) {
           recommendations.additionalSpecs.forEach((additionalSpec) => {
             if (specLower.includes(additionalSpec.toLowerCase())) {
@@ -761,11 +755,11 @@ exports.recommendEyewear = async (req, res) => {
         }
       });
       return { product, score };
-    }); // Filter products with score > 0 and sort by score
+    });
     scoredProducts = scoredProducts
       .filter((item) => item.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 8); // Get top 8 products      .map((item) => item.product);
+      .slice(0, 8);
 
     // If no scored products, fall back to face shape matching
     if (scoredProducts.length === 0) {
@@ -773,14 +767,65 @@ exports.recommendEyewear = async (req, res) => {
         .toLowerCase()
         .replace(/ shape$/, "")
         .trim();
-      scoredProducts = await Product.find({
+      const fallbackProducts = await Product.find({
         specs: {
           $elemMatch: {
             $regex: new RegExp(`^${normalizedFaceShape}`, "i"),
           },
         },
       }).limit(5);
+      scoredProducts = fallbackProducts.map((product) => ({ product, score: 1 }));
     }
+
+    // Get product IDs for ratings aggregation
+    const recommendedProductIds = scoredProducts.map((item) => item.product._id);
+
+    // Aggregate ratings for recommended products
+    const productRatings = await Rating.aggregate([
+      {
+        $lookup: {
+          from: "orders",
+          localField: "orderId",
+          foreignField: "_id",
+          as: "orderDoc",
+        },
+      },
+      { $unwind: "$orderDoc" },
+      { $match: { "orderDoc.products.productId": { $in: recommendedProductIds } } },
+      {
+        $project: {
+          rating: 1,
+          productIds: "$orderDoc.products.productId",
+        },
+      },
+      { $unwind: "$productIds" },
+      { $match: { productIds: { $in: recommendedProductIds } } },
+      {
+        $group: {
+          _id: "$productIds",
+          avgRating: { $avg: "$rating" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const ratingMap = productRatings.reduce((acc, r) => {
+      acc[r._id.toString()] = { avg: r.avgRating, count: r.count };
+      return acc;
+    }, {});
+
+    // Shape response: include averageRating (1dp), ratingCount
+    const shaped = scoredProducts.map((item) => {
+      const base = item.product.toObject ? item.product.toObject() : item.product;
+      const r = ratingMap[item.product._id.toString()];
+      const avg = r ? Math.round(r.avg * 10) / 10 : null;
+      return {
+        ...base,
+        averageRating: avg,
+        ratingCount: r ? r.count : 0,
+        score: item.score,
+      };
+    });
 
     // Save recommendation statistics
     const stat = new RecommendationStat({
@@ -791,11 +836,11 @@ exports.recommendEyewear = async (req, res) => {
       fitPreference,
       occasionUse,
       colorPreference,
-      recommendedProductIds: scoredProducts.map((p) => p._id),
+      recommendedProductIds: shaped.map((p) => p._id),
     });
     await stat.save();
     res.status(200).json({
-      recommended: scoredProducts,
+      recommended: shaped,
       statId: stat._id,
     });
   } catch (err) {

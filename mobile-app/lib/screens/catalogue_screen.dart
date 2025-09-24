@@ -29,7 +29,7 @@ class _CatalogueScreenState extends State<CatalogueScreen>
     try {
       final response = await http.get(
         Uri.parse(
-            'https://baobab-vision-project-peox.onrender.com/api/products'),
+            'https://baobab-vision-project-0234.onrender.com/api/products'),
       );
       if (response.statusCode == 200) {
         final decodedProducts = jsonDecode(response.body);
@@ -307,7 +307,7 @@ class _CatalogueScreenState extends State<CatalogueScreen>
                           try {
                             await http.post(
                               Uri.parse(
-                                  'https://baobab-vision-project-peox.onrender.com/api/user/update-preferences/$username'),
+                                  'https://baobab-vision-project-0234.onrender.com/api/user/update-preferences/$username'),
                               headers: {'Content-Type': 'application/json'},
                               body: jsonEncode({'productId': productId}),
                             );
