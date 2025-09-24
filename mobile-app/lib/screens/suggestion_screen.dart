@@ -17,9 +17,11 @@ class _SuggestionScreenState extends State<SuggestionScreen> {
   @override
   Widget build(BuildContext context) {
     final List<dynamic> items = widget.recommendedProducts ?? [];
-    final List<dynamic> products = items
-        .where((item) => item != null && item['product'] != null)
-        .map((item) => item['product'])
+    // Use backend response directly (already shaped with averageRating and ratingCount)
+    final List<Map<String, dynamic>> products = items
+        .where((item) => item != null)
+        .map<Map<String, dynamic>>((item) => Map<String, dynamic>.from(item))
+        .take(5)
         .toList();
 
     return Scaffold(
@@ -255,13 +257,22 @@ class _SuggestionScreenState extends State<SuggestionScreen> {
                                                   ),
                                                   SizedBox(width: 2),
                                                   CustomText(
-                                                    text:
-                                                        '${product['numStars'] ?? 5}',
-                                                    fontSize:
-                                                        ScreenUtil().setSp(12),
+                                                    text: (product['averageRating'] != null && product['ratingCount'] > 0)
+                                                        ? '${product['averageRating']}'
+                                                        : '0',
+                                                    fontSize: ScreenUtil().setSp(12),
                                                     color: Colors.grey,
                                                     fontWeight: FontWeight.w500,
                                                   ),
+                                              if (product['ratingCount'] != null && product['ratingCount'] > 0)
+                                                Padding(
+                                                  padding: const EdgeInsets.only(left: 4.0),
+                                                  child: CustomText(
+                                                    text: '(${product['ratingCount']})',
+                                                    fontSize: ScreenUtil().setSp(11),
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
                                                 ],
                                               ),
                                             ],
