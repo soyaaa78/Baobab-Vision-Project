@@ -101,7 +101,12 @@ const AllOrdersPage = () => {
           : [ordersRaw];
         setOrderList(orders);
       } catch (error) {
-        console.error("Error fetching orders:", error);
+        if (error.response && error.response.status === 404) {
+          setOrderList([]);
+          showToast({ type: "info", message: "No orders found." });
+        } else {
+          console.error("Error fetching orders:", error);
+        }
       }
     };
     fetchOrders();

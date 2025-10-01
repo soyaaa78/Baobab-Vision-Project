@@ -71,14 +71,18 @@ const AuditLogsPage = () => {
           limit: 100, // Get more logs for better search experience
         },
       });
-
       setAuditLogs(response.data.data || []);
     } catch (error) {
-      console.error("Error fetching audit logs:", error);
-      showToast({
-        type: "error",
-        message: "Failed to fetch audit logs. Please try again.",
-      });
+      if (error.response && error.response.status === 404) {
+        setAuditLogs([]);
+        showToast({ type: "info", message: "No audit logs available yet." });
+      } else {
+        console.error("Error fetching audit logs:", error);
+        showToast({
+          type: "error",
+          message: "Unable to fetch audit logs. Please try again later.",
+        });
+      }
     } finally {
       setLoading(false);
     }

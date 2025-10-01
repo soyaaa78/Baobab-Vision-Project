@@ -94,7 +94,12 @@ const ManageUsersPage = () => {
         });
         setStaffList([...response.data].reverse());
       } catch (error) {
-        console.error("Error fetching staff:", error);
+        if (error.response && error.response.status === 404) {
+          setStaffList([]);
+          showToast({ type: "info", message: "No staff found." });
+        } else {
+          console.error("Error fetching staff:", error);
+        }
       }
     };
     const fetchUsers = async () => {
@@ -106,7 +111,12 @@ const ManageUsersPage = () => {
         });
         setUserList([...response.data].reverse());
       } catch (error) {
-        console.error("Error fetching users:", error);
+        if (error.response && error.response.status === 404) {
+          setUserList([]);
+          showToast({ type: "info", message: "No users found." });
+        } else {
+          console.error("Error fetching users:", error);
+        }
       }
     };
     fetchStaff();
