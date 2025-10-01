@@ -432,9 +432,13 @@ const AuditLogsPage = () => {
                       </span>
                       {log.actorRole && (
                         <span className="actor-role">
-                          {log.actorRole
-                            .replace(/_/g, " ")
-                            .replace(/\b\w/g, (c) => c.toUpperCase())}
+                          {log.actorRole === "staff_order"
+                            ? "Order Staff"
+                            : log.actorRole === "staff_product"
+                            ? "Product Staff"
+                            : log.actorRole
+                                .replace(/_/g, " ")
+                                .replace(/\b\w/g, (c) => c.toUpperCase())}
                         </span>
                       )}
                     </div>
@@ -484,6 +488,13 @@ const AuditLogsPage = () => {
         onClose={() => setDetailModalOpen(false)}
         log={selectedLog}
         getActorDisplayName={getActorDisplayName}
+        getActorRoleDisplay={(role) =>
+          role === "staff_order"
+            ? "Order Staff"
+            : role === "staff_product"
+            ? "Product Staff"
+            : role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        }
       />
     </div>
   );

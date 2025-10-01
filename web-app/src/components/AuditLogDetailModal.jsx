@@ -11,7 +11,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import "../styles/AuditLogDetailModal.css";
 
-const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
+const AuditLogDetailModal = ({
+  isOpen,
+  onClose,
+  log,
+  getActorDisplayName,
+  getActorRoleDisplay,
+}) => {
   if (!isOpen || !log) return null;
 
   // Format date as: Sep 11, 2025, 2:30 PM
@@ -136,9 +142,11 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
                   {log.actorRole && (
                     <span className="actor-role-detail">
                       (
-                      {log.actorRole
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (c) => c.toUpperCase())}
+                      {getActorRoleDisplay
+                        ? getActorRoleDisplay(log.actorRole)
+                        : log.actorRole
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (c) => c.toUpperCase())}
                       )
                     </span>
                   )}
@@ -375,7 +383,11 @@ const AuditLogDetailModal = ({ isOpen, onClose, log, getActorDisplayName }) => {
                   <div className="audit-info-item">
                     <div>
                       <label>Role</label>
-                      <span>{log.actor.role}</span>
+                      <span>
+                        {getActorRoleDisplay
+                          ? getActorRoleDisplay(log.actor.role)
+                          : log.actor.role}
+                      </span>
                     </div>
                   </div>
                 )}

@@ -382,7 +382,13 @@ const ManageUsersPage = () => {
                           <td>{staff.lastname || "N/A"}</td>
                           <td>{staff.username}</td>
                           <td>{staff.email}</td>
-                          <td>{staff.role}</td>
+                          <td>
+                            {staff.role === "staff_order"
+                              ? "Order Staff"
+                              : staff.role === "staff_product"
+                              ? "Product Staff"
+                              : staff.role}
+                          </td>
                           <td>
                             {staff.isVerified ? "Verified" : "Unverified"}
                           </td>
