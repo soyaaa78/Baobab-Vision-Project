@@ -34,7 +34,11 @@ const EyeglassPreview = ({
                 <div className="eyeglass-descriptor">
                   <div className="eyeglass-name">
                     <h3>
-                      <b>{eyeglass.name || "Eyeglass"}</b>
+                      <b>
+                        {eyeglass.name && eyeglass.name.length > 12
+                          ? eyeglass.name.slice(0, 10) + "..."
+                          : eyeglass.name || "Eyeglass"}
+                      </b>
                     </h3>
                   </div>
                   <div className="eyeglass-buttons">

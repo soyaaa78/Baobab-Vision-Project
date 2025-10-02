@@ -429,6 +429,13 @@
   font-family: "Rubik", sans-serif;
 }
 
+/* Center OTP input text fully */
+.login-form .input-group input[placeholder*="OTP"] {
+  text-align: center !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
 .form-input:focus {
   outline: none;
   border-color: #eab676;
