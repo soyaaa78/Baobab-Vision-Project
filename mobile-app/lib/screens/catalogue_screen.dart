@@ -142,315 +142,323 @@ class _CatalogueScreenState extends State<CatalogueScreen>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return Scaffold(
-      backgroundColor: WHITE_COLOR,
-      appBar: AppBar(
-        title: Text(
-          'Catalogue',
-          style: TextStyle(
-            fontSize: 24.sp, // slightly larger for prominence
-            fontWeight: FontWeight.w800,
-            color: BLACK_COLOR,
-            letterSpacing: 0.5, // subtle spacing for elegance
-          ),
-        ),
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pushReplacementNamed('/home');
+        return false;
+      },
+      child: Scaffold(
         backgroundColor: WHITE_COLOR,
-        elevation: 0.5,
-        shadowColor: Colors.grey.shade300,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.filter_list_alt, color: Colors.black87),
-            onPressed: () {
-              showModalBottomSheet(
-                context: context,
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(20.0)),
-                ),
-                builder: (BuildContext context) {
-                  return Container(
-                    padding:
-                        EdgeInsets.symmetric(vertical: 16.h, horizontal: 20.w),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Container(
-                            height: 5.h,
-                            width: 50.w,
-                            margin: EdgeInsets.only(bottom: 20.h),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[400],
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                        Text(
-                          'Sort Products',
-                          style: TextStyle(
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.black87),
-                        ),
-                        SizedBox(height: 12.h),
-                        ...[
-                          {
-                            'icon': Icons.star,
-                            'text': 'Popular',
-                            'sortBy': 'popular',
-                            'order': 'desc'
-                          },
-                          {
-                            'icon': Icons.access_time,
-                            'text': 'Latest',
-                            'sortBy': 'latest',
-                            'order': 'desc'
-                          },
-                          {
-                            'icon': Icons.trending_up,
-                            'text': 'Top Sales',
-                            'sortBy': 'top-sales',
-                            'order': 'desc'
-                          },
-                          {
-                            'icon': Icons.price_change,
-                            'text': 'Price: Low to High',
-                            'sortBy': 'price',
-                            'order': 'asc'
-                          },
-                          {
-                            'icon': Icons.price_change_outlined,
-                            'text': 'Price: High to Low',
-                            'sortBy': 'price',
-                            'order': 'desc'
-                          },
-                        ]
-                            .map((filter) => ListTile(
-                                  leading: Icon(filter['icon'] as IconData,
-                                      color: BLACK_COLOR),
-                                  title: Text(filter['text'] as String,
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 14.sp)),
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    _sortProducts(
-                                      filter['sortBy'] as String,
-                                      filter['order'] as String,
-                                    );
-                                  },
-                                ))
-                            .toList(),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'All Items',
-              style: TextStyle(
-                fontSize: 18.sp, // slightly larger
-                fontWeight: FontWeight.w700,
-                color: Colors.black87.withOpacity(0.85), // softer black
-                letterSpacing: 0.3, // subtle spacing
-              ),
+        appBar: AppBar(
+          title: Text(
+            'Catalogue',
+            style: TextStyle(
+              fontSize: 24.sp, // slightly larger for prominence
+              fontWeight: FontWeight.w800,
+              color: BLACK_COLOR,
+              letterSpacing: 0.5, // subtle spacing for elegance
             ),
-            SizedBox(height: 14.h),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  if (products.isEmpty) {
-                    return Center(child: CircularProgressIndicator());
-                  }
-
-                  final double cardWidth = (constraints.maxWidth - 16.w) / 2;
-                  final double cardHeight = 260.h;
-                  final double childAspectRatio = cardWidth / cardHeight;
-
-                  return GridView.builder(
-                    itemCount: products.length,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16.w,
-                      mainAxisSpacing: 16.h,
-                      childAspectRatio: childAspectRatio,
-                    ),
-                    itemBuilder: (context, index) {
-                      final product = products[index];
-                      String imageUrl = product['imageUrls'] != null &&
-                              product['imageUrls'] is List
-                          ? product['imageUrls'].isNotEmpty
-                              ? product['imageUrls'][0]
-                              : 'assets/images/default.png'
-                          : 'assets/images/default.png';
-
-                      final avgRating = productRatings[product['_id']] ?? 0.0;
-                      final totalReviews =
-                          productTotalReviews[product['_id']] ?? 0;
-
-                      return GestureDetector(
-                        onTap: () async {
-                          String productId = product['_id'];
-                          String? username = await getUsername();
-                          if (username == null) return;
-
-                          try {
-                            await http.post(
-                              Uri.parse(
-                                  'https://baobab-vision-project-0234.onrender.com/api/user/update-preferences/$username'),
-                              headers: {'Content-Type': 'application/json'},
-                              body: jsonEncode({'productId': productId}),
-                            );
-                          } catch (e) {
-                            print('Error updating preferences: $e');
-                          }
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DetailScreen(
-                                productId: product['_id'],
-                                prodName: product['name'] ?? 'Unknown',
-                                prodSize: '${product['stock']} pcs Available',
-                                prodPrice: '${product['price']} PHP',
-                                numStars: product['numStars'] ?? 0,
-                                quantity: product['stock'] ?? 0,
-                                description: product['description'] ??
-                                    'No description available',
-                                prodImages: (product['imageUrls'] != null &&
-                                        product['imageUrls'] is List)
-                                    ? List<String>.from(product['imageUrls'])
-                                    : [imageUrl],
-                                colorOptions: (product['colorOptions']
-                                            as List<dynamic>? ??
-                                        [])
-                                    .map((e) => ColorOption.fromJson(e))
-                                    .toList(),
-                                lensOptions:
-                                    (product['lensOptions'] as List<dynamic>)
-                                        .map((e) => LensOption.fromJson(e))
-                                        .toList(),
+          ),
+          backgroundColor: WHITE_COLOR,
+          elevation: 0.5,
+          shadowColor: Colors.grey.shade300,
+          actions: [
+            IconButton(
+              icon: Icon(Icons.filter_list_alt, color: Colors.black87),
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(20.0)),
+                  ),
+                  builder: (BuildContext context) {
+                    return Container(
+                      padding: EdgeInsets.symmetric(
+                          vertical: 16.h, horizontal: 20.w),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Container(
+                              height: 5.h,
+                              width: 50.w,
+                              margin: EdgeInsets.only(bottom: 20.h),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[400],
+                                borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                          );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: WHITE_COLOR,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.grey.shade300,
-                              width: 1.0,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.15),
-                                spreadRadius: 1,
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.vertical(
-                                    top: Radius.circular(16)),
-                                child: Image.network(
-                                  imageUrl,
-                                  height: 150.h,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      Container(
-                                    height: 150.h,
-                                    color: Colors.grey.shade200,
-                                    child: Icon(Icons.broken_image, size: 48),
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.all(10.w),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      product['name'],
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 14.sp,
-                                        fontFamily: 'Montserrat',
-                                        color: Colors.black87,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    SizedBox(height: 8.h),
-                                    Text(
-                                      '${product['price']} PHP',
-                                      style: TextStyle(
-                                        fontSize: 13.sp,
-                                        fontWeight: FontWeight.w500,
-                                        color: BLACK_COLOR,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    SizedBox(height: 8.h),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: List.generate(5, (starIndex) {
-                                        final raw = avgRating.clamp(0, 5);
-                                        final remaining = raw - starIndex;
-                                        IconData icon;
-                                        Color color;
-                                        if (remaining >= 1) {
-                                          icon = Icons.star;
-                                          color = Colors.amber;
-                                        } else if (remaining >= 0.5) {
-                                          icon = Icons.star_half;
-                                          color = Colors.amber;
-                                        } else {
-                                          icon = Icons.star_border;
-                                          color = Colors.grey.shade300;
-                                        }
-                                        return Icon(icon,
-                                            size: 14.sp, color: color);
-                                      }),
-                                    ),
-                                    SizedBox(height: 4.h),
-                                    Text(
-                                      '(${totalReviews.toString()})',
-                                      style: TextStyle(
-                                        fontSize: 11.sp,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                          Text(
+                            'Sort Products',
+                            style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87),
                           ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+                          SizedBox(height: 12.h),
+                          ...[
+                            {
+                              'icon': Icons.star,
+                              'text': 'Popular',
+                              'sortBy': 'popular',
+                              'order': 'desc'
+                            },
+                            {
+                              'icon': Icons.access_time,
+                              'text': 'Latest',
+                              'sortBy': 'latest',
+                              'order': 'desc'
+                            },
+                            {
+                              'icon': Icons.trending_up,
+                              'text': 'Top Sales',
+                              'sortBy': 'top-sales',
+                              'order': 'desc'
+                            },
+                            {
+                              'icon': Icons.price_change,
+                              'text': 'Price: Low to High',
+                              'sortBy': 'price',
+                              'order': 'asc'
+                            },
+                            {
+                              'icon': Icons.price_change_outlined,
+                              'text': 'Price: High to Low',
+                              'sortBy': 'price',
+                              'order': 'desc'
+                            },
+                          ]
+                              .map((filter) => ListTile(
+                                    leading: Icon(filter['icon'] as IconData,
+                                        color: BLACK_COLOR),
+                                    title: Text(filter['text'] as String,
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14.sp)),
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      _sortProducts(
+                                        filter['sortBy'] as String,
+                                        filter['order'] as String,
+                                      );
+                                    },
+                                  ))
+                              .toList(),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ],
+        ),
+        body: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'All Items',
+                style: TextStyle(
+                  fontSize: 18.sp, // slightly larger
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black87.withOpacity(0.85), // softer black
+                  letterSpacing: 0.3, // subtle spacing
+                ),
+              ),
+              SizedBox(height: 14.h),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    if (products.isEmpty) {
+                      return Center(child: CircularProgressIndicator());
+                    }
+
+                    final double cardWidth = (constraints.maxWidth - 16.w) / 2;
+                    final double cardHeight = 260.h;
+                    final double childAspectRatio = cardWidth / cardHeight;
+
+                    return GridView.builder(
+                      itemCount: products.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 16.w,
+                        mainAxisSpacing: 16.h,
+                        childAspectRatio: childAspectRatio,
+                      ),
+                      itemBuilder: (context, index) {
+                        final product = products[index];
+                        String imageUrl = product['imageUrls'] != null &&
+                                product['imageUrls'] is List
+                            ? product['imageUrls'].isNotEmpty
+                                ? product['imageUrls'][0]
+                                : 'assets/images/default.png'
+                            : 'assets/images/default.png';
+
+                        final avgRating = productRatings[product['_id']] ?? 0.0;
+                        final totalReviews =
+                            productTotalReviews[product['_id']] ?? 0;
+
+                        return GestureDetector(
+                          onTap: () async {
+                            String productId = product['_id'];
+                            String? username = await getUsername();
+                            if (username == null) return;
+
+                            try {
+                              await http.post(
+                                Uri.parse(
+                                    'https://baobab-vision-project-0234.onrender.com/api/user/update-preferences/$username'),
+                                headers: {'Content-Type': 'application/json'},
+                                body: jsonEncode({'productId': productId}),
+                              );
+                            } catch (e) {
+                              print('Error updating preferences: $e');
+                            }
+
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DetailScreen(
+                                  productId: product['_id'],
+                                  prodName: product['name'] ?? 'Unknown',
+                                  prodSize: '${product['stock']} pcs Available',
+                                  prodPrice: '${product['price']} PHP',
+                                  numStars: product['numStars'] ?? 0,
+                                  quantity: product['stock'] ?? 0,
+                                  description: product['description'] ??
+                                      'No description available',
+                                  prodImages: (product['imageUrls'] != null &&
+                                          product['imageUrls'] is List)
+                                      ? List<String>.from(product['imageUrls'])
+                                      : [imageUrl],
+                                  colorOptions: (product['colorOptions']
+                                              as List<dynamic>? ??
+                                          [])
+                                      .map((e) => ColorOption.fromJson(e))
+                                      .toList(),
+                                  lensOptions:
+                                      (product['lensOptions'] as List<dynamic>)
+                                          .map((e) => LensOption.fromJson(e))
+                                          .toList(),
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: WHITE_COLOR,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: Colors.grey.shade300,
+                                width: 1.0,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.15),
+                                  spreadRadius: 1,
+                                  blurRadius: 10,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(16)),
+                                  child: Image.network(
+                                    imageUrl,
+                                    height: 150.h,
+                                    width: double.infinity,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                      height: 150.h,
+                                      color: Colors.grey.shade200,
+                                      child: Icon(Icons.broken_image, size: 48),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: EdgeInsets.all(10.w),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        product['name'],
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 14.sp,
+                                          fontFamily: 'Montserrat',
+                                          color: Colors.black87,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      SizedBox(height: 8.h),
+                                      Text(
+                                        '${product['price']} PHP',
+                                        style: TextStyle(
+                                          fontSize: 13.sp,
+                                          fontWeight: FontWeight.w500,
+                                          color: BLACK_COLOR,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      SizedBox(height: 8.h),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: List.generate(5, (starIndex) {
+                                          final raw = avgRating.clamp(0, 5);
+                                          final remaining = raw - starIndex;
+                                          IconData icon;
+                                          Color color;
+                                          if (remaining >= 1) {
+                                            icon = Icons.star;
+                                            color = Colors.amber;
+                                          } else if (remaining >= 0.5) {
+                                            icon = Icons.star_half;
+                                            color = Colors.amber;
+                                          } else {
+                                            icon = Icons.star_border;
+                                            color = Colors.grey.shade300;
+                                          }
+                                          return Icon(icon,
+                                              size: 14.sp, color: color);
+                                        }),
+                                      ),
+                                      SizedBox(height: 4.h),
+                                      Text(
+                                        '(${totalReviews.toString()})',
+                                        style: TextStyle(
+                                          fontSize: 11.sp,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
