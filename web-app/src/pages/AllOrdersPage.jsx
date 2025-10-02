@@ -33,8 +33,6 @@ const AllOrdersPage = () => {
         return "Pickup Orders";
       case "third":
         return "Third Party Orders";
-      case "cancelled":
-        return "Cancelled Orders";
       default:
         return "All Orders";
     }
@@ -196,19 +194,18 @@ const AllOrdersPage = () => {
   };
 
   const getFilteredOrders = () => {
-    let base =
-      selectedStatus === "all"
-        ? orderList
-        : orderList.filter((order) => order.status === selectedStatus);
+    let base = orderList;
     // Scope filter from navbar dropdown
     if (urlScope === "pickup") {
       base = base.filter((o) => o.deliveryMethod === "Pick Up");
     } else if (urlScope === "third") {
       base = base.filter((o) => o.deliveryMethod === "Third-Party Delivery");
-    } else if (urlScope === "cancelled") {
-      base = base.filter((o) => o.status === "cancelled");
     }
-    return base;
+    // Filter by status
+    if (selectedStatus === "all") {
+      return base;
+    }
+    return base.filter((order) => order.status === selectedStatus);
   };
 
   // Always default to 'All' when switching scopes or opening the page
@@ -263,61 +260,54 @@ const AllOrdersPage = () => {
           >
             All
           </button>
-          {/* Hide processing flow filters when viewing Cancelled scope */}
-          {urlScope !== "cancelled" && (
-            <>
-              <button
-                onClick={() => handleStatusChange("pending")}
-                className={`filter-btn ${
-                  selectedStatus === "pending" ? "active" : ""
-                }`}
-              >
-                Pending
-              </button>
-              <button
-                onClick={() => handleStatusChange("processing")}
-                className={`filter-btn ${
-                  selectedStatus === "processing" ? "active" : ""
-                }`}
-              >
-                Processing
-              </button>
-              <button
-                onClick={() => handleStatusChange("ready_to_pickup")}
-                className={`filter-btn ${
-                  selectedStatus === "ready_to_pickup" ? "active" : ""
-                }`}
-              >
-                Ready to Pick Up
-              </button>
-              <button
-                onClick={() => handleStatusChange("completed")}
-                className={`filter-btn ${
-                  selectedStatus === "completed" ? "active" : ""
-                }`}
-              >
-                Completed
-              </button>
-            </>
-          )}
-          {/* Hide Cancelled filter when viewing Pickup/Third scopes */}
-          {urlScope !== "pickup" && urlScope !== "third" && (
-            <button
-              onClick={() => handleStatusChange("cancelled")}
-              className={`filter-btn ${
-                selectedStatus === "cancelled" ? "active" : ""
-              }`}
-            >
-              Cancelled
-            </button>
-          )}
+          {/* Always show all status filters for each order type */}
+          <button
+            onClick={() => handleStatusChange("pending")}
+            className={`filter-btn ${
+              selectedStatus === "pending" ? "active" : ""
+            }`}
+          >
+            Pending
+          </button>
+          <button
+            onClick={() => handleStatusChange("processing")}
+            className={`filter-btn ${
+              selectedStatus === "processing" ? "active" : ""
+            }`}
+          >
+            Processing
+          </button>
+          <button
+            onClick={() => handleStatusChange("ready_to_pickup")}
+            className={`filter-btn ${
+              selectedStatus === "ready_to_pickup" ? "active" : ""
+            }`}
+          >
+            Ready to Pick Up
+          </button>
+          <button
+            onClick={() => handleStatusChange("completed")}
+            className={`filter-btn ${
+              selectedStatus === "completed" ? "active" : ""
+            }`}
+          >
+            Completed
+          </button>
           <button
             onClick={() => handleStatusChange("cancelled_pending")}
             className={`filter-btn ${
               selectedStatus === "cancelled_pending" ? "active" : ""
             }`}
           >
-            Cancelled Pending
+            Pending Cancelled Orders
+          </button>
+          <button
+            onClick={() => handleStatusChange("cancelled")}
+            className={`filter-btn ${
+              selectedStatus === "cancelled" ? "active" : ""
+            }`}
+          >
+            Cancelled Orders
           </button>
         </div>
       </div>
@@ -433,7 +423,7 @@ const AllOrdersPage = () => {
                                 setCancellationModal(true);
                               }}
                             >
-                              View Cancellation
+                              View Cancellation Reason
                             </button>
                           )}
                           {(() => {

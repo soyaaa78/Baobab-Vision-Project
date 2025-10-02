@@ -85,16 +85,6 @@ function Navbar() {
                       Third Party Orders
                     </Link>
                   </li>
-                  <li>
-                    <Link
-                      to="allorders?scope=cancelled"
-                      className={
-                        onAllOrders && scope === "cancelled" ? "active" : ""
-                      }
-                    >
-                      Cancelled Orders
-                    </Link>
-                  </li>
                 </ul>
               </li>
               <li>
