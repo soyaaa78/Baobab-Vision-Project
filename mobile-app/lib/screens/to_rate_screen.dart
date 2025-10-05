@@ -4,6 +4,7 @@ import '../services/api_client.dart';
 import 'dart:convert';
 import '../widgets/custom_text.dart';
 import '../constants.dart';
+import 'home_screen.dart';
 
 class ToRateScreen extends StatefulWidget {
   const ToRateScreen({super.key});
@@ -188,6 +189,16 @@ class _ToRateScreenState extends State<ToRateScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const HomeScreen(initialIndex: 3),
+              ),
+            );
+          },
+        ),
         title: const Text('To Rate Orders'),
         backgroundColor: WHITE_COLOR,
       ),

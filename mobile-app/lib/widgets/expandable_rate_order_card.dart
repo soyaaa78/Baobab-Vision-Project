@@ -125,7 +125,7 @@ class _ExpandableRateOrderCardState extends State<ExpandableRateOrderCard>
                               Row(
                                 children: [
                                   Text(
-                                    'Order #${widget.orderId}',
+                                    widget.orderId,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,

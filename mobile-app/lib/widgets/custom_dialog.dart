@@ -4,8 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-customDialog(BuildContext context, {required String title, required String content}) {
-  showDialog(
+Future<void> customDialog(BuildContext context,
+    {required String title, required String content}) {
+  return showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
@@ -92,8 +93,9 @@ customShowImageDialog(BuildContext context, {required String imageUrl}) {
                       ? CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
-                          progressIndicatorBuilder: (context, url, downloadProgress) =>
-                              CircularProgressIndicator(
+                          progressIndicatorBuilder:
+                              (context, url, downloadProgress) =>
+                                  CircularProgressIndicator(
                             color: BLACK_COLOR,
                             value: downloadProgress.progress,
                           ),

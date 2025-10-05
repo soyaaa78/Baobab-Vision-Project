@@ -5,6 +5,7 @@ import '../constants.dart';
 // import '../models/productModel.dart';
 import '../widgets/expandable_order_card.dart';
 import '../widgets/custom_text.dart';
+import 'home_screen.dart';
 
 class PendingOrdersScreen extends StatefulWidget {
   const PendingOrdersScreen({super.key});
@@ -158,6 +159,16 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const HomeScreen(initialIndex: 3),
+              ),
+            );
+          },
+        ),
         title: const Text('Pending Orders'),
         backgroundColor: WHITE_COLOR,
         elevation: 1,

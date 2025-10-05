@@ -37,7 +37,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final TextEditingController postalCodeController = TextEditingController();
   final TextEditingController streetController = TextEditingController();
 
-  bool lalamoveSubmitted = false;
+  bool _isSubmitting = false;
 
   final Map<String, Map<String, Map<String, List<String>>>> philippinesRegions =
       {
@@ -74,6 +74,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _handleSubmit() async {
+    if (_isSubmitting) return;
+
     if (selectedDeliveryMethod == 'Lalamove') {
       if (selectedThirdPartyService == null ||
           nameController.text.isEmpty ||
@@ -91,47 +93,62 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       }
 
       setState(() {
-        lalamoveSubmitted = true;
+        _isSubmitting = true;
       });
 
-      // Submit order first
-      await _submitOrder();
+      try {
+        final success = await _submitOrder();
+        if (!success || !mounted) return;
 
-      // ✅ Use customDialog
-      customDialog(
-        context,
-        title: "Order Confirmed",
-        content:
-            "Your order will be delivered via ${selectedThirdPartyService}. Staff will contact you on your number immediately for further instructions. Note that if you didn't answer the call 3 times, the order will be disregarded or cancelled.",
-      );
+        await customDialog(
+          context,
+          title: "Order Confirmed",
+          content:
+              "Your order will be delivered via ${selectedThirdPartyService}. Staff will contact you on your number immediately for further instructions. Note that if you didn't answer the call 3 times, the order will be disregarded or cancelled.",
+        );
 
-      // After closing dialog, navigate
-      Future.delayed(Duration(milliseconds: 10000), () {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) => const DeliveryOrdersScreen()),
+          MaterialPageRoute(builder: (context) => const DeliveryOrdersScreen()),
         );
-      });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
+      }
     } else {
       // Pick Up flow
       if (selectedPaymentMethod == 'Pay Cash') {
-        // ✅ Use customDialog
-        customDialog(
-          context,
-          title: "Order Confirmed",
-          content: "Please pay the exact total amount of cash upon pickup.",
-        );
-
-        // After closing dialog, navigate
-        Future.delayed(Duration(milliseconds: 7000), () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => PendingOrdersScreen()),
-          );
+        setState(() {
+          _isSubmitting = true;
         });
 
-        _submitOrder();
+        try {
+          final success = await _submitOrder();
+          if (!success || !mounted) return;
+
+          await customDialog(
+            context,
+            title: "Order Confirmed",
+            content: "Please pay the exact total amount of cash upon pickup.",
+          );
+
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+                builder: (context) => const PendingOrdersScreen()),
+          );
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isSubmitting = false;
+            });
+          }
+        }
       } else if (selectedPaymentMethod == 'GCASH') {
         Navigator.push(
           context,
@@ -147,7 +164,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
-  Future<void> _submitOrder() async {
+  Future<bool> _submitOrder() async {
     try {
       final isThirdParty = selectedDeliveryMethod == 'Lalamove';
       final addressDetails = isThirdParty
@@ -176,6 +193,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt(
           'cartClearedAt', DateTime.now().millisecondsSinceEpoch);
+      return true;
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -184,6 +202,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           duration: Duration(seconds: 3),
         ),
       );
+      return false;
     }
   }
 
@@ -304,7 +323,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           onTap: () {
                             setState(() {
                               selectedDeliveryMethod = 'Pick Up';
-                              lalamoveSubmitted = false;
                               selectedThirdPartyService = null;
                             });
                           },
@@ -634,14 +652,37 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     borderRadius: BorderRadius.circular(15),
                   ),
                 ),
-                onPressed: _handleSubmit,
-                child: CustomText(
-                  text:
-                      'Confirm Order - PHP ${widget.totalAmount.toStringAsFixed(2)}',
-                  fontSize: ScreenUtil().setSp(18),
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
+                onPressed: _isSubmitting ? null : _handleSubmit,
+                child: _isSubmitting
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                          SizedBox(width: 12.w),
+                          CustomText(
+                            text: 'Processing...',
+                            fontSize: ScreenUtil().setSp(16),
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ],
+                      )
+                    : CustomText(
+                        text:
+                            'Confirm Order - PHP ${widget.totalAmount.toStringAsFixed(2)}',
+                        fontSize: ScreenUtil().setSp(18),
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
               ),
             ),
             SizedBox(height: 30.h),
