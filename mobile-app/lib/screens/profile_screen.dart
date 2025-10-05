@@ -256,7 +256,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ).then((_) => _fetchAndLoadProfile());
                   }),
                   _buildSettingsOption(
-                      Icons.delivery_dining_sharp, 'Delivery Orders', () {
+                      Icons.delivery_dining_sharp, 'Third Party Orders', () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
