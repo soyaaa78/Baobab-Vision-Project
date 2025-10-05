@@ -438,60 +438,65 @@ class _ShopScreenState extends State<ShopScreen> {
             ),
             SizedBox(height: 10),
             SizedBox(
-              height: 230,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: forYou.length,
-                itemBuilder: (context, index) {
-                  var product = forYou[index];
-                  List<String> productImages = (product['imageUrls'] != null &&
-                          product['imageUrls'] is List)
-                      ? List<String>.from(product['imageUrls'])
-                      : ['https://example.com/fallback-image.jpg'];
-                  // Use aggregated averageRating; if null/absent => 0 (unrated); ignore legacy numStars default of 5
-                  final double displayRating = (() {
-                    if (product.containsKey('averageRating')) {
-                      final ar = product['averageRating'];
-                      if (ar == null) return 0.0; // no ratings yet
-                      if (ar is int) return ar.toDouble();
-                      if (ar is double) return ar;
-                    }
-                    return 0.0; // default when no aggregated rating
-                  })();
+              height: 240, // slightly increased to prevent overflow
+              child: Padding(
+                padding:
+                    const EdgeInsets.only(bottom: 8.0), // add bottom padding
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: forYou.length,
+                  itemBuilder: (context, index) {
+                    var product = forYou[index];
+                    List<String> productImages =
+                        (product['imageUrls'] != null &&
+                                product['imageUrls'] is List)
+                            ? List<String>.from(product['imageUrls'])
+                            : ['https://example.com/fallback-image.jpg'];
+                    // Use aggregated averageRating; if null/absent => 0 (unrated); ignore legacy numStars default of 5
+                    final double displayRating = (() {
+                      if (product.containsKey('averageRating')) {
+                        final ar = product['averageRating'];
+                        if (ar == null) return 0.0; // no ratings yet
+                        if (ar is int) return ar.toDouble();
+                        if (ar is double) return ar;
+                      }
+                      return 0.0; // default when no aggregated rating
+                    })();
 
-                  return Padding(
-                    padding: EdgeInsets.only(right: 12),
-                    child: CustomVerticalProductCard(
-                      prodName: product['name'] ?? 'Unknown',
-                      prodPrice: '${product['price']} PHP',
-                      numStars: displayRating,
-                      quantity: product['stock'] ?? 1,
-                      description: product['description'] ?? '',
-                      prodImages: productImages,
-                      productId: product['_id'] ?? product['productId'] ?? '',
-                      colorOptions:
-                          (product['colorOptions'] as List<dynamic>? ?? [])
-                              .map((e) => ColorOption.fromJson(e))
-                              .toList(),
-                      lensOptions:
-                          (product['lensOptions'] as List<dynamic>? ?? [])
-                              .map((e) => LensOption.fromJson(e))
-                              .toList(),
-                      selectedColorName: (product['colorOptions'] != null &&
-                              product['colorOptions'] is List &&
-                              product['colorOptions'].isNotEmpty &&
-                              product['colorOptions'][0]['colorName'] != null)
-                          ? product['colorOptions'][0]['colorName'] as String
-                          : 'Default',
-                      selectedLensLabel: (product['lensOptions'] != null &&
-                              product['lensOptions'] is List &&
-                              product['lensOptions'].isNotEmpty &&
-                              product['lensOptions'][0]['label'] != null)
-                          ? product['lensOptions'][0]['label'] as String
-                          : 'Default',
-                    ),
-                  );
-                },
+                    return Padding(
+                      padding: EdgeInsets.only(right: 12),
+                      child: CustomVerticalProductCard(
+                        prodName: product['name'] ?? 'Unknown',
+                        prodPrice: '${product['price']} PHP',
+                        numStars: displayRating,
+                        quantity: product['stock'] ?? 1,
+                        description: product['description'] ?? '',
+                        prodImages: productImages,
+                        productId: product['_id'] ?? product['productId'] ?? '',
+                        colorOptions:
+                            (product['colorOptions'] as List<dynamic>? ?? [])
+                                .map((e) => ColorOption.fromJson(e))
+                                .toList(),
+                        lensOptions:
+                            (product['lensOptions'] as List<dynamic>? ?? [])
+                                .map((e) => LensOption.fromJson(e))
+                                .toList(),
+                        selectedColorName: (product['colorOptions'] != null &&
+                                product['colorOptions'] is List &&
+                                product['colorOptions'].isNotEmpty &&
+                                product['colorOptions'][0]['colorName'] != null)
+                            ? product['colorOptions'][0]['colorName'] as String
+                            : 'Default',
+                        selectedLensLabel: (product['lensOptions'] != null &&
+                                product['lensOptions'] is List &&
+                                product['lensOptions'].isNotEmpty &&
+                                product['lensOptions'][0]['label'] != null)
+                            ? product['lensOptions'][0]['label'] as String
+                            : 'Default',
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
             SizedBox(height: 20),

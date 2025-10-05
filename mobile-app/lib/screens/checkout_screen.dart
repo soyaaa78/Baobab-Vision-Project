@@ -110,8 +110,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-              builder: (context) => const DeliveryOrdersScreen()),
+          MaterialPageRoute(builder: (context) => const DeliveryOrdersScreen()),
         );
       } finally {
         if (mounted) {
@@ -612,8 +611,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             height: 22,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.5,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white),
+                              valueColor:
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           ),
                           SizedBox(width: 12.w),

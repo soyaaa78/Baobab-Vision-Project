@@ -93,8 +93,9 @@ customShowImageDialog(BuildContext context, {required String imageUrl}) {
                       ? CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
-                          progressIndicatorBuilder: (context, url, downloadProgress) =>
-                              CircularProgressIndicator(
+                          progressIndicatorBuilder:
+                              (context, url, downloadProgress) =>
+                                  CircularProgressIndicator(
                             color: BLACK_COLOR,
                             value: downloadProgress.progress,
                           ),
