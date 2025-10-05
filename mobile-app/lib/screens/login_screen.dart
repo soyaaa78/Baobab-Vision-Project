@@ -126,158 +126,166 @@ class _LogInScreenState extends State<LogInScreen> {
     return Scaffold(
       backgroundColor: WHITE_COLOR,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: SizedBox(
-            height: 1.sh, // ✅ Screen height from ScreenUtil
-            width: 1.sw, // ✅ Screen width from ScreenUtil
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SizedBox(height: 40.h),
-
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 25.w),
+        child: Column(
+          children: [
+            /// Scrollable form content
+            Expanded(
+              child: SingleChildScrollView(
+                child: SizedBox(
+                  width: 1.sw,
+                  child: Form(
+                    key: _formKey,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        /// Logo
-                        Center(
-                          child: Image.asset(
-                            'assets/images/baobab_logo.png',
-                            height: 150.h,
-                          ),
-                        ),
-                        SizedBox(height: 30.h),
-
-                        /// Username Field
-                        TextFormField(
-                          controller: usernameController,
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Please enter your username'
-                              : null,
-                          decoration: InputDecoration(
-                            labelText: 'Username',
-                            labelStyle: TextStyle(
-                              fontSize: 15.sp,
-                              color: BLACK_COLOR,
-                            ),
-                            prefixIcon: const Icon(Icons.person),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.r),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey.shade100,
-                          ),
-                        ),
-                        SizedBox(height: 20.h),
-
-                        /// Password Field
-                        TextFormField(
-                          controller: passwordController,
-                          obscureText: _isObscure,
-                          validator: (value) => value == null || value.isEmpty
-                              ? 'Please enter your password'
-                              : null,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            labelStyle: TextStyle(
-                              fontSize: 15.sp,
-                              color: BLACK_COLOR,
-                            ),
-                            prefixIcon: const Icon(Icons.lock),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _isObscure
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
+                        SizedBox(height: 105.h),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 25.w),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              /// Logo
+                              Center(
+                                child: Image.asset(
+                                  'assets/images/baobab_logo.png',
+                                  height: 150.h,
+                                ),
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _isObscure = !_isObscure;
-                                });
-                              },
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10.r),
-                            ),
-                            filled: true,
-                            fillColor: Colors.grey.shade100,
-                          ),
-                        ),
-                        SizedBox(height: 30.h),
+                              SizedBox(height: 30.h),
 
-                        /// Login Button
-                        CustomInkwellButton(
-                          onTap: () {
-                            if (_formKey.currentState!.validate()) {
-                              login();
-                            }
-                          },
-                          height: 50.h,
-                          width: double.infinity,
-                          buttonName: 'Login',
-                          fontSize: 16.sp,
-                        ),
-                        SizedBox(height: 20.h),
-
-                        /// Forgot Password Link
-                        Center(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.pushNamed(context, '/forgot-password');
-                            },
-                            child: Text(
-                              'Forgot Password?',
-                              style: TextStyle(
-                                color: BLACK_COLOR,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w500,
-                                decoration: TextDecoration.underline,
+                              /// Username Field
+                              TextFormField(
+                                controller: usernameController,
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter your username'
+                                        : null,
+                                decoration: InputDecoration(
+                                  labelText: 'Username',
+                                  labelStyle: TextStyle(
+                                    fontSize: 15.sp,
+                                    color: BLACK_COLOR,
+                                  ),
+                                  prefixIcon: const Icon(Icons.person),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade100,
+                                ),
                               ),
-                            ),
+                              SizedBox(height: 20.h),
+
+                              /// Password Field
+                              TextFormField(
+                                controller: passwordController,
+                                obscureText: _isObscure,
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter your password'
+                                        : null,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  labelStyle: TextStyle(
+                                    fontSize: 15.sp,
+                                    color: BLACK_COLOR,
+                                  ),
+                                  prefixIcon: const Icon(Icons.lock),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _isObscure
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _isObscure = !_isObscure;
+                                      });
+                                    },
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade100,
+                                ),
+                              ),
+                              SizedBox(height: 30.h),
+
+                              /// Login Button
+                              CustomInkwellButton(
+                                onTap: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    login();
+                                  }
+                                },
+                                height: 50.h,
+                                width: double.infinity,
+                                buttonName: 'Login',
+                                fontSize: 16.sp,
+                              ),
+                              SizedBox(height: 20.h),
+
+                              /// Forgot Password Link
+                              Center(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                        context, '/forgot-password');
+                                  },
+                                  child: Text(
+                                    'Forgot Password?',
+                                    style: TextStyle(
+                                      color: BLACK_COLOR,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
+                ),
+              ),
+            ),
 
-                  /// Register Link (bottom section)
-                  Container(
-                    height: 50.h,
-                    width: double.infinity,
-                    color: BLACK_COLOR,
-                    alignment: Alignment.center,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Don't have an account?",
-                          style: TextStyle(
-                            color: Colors.grey.shade300,
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () =>
-                              Navigator.popAndPushNamed(context, '/register'),
-                          child: Text(
-                            ' Register Here',
-                            style: TextStyle(
-                              color: WHITE_COLOR,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14.sp,
-                            ),
-                          ),
-                        ),
-                      ],
+            /// Register Link (always visible at the bottom)
+            Container(
+              height: 50.h,
+              width: double.infinity,
+              color: BLACK_COLOR,
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Don't have an account?",
+                    style: TextStyle(
+                      color: Colors.grey.shade300,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () =>
+                        Navigator.popAndPushNamed(context, '/register'),
+                    child: Text(
+                      ' Register Here',
+                      style: TextStyle(
+                        color: WHITE_COLOR,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.sp,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

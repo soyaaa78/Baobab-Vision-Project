@@ -309,12 +309,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          customDialog(context,
-                              title: "Data Privacy Policy",
-                              content:
-                                  "By registering, you agree to our Data Privacy Policy. "
-                                  "Your personal data will be collected and processed in compliance "
-                                  "with applicable laws.");
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                backgroundColor: WHITE_COLOR,
+                                title: const Text("Data Privacy Policy"),
+                                content: SizedBox(
+                                  height: 400,
+                                  width: double.maxFinite,
+                                  child: SingleChildScrollView(
+                                    child: const Text(
+                                      """
+Baobab Vision values your privacy and is committed to protecting your personal data in compliance with the Data Privacy Act of 2012 (RA 10173). This policy explains how we collect, use, protect, and store your data when using our app.
+
+1. Information We Collect
+- Personal info: Name, email, mobile number, address, username, password (encrypted).
+- Transaction info: Order history, payment details (via secure third parties), delivery info.
+
+2. How We Use Your Information
+- For account creation, order processing, customer support, app improvement, and legal compliance.
+
+3. Data Storage and Protection
+We use secure servers, encryption, and restricted access to protect your information.
+
+4. Data Sharing
+We do not sell or share your data for marketing. We only share with delivery partners or authorities when required by law.
+
+5. User Rights
+You have the right to access, correct, or delete your data, withdraw consent, and file complaints with the National Privacy Commission (NPC).
+
+6. Retention
+We retain data only as long as necessary or required by law, then securely delete or anonymize it.
+
+7. Policy Updates
+We may update this policy periodically. Continued use of the app indicates acceptance.
+
+8. Contact Us
+For questions: baobabeyewear@gmail.com | Room 505, First United Building, 413 Escolta St., Manila
+
+By registering, you consent to the collection and processing of your personal data in accordance with this policy.
+                                      """,
+                                      style: TextStyle(fontSize: 14),
+                                    ),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text("Close",
+      style: TextStyle(color: BLACK_COLOR),
+                                  ),)
+                                ],
+                              );
+                            },
+                          );
                         },
                         child: const Text.rich(
                           TextSpan(
