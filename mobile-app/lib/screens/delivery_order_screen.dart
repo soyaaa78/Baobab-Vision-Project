@@ -5,6 +5,7 @@ import '../widgets/expandable_order_card.dart';
 import '../widgets/custom_text.dart';
 import '../constants.dart';
 import '../services/api_client.dart';
+import 'home_screen.dart';
 
 class DeliveryOrdersScreen extends StatefulWidget {
   const DeliveryOrdersScreen({super.key});
@@ -177,6 +178,16 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const HomeScreen(initialIndex: 3),
+              ),
+            );
+          },
+        ),
         title: const Text('Delivery Orders'),
         backgroundColor: WHITE_COLOR,
       ),

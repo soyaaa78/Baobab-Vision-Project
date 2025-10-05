@@ -5,6 +5,7 @@ import '../widgets/expandable_order_card.dart';
 import '../widgets/custom_text.dart';
 import '../constants.dart';
 import '../services/api_client.dart';
+import 'home_screen.dart';
 
 class CancelledOrdersScreen extends StatefulWidget {
   const CancelledOrdersScreen({super.key});
@@ -143,6 +144,16 @@ class _CancelledOrdersScreenState extends State<CancelledOrdersScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const HomeScreen(initialIndex: 3),
+              ),
+            );
+          },
+        ),
         title: const Text('Cancelled Orders'),
         backgroundColor: WHITE_COLOR,
       ),

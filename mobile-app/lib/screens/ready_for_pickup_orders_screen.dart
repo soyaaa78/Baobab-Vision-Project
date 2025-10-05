@@ -4,6 +4,7 @@ import '../services/api_client.dart';
 import 'dart:convert';
 import '../constants.dart';
 import '../widgets/custom_text.dart';
+import 'home_screen.dart';
 
 class ReadyForPickupOrdersScreen extends StatefulWidget {
   const ReadyForPickupOrdersScreen({super.key});
@@ -178,6 +179,16 @@ class _ReadyForPickupOrdersScreenState extends State<ReadyForPickupOrdersScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const HomeScreen(initialIndex: 3),
+              ),
+            );
+          },
+        ),
         title: const Text('Ready for Pickup Orders'),
         backgroundColor: WHITE_COLOR,
       ),

@@ -118,7 +118,7 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
                               Row(
                                 children: [
                                   Text(
-                                    'Order #${widget.orderId}',
+                                    widget.orderId,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16,
@@ -145,6 +145,55 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
                                 ],
                               ),
                               const SizedBox(height: 4),
+                              // Show pickupLocation and pickupTime if available
+                              if (widget.additionalInfo != null &&
+                                  widget.additionalInfo!['pickupLocation'] !=
+                                      null &&
+                                  (widget.additionalInfo!['pickupLocation']
+                                          as String)
+                                      .isNotEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2.0),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.location_on,
+                                          size: 14, color: Colors.grey[600]),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          widget.additionalInfo![
+                                              'pickupLocation'],
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600]),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (widget.additionalInfo != null &&
+                                  widget.additionalInfo!['pickupTime'] != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 2.0),
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.access_time,
+                                          size: 14, color: Colors.grey[600]),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          _formatPickupTime(widget
+                                              .additionalInfo!['pickupTime']),
+                                          style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600]),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               if (widget.orderDate != null)
                                 Text(
                                   _formatDate(widget.orderDate!),
@@ -513,5 +562,45 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
+  }
+
+  String _formatPickupTime(dynamic pickupTime) {
+    if (pickupTime == null) return '';
+    DateTime? dateTime;
+    if (pickupTime is DateTime) {
+      dateTime = pickupTime;
+    } else if (pickupTime is String) {
+      try {
+        dateTime = DateTime.tryParse(pickupTime);
+      } catch (_) {
+        dateTime = null;
+      }
+    }
+    if (dateTime == null) return pickupTime.toString();
+    // Format as 'MMM d, yyyy h:mm a'
+    final months = [
+      '',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    final month = months[dateTime.month];
+    final day = dateTime.day;
+    final year = dateTime.year;
+    int hour = dateTime.hour;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final ampm = hour >= 12 ? 'PM' : 'AM';
+    hour = hour % 12;
+    if (hour == 0) hour = 12;
+    return '$month $day, $year $hour:$minute $ampm';
   }
 }

@@ -4,6 +4,7 @@ import '../services/api_client.dart';
 import 'dart:convert';
 import '../widgets/custom_text.dart';
 import '../constants.dart';
+import 'home_screen.dart';
 
 class ProcessingOrdersScreen extends StatefulWidget {
   const ProcessingOrdersScreen({super.key});
@@ -156,6 +157,16 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const HomeScreen(initialIndex: 3),
+              ),
+            );
+          },
+        ),
         title: const Text('Processing Orders'),
         backgroundColor: WHITE_COLOR,
       ),

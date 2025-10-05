@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../widgets/custom_text.dart';
 import '../constants.dart';
 import '../services/api_client.dart';
+import 'home_screen.dart';
 
 class CompletedPurchasesScreen extends StatefulWidget {
   const CompletedPurchasesScreen({super.key});
@@ -182,6 +183,16 @@ class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const HomeScreen(initialIndex: 3),
+              ),
+            );
+          },
+        ),
         title: const Text('Completed Purchases'),
         backgroundColor: WHITE_COLOR,
       ),
