@@ -1,4 +1,4 @@
-import 'package:baobab_vision_project/widgets/processing_order_card.dart';
+import 'package:baobab_vision_project/widgets/expandable_order_card.dart';
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
 import 'dart:convert';
@@ -44,68 +44,112 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen>
 
   Future<List<Map<String, dynamic>>> fetchProcessingOrders() async {
     final response = await ApiClient.get('/api/orders?status=processing');
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      final orders = (data['order'] as List)
-          .where((order) => order['status'] == 'processing')
-          .expand((order) {
-        final products = order['products'] as List? ?? [];
-        return products.map((product) {
-          final productId = product['productId'];
-          final prodName = productId?['name'] ?? '';
-          final imageUrls = productId?['imageUrls'] ?? [];
-          final prodImages = imageUrls is List && imageUrls.isNotEmpty
-              ? [imageUrls.first]
-              : [];
-          // Resolve color name and value
-          String selectedColorName = '';
-          String selectedColorValue = '';
-          final colorId = product['color'];
-          final colorOptions = productId?['colorOptions'] ?? [];
-          if (colorId != null && colorOptions is List) {
-            final colorObj = colorOptions.firstWhere(
-              (c) => c['_id'] == colorId,
-              orElse: () => null,
-            );
-            if (colorObj != null) {
-              selectedColorName = colorObj['name'] ?? '';
-              if (colorObj['colors'] is List && colorObj['colors'].isNotEmpty) {
-                selectedColorValue = colorObj['colors'][0];
-              }
-            }
-          }
-          // Resolve lens label
-          String selectedLensLabel = '';
-          final lensId = product['lens'];
-          final lensOptions = productId?['lensOptions'] ?? [];
-          if (lensId != null && lensOptions is List) {
-            final lensObj = lensOptions.firstWhere(
-              (l) => l['_id'] == lensId,
-              orElse: () => null,
-            );
-            if (lensObj != null) {
-              selectedLensLabel = lensObj['label'] ?? '';
-            }
-          }
-          return {
-            'productId':
-                productId is Map ? productId['_id'] ?? '' : productId ?? '',
-            'prodName': prodName,
-            'quantity': product['quantity'] ?? 1,
-            'prodPrice': product['price']?.toString() ?? '',
-            'prodImages': prodImages,
-            'selectedColorName': selectedColorName,
-            'selectedColorValue': selectedColorValue,
-            'selectedLensLabel': selectedLensLabel,
-            'deliveryMethod': order['deliveryMethod'] ?? '',
-            'paymentMethod': order['paymentMethod'] ?? '',
-          };
-        });
-      }).toList();
-      return orders.cast<Map<String, dynamic>>();
-    } else {
+    if (response.statusCode != 200) {
       throw Exception('Failed to load processing orders');
     }
+
+    final data = json.decode(response.body);
+    final rawOrders = data is Map<String, dynamic> ? data['order'] : null;
+    if (rawOrders is! List) return [];
+
+    final List<Map<String, dynamic>> groupedOrders = rawOrders
+        .whereType<Map>()
+        .map((o) => Map<String, dynamic>.from(o))
+        .where((order) => order['status']?.toString() == 'processing')
+        .map((order) {
+          final products = order['products'];
+          if (products is! List) return null;
+
+          final List<Map<String, dynamic>> processedProducts =
+              products.map<Map<String, dynamic>>((p) {
+            final product = Map<String, dynamic>.from(p as Map);
+            final productIdRaw = product['productId'];
+            final Map<String, dynamic>? productId = productIdRaw is Map
+                ? Map<String, dynamic>.from(productIdRaw)
+                : null;
+
+            final String prodName = productId?['name']?.toString() ?? '';
+
+            final imageUrls = productId?['imageUrls'];
+            final List<String> prodImages = (imageUrls is List)
+                ? imageUrls.whereType<String>().toList().take(1).toList()
+                : <String>[];
+
+            // Resolve color name
+            String selectedColorName = '';
+            final String? colorId = product['color']?.toString();
+            final colorOptionsRaw = productId?['colorOptions'];
+            if (colorId != null && colorOptionsRaw is List) {
+              final List<Map<String, dynamic>> colorOptions = colorOptionsRaw
+                  .whereType<Map>()
+                  .map((m) => Map<String, dynamic>.from(m))
+                  .toList();
+              final colorObj = colorOptions.firstWhere(
+                (c) => c['_id']?.toString() == colorId,
+                orElse: () => <String, dynamic>{},
+              );
+              if (colorObj.isNotEmpty) {
+                selectedColorName = colorObj['name']?.toString() ?? '';
+              }
+            }
+
+            // Resolve lens label
+            String selectedLensLabel = '';
+            final String? lensId = product['lens']?.toString();
+            final lensOptionsRaw = productId?['lensOptions'];
+            if (lensId != null && lensOptionsRaw is List) {
+              final List<Map<String, dynamic>> lensOptions = lensOptionsRaw
+                  .whereType<Map>()
+                  .map((m) => Map<String, dynamic>.from(m))
+                  .toList();
+              final lensObj = lensOptions.firstWhere(
+                (l) => l['_id']?.toString() == lensId,
+                orElse: () => <String, dynamic>{},
+              );
+              if (lensObj.isNotEmpty) {
+                selectedLensLabel = lensObj['label']?.toString() ?? '';
+              }
+            }
+
+            final productIdForCard = productId?['_id']?.toString() ??
+                (product['productId']?.toString() ?? '');
+            final quantity = product['quantity'] is int
+                ? product['quantity'] as int
+                : int.tryParse(product['quantity']?.toString() ?? '') ?? 1;
+            final prodPrice = product['price']?.toString() ?? '';
+
+            return {
+              'productId': productIdForCard,
+              'prodName': prodName,
+              'prodPrice': prodPrice,
+              'quantity': quantity,
+              'prodImages': prodImages,
+              'selectedColorName': selectedColorName,
+              'selectedLensLabel': selectedLensLabel,
+            };
+          }).toList();
+
+          // Parse order date
+          DateTime? orderDate;
+          final dateStr = order['date']?.toString();
+          if (dateStr != null) {
+            orderDate = DateTime.tryParse(dateStr);
+          }
+
+          return {
+            'orderId':
+                order['orderId']?.toString() ?? order['_id']?.toString() ?? '',
+            'products': processedProducts,
+            'deliveryMethod': order['deliveryMethod']?.toString() ?? '',
+            'thirdPartyDelivery': order['thirdPartyDelivery']?.toString() ?? '',
+            'status': order['status']?.toString() ?? 'processing',
+            'orderDate': orderDate,
+          };
+        })
+        .whereType<Map<String, dynamic>>()
+        .toList();
+
+    return groupedOrders;
   }
 
   @override
@@ -144,18 +188,15 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen>
               itemCount: orders.length,
               itemBuilder: (context, index) {
                 final order = orders[index];
-                return ProcessingOrderCard(
-                  productId: order['productId']?.toString() ?? '',
-                  prodName: order['prodName']?.toString() ?? '',
-                  quantity: order['quantity'] ?? 1,
-                  prodPrice: order['prodPrice']?.toString() ?? '',
-                  prodImages: List<String>.from(order['prodImages'] ?? []),
-                  selectedColorName:
-                      order['selectedColorName']?.toString() ?? '',
-                  selectedLensLabel:
-                      order['selectedLensLabel']?.toString() ?? '',
+                return ExpandableOrderCard(
+                  orderId: order['orderId']?.toString() ?? '',
+                  products:
+                      List<Map<String, dynamic>>.from(order['products'] ?? []),
                   deliveryMethod: order['deliveryMethod']?.toString() ?? '',
-                  paymentMethod: order['paymentMethod']?.toString() ?? '',
+                  thirdPartyDelivery:
+                      order['thirdPartyDelivery']?.toString() ?? '',
+                  status: order['status']?.toString() ?? 'processing',
+                  orderDate: order['orderDate'],
                 );
               },
             ),
