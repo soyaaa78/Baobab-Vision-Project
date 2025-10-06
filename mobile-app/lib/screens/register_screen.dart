@@ -87,7 +87,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
 
         // Navigate to login after a short delay
-        Future.delayed(const Duration(milliseconds: 600), () {
+        Future.delayed(const Duration(milliseconds: 15000), () {
           Navigator.pushReplacementNamed(context, '/login');
         });
       } else {
@@ -174,7 +174,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     List<String> missing = [];
 
     if (value.length < 8) missing.add('at least 8 characters');
-    if (value.length > 12) missing.add('no more than 12 characters');
+    if (value.length > 36) missing.add('no more than 36 characters');
     if (!RegExp(r'[A-Z]').hasMatch(value)) missing.add('1 uppercase letter');
     if (!RegExp(r'[a-z]').hasMatch(value)) missing.add('1 lowercase letter');
     if (!RegExp(r'\d').hasMatch(value)) missing.add('1 number');

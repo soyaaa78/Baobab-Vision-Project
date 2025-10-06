@@ -249,40 +249,69 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _showThirdPartyInfoDialog() {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      backgroundColor: WHITE_COLOR, // 👈 full dialog background
-      title: Text(
-        "Third-Party Delivery Info",
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 20, // slightly bigger title
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: WHITE_COLOR,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        insetPadding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.75, // Scrollable
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Third-Party Delivery Info",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 15),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: BouncingScrollPhysics(),
+                    child: Text(
+                      "By selecting third-party delivery, your order will be handled by your chosen delivery service (e.g., Lalamove, J&T, GrabExpress). Please ensure that your delivery details are complete and accurate.\n\n"
+                      "When you choose Third-Party Delivery, you’ll need to provide a few delivery details through the form. This helps us process your order and make sure your chosen courier has the correct information.\n\n"
+                      "After submitting the form, your order will appear in the Third Party Orders section. Here, you can easily track its progress through different statuses such as Pending, Processing, Ready for Shipment, In Transit, and Delivered.\n\n"
+                      "Please note that arranging the courier service, settling the delivery payment, and other related steps will be handled by both you and our staff outside the system. After you submit your delivery details, our staff will contact you to coordinate and finalize the process.",
+                      textAlign: TextAlign.justify,
+                      style: TextStyle(
+                        fontSize: 15,
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 15),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text(
+                      "OK",
+                      style: TextStyle(
+                        color: BLACK_COLOR,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
         ),
       ),
-      content: Text(
-        "By selecting third-party delivery, your order will be handled by your chosen delivery service (e.g., Lalamove, J&T, GrabExpress). Please ensure that your delivery details are complete and accurate.\n\n"
-        "When you choose Third-Party Delivery, you’ll need to provide a few delivery details through the form. This helps us process your order and make sure your chosen courier has the correct information.\n\n"
-        "After submitting the form, your order will appear in the Third Party Orders section. Here, you can easily track its progress through different statuses such as Pending, Processing, Ready for Shipment, In Transit, and Delivered.\n\n"
-        "Please note that arranging the courier service, settling the delivery payment, and other related steps will be handled by both you and our staff outside the system. After you submit your delivery details, our staff will contact you to coordinate and finalize the process.",
-        textAlign: TextAlign.justify,
-        style: TextStyle(
-          fontSize: 15, // increased by 1
-          height: 1.5,  // better line spacing
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text("OK",   style: TextStyle(
-              color: BLACK_COLOR, // 👈 make OK button black
-              fontWeight: FontWeight.bold,),
-        ),
-        ),
-      ],
-    ),
-  );
-}
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -488,27 +517,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-  mainAxisSize: MainAxisSize.min,
-  children: [
-    CustomText(
-      text: 'Third-Party Delivery Details',
-      fontSize: ScreenUtil().setSp(18),
-      fontWeight: FontWeight.bold,
-      color: Colors.black,
-    ),
-    GestureDetector(
-      onTap: _showThirdPartyInfoDialog,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 3), // adjust if needed
-        child: Icon(
-          Icons.info_outline,
-          color: Colors.black,
-          size: 18,
-        ),
-      ),
-    ),
-  ],
-),
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CustomText(
+                          text: 'Third-Party Delivery Details',
+                          fontSize: ScreenUtil().setSp(18),
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                        GestureDetector(
+                          onTap: _showThirdPartyInfoDialog,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 3),
+                            child: Icon(
+                              Icons.info_outline,
+                              color: Colors.black,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: 15.h),
                     _buildDropdown(
                       value: selectedThirdPartyService,
