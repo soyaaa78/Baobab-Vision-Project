@@ -89,223 +89,247 @@ class _ExpandableRateOrderCardState extends State<ExpandableRateOrderCard>
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      shadowColor: Colors.black26,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.white, Colors.grey.shade50],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 360;
+        final borderRadius = BorderRadius.circular(20);
+        final headerPadding = EdgeInsets.all(isCompact ? 12 : 16);
+        final summarySpacing = isCompact ? 8.0 : 12.0;
+
+        return Card(
+          elevation: 6,
+          shape: RoundedRectangleBorder(
+            borderRadius: borderRadius,
           ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          children: [
-            // Order Header - Always Visible
-            InkWell(
-              onTap: _toggleExpansion,
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
+          margin: EdgeInsets.symmetric(
+            vertical: 8,
+            horizontal: isCompact ? 8 : 12,
+          ),
+          shadowColor: Colors.black26,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.white, Colors.grey.shade50],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: borderRadius,
+            ),
+            child: Column(
+              children: [
+                InkWell(
+                  onTap: _toggleExpansion,
+                  borderRadius: borderRadius,
+                  child: Padding(
+                    padding: headerPadding,
+                    child: Column(
                       children: [
-                        // Order ID and Status
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    widget.orderId,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.black87,
-                                    ),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          widget.orderId,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isCompact ? 14 : 16,
+                                            color: Colors.black87,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      SizedBox(width: isCompact ? 6 : 8),
+                                      Flexible(
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isCompact ? 6 : 8,
+                                            vertical: isCompact ? 2 : 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.shade700,
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            'Completed',
+                                            style: TextStyle(
+                                              fontSize: isCompact ? 11 : 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.shade700,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Text(
-                                      'Completed',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                  if (widget.orderDate != null)
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                          top: isCompact ? 4 : 6),
+                                      child: Text(
+                                        _formatDate(widget.orderDate!),
+                                        style: TextStyle(
+                                          fontSize: isCompact ? 11 : 12,
+                                          color: Colors.grey[600],
+                                        ),
                                       ),
                                     ),
-                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              if (widget.orderDate != null)
-                                Text(
-                                  _formatDate(widget.orderDate!),
-                                  style: TextStyle(
-                                    fontSize: 12,
+                            ),
+                            AnimatedBuilder(
+                              animation: _iconRotationAnimation,
+                              builder: (context, child) {
+                                return Transform.rotate(
+                                  angle: _iconRotationAnimation.value * 3.14159,
+                                  child: Icon(
+                                    Icons.expand_more,
+                                    size: 24,
                                     color: Colors.grey[600],
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        // Expand/Collapse Icon
-                        AnimatedBuilder(
-                          animation: _iconRotationAnimation,
-                          builder: (context, child) {
-                            return Transform.rotate(
-                              angle: _iconRotationAnimation.value * 3.14159,
-                              child: Icon(
-                                Icons.expand_more,
-                                size: 24,
-                                color: Colors.grey[600],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Order Summary
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '$_totalItems item${_totalItems > 1 ? 's' : ''}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          '₱${_totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.local_shipping,
-                            size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.deliveryMethod,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        if (widget.thirdPartyDelivery.isNotEmpty) ...[
-                          const SizedBox(width: 16),
-                          Icon(Icons.delivery_dining,
-                              size: 16, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.thirdPartyDelivery,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                                );
+                              },
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
+                        SizedBox(height: summarySpacing),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                '$_totalItems item${_totalItems > 1 ? 's' : ''}',
+                                style: TextStyle(
+                                  fontSize: isCompact ? 13 : 14,
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                '₱${_totalAmount.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: isCompact ? 15 : 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                                textAlign: TextAlign.end,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: isCompact ? 6 : 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildIconTextRow(
+                              Icons.local_shipping,
+                              widget.deliveryMethod,
+                              isCompact,
+                              maxLines: 2,
+                            ),
+                            if (widget.thirdPartyDelivery.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: _buildIconTextRow(
+                                  Icons.delivery_dining,
+                                  widget.thirdPartyDelivery,
+                                  isCompact,
+                                  maxLines: 2,
+                                ),
+                              ),
+                          ],
+                        ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Expandable Product List and Rate Button
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 300),
-              crossFadeState: _isExpanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              firstChild: const SizedBox.shrink(),
-              secondChild: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
                   ),
                 ),
-                child: Column(
-                  children: [
-                    const Divider(height: 1, thickness: 1),
-                    ...widget.products
-                        .map((product) => _buildProductItem(product)),
-                    // Rate Button
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 3,
-                          ),
-                          onPressed: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => RateInputScreen(
-                                  productName: _primaryProductName,
-                                  orderId: widget.backendOrderId,
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 300),
+                  crossFadeState: _isExpanded
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const Divider(height: 1, thickness: 1),
+                        ...widget.products.map(
+                            (product) => _buildProductItem(product, isCompact)),
+                        Padding(
+                          padding: EdgeInsets.all(isCompact ? 12 : 16),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.orange,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                  vertical: isCompact ? 10 : 12,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                elevation: 3,
+                                textStyle: TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: isCompact ? 15 : 16,
                                 ),
                               ),
-                            );
-                            if (widget.onRated != null) {
-                              widget.onRated!();
-                            }
-                          },
-                          icon: const Icon(Icons.star_rate, size: 20),
-                          label: const Text(
-                            'Rate This Order',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 16,
+                              onPressed: () async {
+                                await Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => RateInputScreen(
+                                      productName: _primaryProductName,
+                                      orderId: widget.backendOrderId,
+                                    ),
+                                  ),
+                                );
+                                if (widget.onRated != null) {
+                                  widget.onRated!();
+                                }
+                              },
+                              icon: Icon(
+                                Icons.star_rate,
+                                size: isCompact ? 18 : 20,
+                              ),
+                              label: const Text('Rate This Order'),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildProductItem(Map<String, dynamic> product) {
+  Widget _buildProductItem(Map<String, dynamic> product, bool isCompact) {
     final prodImages = List<String>.from(product['prodImages'] ?? []);
     final prodName = product['prodName']?.toString() ?? '';
     final quantity = product['quantity'] ?? 1;
@@ -316,14 +340,17 @@ class _ExpandableRateOrderCardState extends State<ExpandableRateOrderCard>
     final total = (double.tryParse(prodPrice) ?? 0.0) * quantity;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 12 : 16,
+        vertical: isCompact ? 10 : 12,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Product Image
           Container(
-            height: 60,
-            width: 60,
+            height: isCompact ? 52 : 60,
+            width: isCompact ? 52 : 60,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: Colors.grey[200],
@@ -340,7 +367,7 @@ class _ExpandableRateOrderCardState extends State<ExpandableRateOrderCard>
                 : null,
           ),
 
-          const SizedBox(width: 12),
+          SizedBox(width: isCompact ? 10 : 12),
 
           // Product Details
           Expanded(
@@ -349,9 +376,9 @@ class _ExpandableRateOrderCardState extends State<ExpandableRateOrderCard>
               children: [
                 Text(
                   prodName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: isCompact ? 13 : 14,
                     color: Colors.black87,
                   ),
                   maxLines: 2,
@@ -362,7 +389,7 @@ class _ExpandableRateOrderCardState extends State<ExpandableRateOrderCard>
                   Text(
                     'Color: $selectedColorName',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: isCompact ? 11 : 12,
                       color: Colors.grey[600],
                     ),
                   ),
@@ -370,28 +397,31 @@ class _ExpandableRateOrderCardState extends State<ExpandableRateOrderCard>
                   Text(
                     'Lens: $selectedLensLabel',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: isCompact ? 11 : 12,
                       color: Colors.grey[600],
                     ),
                   ),
-                const SizedBox(height: 4),
+                SizedBox(height: isCompact ? 4 : 6),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Qty: $quantity',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: isCompact ? 11 : 12,
                         fontWeight: FontWeight.w500,
                         color: Colors.grey[700],
                       ),
                     ),
-                    Text(
-                      '₱${total.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '₱${total.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: isCompact ? 13 : 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.end,
                       ),
                     ),
                   ],
@@ -401,6 +431,36 @@ class _ExpandableRateOrderCardState extends State<ExpandableRateOrderCard>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildIconTextRow(
+    IconData icon,
+    String text,
+    bool isCompact, {
+    int maxLines = 2,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: isCompact ? 14 : 16,
+          color: Colors.grey[600],
+        ),
+        SizedBox(width: isCompact ? 4 : 6),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: isCompact ? 11 : 12,
+              color: Colors.grey[600],
+            ),
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
     );
   }
 

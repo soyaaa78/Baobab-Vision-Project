@@ -82,269 +82,282 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      shadowColor: Colors.black26,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.white, Colors.grey.shade50],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 360;
+        final borderRadius = BorderRadius.circular(20);
+        final headerPadding = EdgeInsets.all(isCompact ? 12 : 16);
+        final summarySpacing = isCompact ? 8.0 : 12.0;
+
+        return Card(
+          elevation: 6,
+          shape: RoundedRectangleBorder(
+            borderRadius: borderRadius,
           ),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          children: [
-            // Order Header - Always Visible
-            InkWell(
-              onTap: _toggleExpansion,
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
+          margin: EdgeInsets.symmetric(
+            vertical: 8,
+            horizontal: isCompact ? 8 : 12,
+          ),
+          shadowColor: Colors.black26,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.white, Colors.grey.shade50],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: borderRadius,
+            ),
+            child: Column(
+              children: [
+                InkWell(
+                  onTap: _toggleExpansion,
+                  borderRadius: borderRadius,
+                  child: Padding(
+                    padding: headerPadding,
+                    child: Column(
                       children: [
-                        // Order ID and Status
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
-                                    widget.orderId,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.black87,
-                                    ),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          widget.orderId,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: isCompact ? 14 : 16,
+                                            color: Colors.black87,
+                                          ),
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      SizedBox(width: isCompact ? 6 : 8),
+                                      Flexible(
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(
+                                            horizontal: isCompact ? 6 : 8,
+                                            vertical: isCompact ? 2 : 4,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color:
+                                                _getStatusColor(widget.status),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            _getStatusDisplayText(
+                                                widget.status),
+                                            style: TextStyle(
+                                              fontSize: isCompact ? 11 : 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.white,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: _getStatusColor(widget.status),
-                                      borderRadius: BorderRadius.circular(12),
+                                  SizedBox(height: isCompact ? 4 : 6),
+                                  if (widget.additionalInfo != null &&
+                                      widget.additionalInfo![
+                                              'pickupLocation'] !=
+                                          null &&
+                                      (widget.additionalInfo!['pickupLocation']
+                                              as String)
+                                          .isNotEmpty)
+                                    _buildIconTextRow(
+                                      Icons.location_on,
+                                      widget.additionalInfo!['pickupLocation'],
+                                      isCompact,
                                     ),
-                                    child: Text(
-                                      _getStatusDisplayText(widget.status),
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                  if (widget.additionalInfo != null &&
+                                      widget.additionalInfo!['pickupTime'] !=
+                                          null)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 4),
+                                      child: _buildIconTextRow(
+                                        Icons.access_time,
+                                        _formatPickupTime(
+                                          widget.additionalInfo!['pickupTime'],
+                                        ),
+                                        isCompact,
                                       ),
                                     ),
-                                  ),
+                                  if (widget.orderDate != null)
+                                    Padding(
+                                      padding: EdgeInsets.only(
+                                          top: isCompact ? 4 : 6),
+                                      child: Text(
+                                        _formatDate(widget.orderDate!),
+                                        style: TextStyle(
+                                          fontSize: isCompact ? 11 : 12,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              // Show pickupLocation and pickupTime if available
-                              if (widget.additionalInfo != null &&
-                                  widget.additionalInfo!['pickupLocation'] !=
-                                      null &&
-                                  (widget.additionalInfo!['pickupLocation']
-                                          as String)
-                                      .isNotEmpty)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2.0),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.location_on,
-                                          size: 14, color: Colors.grey[600]),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          widget.additionalInfo![
-                                              'pickupLocation'],
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey[600]),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              if (widget.additionalInfo != null &&
-                                  widget.additionalInfo!['pickupTime'] != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 2.0),
-                                  child: Row(
-                                    children: [
-                                      Icon(Icons.access_time,
-                                          size: 14, color: Colors.grey[600]),
-                                      const SizedBox(width: 4),
-                                      Flexible(
-                                        child: Text(
-                                          _formatPickupTime(widget
-                                              .additionalInfo!['pickupTime']),
-                                          style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey[600]),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              if (widget.orderDate != null)
-                                Text(
-                                  _formatDate(widget.orderDate!),
-                                  style: TextStyle(
-                                    fontSize: 12,
+                            ),
+                            AnimatedBuilder(
+                              animation: _iconRotationAnimation,
+                              builder: (context, child) {
+                                return Transform.rotate(
+                                  angle: _iconRotationAnimation.value * 3.14159,
+                                  child: Icon(
+                                    Icons.expand_more,
+                                    size: 24,
                                     color: Colors.grey[600],
                                   ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        // Expand/Collapse Icon
-                        AnimatedBuilder(
-                          animation: _iconRotationAnimation,
-                          builder: (context, child) {
-                            return Transform.rotate(
-                              angle: _iconRotationAnimation.value * 3.14159,
-                              child: Icon(
-                                Icons.expand_more,
-                                size: 24,
-                                color: Colors.grey[600],
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    // Order Summary
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '$_totalItems item${_totalItems > 1 ? 's' : ''}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          '₱${_totalAmount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.local_shipping,
-                            size: 16, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          widget.deliveryMethod,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        if (widget.thirdPartyDelivery.isNotEmpty) ...[
-                          const SizedBox(width: 16),
-                          Icon(Icons.delivery_dining,
-                              size: 16, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
-                          Text(
-                            widget.thirdPartyDelivery,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey[600],
+                                );
+                              },
                             ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Expandable Product List
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 300),
-              crossFadeState: _isExpanded
-                  ? CrossFadeState.showSecond
-                  : CrossFadeState.showFirst,
-              firstChild: const SizedBox.shrink(),
-              secondChild: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade50,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(20),
-                    bottomRight: Radius.circular(20),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const Divider(height: 1, thickness: 1),
-                    ...widget.products
-                        .map((product) => _buildProductItem(product)),
-                    // Action buttons
-                    if (widget.onCancel != null ||
-                        widget.additionalInfo != null)
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          ],
+                        ),
+                        SizedBox(height: summarySpacing),
+                        Row(
                           children: [
-                            if (widget.additionalInfo != null) ...[
-                              // Additional info like pickup location, time, etc.
-                              Expanded(
-                                child: _buildAdditionalInfo(),
-                              ),
-                            ],
-                            if (widget.onCancel != null)
-                              ElevatedButton.icon(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red.shade50,
-                                  foregroundColor: Colors.red.shade700,
-                                  padding: const EdgeInsets.symmetric(
-                                      vertical: 8, horizontal: 14),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  textStyle: const TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 14),
-                                  elevation: 2,
+                            Expanded(
+                              child: Text(
+                                '$_totalItems item${_totalItems > 1 ? 's' : ''}',
+                                style: TextStyle(
+                                  fontSize: isCompact ? 13 : 14,
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
                                 ),
-                                onPressed: widget.onCancel,
-                                icon:
-                                    const Icon(Icons.cancel_outlined, size: 18),
-                                label: const Text("Cancel Order"),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                '₱${_totalAmount.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: isCompact ? 15 : 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                                textAlign: TextAlign.end,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: isCompact ? 6 : 8),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildIconTextRow(
+                              Icons.local_shipping,
+                              widget.deliveryMethod,
+                              isCompact,
+                              maxLines: 2,
+                            ),
+                            if (widget.thirdPartyDelivery.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 4),
+                                child: _buildIconTextRow(
+                                  Icons.delivery_dining,
+                                  widget.thirdPartyDelivery,
+                                  isCompact,
+                                  maxLines: 2,
+                                ),
                               ),
                           ],
                         ),
-                      ),
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 300),
+                  crossFadeState: _isExpanded
+                      ? CrossFadeState.showSecond
+                      : CrossFadeState.showFirst,
+                  firstChild: const SizedBox.shrink(),
+                  secondChild: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const Divider(height: 1, thickness: 1),
+                        ...widget.products.map(
+                            (product) => _buildProductItem(product, isCompact)),
+                        if (widget.onCancel != null ||
+                            widget.additionalInfo != null)
+                          Padding(
+                            padding: EdgeInsets.all(isCompact ? 12 : 16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (widget.additionalInfo != null)
+                                  _buildAdditionalInfo(isCompact),
+                                if (widget.additionalInfo != null &&
+                                    widget.onCancel != null)
+                                  SizedBox(height: isCompact ? 12 : 16),
+                                if (widget.onCancel != null)
+                                  Align(
+                                    alignment: isCompact
+                                        ? Alignment.center
+                                        : Alignment.centerRight,
+                                    child: SizedBox(
+                                      width: isCompact ? double.infinity : null,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red.shade50,
+                                          foregroundColor: Colors.red.shade700,
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: isCompact ? 8 : 10,
+                                            horizontal: isCompact ? 12 : 14,
+                                          ),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          textStyle: TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: isCompact ? 13 : 14,
+                                          ),
+                                          elevation: 2,
+                                        ),
+                                        onPressed: widget.onCancel,
+                                        icon: Icon(
+                                          Icons.cancel_outlined,
+                                          size: isCompact ? 18 : 20,
+                                        ),
+                                        label: const Text('Cancel Order'),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildProductItem(Map<String, dynamic> product) {
+  Widget _buildProductItem(Map<String, dynamic> product, bool isCompact) {
     final prodImages = List<String>.from(product['prodImages'] ?? []);
     final prodName = product['prodName']?.toString() ?? '';
     final quantity = product['quantity'] ?? 1;
@@ -355,14 +368,17 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
     final total = (double.tryParse(prodPrice) ?? 0.0) * quantity;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 12 : 16,
+        vertical: isCompact ? 10 : 12,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Product Image
           Container(
-            height: 60,
-            width: 60,
+            height: isCompact ? 52 : 60,
+            width: isCompact ? 52 : 60,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: Colors.grey[200],
@@ -379,7 +395,7 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
                 : null,
           ),
 
-          const SizedBox(width: 12),
+          SizedBox(width: isCompact ? 10 : 12),
 
           // Product Details
           Expanded(
@@ -388,9 +404,9 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
               children: [
                 Text(
                   prodName,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
+                    fontSize: isCompact ? 13 : 14,
                     color: Colors.black87,
                   ),
                   maxLines: 2,
@@ -401,7 +417,7 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
                   Text(
                     'Color: $selectedColorName',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: isCompact ? 11 : 12,
                       color: Colors.grey[600],
                     ),
                   ),
@@ -409,28 +425,31 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
                   Text(
                     'Lens: $selectedLensLabel',
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: isCompact ? 11 : 12,
                       color: Colors.grey[600],
                     ),
                   ),
-                const SizedBox(height: 4),
+                SizedBox(height: isCompact ? 4 : 6),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       'Qty: $quantity',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: isCompact ? 11 : 12,
                         fontWeight: FontWeight.w500,
                         color: Colors.grey[700],
                       ),
                     ),
-                    Text(
-                      '₱${total.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '₱${total.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: isCompact ? 13 : 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        textAlign: TextAlign.end,
                       ),
                     ),
                   ],
@@ -443,68 +462,82 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
     );
   }
 
-  Widget _buildAdditionalInfo() {
+  Widget _buildAdditionalInfo(bool isCompact) {
     if (widget.additionalInfo == null) return const SizedBox.shrink();
 
     final info = widget.additionalInfo!;
+    final spacing = isCompact ? 6.0 : 8.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (info['pickupLocation'] != null) ...[
-          Row(
-            children: [
-              Icon(Icons.location_on, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                'Pickup: ${info['pickupLocation']}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            ],
+        if (info['pickupLocation'] != null)
+          Padding(
+            padding: EdgeInsets.only(bottom: spacing),
+            child: _buildIconTextRow(
+              Icons.location_on,
+              'Pickup: ${info['pickupLocation']}',
+              isCompact,
+              maxLines: 2,
+            ),
           ),
-          const SizedBox(height: 4),
-        ],
-        if (info['pickupTime'] != null) ...[
-          Row(
-            children: [
-              Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                'Time: ${info['pickupTime']}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            ],
+        if (info['pickupTime'] != null)
+          Padding(
+            padding: EdgeInsets.only(bottom: spacing),
+            child: _buildIconTextRow(
+              Icons.access_time,
+              'Time: ${_formatPickupTime(info['pickupTime'])}',
+              isCompact,
+              maxLines: 2,
+            ),
           ),
-          const SizedBox(height: 4),
-        ],
-        if (info['thirdPartyDelivery'] != null) ...[
-          Row(
-            children: [
-              Icon(Icons.delivery_dining, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Text(
-                'Delivery: ${info['thirdPartyDelivery']}',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-              ),
-            ],
+        if (info['thirdPartyDelivery'] != null)
+          Padding(
+            padding: EdgeInsets.only(bottom: spacing),
+            child: _buildIconTextRow(
+              Icons.delivery_dining,
+              'Delivery: ${info['thirdPartyDelivery']}',
+              isCompact,
+              maxLines: 2,
+            ),
           ),
-          const SizedBox(height: 4),
-        ],
-        if (info['cancellationReason'] != null) ...[
-          Row(
-            children: [
-              Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  'Reason: ${info['cancellationReason']}',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+        if (info['cancellationReason'] != null)
+          _buildIconTextRow(
+            Icons.info_outline,
+            'Reason: ${info['cancellationReason']}',
+            isCompact,
+            maxLines: 3,
           ),
-        ],
+      ],
+    );
+  }
+
+  Widget _buildIconTextRow(
+    IconData icon,
+    String text,
+    bool isCompact, {
+    int maxLines = 2,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          icon,
+          size: isCompact ? 14 : 16,
+          color: Colors.grey[600],
+        ),
+        SizedBox(width: isCompact ? 4 : 6),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: isCompact ? 11 : 12,
+              color: Colors.grey[600],
+            ),
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }
