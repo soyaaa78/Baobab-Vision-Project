@@ -357,9 +357,11 @@ By registering, you consent to the collection and processing of your personal da
                                 actions: [
                                   TextButton(
                                     onPressed: () => Navigator.pop(context),
-                                    child: const Text("Close",
-      style: TextStyle(color: BLACK_COLOR),
-                                  ),)
+                                    child: const Text(
+                                      "Close",
+                                      style: TextStyle(color: BLACK_COLOR),
+                                    ),
+                                  )
                                 ],
                               );
                             },

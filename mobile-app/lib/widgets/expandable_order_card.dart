@@ -518,6 +518,10 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
         return Colors.blue;
       case 'ready_to_pickup':
         return Colors.green;
+      case 'ready_for_shipment':
+        return Colors.deepPurple;
+      case 'in_transit':
+        return Colors.indigo;
       case 'completed':
         return Colors.green.shade700;
       case 'cancelled':
@@ -538,6 +542,10 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
         return 'Preparing';
       case 'ready_to_pickup':
         return 'Ready for Pickup';
+      case 'ready_for_shipment':
+        return 'For Shipment';
+      case 'in_transit':
+        return 'In Transit';
       case 'completed':
         return 'Completed';
       case 'cancelled':

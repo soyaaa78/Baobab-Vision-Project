@@ -163,6 +163,12 @@ class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen>
             orderDate = DateTime.tryParse(dateStr);
           }
 
+          DateTime? createdAt;
+          final createdAtStr = order['createdAt']?.toString();
+          if (createdAtStr != null) {
+            createdAt = DateTime.tryParse(createdAtStr);
+          }
+
           return {
             'orderId':
                 order['orderId']?.toString() ?? order['_id']?.toString() ?? '',
@@ -171,10 +177,19 @@ class _CompletedPurchasesScreenState extends State<CompletedPurchasesScreen>
             'thirdPartyDelivery': order['thirdPartyDelivery']?.toString() ?? '',
             'status': order['status']?.toString() ?? 'completed',
             'orderDate': orderDate,
+            'createdAt': createdAt,
           };
         })
         .whereType<Map<String, dynamic>>()
         .toList();
+
+    groupedOrders.sort((a, b) {
+      final aCreated = a['createdAt'] as DateTime?;
+      final bCreated = b['createdAt'] as DateTime?;
+      final aValue = aCreated ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bValue = bCreated ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bValue.compareTo(aValue);
+    });
 
     return groupedOrders;
   }

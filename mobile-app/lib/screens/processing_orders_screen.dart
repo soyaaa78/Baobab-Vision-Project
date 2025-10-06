@@ -56,7 +56,12 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen>
     final List<Map<String, dynamic>> groupedOrders = rawOrders
         .whereType<Map>()
         .map((o) => Map<String, dynamic>.from(o))
-        .where((order) => order['status']?.toString() == 'processing')
+        .where((order) {
+          final status = order['status']?.toString();
+          final deliveryMethod = order['deliveryMethod']?.toString() ?? '';
+          return status == 'processing' &&
+              deliveryMethod != 'Third-Party Delivery';
+        })
         .map((order) {
           final products = order['products'];
           if (products is! List) return null;
@@ -137,6 +142,12 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen>
             orderDate = DateTime.tryParse(dateStr);
           }
 
+          DateTime? createdAt;
+          final createdAtStr = order['createdAt']?.toString();
+          if (createdAtStr != null) {
+            createdAt = DateTime.tryParse(createdAtStr);
+          }
+
           return {
             'orderId':
                 order['orderId']?.toString() ?? order['_id']?.toString() ?? '',
@@ -145,10 +156,19 @@ class _ProcessingOrdersScreenState extends State<ProcessingOrdersScreen>
             'thirdPartyDelivery': order['thirdPartyDelivery']?.toString() ?? '',
             'status': order['status']?.toString() ?? 'processing',
             'orderDate': orderDate,
+            'createdAt': createdAt,
           };
         })
         .whereType<Map<String, dynamic>>()
         .toList();
+
+    groupedOrders.sort((a, b) {
+      final aCreated = a['createdAt'] as DateTime?;
+      final bCreated = b['createdAt'] as DateTime?;
+      final aValue = aCreated ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bValue = bCreated ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bValue.compareTo(aValue);
+    });
 
     return groupedOrders;
   }

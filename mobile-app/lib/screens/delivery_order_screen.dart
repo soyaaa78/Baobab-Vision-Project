@@ -56,30 +56,30 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
     if (rawOrders is! List) return [];
 
     // Flatten orders to product cards; include only third-party delivery
-    final allowed = {'pending', 'preparing', 'ready_to_pickup', 'completed'};
+    const statusMapping = <String, String>{
+      'pending': 'pending',
+      'processing': 'processing',
+      'preparing': 'processing',
+      'ready_to_pickup': 'processing',
+      'ready_for_shipment': 'ready_for_shipment',
+      'in_transit': 'in_transit',
+      'completed': 'completed',
+    };
     final List<Map<String, dynamic>> groupedOrders = rawOrders
         .whereType<Map>()
         .map((o) => Map<String, dynamic>.from(o))
-        .where((order) =>
-            (order['deliveryMethod']?.toString() ?? '') ==
-                'Third-Party Delivery' &&
-            allowed.contains(order['status']?.toString()))
+        .where((order) {
+          final deliveryMethod = order['deliveryMethod']?.toString() ?? '';
+          final status = order['status']?.toString() ?? '';
+          return deliveryMethod == 'Third-Party Delivery' &&
+              statusMapping.containsKey(status);
+        })
         .map((order) {
           final products = order['products'];
           if (products is! List) return null;
 
-          String deliveryStatus;
-          switch (order['status']?.toString()) {
-            case 'pending':
-              deliveryStatus = 'pending';
-              break;
-            case 'preparing':
-            case 'ready_to_pickup':
-              deliveryStatus = 'processing';
-              break;
-            default:
-              deliveryStatus = 'completed';
-          }
+          final rawStatus = order['status']?.toString() ?? '';
+          final deliveryStatus = statusMapping[rawStatus] ?? rawStatus;
 
           final List<Map<String, dynamic>> processedProducts =
               products.map<Map<String, dynamic>>((p) {
@@ -157,6 +157,12 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
             orderDate = DateTime.tryParse(dateStr);
           }
 
+          DateTime? createdAt;
+          final createdAtStr = order['createdAt']?.toString();
+          if (createdAtStr != null) {
+            createdAt = DateTime.tryParse(createdAtStr);
+          }
+
           return {
             'orderId':
                 order['orderId']?.toString() ?? order['_id']?.toString() ?? '',
@@ -166,10 +172,19 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
             'status': deliveryStatus,
             'orderDate': orderDate,
             'thirdPartyDelivery': order['thirdPartyDelivery']?.toString() ?? '',
+            'createdAt': createdAt,
           };
         })
         .whereType<Map<String, dynamic>>()
         .toList();
+
+    groupedOrders.sort((a, b) {
+      final aCreated = a['createdAt'] as DateTime?;
+      final bCreated = b['createdAt'] as DateTime?;
+      final aValue = aCreated ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bValue = bCreated ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bValue.compareTo(aValue);
+    });
 
     return groupedOrders;
   }

@@ -121,6 +121,12 @@ class _CancelledOrdersScreenState extends State<CancelledOrdersScreen> {
             orderDate = DateTime.tryParse(dateStr);
           }
 
+          DateTime? createdAt;
+          final createdAtStr = order['createdAt']?.toString();
+          if (createdAtStr != null) {
+            createdAt = DateTime.tryParse(createdAtStr);
+          }
+
           return {
             'mongoId': order['_id']?.toString() ?? '',
             'orderId':
@@ -132,10 +138,19 @@ class _CancelledOrdersScreenState extends State<CancelledOrdersScreen> {
             'orderDate': orderDate,
             'cancellationReason': reasonText,
             'reasonType': reasonType,
+            'createdAt': createdAt,
           };
         })
         .whereType<Map<String, dynamic>>()
         .toList();
+
+    groupedOrders.sort((a, b) {
+      final aCreated = a['createdAt'] as DateTime?;
+      final bCreated = b['createdAt'] as DateTime?;
+      final aValue = aCreated ?? DateTime.fromMillisecondsSinceEpoch(0);
+      final bValue = bCreated ?? DateTime.fromMillisecondsSinceEpoch(0);
+      return bValue.compareTo(aValue);
+    });
 
     return groupedOrders;
   }
