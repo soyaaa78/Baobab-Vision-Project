@@ -14,14 +14,21 @@ import { Trash2 } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
 
+const STATUS_LABELS = {
+  pending: "Pending",
+  processing: "Processing",
+  ready_for_shipment: "Ready for Shipment",
+  in_transit: "In Transit",
+  ready_to_pickup: "Ready to Pick Up",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  cancelled_pending: "Pending Cancelled Orders",
+};
+
 const AllOrdersPage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
   const [orderList, setOrderList] = useState([]);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [selectedAction, setSelectedAction] = useState(null);
   const [expandedOrder, setExpandedOrder] = useState(null);
-  const [alertModal, setAlertModal] = useState(false);
-  const [alertModalContent, setAlertModalContent] = useState("Delete");
   const location = useLocation();
   const urlScope = useMemo(
     () => new URLSearchParams(location.search).get("scope"),
@@ -52,24 +59,54 @@ const AllOrdersPage = () => {
   // Helpers
   const getOrderLabel = (order) =>
     order?.orderId || `Order ${order?._id?.slice(-8)}`;
-  const statusLabel = (s) => {
-    switch (s) {
-      case "pending":
-        return "pending";
-      case "processing":
-        return "processing";
-      case "ready_to_pickup":
-        return "ready to pick up";
-      case "completed":
-        return "completed";
-      case "cancelled":
-        return "cancelled";
-      case "cancelled_pending":
-        return "cancellation pending";
-      default:
-        return s;
+  const statusLabel = (s) => STATUS_LABELS[s] || s;
+
+  const statusFilters = useMemo(() => {
+    const base = [
+      { value: "pending", label: STATUS_LABELS.pending },
+      { value: "processing", label: STATUS_LABELS.processing },
+    ];
+
+    if (urlScope === "third") {
+      return [
+        ...base,
+        { value: "ready_for_shipment", label: STATUS_LABELS.ready_for_shipment },
+        { value: "in_transit", label: STATUS_LABELS.in_transit },
+        { value: "completed", label: STATUS_LABELS.completed },
+        {
+          value: "cancelled_pending",
+          label: STATUS_LABELS.cancelled_pending,
+        },
+        { value: "cancelled", label: STATUS_LABELS.cancelled },
+      ];
     }
-  };
+
+    if (urlScope === "pickup") {
+      return [
+        ...base,
+        { value: "ready_to_pickup", label: STATUS_LABELS.ready_to_pickup },
+        { value: "completed", label: STATUS_LABELS.completed },
+        {
+          value: "cancelled_pending",
+          label: STATUS_LABELS.cancelled_pending,
+        },
+        { value: "cancelled", label: STATUS_LABELS.cancelled },
+      ];
+    }
+
+    return [
+      ...base,
+      { value: "ready_for_shipment", label: STATUS_LABELS.ready_for_shipment },
+      { value: "in_transit", label: STATUS_LABELS.in_transit },
+      { value: "ready_to_pickup", label: STATUS_LABELS.ready_to_pickup },
+      { value: "completed", label: STATUS_LABELS.completed },
+      {
+        value: "cancelled_pending",
+        label: STATUS_LABELS.cancelled_pending,
+      },
+      { value: "cancelled", label: STATUS_LABELS.cancelled },
+    ];
+  }, [urlScope]);
 
   useEffect(() => {
     const t = Cookies.get("token");
@@ -182,7 +219,6 @@ const AllOrdersPage = () => {
         ? [...ordersRaw].reverse()
         : [ordersRaw];
       setOrderList(orders);
-      setAlertModal(false);
       showToast({ type: "success", message: `${label} has been deleted.` });
     } catch (error) {
       console.error("Error deleting order:", error);
@@ -222,24 +258,76 @@ const AllOrdersPage = () => {
   };
 
   // Compute next status in lifecycle
-  const getNextStatus = (current) => {
-    const flow = ["pending", "processing", "ready_to_pickup", "completed"];
-    const i = flow.indexOf(current);
+  const getStatusFlow = (order) => {
+    if (order.deliveryMethod === "Third-Party Delivery") {
+      return [
+        "pending",
+        "processing",
+        "ready_for_shipment",
+        "in_transit",
+        "completed",
+      ];
+    }
+
+    return ["pending", "processing", "ready_to_pickup", "completed"];
+  };
+
+  const getNextStatus = (order) => {
+    const flow = getStatusFlow(order);
+    const i = flow.indexOf(order.status);
     if (i === -1 || i === flow.length - 1) return null;
     return flow[i + 1];
   };
 
-  const getProgressLabel = (current) => {
-    switch (current) {
-      case "pending":
-        return "Mark as Processing";
+  const getProgressLabel = (order, nextStatus) => {
+    switch (nextStatus) {
       case "processing":
-        return "Mark as Ready to Pick Up";
+        return "Mark as Processing";
+      case "ready_for_shipment":
+        return "Mark as Ready for Shipment";
+      case "in_transit":
+        return "Mark as In Transit";
       case "ready_to_pickup":
+        return "Mark as Ready to Pick Up";
+      case "completed":
         return "Mark as Completed";
       default:
         return "Progress";
     }
+  };
+
+  const getStatusOptionsForOrder = (order) => {
+    const options = [
+      { value: "pending", label: STATUS_LABELS.pending },
+      { value: "processing", label: STATUS_LABELS.processing },
+    ];
+
+    if (order.deliveryMethod === "Third-Party Delivery") {
+      options.push(
+        {
+          value: "ready_for_shipment",
+          label: STATUS_LABELS.ready_for_shipment,
+        },
+        { value: "in_transit", label: STATUS_LABELS.in_transit }
+      );
+    } else {
+      options.push({ value: "ready_to_pickup", label: STATUS_LABELS.ready_to_pickup });
+    }
+
+    options.push(
+      { value: "completed", label: STATUS_LABELS.completed },
+      { value: "cancelled", label: STATUS_LABELS.cancelled },
+      { value: "cancelled_pending", label: STATUS_LABELS.cancelled_pending }
+    );
+
+    if (!options.some((opt) => opt.value === order.status)) {
+      options.splice(2, 0, {
+        value: order.status,
+        label: statusLabel(order.status),
+      });
+    }
+
+    return options;
   };
 
   return (
@@ -260,55 +348,17 @@ const AllOrdersPage = () => {
           >
             All
           </button>
-          {/* Always show all status filters for each order type */}
-          <button
-            onClick={() => handleStatusChange("pending")}
-            className={`filter-btn ${
-              selectedStatus === "pending" ? "active" : ""
-            }`}
-          >
-            Pending
-          </button>
-          <button
-            onClick={() => handleStatusChange("processing")}
-            className={`filter-btn ${
-              selectedStatus === "processing" ? "active" : ""
-            }`}
-          >
-            Processing
-          </button>
-          <button
-            onClick={() => handleStatusChange("ready_to_pickup")}
-            className={`filter-btn ${
-              selectedStatus === "ready_to_pickup" ? "active" : ""
-            }`}
-          >
-            Ready to Pick Up
-          </button>
-          <button
-            onClick={() => handleStatusChange("completed")}
-            className={`filter-btn ${
-              selectedStatus === "completed" ? "active" : ""
-            }`}
-          >
-            Completed
-          </button>
-          <button
-            onClick={() => handleStatusChange("cancelled_pending")}
-            className={`filter-btn ${
-              selectedStatus === "cancelled_pending" ? "active" : ""
-            }`}
-          >
-            Pending Cancelled Orders
-          </button>
-          <button
-            onClick={() => handleStatusChange("cancelled")}
-            className={`filter-btn ${
-              selectedStatus === "cancelled" ? "active" : ""
-            }`}
-          >
-            Cancelled Orders
-          </button>
+          {statusFilters.map((filter) => (
+            <button
+              key={filter.value}
+              onClick={() => handleStatusChange(filter.value)}
+              className={`filter-btn ${
+                selectedStatus === filter.value ? "active" : ""
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -380,16 +430,11 @@ const AllOrdersPage = () => {
                           onClick={(e) => e.stopPropagation()}
                           className="status-dropdown"
                         >
-                          <option value="pending">Pending</option>
-                          <option value="processing">Processing</option>
-                          <option value="ready_to_pickup">
-                            Ready to Pick Up
-                          </option>
-                          <option value="completed">Completed</option>
-                          <option value="cancelled">Cancelled</option>
-                          <option value="cancelled_pending">
-                            Cancelled Pending
-                          </option>
+                          {getStatusOptionsForOrder(order).map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
                         </select>
                       </td>
                       <td>
@@ -427,9 +472,9 @@ const AllOrdersPage = () => {
                             </button>
                           )}
                           {(() => {
-                            const next = getNextStatus(order.status);
+                            const next = getNextStatus(order);
                             if (!next) return null; // hide default
-                            const label = getProgressLabel(order.status);
+                            const label = getProgressLabel(order, next);
                             const isProcessingToReady =
                               order.status === "processing" &&
                               order.deliveryMethod === "Pick Up";
@@ -465,8 +510,6 @@ const AllOrdersPage = () => {
                             className="delete-btn"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedOrder(order._id);
-                              setSelectedAction("Delete");
                               setSelectedProofOrder(order); // reuse for modal summary
                               setDeleteModalOpen(true);
                             }}
@@ -541,7 +584,7 @@ const AllOrdersPage = () => {
                                       Status:
                                     </span>
                                     <span className="detail-value">
-                                      {order.status}
+                                      {statusLabel(order.status)}
                                     </span>
                                   </div>
                                 </div>
