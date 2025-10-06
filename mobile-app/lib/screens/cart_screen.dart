@@ -41,7 +41,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
     if (token == null || userId == null) return;
 
     final url = Uri.parse(
-        'https://baobab-vision-project-peox.onrender.com/api/cart/$userId');
+        'https://baobab-vision-project-0234.onrender.com/api/cart/$userId');
     final headers = {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
@@ -109,7 +109,7 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
     setState(() {});
 
     final url = Uri.parse(
-        'https://baobab-vision-project-peox.onrender.com/api/cart/update');
+        'https://baobab-vision-project-0234.onrender.com/api/cart/update');
     final body = json.encode({
       'productId': productId,
       'colorOptionId': colorOptionId,
@@ -157,190 +157,197 @@ class _CartScreenState extends State<CartScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: WHITE_COLOR,
-      appBar: AppBar(
-        systemOverlayStyle: const SystemUiOverlayStyle(
-          statusBarColor: WHITE_COLOR,
-          statusBarIconBrightness: Brightness.dark,
-        ),
-        title: CustomText(
-          text: 'Shopping Cart',
-          fontSize: 24.sp,
-          color: BLACK_COLOR,
-          fontWeight: FontWeight.bold,
-        ),
+    return WillPopScope(
+      onWillPop: () async {
+        // Replace '/home' with your actual home route name or use pushReplacement with your Home widget
+        Navigator.of(context).pushReplacementNamed('/home');
+        return false;
+      },
+      child: Scaffold(
         backgroundColor: WHITE_COLOR,
-        elevation: 0, // removes the purple shadow
-        iconTheme: const IconThemeData(color: BLACK_COLOR),
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: cartItems.isEmpty
-                ? Center(
-                    child: CustomText(
-                      text: 'Your cart is empty',
-                      fontSize: 18.sp,
-                      color: BLACK_COLOR,
-                    ),
-                  )
-                : ListView.builder(
-                    padding: EdgeInsets.symmetric(vertical: 12.h),
-                    itemCount: cartItems.length,
-                    itemBuilder: (context, index) {
-                      final item = cartItems[index];
-                      final product = item['productId'];
-                      final colorOption = product['colorOptions'].firstWhere(
-                        (opt) => opt['_id'] == item['colorOption'],
-                        orElse: () => {},
-                      );
-                      final lensOption = product['lensOptions'].firstWhere(
-                        (opt) => opt['_id'] == item['lensOption'],
-                        orElse: () => {},
-                      );
-                      final quantity = item['quantity'] ?? 1;
-                      final price = ((product['price'] ?? 0) +
-                              (lensOption['price'] ?? 0)) *
-                          quantity;
+        appBar: AppBar(
+          systemOverlayStyle: const SystemUiOverlayStyle(
+            statusBarColor: WHITE_COLOR,
+            statusBarIconBrightness: Brightness.dark,
+          ),
+          title: CustomText(
+            text: 'Shopping Cart',
+            fontSize: 24.sp,
+            color: BLACK_COLOR,
+            fontWeight: FontWeight.bold,
+          ),
+          backgroundColor: WHITE_COLOR,
+          elevation: 0, // removes the purple shadow
+          iconTheme: const IconThemeData(color: BLACK_COLOR),
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: cartItems.isEmpty
+                  ? Center(
+                      child: CustomText(
+                        text: 'Your cart is empty',
+                        fontSize: 18.sp,
+                        color: BLACK_COLOR,
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      itemCount: cartItems.length,
+                      itemBuilder: (context, index) {
+                        final item = cartItems[index];
+                        final product = item['productId'];
+                        final colorOption = product['colorOptions'].firstWhere(
+                          (opt) => opt['_id'] == item['colorOption'],
+                          orElse: () => {},
+                        );
+                        final lensOption = product['lensOptions'].firstWhere(
+                          (opt) => opt['_id'] == item['lensOption'],
+                          orElse: () => {},
+                        );
+                        final quantity = item['quantity'] ?? 1;
+                        final price = ((product['price'] ?? 0) +
+                                (lensOption['price'] ?? 0)) *
+                            quantity;
 
-                      return Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 16.w, vertical: 6.h),
-                        child: Material(
-                          elevation: 0, // remove purple shadow
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(15),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DetailScreen(
-                                    productId: product['_id'],
-                                    prodName: product['name'],
-                                    prodSize:
-                                        '', // or provide a size if available
-                                    prodPrice:
-                                        (product['price'] ?? 0).toString(),
-                                    numStars: product['numStars'] ?? 5,
-                                    quantity: quantity,
-                                    description: product['description'] ??
-                                        'No description',
-                                    prodImages: List<String>.from(
-                                        product['imageUrls'] ?? []),
-                                    colorOptions: (product['colorOptions']
-                                            as List<dynamic>)
-                                        .map((e) => ColorOption.fromJson(e))
-                                        .toList(),
-                                    lensOptions: (product['lensOptions']
-                                            as List<dynamic>)
-                                        .map((e) => LensOption.fromJson(e))
-                                        .toList(),
+                        return Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 16.w, vertical: 6.h),
+                          child: Material(
+                            elevation: 0, // remove purple shadow
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(15),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => DetailScreen(
+                                      productId: product['_id'],
+                                      prodName: product['name'],
+                                      prodSize:
+                                          '', // or provide a size if available
+                                      prodPrice:
+                                          (product['price'] ?? 0).toString(),
+                                      numStars: product['numStars'] ?? 5,
+                                      quantity: quantity,
+                                      description: product['description'] ??
+                                          'No description',
+                                      prodImages: List<String>.from(
+                                          product['imageUrls'] ?? []),
+                                      colorOptions: (product['colorOptions']
+                                              as List<dynamic>)
+                                          .map((e) => ColorOption.fromJson(e))
+                                          .toList(),
+                                      lensOptions: (product['lensOptions']
+                                              as List<dynamic>)
+                                          .map((e) => LensOption.fromJson(e))
+                                          .toList(),
+                                    ),
                                   ),
+                                );
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: WHITE_COLOR,
+                                  borderRadius: BorderRadius.circular(15),
                                 ),
-                              );
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: WHITE_COLOR,
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: CustomHorizontalProductCard(
-                                productId: product['_id'],
-                                prodName: product['name'],
-                                prodPrice: 'PHP ${price.toStringAsFixed(2)}',
-                                numStars: product['numStars'] ?? 5,
-                                quantity: quantity,
-                                description:
-                                    'Frame in ${colorOption['name']}, ${lensOption['label']}',
-                                selectedColorName: colorOption['name'],
-                                selectedLensLabel: lensOption['label'],
-                                prodImages: List<String>.from(
-                                    product['imageUrls'] ?? []),
-                                colorOptions:
-                                    (product['colorOptions'] as List<dynamic>)
-                                        .map((e) => ColorOption.fromJson(e))
-                                        .toList(),
-                                lensOptions:
-                                    (product['lensOptions'] as List<dynamic>)
-                                        .map((e) => LensOption.fromJson(e))
-                                        .toList(),
-                                isCart: true,
-                                onAdd: () =>
-                                    _updateQuantity(index, quantity + 1),
-                                onRemove: () =>
-                                    _updateQuantity(index, quantity - 1),
+                                child: CustomHorizontalProductCard(
+                                  productId: product['_id'],
+                                  prodName: product['name'],
+                                  prodPrice: 'PHP ${price.toStringAsFixed(2)}',
+                                  numStars: product['numStars'] ?? 5,
+                                  quantity: quantity,
+                                  description:
+                                      'Frame in ${colorOption['name']}, ${lensOption['label']}',
+                                  selectedColorName: colorOption['name'],
+                                  selectedLensLabel: lensOption['label'],
+                                  prodImages: List<String>.from(
+                                      product['imageUrls'] ?? []),
+                                  colorOptions:
+                                      (product['colorOptions'] as List<dynamic>)
+                                          .map((e) => ColorOption.fromJson(e))
+                                          .toList(),
+                                  lensOptions:
+                                      (product['lensOptions'] as List<dynamic>)
+                                          .map((e) => LensOption.fromJson(e))
+                                          .toList(),
+                                  isCart: true,
+                                  onAdd: () =>
+                                      _updateQuantity(index, quantity + 1),
+                                  onRemove: () =>
+                                      _updateQuantity(index, quantity - 1),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
+            ),
+            if (cartItems.isNotEmpty)
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
+                decoration: BoxDecoration(
+                  color: WHITE_COLOR, // changed from gray to white
+                  border: Border(
+                    top: BorderSide(color: Colors.grey.shade300, width: 1),
                   ),
-          ),
-          if (cartItems.isNotEmpty)
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 18.h),
-              decoration: BoxDecoration(
-                color: WHITE_COLOR, // changed from gray to white
-                border: Border(
-                  top: BorderSide(color: Colors.grey.shade300, width: 1),
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      CustomText(
-                        text: 'Total',
-                        fontSize: 16.sp,
-                        color: BLACK_COLOR,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CustomText(
+                          text: 'Total',
+                          fontSize: 16.sp,
+                          color: BLACK_COLOR,
+                        ),
+                        SizedBox(height: 5.h),
+                        CustomText(
+                          text: 'PHP ${getTotalPrice().toStringAsFixed(2)}',
+                          fontSize: 20.sp,
+                          color: BLACK_COLOR,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ],
+                    ),
+                    ElevatedButton(
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CheckoutScreen(
+                              totalAmount: getTotalPrice(),
+                            ),
+                          ),
+                        );
+                        await _checkCartClearedFlag();
+                        await _fetchCart();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: BLACK_COLOR,
+                        padding: EdgeInsets.symmetric(
+                            vertical: 14.h, horizontal: 40.w),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
                       ),
-                      SizedBox(height: 5.h),
-                      CustomText(
-                        text: 'PHP ${getTotalPrice().toStringAsFixed(2)}',
-                        fontSize: 20.sp,
-                        color: BLACK_COLOR,
+                      child: CustomText(
+                        text: 'Check Out',
+                        fontSize: 16.sp,
+                        color: WHITE_COLOR,
                         fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CheckoutScreen(
-                            totalAmount: getTotalPrice(),
-                          ),
-                        ),
-                      );
-                      await _checkCartClearedFlag();
-                      await _fetchCart();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: BLACK_COLOR,
-                      padding: EdgeInsets.symmetric(
-                          vertical: 14.h, horizontal: 40.w),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 4,
                     ),
-                    child: CustomText(
-                      text: 'Check Out',
-                      fontSize: 16.sp,
-                      color: WHITE_COLOR,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

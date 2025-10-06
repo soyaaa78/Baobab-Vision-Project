@@ -37,7 +37,10 @@ const StaffProductHomePage = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const productData = response.data;
-        setProducts(productData.slice(0, 6)); // Show latest 6 products
+        const sorted = productData.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        );
+        setProducts(sorted.slice(0, 6)); // Show latest 6 products
 
         // Calculate stats
         const currentDate = new Date();

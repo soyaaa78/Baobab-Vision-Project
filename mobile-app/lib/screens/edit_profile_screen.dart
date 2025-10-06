@@ -30,7 +30,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? profileImageUrl;
 
   static const String _apiBase =
-      'https://baobab-vision-project-peox.onrender.com';
+      'https://baobab-vision-project-0234.onrender.com';
 
   bool _isLoading = false;
   bool _isEditing = false;

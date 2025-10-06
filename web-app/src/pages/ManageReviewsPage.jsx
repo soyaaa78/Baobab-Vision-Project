@@ -31,8 +31,16 @@ const ManageReviewsPage = () => {
       const list = res.data.rating || res.data || [];
       setRatings(Array.isArray(list) ? list : [list]);
     } catch (e) {
-      console.error("Failed to load ratings", e);
-      showToast({ type: "error", message: "Failed to fetch reviews" });
+      if (e.response && e.response.status === 404) {
+        setRatings([]);
+        showToast({ type: "info", message: "No reviews available yet." });
+      } else {
+        console.error("Failed to load ratings", e);
+        showToast({
+          type: "error",
+          message: "Unable to fetch reviews. Please try again later.",
+        });
+      }
     }
   };
 

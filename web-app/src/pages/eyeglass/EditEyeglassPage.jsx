@@ -76,6 +76,24 @@ const EditEyeglassPage = () => {
         const data = response.data;
         setEyeglass(data);
         setOriginalEyeglass(JSON.parse(JSON.stringify(data))); // Deep copy for comparison
+        // Process colorOptions to include existing images as imageFile references
+        const processedColorOptions = (data.colorOptions || []).map(
+          (option) => ({
+            ...option,
+            imageFile: option.imageUrl
+              ? {
+                  // Create a mock file object that represents the existing image
+                  name: `existing_${option.name || "colorway"}.jpg`,
+                  type: "image/jpeg",
+                  size: 0,
+                  lastModified: Date.now(),
+                  // Store the URL for preview purposes
+                  preview: option.imageUrl,
+                }
+              : null,
+          })
+        );
+
         setForm({
           name: data.name || "",
           description: data.description || "",
@@ -88,12 +106,12 @@ const EditEyeglassPage = () => {
             data.lensOptions && data.lensOptions.length > 0
               ? ensureBuiltInLensOption(data.lensOptions)
               : [{ label: "Built-in UV400 Lenses", price: 0, type: "builtin" }],
-          colorOptions: data.colorOptions || [],
+          colorOptions: processedColorOptions,
           stock: data.stock || 0,
           recommendedFor: !!data.recommendedFor,
         });
         setProductImages(
-          (data.imageUrls || []).map((url, idx) => ({
+          (data.imageUrls || []).map((url) => ({
             id: url,
             url,
           }))
@@ -122,10 +140,10 @@ const EditEyeglassPage = () => {
       }
     };
 
-    if (id) {
+    if (id && TOKEN) {
       fetchEyeglass();
     }
-  }, [id]);
+  }, [id, TOKEN, SERVER_URL]);
 
   // Check if any changes were made
   const hasChanges = () => {
@@ -539,7 +557,10 @@ const EditEyeglassPage = () => {
         setIsSubmitting(false);
         return;
       }
-      if (!opt.imageFile) {
+      if (
+        !opt.imageFile ||
+        (!opt.imageFile.preview && !(opt.imageFile instanceof File))
+      ) {
         setModal({
           open: true,
           title: "Missing Colorway Image",
@@ -566,14 +587,16 @@ const EditEyeglassPage = () => {
       if (img.file) formData.append("productImages", img.file);
     });
 
-    // Add colorway images and models
+    // Add colorway images and models (only new files)
     form.colorOptions.forEach((opt, idx) => {
-      if (opt.imageFile)
+      // Only append if it's a new file (not an existing image with preview property)
+      if (opt.imageFile && opt.imageFile instanceof File) {
         formData.append(
           "colorwayImages",
           opt.imageFile,
           `colorway_${idx}_${opt.imageFile.name}`
         );
+      }
       if (colorwayModelFiles[idx] && colorwayModelFiles[idx].rawFile) {
         formData.append(
           "colorwayModels3d",
@@ -763,13 +786,6 @@ const EditEyeglassPage = () => {
                         </label>
                       </div>
                     </div>
-
-                    <div>
-                      <label>Colorway Images</label>
-                      {/* Colorway images are now handled per colorway option below */}
-                    </div>
-
-                    {/* Removed legacy top-level Virtual Try-On 3D Model input */}
                   </div>
                 </div>
               </div>
@@ -1332,7 +1348,10 @@ const EditEyeglassPage = () => {
                           >
                             {option.imageFile ? (
                               <img
-                                src={URL.createObjectURL(option.imageFile)}
+                                src={
+                                  option.imageFile.preview ||
+                                  URL.createObjectURL(option.imageFile)
+                                }
                                 alt="Preview"
                                 style={{
                                   width: "100px",

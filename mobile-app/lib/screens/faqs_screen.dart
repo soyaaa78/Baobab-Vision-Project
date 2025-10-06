@@ -1,3 +1,4 @@
+import 'package:baobab_vision_project/constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -30,55 +31,106 @@ class FaqsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100], // subtle background
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0,
+        elevation: 1,
+        centerTitle: true,
         title: Text(
-          "FAQs",
+          "Frequently Ask Questions",
           style: TextStyle(
             fontSize: 20.sp,
             fontWeight: FontWeight.bold,
             color: Colors.black,
           ),
         ),
-        centerTitle: true,
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.w),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
         child: ListView.separated(
+          physics: BouncingScrollPhysics(),
           itemCount: faqs.length,
           separatorBuilder: (context, index) => SizedBox(height: 12.h),
           itemBuilder: (context, index) {
             final faq = faqs[index];
-            return Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-              elevation: 2,
-              child: ExpansionTile(
-                tilePadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                childrenPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-                title: Text(
-                  faq["question"]!,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                children: [
-                  Text(
-                    faq["answer"]!,
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: Colors.black54,
-                      height: 1.4,
-                    ),
-                  )
-                ],
-              ),
+            return _FaqItem(
+              question: faq["question"]!,
+              answer: faq["answer"]!,
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class _FaqItem extends StatefulWidget {
+  final String question;
+  final String answer;
+
+  const _FaqItem({
+    required this.question,
+    required this.answer,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  State<_FaqItem> createState() => _FaqItemState();
+}
+
+class _FaqItemState extends State<_FaqItem> with SingleTickerProviderStateMixin {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: WHITE_COLOR,
+      elevation: 3,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
+        side: BorderSide(
+          color: BLACK_COLOR,
+          width: 1,
+        )
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+          childrenPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          onExpansionChanged: (expanded) {
+            setState(() {
+              _isExpanded = expanded;
+            });
+          },
+          trailing: AnimatedRotation(
+            turns: _isExpanded ? 0.5 : 0.0, // rotates the icon
+            duration: Duration(milliseconds: 200),
+            child: Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 24.sp,
+              color: Colors.black54,
+            ),
+          ),
+          title: Text(
+            widget.question,
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          children: [
+            Text(
+              widget.answer,
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.black54,
+                height: 1.5,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -318,8 +318,8 @@ const StaffOrderHomePage = () => {
                 {newUsers.map((user) => (
                   <div key={user._id} className="user-item">
                     <div className="user-avatar">
-                      {user.profilePicture ? (
-                        <img src={user.profilePicture} alt={user.firstName} />
+                      {user.profileImage ? (
+                        <img src={user.profileImage} alt={user.firstName} />
                       ) : (
                         <div className="avatar-placeholder">
                           {user.firstName?.charAt(0)}

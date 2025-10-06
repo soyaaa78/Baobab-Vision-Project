@@ -24,7 +24,7 @@ String _normalizeProfileImageUrl(String? url) {
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
   if (url.startsWith('/userprofileuploads/') ||
       url.startsWith('userprofileuploads/')) {
-    final base = 'https://baobab-vision-project-peox.onrender.com';
+    final base = 'https://baobab-vision-project-0234.onrender.com';
     if (!url.startsWith('/')) url = '/$url';
     return base + url;
   }
@@ -52,6 +52,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     'processing': 0,
     'ready_to_pickup': 0,
     'to_rate': 0,
+    'third_party': 0,
   };
 
   Timer? _refreshTimer;
@@ -99,7 +100,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final response = await http.get(
         Uri.parse(
-            'https://baobab-vision-project-peox.onrender.com/api/user/profile'),
+            'https://baobab-vision-project-0234.onrender.com/api/user/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -142,12 +143,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final processingFuture = _countOrdersByStatus('processing');
       final readyFuture = _countOrdersByStatus('ready_to_pickup');
       final toRateFuture = _countToRate();
+      final thirdPartyFuture = _countThirdPartyOrders();
 
       final results = await Future.wait<int>([
         pendingFuture,
         processingFuture,
         readyFuture,
         toRateFuture,
+        thirdPartyFuture,
       ]);
 
       if (!mounted) return;
@@ -157,6 +160,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'processing': results[1],
           'ready_to_pickup': results[2],
           'to_rate': results[3],
+          'third_party': results[4],
         };
       });
     } catch (e) {
@@ -175,7 +179,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return raw.where((o) {
       if (o is! Map) return false;
       final st = o['status']?.toString();
-      return st == status;
+      if (st != status) return false;
+      final deliveryMethod = o['deliveryMethod']?.toString() ?? '';
+      return deliveryMethod != 'Third-Party Delivery';
+    }).length;
+  }
+
+  Future<int> _countThirdPartyOrders() async {
+    final resp =
+        await ApiClient.get('/api/orders?&deliveryMethod=Third-Party Delivery');
+    if (resp.statusCode != 200) return 0;
+    final decoded = jsonDecode(resp.body);
+    final raw = decoded is Map<String, dynamic> ? decoded['order'] : null;
+    if (raw is! List) return 0;
+    const trackedStatuses = {
+      'pending',
+      'processing',
+      'preparing',
+      'ready_to_pickup',
+      'ready_for_shipment',
+      'in_transit',
+    };
+    return raw.where((o) {
+      if (o is! Map) return false;
+      final deliveryMethod = o['deliveryMethod']?.toString() ?? '';
+      if (deliveryMethod != 'Third-Party Delivery') return false;
+      final status = o['status']?.toString() ?? '';
+      return trackedStatuses.contains(status);
     }).length;
   }
 
@@ -256,13 +286,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ).then((_) => _fetchAndLoadProfile());
                   }),
                   _buildSettingsOption(
-                      Icons.delivery_dining_sharp, 'Delivery Orders', () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const DeliveryOrdersScreen()),
-                    );
-                  }),
+                    Icons.delivery_dining_sharp,
+                    'Third Party Orders',
+                    () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const DeliveryOrdersScreen()),
+                      );
+                    },
+                    badgeCount: orderCounts['third_party'] ?? 0,
+                  ),
                   _buildSettingsOption(
                       Icons.receipt_long, 'Completed Purchases', () {
                     Navigator.push(
@@ -452,7 +486,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsOption(IconData icon, String title, VoidCallback onTap) {
+  Widget _buildSettingsOption(IconData icon, String title, VoidCallback onTap,
+      {int badgeCount = 0}) {
     return Column(
       children: [
         ListTile(
@@ -466,7 +501,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontSize: 15.sp,
             color: Colors.black,
           ),
-          trailing: Icon(Icons.chevron_right, size: 18.sp),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (badgeCount > 0)
+                Container(
+                  padding: EdgeInsets.all(4.r),
+                  margin: EdgeInsets.only(right: 6.w),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.w),
+                  ),
+                  child: Text(
+                    '$badgeCount',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              Icon(Icons.chevron_right, size: 18.sp),
+            ],
+          ),
           onTap: onTap,
         ),
         Divider(height: 1, thickness: 0.5, indent: 16.w, endIndent: 16.w)

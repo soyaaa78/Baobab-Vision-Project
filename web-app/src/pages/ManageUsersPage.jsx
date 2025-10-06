@@ -3,13 +3,7 @@ import Button from "../components/Button";
 import ConfirmationModal from "../components/ConfirmationModal";
 import "../styles/ManageUsersPage.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faXmark,
-  faCaretDown,
-  faSort,
-  faSortUp,
-  faSortDown,
-} from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { Check, Ban, Trash2 } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -29,13 +23,8 @@ const ManageUsersPage = () => {
     onConfirm: null,
   });
   const [actionLoading, setActionLoading] = useState(false);
-  const [dropdown, setDropdown] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [userList, setUserList] = useState([]);
-  const [orderList, setOrderList] = useState([]);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [expandedOrder, setExpandedOrder] = useState(null);
-
   const [addStaffForm, setAddStaffForm] = useState({
     firstname: "",
     lastname: "",
@@ -44,8 +33,6 @@ const ManageUsersPage = () => {
     password: "",
     role: "staff_product", // Default role
   }); // Add status filter state - default to pending
-  const [selectedStatus, setSelectedStatus] = useState("pending");
-
   const openConfirmationModal = (
     action,
     itemType,
@@ -74,13 +61,6 @@ const ManageUsersPage = () => {
     setActionLoading(false);
   };
 
-  const toggleAlertModal = () => {
-    setAlertModal((prev) => !prev);
-  };
-
-  const toggleDropdown = () => {
-    setDropdown((prev) => !prev);
-  };
   const toggleModal = () => {
     setModal((prev) => !prev);
     if (modal) {
@@ -93,10 +73,6 @@ const ManageUsersPage = () => {
         role: "staff_product",
       });
     }
-  };
-
-  const toggleExpandedOrder = (orderId) => {
-    setExpandedOrder((prev) => (prev === orderId ? null : orderId));
   };
 
   const [token, setToken] = useState();
@@ -116,9 +92,14 @@ const ManageUsersPage = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        setStaffList(response.data);
+        setStaffList([...response.data].reverse());
       } catch (error) {
-        console.error("Error fetching staff:", error);
+        if (error.response && error.response.status === 404) {
+          setStaffList([]);
+          showToast({ type: "info", message: "No staff found." });
+        } else {
+          console.error("Error fetching staff:", error);
+        }
       }
     };
     const fetchUsers = async () => {
@@ -128,31 +109,18 @@ const ManageUsersPage = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        setUserList(response.data);
+        setUserList([...response.data].reverse());
       } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-    const fetchOrders = async () => {
-      try {
-        const response = await axios.get(
-          `${SERVER_URL}/api/orders?index=true`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        // Handle the response structure - check if it's response.data.order or response.data
-        const orders = response.data.order || response.data;
-        setOrderList(Array.isArray(orders) ? orders : [orders]);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
+        if (error.response && error.response.status === 404) {
+          setUserList([]);
+          showToast({ type: "info", message: "No users found." });
+        } else {
+          console.error("Error fetching users:", error);
+        }
       }
     };
     fetchStaff();
     fetchUsers();
-    fetchOrders();
   }, [SERVER_URL, token]);
 
   const handleUserAction = async (id, action) => {
@@ -167,7 +135,7 @@ const ManageUsersPage = () => {
       const response = await axios.get(`${SERVER_URL}/api/admin/user-list`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUserList(response.data);
+      setUserList([...response.data].reverse());
       closeConfirmationModal();
       showToast({
         message: `User ${action.toLowerCase()}d successfully`,
@@ -208,7 +176,7 @@ const ManageUsersPage = () => {
       const response = await axios.get(`${SERVER_URL}/api/admin/staff-list`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setStaffList(response.data);
+      setStaffList([...response.data].reverse());
       closeConfirmationModal();
       showToast({
         message: `Staff ${action.toLowerCase()}d successfully`,
@@ -231,66 +199,6 @@ const ManageUsersPage = () => {
       ...prev,
       [name]: value,
     }));
-  };
-
-  // Add function to update order status
-  const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      await axios.put(
-        `${SERVER_URL}/api/orders?id=${orderId}`,
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      // Refresh orders list
-      const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const orders = response.data.order || response.data;
-      setOrderList(Array.isArray(orders) ? orders : [orders]);
-    } catch (error) {
-      console.error("Error updating order status:", error);
-    }
-  };
-
-  // Add function to delete order
-  const deleteOrder = async (orderId) => {
-    setActionLoading(true);
-    try {
-      await axios.delete(`${SERVER_URL}/api/orders?id=${orderId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      // Refresh orders list
-      const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const orders = response.data.order || response.data;
-      setOrderList(Array.isArray(orders) ? orders : [orders]);
-
-      closeConfirmationModal();
-      showToast({
-        message: "Order deleted successfully",
-        type: "success",
-      });
-    } catch (error) {
-      console.error("Error deleting order:", error);
-      showToast({
-        message: "Failed to delete order",
-        type: "error",
-      });
-      setActionLoading(false);
-    }
   };
 
   const handleAddStaff = async (e) => {
@@ -356,15 +264,6 @@ const ManageUsersPage = () => {
       }
     }
   }; // Filter orders by selected status
-  const getFilteredOrders = () => {
-    if (selectedStatus === "all") return orderList;
-    return orderList.filter((order) => order.status === selectedStatus);
-  };
-
-  // Handle status filter change
-  const handleStatusChange = (status) => {
-    setSelectedStatus(status);
-  };
 
   return (
     <>
@@ -450,363 +349,6 @@ const ManageUsersPage = () => {
                 </div>
               </div>
             )}{" "}
-            {activeTab === "orders" && (
-              <div className="manageusers-tab-content">
-                <div className="orders-container">
-                  {" "}
-                  {/* Status Filter Controls */}
-                  <div className="sort-controls">
-                    <div className="sort-controls-content">
-                      <span className="sort-label">Filter by status:</span>
-                      <div className="sort-buttons">
-                        {" "}
-                        <button
-                          onClick={() => handleStatusChange("all")}
-                          className={`sort-btn ${
-                            selectedStatus === "all" ? "active" : ""
-                          }`}
-                        >
-                          All
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange("pending")}
-                          className={`sort-btn ${
-                            selectedStatus === "pending" ? "active" : ""
-                          }`}
-                        >
-                          Pending
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange("processing")}
-                          className={`sort-btn ${
-                            selectedStatus === "processing" ? "active" : ""
-                          }`}
-                        >
-                          Processing
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange("ready_to_pickup")}
-                          className={`sort-btn ${
-                            selectedStatus === "ready_to_pickup" ? "active" : ""
-                          }`}
-                        >
-                          Ready to Pick Up
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange("completed")}
-                          className={`sort-btn ${
-                            selectedStatus === "completed" ? "active" : ""
-                          }`}
-                        >
-                          Completed
-                        </button>
-                        <button
-                          onClick={() => handleStatusChange("cancelled")}
-                          className={`sort-btn ${
-                            selectedStatus === "cancelled" ? "active" : ""
-                          }`}
-                        >
-                          Cancelled
-                        </button>
-                        <button
-                          onClick={() =>
-                            handleStatusChange("cancelled_pending")
-                          }
-                          className={`sort-btn ${
-                            selectedStatus === "cancelled_pending"
-                              ? "active"
-                              : ""
-                          }`}
-                        >
-                          Cancelled Pending
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="table-wrapper">
-                    <table className="orders-table">
-                      <thead>
-                        <tr>
-                          <th>Order ID</th>
-                          <th>Order Date</th>
-                          <th>Customer</th>
-                          <th>Email</th>
-                          <th>Products</th>
-                          <th>Total Amount</th>
-                          <th>Status</th>
-                          <th>Delivery Method</th>
-                          <th>Payment Method</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>{" "}
-                      <tbody>
-                        {orderList.length === 0 ? (
-                          <tr>
-                            <td colSpan="10" className="no-data">
-                              No orders found.
-                            </td>
-                          </tr>
-                        ) : (
-                          getFilteredOrders().map((order) => {
-                            const orderDate = new Date(
-                              order.date || order.createdAt
-                            ).toLocaleDateString();
-                            const customerName = order.customer
-                              ? `${order.customer.firstname} ${order.customer.lastname}`
-                              : "N/A";
-                            const customerEmail =
-                              order.customer?.email || "N/A";
-
-                            // Status badge styling
-                            const getStatusBadge = (status) => {
-                              switch (status) {
-                                case "pending":
-                                  return "status-badge pending";
-                                case "processing":
-                                  return "status-badge processing";
-                                case "ready_to_pickup":
-                                  return "status-badge ready";
-                                case "completed":
-                                  return "status-badge completed";
-                                case "cancelled":
-                                  return "status-badge cancelled";
-                                case "cancelled_pending":
-                                  return "status-badge cancelled-pending";
-                                default:
-                                  return "status-badge default";
-                              }
-                            };
-                            const getStatusLabel = (status) => {
-                              switch (status) {
-                                case "ready_to_pickup":
-                                  return "Ready to Pick Up";
-                                case "cancelled_pending":
-                                  return "Cancelled Pending";
-                                default:
-                                  return (
-                                    status.charAt(0).toUpperCase() +
-                                    status.slice(1)
-                                  );
-                              }
-                            };
-
-                            return (
-                              <React.Fragment key={order._id}>
-                                <tr
-                                  onClick={() => toggleExpandedOrder(order._id)}
-                                  className="order-row"
-                                >
-                                  <td className="order-id">
-                                    {order.orderId ||
-                                      `${order._id.slice(-8)}...`}
-                                  </td>
-                                  <td>{orderDate}</td>
-                                  <td>{customerName}</td>
-                                  <td className="customer-email">
-                                    {customerEmail}
-                                  </td>
-                                  <td>
-                                    <span className="product-count-badge">
-                                      {order.products?.length > 0
-                                        ? `${order.products.length} item(s)`
-                                        : "No products"}
-                                    </span>
-                                  </td>
-                                  <td className="total-amount">
-                                    ₱{order.totalAmount}
-                                  </td>
-                                  <td>
-                                    <select
-                                      value={order.status}
-                                      onChange={(e) => {
-                                        e.stopPropagation();
-                                        updateOrderStatus(
-                                          order._id,
-                                          e.target.value
-                                        );
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="status-select"
-                                    >
-                                      <option value="pending">Pending</option>
-                                      <option value="processing">
-                                        Processing
-                                      </option>
-                                      <option value="ready_to_pickup">
-                                        Ready to Pick Up
-                                      </option>
-                                      <option value="completed">
-                                        Completed
-                                      </option>
-                                      <option value="cancelled">
-                                        Cancelled
-                                      </option>
-                                      <option value="cancelled_pending">
-                                        Cancelled Pending
-                                      </option>
-                                    </select>
-                                  </td>
-                                  <td>{order.deliveryMethod || "N/A"}</td>
-                                  <td>{order.paymentMethod || "N/A"}</td>
-                                  <td>
-                                    <button
-                                      className="action-li delete"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        openConfirmationModal(
-                                          "Delete",
-                                          "Order",
-                                          `Order #${
-                                            order.orderId || order._id.slice(-8)
-                                          }`,
-                                          () => deleteOrder(order._id)
-                                        );
-                                      }}
-                                    >
-                                      <Trash2 size={14} />
-                                      Delete
-                                    </button>
-                                  </td>
-                                </tr>
-
-                                {expandedOrder === order._id && (
-                                  <tr className="order-details-row">
-                                    <td colSpan="10">
-                                      <div className="order-details-panel">
-                                        <div className="order-details-grid">
-                                          <div className="order-info-section">
-                                            <h4 className="section-title">
-                                              <svg
-                                                className="section-icon"
-                                                viewBox="0 0 24 24"
-                                              >
-                                                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                              </svg>
-                                              Order Details
-                                            </h4>
-                                            <div className="detail-list">
-                                              <div className="detail-item">
-                                                <span className="detail-label">
-                                                  Address:
-                                                </span>
-                                                <span className="detail-value">
-                                                  {order.address || "N/A"}
-                                                </span>
-                                              </div>
-                                              <div className="detail-item">
-                                                <span className="detail-label">
-                                                  Contact:
-                                                </span>
-                                                <span className="detail-value">
-                                                  {order.contactNumber || "N/A"}
-                                                </span>
-                                              </div>
-                                              <div className="detail-item">
-                                                <span className="detail-label">
-                                                  Order Date:
-                                                </span>
-                                                <span className="detail-value">
-                                                  {new Date(
-                                                    order.date ||
-                                                      order.createdAt
-                                                  ).toLocaleString()}
-                                                </span>
-                                              </div>
-                                              <div className="detail-item">
-                                                <span className="detail-label">
-                                                  Status:
-                                                </span>
-                                                <span
-                                                  className={getStatusBadge(
-                                                    order.status
-                                                  )}
-                                                >
-                                                  {getStatusLabel(order.status)}
-                                                </span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                          <div className="products-section">
-                                            <h4 className="section-title">
-                                              <svg
-                                                className="section-icon"
-                                                viewBox="0 0 24 24"
-                                              >
-                                                <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path>
-                                              </svg>
-                                              Products (
-                                              {order.products?.length || 0})
-                                            </h4>
-                                            <div className="products-list">
-                                              {order.products?.map(
-                                                (product, idx) => (
-                                                  <div
-                                                    key={idx}
-                                                    className="product-card"
-                                                  >
-                                                    <div className="product-info">
-                                                      <div className="product-details">
-                                                        <p className="product-name">
-                                                          {product.productId
-                                                            ?.name ||
-                                                            "Unknown Product"}
-                                                        </p>
-                                                        <p className="product-spec">
-                                                          Color: {product.color}
-                                                        </p>
-                                                        <p className="product-spec">
-                                                          Lens: {product.lens}
-                                                        </p>
-                                                      </div>
-                                                      <div className="product-pricing">
-                                                        <p className="product-qty">
-                                                          Qty:{" "}
-                                                          {product.quantity}
-                                                        </p>
-                                                        <p className="product-price">
-                                                          ₱{product.price}
-                                                        </p>
-                                                        <p className="product-total">
-                                                          ₱
-                                                          {product.price *
-                                                            product.quantity}
-                                                        </p>
-                                                      </div>
-                                                    </div>
-                                                  </div>
-                                                )
-                                              ) || (
-                                                <p className="no-products">
-                                                  No products found
-                                                </p>
-                                              )}
-                                            </div>
-                                            <div className="order-total">
-                                              <div className="total-row">
-                                                <span className="total-label">
-                                                  Total:
-                                                </span>
-                                                <span className="total-value">
-                                                  ₱{order.totalAmount}
-                                                </span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </td>
-                                  </tr>
-                                )}
-                              </React.Fragment>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            )}
             {activeTab === "staff" && (
               <div className="manageusers-tab-content">
                 <Button
@@ -836,16 +378,18 @@ const ManageUsersPage = () => {
                     ) : (
                       staffList.map((staff) => (
                         <tr key={staff._id} className="table-tr">
-                          <td data-label="First Name">
-                            {staff.firstname || "N/A"}
+                          <td>{staff.firstname || "N/A"}</td>
+                          <td>{staff.lastname || "N/A"}</td>
+                          <td>{staff.username}</td>
+                          <td>{staff.email}</td>
+                          <td>
+                            {staff.role === "staff_order"
+                              ? "Order Staff"
+                              : staff.role === "staff_product"
+                              ? "Product Staff"
+                              : staff.role}
                           </td>
-                          <td data-label="Last Name">
-                            {staff.lastname || "N/A"}
-                          </td>
-                          <td data-label="Username">{staff.username}</td>
-                          <td data-label="Email">{staff.email}</td>
-                          <td data-label="Role">{staff.role}</td>
-                          <td data-label="Verification Status">
+                          <td>
                             {staff.isVerified ? "Verified" : "Unverified"}
                           </td>
                           <td data-label="Account Status">

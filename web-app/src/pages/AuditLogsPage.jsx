@@ -71,14 +71,18 @@ const AuditLogsPage = () => {
           limit: 100, // Get more logs for better search experience
         },
       });
-
       setAuditLogs(response.data.data || []);
     } catch (error) {
-      console.error("Error fetching audit logs:", error);
-      showToast({
-        type: "error",
-        message: "Failed to fetch audit logs. Please try again.",
-      });
+      if (error.response && error.response.status === 404) {
+        setAuditLogs([]);
+        showToast({ type: "info", message: "No audit logs available yet." });
+      } else {
+        console.error("Error fetching audit logs:", error);
+        showToast({
+          type: "error",
+          message: "Unable to fetch audit logs. Please try again later.",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -428,9 +432,13 @@ const AuditLogsPage = () => {
                       </span>
                       {log.actorRole && (
                         <span className="actor-role">
-                          {log.actorRole
-                            .replace(/_/g, " ")
-                            .replace(/\b\w/g, (c) => c.toUpperCase())}
+                          {log.actorRole === "staff_order"
+                            ? "Order Staff"
+                            : log.actorRole === "staff_product"
+                            ? "Product Staff"
+                            : log.actorRole
+                                .replace(/_/g, " ")
+                                .replace(/\b\w/g, (c) => c.toUpperCase())}
                         </span>
                       )}
                     </div>
@@ -480,6 +488,13 @@ const AuditLogsPage = () => {
         onClose={() => setDetailModalOpen(false)}
         log={selectedLog}
         getActorDisplayName={getActorDisplayName}
+        getActorRoleDisplay={(role) =>
+          role === "staff_order"
+            ? "Order Staff"
+            : role === "staff_product"
+            ? "Product Staff"
+            : role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        }
       />
     </div>
   );

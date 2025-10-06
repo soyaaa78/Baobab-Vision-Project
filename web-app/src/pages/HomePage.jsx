@@ -32,28 +32,31 @@ const HomePage = () => {
   const [token, setToken] = useState();
   const [showCarouselModal, setShowCarouselModal] = useState(false);
   const [carouselImages, setCarouselImages] = useState([]);
+  const [profileData, setProfileData] = useState({ firstname: "" });
+  const [eyeglasses, setEyeglasses] = useState([]);
 
   useEffect(() => {
     const t = Cookies.get("token");
     setToken(t);
   }, []);
 
-  const navigate = useNavigate();
-  const handleAdd = () => navigate("/dashboard/addeyeglasses");
-  const handleCatalogue = () => navigate("/dashboard/catalogue");
-  const handleDelete = () =>
-    navigate("/dashboard/catalogue", { state: { deleteMode: true } });
-  const handleStatistics = () => navigate("/dashboard/statistics");
-  const handleManageGallery = () => setShowCarouselModal(true);
-
-  const handleImagesUpdate = (updatedImages) => {
-    setCarouselImages(updatedImages);
-    // Here you could also save to backend if needed
-  };
-
-  const [eyeglasses, setEyeglasses] = useState([]);
+  useEffect(() => {
+    if (!token) return;
+    const fetchProfile = async () => {
+      try {
+        const response = await axios.get(`${SERVER_URL}/api/admin/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setProfileData(response.data);
+      } catch (error) {
+        // fail silently
+      }
+    };
+    fetchProfile();
+  }, [token, SERVER_URL]);
 
   useEffect(() => {
+    if (!token) return;
     const fetchEyeglasses = async () => {
       try {
         const response = await axios.get(`${SERVER_URL}/api/products/for-you`, {
@@ -64,9 +67,20 @@ const HomePage = () => {
         setEyeglasses(response.data);
       } catch (error) {}
     };
-
     fetchEyeglasses();
-  }, []);
+  }, [token, SERVER_URL]);
+
+  const navigate = useNavigate();
+  const handleAdd = () => navigate("/dashboard/addeyeglasses");
+  const handleCatalogue = () => navigate("/dashboard/catalogue");
+  const handleDelete = () =>
+    navigate("/dashboard/catalogue", { state: { deleteMode: true } });
+  const handleStatistics = () => navigate("/dashboard/statistics");
+  const handleManageGallery = () => setShowCarouselModal(true);
+  const handleImagesUpdate = (updatedImages) => {
+    setCarouselImages(updatedImages);
+    // Here you could also save to backend if needed
+  };
 
   return (
     <>
@@ -74,9 +88,15 @@ const HomePage = () => {
         <div className="home-content">
           <div className="home-left">
             <div className="left-hero">
-              <h1> ¿Cómo estás? </h1>
-              <p>We aren't actually Spanish, the devs who made this.</p>
-              <p>Or maybe we are? You never know ;)</p>
+              <h1>
+                {`Hello${
+                  profileData.firstname ? ` ${profileData.firstname}!` : "!"
+                }`}
+              </h1>
+              <p>
+                Here’s a quick look at your eyewear selections, sales
+                statistics, and user activity
+              </p>
 
               <div className="hero-cta-buttons">
                 <Button

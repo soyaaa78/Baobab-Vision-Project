@@ -82,7 +82,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => isLoading = true);
 
     final url = Uri.parse(
-        'https://baobab-vision-project-peox.onrender.com/api/auth/reset-password');
+        'https://baobab-vision-project-0234.onrender.com/api/auth/reset-password');
 
     try {
       final response = await http.post(
