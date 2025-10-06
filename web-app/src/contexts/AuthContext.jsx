@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
+import axios from "axios";
 
 const AuthContext = createContext();
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -11,6 +13,8 @@ export const useAuth = () => {
   }
   return context;
 };
+
+const SERVER_URL = import.meta.env.VITE_SERVER_URL;
 
 export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -33,12 +37,32 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    Cookies.remove("token");
-    Cookies.remove("role");
-    Cookies.remove("pendingEmail");
-    setIsAuthenticated(false);
-    navigate("/");
+  const logout = async () => {
+    const token = Cookies.get("token");
+    try {
+      if (token) {
+        await axios.post(
+          `${SERVER_URL}/api/admin/logout`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      }
+    } catch (err) {
+      console.error(
+        "Failed to record logout audit event:",
+        err?.response?.data || err.message
+      );
+    } finally {
+      Cookies.remove("token");
+      Cookies.remove("role");
+      Cookies.remove("pendingEmail");
+      setIsAuthenticated(false);
+      navigate("/");
+    }
   };
 
   const value = {

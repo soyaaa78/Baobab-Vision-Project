@@ -16,8 +16,8 @@ function Navbar() {
   const scope = params.get("scope");
   const onAllOrders = location.pathname.includes("allorders");
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (
