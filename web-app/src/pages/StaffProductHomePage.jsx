@@ -94,7 +94,7 @@ const StaffProductHomePage = () => {
               </Button>
             </div>
           </div>
-          <div className="dashboard-grid">
+          <div className="">
             {/* Stats Cards */}
             <div className="stats-section">
               <div className="stats-grid">
@@ -140,37 +140,43 @@ const StaffProductHomePage = () => {
               </div>
             </div>
 
-            {/* Recent Products */}
-            <div className="recent-products">
-              <div className="section-header">
-                <h2>Recent Products</h2>
-                <Button className="view-all-btn" onClick={handleManageProducts}>
-                  View All
-                </Button>
+            {/* Content Row: Recent Products & Analytics side by side */}
+            <div className="dashboard-content-row">
+              {/* Recent Products */}
+              <div className="recent-products">
+                <div className="section-header">
+                  <h2>Recent Products</h2>
+                  <Button
+                    className="view-all-btn"
+                    onClick={handleManageProducts}
+                  >
+                    View All
+                  </Button>
+                </div>
+                <div className="products-grid">
+                  {products.map((product) => (
+                    <EyeglassPreview
+                      key={product._id}
+                      eyeglass={product}
+                      className="product-preview-card"
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="products-grid">
-                {products.map((product) => (
-                  <EyeglassPreview
-                    key={product._id}
-                    eyeglass={product}
-                    className="product-preview-card"
-                  />
-                ))}
-              </div>
-            </div>
 
-            {/* Analytics Section */}
-            <div className="analytics-section">
-              <div className="section-header">
-                <h2>Product Analytics</h2>
-                <Button className="view-all-btn" onClick={handleStatistics}>
-                  <TrendingUp size={16} />
-                  View Details
-                </Button>
-              </div>
-              <div className="analytics-content">
-                <div className="chart-container">
-                  <PieChart />
+              {/* Analytics Section */}
+              <div className="analytics-section">
+                <div className="section-header">
+                  <h2>Product Analytics</h2>
+                  <Button className="view-all-btn" onClick={handleStatistics}>
+                    <TrendingUp size={16} />
+                    View Details
+                  </Button>
+                </div>
+                <div className="analytics-content">
+                  <div className="chart-container">
+                    <PieChart />
+                  </div>
                 </div>
               </div>
             </div>

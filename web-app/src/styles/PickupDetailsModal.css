@@ -95,3 +95,361 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* ============================= */
+/* COMPREHENSIVE RESPONSIVE DESIGN */
+/* ============================= */
+
+/* Ensure box-sizing for all elements */
+.pickup-modal-overlay *,
+.pickup-modal * {
+  box-sizing: border-box;
+}
+
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
+  .pickup-modal {
+    max-width: 560px;
+  }
+}
+
+/* Desktop (1200px - 1399px) */
+@media (max-width: 1399px) {
+  .pickup-modal {
+    max-width: 520px;
+  }
+}
+
+/* Tablet Large (1024px - 1199px) */
+@media (max-width: 1199px) {
+  .pickup-modal {
+    max-width: 90%;
+    width: 90%;
+  }
+
+  .pickup-modal-header,
+  .pickup-modal-body,
+  .pickup-modal-footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .pickup-modal-header {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .pickup-modal-body {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    gap: 13px;
+  }
+
+  .pickup-modal-footer {
+    padding-top: 13px;
+    padding-bottom: 16px;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) {
+  .pickup-modal {
+    max-width: 92%;
+    width: 92%;
+  }
+
+  .pickup-modal-header h3 {
+    font-size: 17px;
+  }
+
+  .pickup-close {
+    font-size: 20px;
+  }
+
+  .pickup-field label {
+    font-size: 12.5px;
+    margin-bottom: 5px;
+  }
+
+  .pickup-field input[type="text"],
+  .pickup-field input[type="datetime-local"] {
+    padding: 9px 11px;
+    font-size: 13.5px;
+  }
+
+  .pickup-btn {
+    padding: 9px 13px;
+    font-size: 13.5px;
+  }
+}
+
+/* Mobile Large (640px - 767px) */
+@media (max-width: 767px) {
+  .pickup-modal {
+    max-width: 95%;
+    width: 95%;
+  }
+
+  .pickup-modal-header,
+  .pickup-modal-body,
+  .pickup-modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .pickup-modal-header {
+    padding-top: 13px;
+    padding-bottom: 13px;
+  }
+
+  .pickup-modal-body {
+    padding-top: 13px;
+    padding-bottom: 13px;
+    gap: 12px;
+  }
+
+  .pickup-modal-footer {
+    padding-top: 12px;
+    padding-bottom: 15px;
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .pickup-modal-header h3 {
+    font-size: 16px;
+  }
+
+  .pickup-close {
+    font-size: 19px;
+  }
+
+  .pickup-field label {
+    font-size: 12px;
+  }
+
+  .pickup-field input[type="text"],
+  .pickup-field input[type="datetime-local"] {
+    padding: 10px 12px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+
+  .pickup-btn {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+}
+
+/* Mobile Medium (480px - 639px) */
+@media (max-width: 639px) {
+  .pickup-modal {
+    max-width: calc(100% - 1rem);
+    width: calc(100% - 1rem);
+  }
+
+  .pickup-modal-header,
+  .pickup-modal-body,
+  .pickup-modal-footer {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .pickup-modal-header {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .pickup-modal-body {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    gap: 11px;
+  }
+
+  .pickup-modal-footer {
+    padding-top: 11px;
+    padding-bottom: 14px;
+  }
+
+  .pickup-modal-header h3 {
+    font-size: 15px;
+  }
+
+  .pickup-close {
+    font-size: 18px;
+  }
+
+  .pickup-field label {
+    font-size: 11.5px;
+    margin-bottom: 5px;
+  }
+
+  .pickup-field input[type="text"],
+  .pickup-field input[type="datetime-local"] {
+    padding: 9px 11px;
+    font-size: 12.5px;
+  }
+
+  .pickup-btn {
+    padding: 9px 13px;
+    font-size: 12.5px;
+  }
+}
+
+/* Mobile Small (375px - 479px) */
+@media (max-width: 479px) {
+  .pickup-modal {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 8px;
+  }
+
+  .pickup-modal-header,
+  .pickup-modal-body,
+  .pickup-modal-footer {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .pickup-modal-header {
+    padding-top: 11px;
+    padding-bottom: 11px;
+  }
+
+  .pickup-modal-body {
+    padding-top: 11px;
+    padding-bottom: 11px;
+    gap: 10px;
+  }
+
+  .pickup-modal-footer {
+    padding-top: 10px;
+    padding-bottom: 13px;
+    gap: 7px;
+  }
+
+  .pickup-modal-header h3 {
+    font-size: 14px;
+  }
+
+  .pickup-close {
+    font-size: 17px;
+  }
+
+  .pickup-field label {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .pickup-field input[type="text"],
+  .pickup-field input[type="datetime-local"] {
+    padding: 8px 10px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .pickup-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+}
+
+/* Mobile Extra Small (320px - 374px) */
+@media (max-width: 374px) {
+  .pickup-modal {
+    border-radius: 0;
+  }
+
+  .pickup-modal-header,
+  .pickup-modal-body,
+  .pickup-modal-footer {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .pickup-modal-header {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .pickup-modal-body {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    gap: 9px;
+  }
+
+  .pickup-modal-footer {
+    padding-top: 9px;
+    padding-bottom: 12px;
+    gap: 6px;
+  }
+
+  .pickup-modal-header h3 {
+    font-size: 13px;
+  }
+
+  .pickup-close {
+    font-size: 16px;
+  }
+
+  .pickup-field label {
+    font-size: 10.5px;
+  }
+
+  .pickup-field input[type="text"],
+  .pickup-field input[type="datetime-local"] {
+    padding: 7px 9px;
+    font-size: 11.5px;
+  }
+
+  .pickup-btn {
+    padding: 7px 11px;
+    font-size: 11.5px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .pickup-close,
+  .pickup-btn {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  .pickup-field input[type="text"],
+  .pickup-field input[type="datetime-local"] {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .pickup-modal {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ensure buttons are easily tappable on touch devices */
+  .pickup-btn {
+    padding: 10px 14px;
+  }
+}
+
+/* Improved input handling on mobile */
+@media (max-width: 767px) {
+  .pickup-field input[type="text"],
+  .pickup-field input[type="datetime-local"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  .pickup-field input[type="datetime-local"] {
+    position: relative;
+  }
+
+  /* Better text wrapping */
+  .pickup-field label {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+}

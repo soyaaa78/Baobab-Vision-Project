@@ -10,6 +10,8 @@ function Navbar() {
   const { logout } = useAuth();
   const role = Cookies.get("role");
   const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Derive active scope from current URL query
   const params = new URLSearchParams(location.search);
@@ -20,6 +22,25 @@ function Navbar() {
     logout();
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
+  }, [location]);
+
   return (
     <nav className="navigation">
       <div className="nav-content">
@@ -27,9 +48,24 @@ function Navbar() {
           <img src={baobablogo} className="logo" alt="Baobab Vision" />
         </div>
 
-        <ul className="links">
+        <button
+          className={`mobile-menu-toggle ${isMobileMenuOpen ? "active" : ""}`}
+          onClick={toggleMobileMenu}
+          aria-label="Toggle navigation menu"
+          aria-expanded={isMobileMenuOpen}
+        >
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+        </button>
+
+        <ul className={`links ${isMobileMenuOpen ? "mobile-open" : ""}`}>
           <li>
-            <Link to="/dashboard" className="nav-button">
+            <Link
+              to="/dashboard"
+              className="nav-button"
+              onClick={closeMobileMenu}
+            >
               Home
             </Link>
           </li>
@@ -37,12 +73,20 @@ function Navbar() {
           {role !== "staff_order" && (
             <>
               <li>
-                <Link to="catalogue" className="nav-button">
+                <Link
+                  to="catalogue"
+                  className="nav-button"
+                  onClick={closeMobileMenu}
+                >
                   Manage Eyeglass Selections
                 </Link>
               </li>
               <li>
-                <Link to="statistics" className="nav-button">
+                <Link
+                  to="statistics"
+                  className="nav-button"
+                  onClick={closeMobileMenu}
+                >
                   Statistics
                 </Link>
               </li>
@@ -52,15 +96,22 @@ function Navbar() {
           {role !== "staff_product" && (
             <>
               <li>
-                <Link to="manageusers" className="nav-button">
+                <Link
+                  to="manageusers"
+                  className="nav-button"
+                  onClick={closeMobileMenu}
+                >
                   Manage Users
                 </Link>
               </li>
-              <li className="dropdown">
+              <li
+                className={`dropdown ${isDropdownOpen ? "dropdown-open" : ""}`}
+              >
                 <span
                   className={`nav-button dropdown-toggle ${
                     onAllOrders ? "active" : ""
                   }`}
+                  onClick={toggleDropdown}
                 >
                   Manage Orders <span className="caret">▾</span>
                 </span>
@@ -71,6 +122,7 @@ function Navbar() {
                       className={
                         onAllOrders && scope === "pickup" ? "active" : ""
                       }
+                      onClick={closeMobileMenu}
                     >
                       Pickup Orders
                     </Link>
@@ -81,6 +133,7 @@ function Navbar() {
                       className={
                         onAllOrders && scope === "third" ? "active" : ""
                       }
+                      onClick={closeMobileMenu}
                     >
                       Third Party Orders
                     </Link>
@@ -91,6 +144,7 @@ function Navbar() {
                       className={
                         onAllOrders && scope === "cancelled" ? "active" : ""
                       }
+                      onClick={closeMobileMenu}
                     >
                       Cancelled Orders
                     </Link>
@@ -98,7 +152,11 @@ function Navbar() {
                 </ul>
               </li>
               <li>
-                <Link to="reviews" className="nav-button">
+                <Link
+                  to="reviews"
+                  className="nav-button"
+                  onClick={closeMobileMenu}
+                >
                   Manage Reviews
                 </Link>
               </li>
@@ -107,26 +165,35 @@ function Navbar() {
 
           {role === "system_admin" && (
             <li>
-              <Link to="audit-logs" className="nav-button">
+              <Link
+                to="audit-logs"
+                className="nav-button"
+                onClick={closeMobileMenu}
+              >
                 Audit Logs
               </Link>
             </li>
           )}
 
           <li>
-            <Link to="profile" className="nav-button">
+            <Link to="profile" className="nav-button" onClick={closeMobileMenu}>
               Profile
             </Link>
           </li>
 
-          <Button
-            onClick={handleLogout}
-            children={
-              <div>
-                <p>Log Out</p>
-              </div>
-            }
-          />
+          <li className="nav-logout-btn">
+            <Button
+              onClick={() => {
+                handleLogout();
+                closeMobileMenu();
+              }}
+              children={
+                <div>
+                  <p>Log Out</p>
+                </div>
+              }
+            />
+          </li>
         </ul>
       </div>
     </nav>

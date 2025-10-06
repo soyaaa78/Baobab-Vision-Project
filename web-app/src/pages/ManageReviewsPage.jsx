@@ -130,26 +130,30 @@ const ManageReviewsPage = () => {
             ) : (
               filtered.map((r) => (
                 <tr key={r._id}>
-                  <td>
+                  <td data-label="User">
                     {r.userId
                       ? `${r.userId.firstname} ${r.userId.lastname}`
                       : "—"}
                   </td>
-                  <td>
+                  <td data-label="Order">
                     {r.orderId
                       ? r.orderId.orderId || r.orderId._id?.slice(-8)
                       : "—"}
                   </td>
-                  <td>{r.rating} / 5</td>
-                  <td style={{ maxWidth: 300 }}>{r.comment || "—"}</td>
-                  <td style={{ maxWidth: 300 }}>{r.adminResponse || "—"}</td>
-                  <td>
+                  <td data-label="Rating">{r.rating} / 5</td>
+                  <td data-label="Comment" style={{ maxWidth: 300 }}>
+                    {r.comment || "—"}
+                  </td>
+                  <td data-label="Admin Response" style={{ maxWidth: 300 }}>
+                    {r.adminResponse || "—"}
+                  </td>
+                  <td data-label="Responded At">
                     {r.respondedAt
                       ? new Date(r.respondedAt).toLocaleString()
                       : "—"}
                   </td>
-                  <td>
-                    <div className="table-actions ">
+                  <td data-label="Actions">
+                    <div className="table-actions">
                       <button
                         className="filter-btn"
                         style={{ marginRight: 8 }}

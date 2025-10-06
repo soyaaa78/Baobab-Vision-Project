@@ -417,12 +417,12 @@ const ManageUsersPage = () => {
                       ) : (
                         userList.map((user) => (
                           <tr key={user._id} className="table-tr">
-                            <td>{user.username}</td>
-                            <td>{user.email}</td>
-                            <td>
+                            <td data-label="Username">{user.username}</td>
+                            <td data-label="Email">{user.email}</td>
+                            <td data-label="Verification Status">
                               {user.isVerified ? "Verified" : "Unverified"}
                             </td>
-                            <td>
+                            <td data-label="Actions">
                               <div className="td-action">
                                 <li
                                   className="action-li delete"
@@ -836,15 +836,19 @@ const ManageUsersPage = () => {
                     ) : (
                       staffList.map((staff) => (
                         <tr key={staff._id} className="table-tr">
-                          <td>{staff.firstname || "N/A"}</td>
-                          <td>{staff.lastname || "N/A"}</td>
-                          <td>{staff.username}</td>
-                          <td>{staff.email}</td>
-                          <td>{staff.role}</td>
-                          <td>
+                          <td data-label="First Name">
+                            {staff.firstname || "N/A"}
+                          </td>
+                          <td data-label="Last Name">
+                            {staff.lastname || "N/A"}
+                          </td>
+                          <td data-label="Username">{staff.username}</td>
+                          <td data-label="Email">{staff.email}</td>
+                          <td data-label="Role">{staff.role}</td>
+                          <td data-label="Verification Status">
                             {staff.isVerified ? "Verified" : "Unverified"}
                           </td>
-                          <td>
+                          <td data-label="Account Status">
                             <span
                               className={`status-badge ${
                                 staff.isDisabled ? "disabled" : "active"
@@ -853,7 +857,7 @@ const ManageUsersPage = () => {
                               {staff.isDisabled ? "Disabled" : "Active"}
                             </span>
                           </td>
-                          <td>
+                          <td data-label="Actions">
                             <div className="td-action">
                               {staff.isDisabled ? (
                                 <li

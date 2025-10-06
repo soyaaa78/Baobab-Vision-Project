@@ -102,11 +102,27 @@
   opacity: 1;
 }
 
-/* Dashboard Grid */
+/* Dashboard Container */
 .dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
+  width: 100%;
+}
+
+/* Content Row for side-by-side layout on desktop */
+.dashboard-content-row {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  width: 100%;
+}
+
+/* Stack on tablets and mobile */
+@media (max-width: 1024px) {
+  .dashboard-content-row {
+    flex-direction: column;
+  }
 }
 
 /* Stats Section */
@@ -115,12 +131,15 @@
 }
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
+  width: 100%;
 }
 
 .stat-card {
+  flex: 1 1 calc(25% - 0.75rem); /* 4 columns on desktop */
+  min-width: 200px;
   background: #ffffff;
   padding: 1rem;
   border-radius: 8px;
@@ -129,6 +148,7 @@
   align-items: center;
   gap: 0.75rem;
   transition: all 0.2s ease;
+  box-sizing: border-box;
 }
 
 .stat-icon {
@@ -182,7 +202,9 @@
   border-radius: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
-  margin-bottom: 2rem;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .section-header {
@@ -221,16 +243,20 @@
 }
 
 .products-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
+  width: 100%;
 }
 
 .product-preview-card {
+  flex: 1 1 calc(33.333% - 0.67rem); /* 3 columns on desktop */
+  min-width: 200px;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 12px;
   padding: 1rem;
   transition: all 0.3s ease;
+  box-sizing: border-box;
 }
 
 .product-preview-card:hover {
@@ -246,6 +272,9 @@
   border-radius: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .analytics-content {
@@ -301,12 +330,19 @@
     padding: 1.5rem 2rem;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .stat-card {
+    flex: 1 1 calc(50% - 0.5rem); /* 2 columns */
   }
 
-  .products-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .product-preview-card {
+    flex: 1 1 calc(50% - 0.5rem); /* 2 columns */
+  }
+}
+
+/* Tablet adjustments when stacked */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .product-preview-card {
+    flex: 1 1 calc(33.333% - 0.67rem); /* 3 columns when stacked full width */
   }
 }
 
@@ -315,16 +351,16 @@
     padding: 1rem;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr;
+  .stat-card {
+    flex: 1 1 100%; /* Full width - stacked */
   }
 
   .dashboard-grid {
     gap: 1.5rem;
   }
 
-  .products-grid {
-    grid-template-columns: 1fr;
+  .product-preview-card {
+    flex: 1 1 100%; /* Full width - stacked */
   }
 
   .analytics-content {

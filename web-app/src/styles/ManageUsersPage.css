@@ -402,89 +402,921 @@ button.action-li:hover {
   margin: 0;
 }
 
-/* Responsive design improvements */
-@media (max-width: 1200px) {
+/* ============================= */
+/* COMPREHENSIVE RESPONSIVE DESIGN */
+/* ============================= */
+
+/* Ensure box-sizing for all elements */
+* {
+  box-sizing: border-box;
+}
+
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
   .manageusers-content {
-    padding: 2rem 5%;
+    padding: 2rem 12%;
   }
 }
 
-@media (max-width: 768px) {
+/* Desktop (1200px - 1399px) */
+@media (max-width: 1399px) {
   .manageusers-content {
-    padding: 1rem 2%;
+    padding: 2rem 8%;
+  }
+}
+
+/* Tablet Large (1024px - 1199px) */
+@media (max-width: 1199px) {
+  .manageusers-content {
+    padding: 2rem 5%;
+  }
+
+  .page-header h1 {
+    font-size: 2.25rem;
+  }
+
+  .muc-manageusers-table th,
+  .muc-manageusers-table td {
+    padding: 0.875rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .orders-table th,
+  .orders-table td {
+    padding: 0.875rem 0.75rem;
+    font-size: 0.875rem;
+  }
+
+  .action-li {
+    padding: 0.45rem 0.7rem;
+    font-size: 0.75rem;
+    min-width: 70px;
+  }
+}
+
+/* Tablet (768px - 1023px) - Start transitioning to cards */
+@media (max-width: 1023px) {
+  .manageusers-content {
+    padding: 1.5rem 3%;
+  }
+
+  .page-header h1 {
+    font-size: 2rem;
   }
 
   .muc-selection-headers ul {
-    flex-direction: column;
-    padding: 0.25rem;
+    padding: 0.375rem;
   }
 
   .muc-link {
     padding: 0.875rem 1.5rem;
     font-size: 0.8rem;
-    margin: 0.125rem 0;
-    min-width: auto;
   }
 
-  .muc-manageusers-table {
-    font-size: 0.8rem;
+  .manageusers-tab-content-container {
+    padding: 1.5rem;
   }
 
-  .muc-manageusers-table td,
-  .muc-manageusers-table th {
-    padding: 0.75rem 0.5rem;
+  /* Hide table headers, show card layout */
+  .muc-manageusers-table thead {
+    display: none;
+  }
+
+  .muc-manageusers-table tbody,
+  .muc-manageusers-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .muc-manageusers-table tr {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .muc-manageusers-table tr:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+
+  .muc-manageusers-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.75rem 0;
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .muc-manageusers-table td:last-child {
+    border-bottom: none;
+  }
+
+  .muc-manageusers-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #64748b;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    flex-shrink: 0;
+    min-width: 140px;
   }
 
   .td-action {
-    flex-direction: column;
-    gap: 0.5rem;
+    flex-direction: row;
+    width: 100%;
+    margin-top: 0.5rem;
+    justify-content: flex-end;
   }
 
   .action-li {
-    padding: 0.5rem 1rem;
-    font-size: 0.8rem;
+    flex: 0 1 auto;
   }
-}
 
-@media (max-width: 480px) {
-  .muc-selection-headers {
+  /* Orders table responsive */
+  .orders-table thead {
+    display: none;
+  }
+
+  .orders-table tbody,
+  .orders-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .orders-table tr {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem;
     margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
-  .muc-selection-headers ul {
-    padding: 0.25rem;
+  .orders-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.75rem 0;
+    border: none;
+    border-bottom: 1px solid #f1f5f9;
   }
 
-  .muc-link {
-    padding: 0.75rem 1rem;
-    font-size: 0.75rem;
+  .orders-table td:last-child {
+    border-bottom: none;
+  }
+
+  .orders-table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #64748b;
+    font-size: 0.85rem;
+    text-transform: uppercase;
     letter-spacing: 0.025em;
+    flex-shrink: 0;
+    min-width: 140px;
   }
 
-  .muc-link {
-    text-align: center;
-    border-bottom: none;
-    border-right: 4px solid transparent;
+  .order-details-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 
-  .muc-link.active {
-    border-bottom: none;
-    border-right: 4px solid #5e503f;
-  }
-
-  .muc-manageusers-table {
-    font-size: 0.75rem;
-  }
-
-  .td-action {
+  .sort-controls-content {
     flex-direction: column;
     align-items: stretch;
   }
 
+  .sort-buttons {
+    justify-content: flex-start;
+  }
+}
+
+/* Mobile Large (640px - 767px) */
+@media (max-width: 767px) {
+  .manageusers-content {
+    padding: 1.25rem 1.5rem;
+    padding-bottom: 2rem;
+  }
+
+  .page-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.75rem;
+  }
+
+  .muc-selection-headers {
+    margin-bottom: 1.5rem;
+  }
+
+  .muc-selection-headers ul {
+    flex-direction: row;
+    padding: 0.5rem;
+    gap: 0.5rem;
+  }
+
+  .muc-link {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.75rem;
+    flex: 1;
+    text-align: center;
+  }
+
+  .manageusers-tab-content-container {
+    padding: 1.25rem;
+  }
+
+  .muc-add-users-btn {
+    margin: 1.5rem 0 1rem 0;
+  }
+
+  .muc-add-users-btn button {
+    width: 100%;
+    padding: 0.875rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .muc-manageusers-table tr {
+    padding: 1rem;
+  }
+
+  .muc-manageusers-table td {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.65rem 0;
+  }
+
+  .muc-manageusers-table td::before {
+    min-width: auto;
+    margin-bottom: 0.25rem;
+  }
+
+  .td-action {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
   .action-li {
     width: 100%;
-    text-align: center;
-    margin: 0.25rem 0;
+    justify-content: center;
+    padding: 0.65rem 1rem;
+  }
+
+  .orders-container {
+    padding: 1.25rem;
+  }
+
+  .sort-controls {
+    padding: 1.25rem;
+  }
+
+  .sort-buttons {
+    flex-direction: column;
+  }
+
+  .sort-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 0.75rem 1.25rem;
+  }
+
+  .orders-table tr {
+    padding: 1rem;
+  }
+
+  .orders-table td {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .orders-table td::before {
+    min-width: auto;
+  }
+
+  .order-details-panel {
+    padding: 1.25rem;
+  }
+
+  .product-info {
+    flex-direction: column;
+  }
+
+  .product-pricing {
+    text-align: left;
+  }
+
+  /* Modal responsive */
+  .modal-content {
+    width: 100%;
+    min-width: auto;
+    max-width: none;
+    height: 100vh;
+    border-radius: 0;
+    z-index: 10000;
+  }
+
+  .modal-content-header {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .modal-content-body {
+    padding: 1.5rem;
+  }
+
+  .mcb-body-container {
+    padding: 1.25rem;
+  }
+
+  .add-text {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    padding: 0.875rem 1rem;
+  }
+
+  .modal-body-container {
+    gap: 1.125rem;
+  }
+
+  .modal-body-container .button-component button {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+  }
+
+  .mu-modal-input {
+    margin-bottom: 0.875rem;
+  }
+
+  .mu-modal-input label {
+    font-size: 0.8125rem;
+  }
+
+  .mu-modal-input input,
+  .mu-modal-input select {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  .mu-modal-input select {
+    background-position: right 0.625rem center;
+  }
+}
+
+/* Mobile Medium (480px - 639px) */
+@media (max-width: 639px) {
+  .manageusers-content {
+    padding: 1rem 1rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .muc-selection-headers ul {
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .muc-link {
+    padding: 0.7rem 1rem;
+    font-size: 0.7rem;
+  }
+
+  .manageusers-tab-content-container {
+    padding: 1rem;
+  }
+
+  .muc-manageusers-table tr {
+    padding: 0.875rem;
+    margin-bottom: 0.875rem;
+  }
+
+  .muc-manageusers-table td {
+    font-size: 0.875rem;
+    padding: 0.6rem 0;
+  }
+
+  .muc-manageusers-table td::before {
+    font-size: 0.75rem;
+  }
+
+  .action-li {
+    padding: 0.6rem 0.875rem;
+    font-size: 0.75rem;
+  }
+
+  .orders-container {
+    padding: 1rem;
+  }
+
+  .sort-controls {
+    padding: 1rem;
+  }
+
+  .sort-btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .orders-table tr {
+    padding: 0.875rem;
+  }
+
+  .orders-table td {
+    font-size: 0.875rem;
+    padding: 0.6rem 0;
+  }
+
+  .order-details-panel {
+    padding: 1rem;
+  }
+
+  .section-title {
+    font-size: 1rem;
+  }
+
+  .product-card {
+    padding: 1rem;
+  }
+
+  .modal-content {
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto;
+    border-radius: 0;
+  }
+
+  .modal-content-header {
+    padding: 1rem 1.25rem;
+  }
+
+  .modal-content-body {
+    padding: 1.25rem;
+  }
+
+  .mcb-body-container {
+    padding: 1rem;
+  }
+
+  .add-text {
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    padding: 0.875rem;
+  }
+
+  .modal-content-body {
+    padding: 1.25rem;
+  }
+
+  .modal-body-container {
+    gap: 1rem;
+  }
+
+  .modal-body-container .button-component button {
+    padding: 0.75rem 1.125rem;
+    font-size: 0.8125rem;
+  }
+
+  .mu-modal-input {
+    margin-bottom: 0.875rem;
+  }
+
+  .mu-modal-input label {
+    font-size: 0.8125rem;
+  }
+
+  .mu-modal-input input,
+  .mu-modal-input select {
+    padding: 0.625rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+
+  .mu-modal-input select {
+    background-position: right 0.625rem center;
+    padding-right: 2.25rem;
+  }
+}
+
+/* Mobile Small (375px - 479px) */
+@media (max-width: 479px) {
+  .manageusers-content {
+    padding: 0.875rem 0.875rem;
+    padding-top: 1.25rem;
+  }
+
+  .page-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.375rem;
+    line-height: 1.2;
+  }
+
+  .muc-selection-headers {
+    margin-bottom: 1.25rem;
+    border-radius: 12px;
+  }
+
+  .muc-selection-headers ul {
+    padding: 0.375rem;
+  }
+
+  .muc-link {
+    padding: 0.65rem 0.875rem;
+    font-size: 0.675rem;
+    border-radius: 10px;
+  }
+
+  .manageusers-tab-content-container {
+    padding: 0.875rem;
+    border-radius: 12px;
+  }
+
+  .muc-add-users-btn button {
+    padding: 0.8rem 1.25rem;
+    font-size: 0.825rem;
+  }
+
+  .muc-manageusers-table tr {
+    padding: 0.75rem;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+  }
+
+  .muc-manageusers-table td {
+    padding: 0.55rem 0;
+    font-size: 0.825rem;
+  }
+
+  .muc-manageusers-table td::before {
+    font-size: 0.7rem;
+  }
+
+  .action-li {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.7rem;
+    min-width: auto;
+  }
+
+  .orders-container {
+    padding: 0.875rem;
+    border-radius: 12px;
+  }
+
+  .sort-controls {
+    padding: 0.875rem;
+    border-radius: 10px;
+  }
+
+  .sort-label {
+    font-size: 0.9rem;
+  }
+
+  .sort-btn {
+    padding: 0.6rem 0.875rem;
+    font-size: 0.8rem;
+    border-radius: 6px;
+  }
+
+  .table-wrapper {
+    border-radius: 10px;
+  }
+
+  .orders-table tr {
+    padding: 0.75rem;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+  }
+
+  .orders-table td {
+    padding: 0.55rem 0;
+    font-size: 0.825rem;
+  }
+
+  .order-details-panel {
+    padding: 0.875rem;
+    margin: 0.5rem;
+  }
+
+  .section-title {
+    font-size: 0.95rem;
+  }
+
+  .product-card {
+    padding: 0.875rem;
+  }
+
+  .product-name {
+    font-size: 0.9rem;
+  }
+
+  .modal-content {
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto;
+    border-radius: 0;
+  }
+
+  .modal-content-header {
+    padding: 0.875rem 1rem;
+  }
+
+  .modal-content-header h2 {
+    font-size: 1.125rem;
+  }
+
+  .modal-content-body {
+    padding: 1rem;
+  }
+
+  .mcb-body-container {
+    padding: 0.875rem;
+  }
+
+  .add-text {
+    font-size: 0.8rem;
+    line-height: 1.4;
+    padding: 0.75rem;
+  }
+
+  .add-text p {
+    margin: 0;
+  }
+
+  .add-text {
+    font-size: 0.75rem;
+    line-height: 1.45;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .add-text br {
+    display: none;
+  }
+
+  .modal-content-body {
+    padding: 1rem;
+  }
+
+  .modal-body-container {
+    gap: 0.875rem;
+  }
+
+  .modal-body-container .button-component button {
+    padding: 0.7rem 1rem;
+    font-size: 0.8125rem;
+  }
+
+  .mu-modal-input {
+    margin-bottom: 0.75rem;
+  }
+
+  .mu-modal-input label {
+    font-size: 0.75rem;
+  }
+
+  .mu-modal-input input,
+  .mu-modal-input select {
+    padding: 0.6rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+
+  .mu-modal-input select {
+    background-position: right 0.5rem center;
+    padding-right: 2rem;
+  }
+}
+
+/* Mobile Extra Small (320px - 374px) */
+@media (max-width: 374px) {
+  .manageusers-content {
+    padding: 0.75rem 0.75rem;
+    padding-top: 1rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .muc-selection-headers {
+    margin-bottom: 1rem;
+  }
+
+  .muc-link {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.65rem;
+  }
+
+  .manageusers-tab-content-container {
+    padding: 0.75rem;
+  }
+
+  .muc-add-users-btn button {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .muc-manageusers-table tr {
+    padding: 0.65rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .muc-manageusers-table td {
+    padding: 0.5rem 0;
+    font-size: 0.8rem;
+  }
+
+  .muc-manageusers-table td::before {
+    font-size: 0.675rem;
+  }
+
+  .action-li {
+    padding: 0.5rem 0.65rem;
+    font-size: 0.675rem;
+  }
+
+  .orders-container {
+    padding: 0.75rem;
+  }
+
+  .sort-controls {
+    padding: 0.75rem;
+  }
+
+  .sort-label {
+    font-size: 0.85rem;
+  }
+
+  .sort-btn {
+    padding: 0.55rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .orders-table tr {
+    padding: 0.65rem;
+    margin-bottom: 0.65rem;
+  }
+
+  .orders-table td {
+    padding: 0.5rem 0;
+    font-size: 0.8rem;
+  }
+
+  .order-details-panel {
+    padding: 0.75rem;
+  }
+
+  .section-title {
+    font-size: 0.9rem;
+  }
+
+  .product-card {
+    padding: 0.75rem;
+  }
+
+  .modal-content {
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto;
+    border-radius: 0;
+    right: 0;
+    left: 0;
+  }
+
+  .modal-content-header {
+    padding: 0.75rem 0.875rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f8fafc;
+  }
+
+  .modal-content-header h2 {
+    font-size: 1rem;
+  }
+
+  .modal-content-body {
+    padding: 0.875rem;
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .mcb-body-container {
+    padding: 0.75rem;
+  }
+
+  .add-text {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    padding: 0.65rem;
+  }
+
+  .add-text {
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .modal-content-body {
+    padding: 0.875rem;
+  }
+
+  .modal-body-container {
+    gap: 0.75rem;
+  }
+
+  .modal-body-container .button-component button {
+    padding: 0.65rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .mu-modal-input {
+    margin-bottom: 0.65rem;
+  }
+
+  .mu-modal-input label {
+    font-size: 0.75rem;
+  }
+
+  .mu-modal-input input,
+  .mu-modal-input select {
+    padding: 0.575rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+
+  .mu-modal-input select {
+    background-position: right 0.5rem center;
+    padding-right: 2rem;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .muc-link,
+  .action-li,
+  .sort-btn {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .muc-manageusers-table tr,
+  .orders-table tr {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+  }
+
+  .status-select {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .mu-modal-input input,
+  .mu-modal-input select {
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .modal-content-header .action-li {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+
+  .modal-body-container .button-component {
+    min-height: 48px;
+    touch-action: manipulation;
+  }
+}
+
+/* Text overflow handling */
+.customer-email,
+.order-id,
+.detail-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  .customer-email,
+  .order-id,
+  .detail-value {
+    white-space: normal;
+    word-break: break-word;
   }
 }
 .orders-container {
@@ -1191,6 +2023,7 @@ button.action-li:hover {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 9998;
 }
 
 .alert-modal-container {
@@ -1213,7 +2046,7 @@ button.action-li:hover {
   opacity: 0;
   transition: opacity 0.3s ease;
   background-color: var(--darkcolor);
-  z-index: 1;
+  z-index: 9998;
 }
 
 .modal-overlay.active {
@@ -1230,7 +2063,7 @@ button.action-li:hover {
   padding: 10px 20px;
   background-color: var(--basecolor);
   border-radius: 24px;
-  z-index: 2;
+  z-index: 9999;
 }
 
 .alert-modal-content.active {
@@ -1244,16 +2077,17 @@ button.action-li:hover {
   width: 32%;
   min-width: 350px;
   max-width: 600px;
-  height: 100%;
+  height: 100vh;
   background-color: #ffffff;
   padding: 0;
   box-shadow: -8px 0 25px rgba(0, 0, 0, 0.1);
   transform: translateX(100%);
   transition: transform 0.3s ease-in-out;
-  z-index: 1000;
+  z-index: 9999;
   display: flex;
   flex-direction: column;
   border-left: 1px solid #e5e7eb;
+  border-radius: 0;
 }
 
 .modal-content.show {
@@ -1315,7 +2149,7 @@ button.action-li:hover {
 
 .modal-content-body {
   flex: 1;
-  padding: 2rem;
+  padding: 1.5rem 2rem 2rem 2rem;
   overflow-y: auto;
 }
 
@@ -1323,19 +2157,38 @@ button.action-li:hover {
   /* height: 100%; */
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
+}
+
+.add-text {
+  font-family: "Rubik", sans-serif;
+  color: #78350f;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  padding: 1rem 1.25rem;
+  background: #fef9e7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  margin-bottom: 0;
+}
+
+.add-text p {
+  margin: 0;
 }
 
 .mcb-body-container {
   width: 100%;
   padding: 1.5rem;
-  background: #f9fafb;
+  background: #ffffff;
   border-radius: 8px;
   border: 1px solid #e5e7eb;
 }
 
 .mcb-body {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .modal-form-description {
@@ -1352,38 +2205,79 @@ button.action-li:hover {
 .mu-modal-input {
   display: flex;
   flex-direction: column;
-  margin-bottom: 1.25rem;
-  gap: 0.5rem;
+  margin-bottom: 1rem;
+  gap: 0.375rem;
 }
 
 .mu-modal-input label {
   font-family: "Rubik", sans-serif;
-  font-weight: 500;
-  color: #374151;
-  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 0.8125rem;
+  letter-spacing: 0.01em;
+}
+
+.mu-modal-input label .required-asterisk {
+  color: #dc2626;
+  margin-left: 0.125rem;
 }
 
 .mu-modal-input input,
 .mu-modal-input select {
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
+  padding: 0.625rem 0.75rem;
+  border: 1.5px solid #d1d5db;
   border-radius: 6px;
   outline: none;
   font-family: "Rubik", sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   background: #ffffff;
-  color: #374151;
-  transition: border-color 0.2s ease;
+  color: #1f2937;
+  transition: all 0.2s ease;
+  min-height: 42px;
+}
+
+.mu-modal-input select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.mu-modal-input input:hover,
+.mu-modal-input select:hover {
+  border-color: #9ca3af;
 }
 
 .mu-modal-input input:focus,
 .mu-modal-input select:focus {
   border-color: #5e503f;
-  box-shadow: 0 0 0 2px rgba(94, 80, 63, 0.1);
+  box-shadow: 0 0 0 3px rgba(94, 80, 63, 0.08);
 }
 
 .mu-modal-input input::placeholder {
   color: #9ca3af;
+}
+
+/* Button component in modal */
+.modal-body-container > .button-component {
+  margin-top: 0.5rem;
+}
+
+.modal-body-container .button-component button {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  min-height: 48px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.modal-body-container .button-component button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(94, 80, 63, 0.2);
 }
 
 .modal-submit-btn {
