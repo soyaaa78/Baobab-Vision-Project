@@ -3,15 +3,50 @@ import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class VirtualTryOnScreen extends StatefulWidget {
-  const VirtualTryOnScreen({super.key});
+  const VirtualTryOnScreen({
+    super.key,
+    this.modelSlug,
+    this.variantSlug,
+    this.baseUrl,
+  });
+
+  final String? modelSlug;
+  final String? variantSlug;
+  final String? baseUrl;
 
   @override
-  _VirtualTryOnScreenState createState() => _VirtualTryOnScreenState();
+  State<VirtualTryOnScreen> createState() => _VirtualTryOnScreenState();
 }
 
 class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
-  late InAppWebViewController _webViewController;
   bool _permissionGranted = false;
+
+  static const String _defaultBaseUrl = String.fromEnvironment(
+    'VTO_WEB_BASE_URL',
+    defaultValue: 'https://baobab-vto.vercel.app',
+  );
+  static const String _defaultModelSlug = 'lana';
+  static const String _defaultVariantSlug = 'rich-black';
+
+  String _slugOrDefault(String? value, String fallback) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      return fallback;
+    }
+    return normalized.toLowerCase();
+  }
+
+  WebUri _buildVtoUri() {
+    final configuredBase = (widget.baseUrl ?? _defaultBaseUrl).trim();
+    final base = configuredBase.endsWith('/')
+        ? configuredBase.substring(0, configuredBase.length - 1)
+        : configuredBase;
+
+    final modelSlug = _slugOrDefault(widget.modelSlug, _defaultModelSlug);
+    final variantSlug = _slugOrDefault(widget.variantSlug, _defaultVariantSlug);
+
+    return WebUri('$base/$modelSlug/$variantSlug');
+  }
 
   @override
   void initState() {
@@ -56,7 +91,7 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
       ),
       body: InAppWebView(
         initialUrlRequest: URLRequest(
-          url: WebUri('https://next-webar-tryon.vercel.app/'),
+          url: _buildVtoUri(),
         ),
         initialSettings: InAppWebViewSettings(
           javaScriptEnabled: true,
@@ -66,9 +101,6 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
           allowContentAccess: true,
           allowsInlineMediaPlayback: true,
         ),
-        onWebViewCreated: (controller) {
-          _webViewController = controller;
-        },
         onPermissionRequest: (controller, permissionRequest) async {
           // Only grant camera-related resources (deny mic if requested)
           final allowed = permissionRequest.resources.where(
