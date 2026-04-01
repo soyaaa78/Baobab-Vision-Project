@@ -7,9 +7,23 @@ const mongoose = require("mongoose");
 const ProofOfPayment = require("../models/Order/ProofOfPayment");
 const crypto = require("crypto");
 const { logEvent } = require("../services/auditLogService");
-const User = require("../models/User");
 const sendEmail = require("../services/sendEmail");
 const generateReceiptEmail = require("../services/receiptEmailTemplate");
+
+const isStaffUser = (req) =>
+  req.user &&
+  (req.user.role === "system_admin" || req.user.role?.startsWith("staff"));
+
+const isOrderOwner = (order, userId) => {
+  const customerId =
+    order?.customer && typeof order.customer === "object"
+      ? order.customer._id?.toString?.()
+      : order?.customer?.toString?.();
+
+  return Boolean(customerId && userId && customerId === userId);
+};
+
+const RECEIPT_SEND_LOCK_TIMEOUT_MS = 15 * 60 * 1000;
 
 // Generate a user-friendly, unique orderId (e.g., ORD-20250829-3F9A2C)
 const generateOrderId = async () => {
@@ -49,13 +63,76 @@ const resolveProductsForReceipt = (populatedProducts) => {
   });
 };
 
+const sendReceiptEmailForOrder = async ({ orderId, subject, text }) => {
+  const staleLockCutoff = new Date(Date.now() - RECEIPT_SEND_LOCK_TIMEOUT_MS);
+  const populatedOrder = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      receiptSentAt: null,
+      $or: [{ receiptSendingAt: null }, { receiptSendingAt: { $lt: staleLockCutoff } }],
+    },
+    {
+      $set: { receiptSendingAt: new Date() },
+    },
+    { new: true }
+  )
+    .populate({
+      path: "products.productId",
+      select: "name imageUrls colorOptions lensOptions",
+    })
+    .populate("customer", "email firstname lastname");
+
+  if (!populatedOrder?.customer?.email) {
+    if (populatedOrder?._id) {
+      await Order.findByIdAndUpdate(populatedOrder._id, {
+        $unset: { receiptSendingAt: 1 },
+      });
+    }
+    return;
+  }
+
+  const { customer } = populatedOrder;
+  const html = generateReceiptEmail({
+    orderId: populatedOrder.orderId,
+    orderDate: populatedOrder.createdAt || populatedOrder.date,
+    customerFirstname: customer.firstname,
+    customerLastname: customer.lastname,
+    paymentMethod: populatedOrder.paymentMethod,
+    deliveryMethod: populatedOrder.deliveryMethod,
+    totalAmount: populatedOrder.totalAmount,
+    products: resolveProductsForReceipt(populatedOrder.products),
+  });
+
+  try {
+    await sendEmail(customer.email, subject, text, html);
+    await Order.findByIdAndUpdate(orderId, {
+      receiptSentAt: new Date(),
+      $unset: { receiptSendingAt: 1 },
+    });
+  } catch (error) {
+    await Order.findByIdAndUpdate(orderId, {
+      $unset: { receiptSendingAt: 1 },
+    });
+    throw error;
+  }
+};
+
 // Get Order by id or customer
 const order_get = catchAsync(async (req, res, next) => {
   const { id, customer, index, status, deliveryMethod } = req.query;
+  const staffUser = isStaffUser(req);
 
   let order;
   // Build query object
   let queryObj = {};
+
+  if (index && !staffUser) {
+    return next(new AppError("Only staff can list all orders.", 403));
+  }
+
+  if (customer && !staffUser && customer !== req.userId) {
+    return next(new AppError("You can only access your own orders.", 403));
+  }
 
   if (id) {
     // Find by ID
@@ -65,6 +142,11 @@ const order_get = catchAsync(async (req, res, next) => {
       .populate("address")
       .populate("proofOfPayment")
       .populate("rating");
+
+    if (!order) return next(new AppError("Order not found.", 404));
+    if (!staffUser && !isOrderOwner(order, req.userId)) {
+      return next(new AppError("You are not allowed to access this order.", 403));
+    }
   } else {
     // Build query for list
     if (customer) queryObj.customer = customer;
@@ -121,9 +203,14 @@ const order_post = catchAsync(async (req, res, next) => {
     cancellationReason,
     declineReason,
   } = req.body;
+  const staffUser = isStaffUser(req);
+  const effectiveCustomer = staffUser ? customer : req.userId;
 
-  if (!customer || !products)
+  if (!effectiveCustomer || !products)
     return next(new AppError("Cannot create order, missing fields.", 400));
+  if (!staffUser && customer && customer !== req.userId) {
+    return next(new AppError("You can only create orders for your own account.", 403));
+  }
   const date = Date.now();
 
   // Generate friendly orderId
@@ -159,7 +246,7 @@ const order_post = catchAsync(async (req, res, next) => {
 
   const newOrder = new Order({
     orderId,
-    customer,
+    customer: effectiveCustomer,
     products,
     date,
     address, // expecting an Address ObjectId if provided
@@ -240,6 +327,56 @@ const order_put = catchAsync(async (req, res, next) => {
   const order = await Order.findById(id);
   if (!order) return next(new AppError("Order not found. Invalid ID.", 404));
 
+  const staffUser = isStaffUser(req);
+  const owner = isOrderOwner(order, req.userId);
+
+  if (!staffUser && !owner) {
+    return next(new AppError("You are not allowed to update this order.", 403));
+  }
+
+  if (!staffUser) {
+    const customerEditableFields = [
+      "address",
+      "contactNumber",
+      "proofOfPayment",
+      "cancellationReason",
+      "status",
+    ];
+    const attemptedFields = Object.entries({
+      customer,
+      products,
+      date,
+      totalAmount,
+      paymentMethod,
+      deliveryMethod,
+      thirdPartyDelivery,
+      rating,
+      declineReason,
+    }).filter(([, value]) => typeof value !== "undefined");
+
+    if (attemptedFields.length > 0) {
+      return next(
+        new AppError(
+          `Customers can only update: ${customerEditableFields.join(", ")}.`,
+          403
+        )
+      );
+    }
+
+    if (typeof status !== "undefined") {
+      const validCustomerCancellation =
+        status === "cancelled_pending" && order.status === "pending";
+      if (!validCustomerCancellation) {
+        return next(
+          new AppError(
+            "Customers can only request cancellation for pending orders.",
+            403
+          )
+        );
+      }
+    }
+  }
+
   let updates = {};
   if (typeof customer !== "undefined") updates.customer = customer;
   if (typeof products !== "undefined") updates.products = products;
@@ -313,48 +450,31 @@ const order_put = catchAsync(async (req, res, next) => {
         metadata,
       });
 
-      // Send receipt email when Gcash payment is approved (pending → processing)
-      if (
-        updatedOrder.paymentMethod === "Gcash" &&
-        oldStatus === "pending" &&
-        newStatus === "processing"
-      ) {
-        (async () => {
-          try {
-            const populatedOrder = await Order.findById(updatedOrder._id)
-              .populate({
-                path: "products.productId",
-                select: "name imageUrls colorOptions lensOptions",
-              })
-              .populate("customer", "email firstname lastname");
-            if (!populatedOrder?.customer?.email) return;
-            const { customer } = populatedOrder;
-            const html = generateReceiptEmail({
-              orderId: updatedOrder.orderId,
-              orderDate: updatedOrder.createdAt || updatedOrder.date,
-              customerFirstname: customer.firstname,
-              customerLastname: customer.lastname,
-              paymentMethod: updatedOrder.paymentMethod,
-              deliveryMethod: updatedOrder.deliveryMethod,
-              totalAmount: updatedOrder.totalAmount,
-              products: resolveProductsForReceipt(populatedOrder.products),
-            });
-            await sendEmail(
-              customer.email,
-              `Payment Approved — Baobab Vision Order ${updatedOrder.orderId}`,
-              `Your GCash payment for order ${updatedOrder.orderId} has been approved. Total: ₱${updatedOrder.totalAmount.toFixed(2)}.`,
-              html
-            );
-          } catch (emailErr) {
-            console.error(
-              "[Receipt Email] Gcash receipt failed:",
-              updatedOrder.orderId,
-              emailErr.message
-            );
-          }
-        })();
-      }
     }
+  }
+
+  if (status && order.status === "pending" && updatedOrder.status === "processing") {
+    (async () => {
+      try {
+        const isGcash = updatedOrder.paymentMethod === "Gcash";
+        await sendReceiptEmailForOrder({
+          orderId: updatedOrder._id,
+          subject: isGcash
+            ? `Payment Approved - Baobab Vision Order ${updatedOrder.orderId}`
+            : `Order Confirmed - Baobab Vision Order ${updatedOrder.orderId}`,
+          text: isGcash
+            ? `Your GCash payment for order ${updatedOrder.orderId} has been approved. Total: PHP ${updatedOrder.totalAmount.toFixed(2)}.`
+            : `Your order ${updatedOrder.orderId} has been confirmed and is now being processed. Total: PHP ${updatedOrder.totalAmount.toFixed(2)}.`,
+        });
+      } catch (emailErr) {
+        console.error(
+          "[Receipt Email] Failed:",
+          updatedOrder.orderId,
+          updatedOrder.paymentMethod,
+          emailErr.message
+        );
+      }
+    })();
   }
 
   return res
@@ -367,6 +487,9 @@ const order_delete = catchAsync(async (req, res, next) => {
   const { id } = req.query;
 
   if (!id) return next(new AppError("Order identifier not found", 400));
+  if (!isStaffUser(req)) {
+    return next(new AppError("Only staff can delete orders.", 403));
+  }
 
   const order = await Order.findById(id);
   if (!order) return next(new AppError("Order not found", 404));
@@ -519,44 +642,6 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
   // 6. Clear the cart after checkout
   userCart.items = [];
   await userCart.save();
-
-  // 7. Send receipt email immediately for COD orders (fire-and-forget)
-  if (paymentMethod === "Pay Cash on Pickup") {
-    (async () => {
-      try {
-        const [populatedOrder, customer] = await Promise.all([
-          Order.findById(newOrder._id).populate({
-            path: "products.productId",
-            select: "name imageUrls colorOptions lensOptions",
-          }),
-          User.findById(userId).select("email firstname lastname"),
-        ]);
-        if (!populatedOrder || !customer?.email) return;
-        const html = generateReceiptEmail({
-          orderId: newOrder.orderId,
-          orderDate: newOrder.date,
-          customerFirstname: customer.firstname,
-          customerLastname: customer.lastname,
-          paymentMethod: newOrder.paymentMethod,
-          deliveryMethod: newOrder.deliveryMethod,
-          totalAmount: newOrder.totalAmount,
-          products: resolveProductsForReceipt(populatedOrder.products),
-        });
-        await sendEmail(
-          customer.email,
-          `Your Baobab Vision Order Receipt — ${newOrder.orderId}`,
-          `Thank you for your order ${newOrder.orderId}! Total: ₱${newOrder.totalAmount.toFixed(2)}.`,
-          html
-        );
-      } catch (emailErr) {
-        console.error(
-          "[Receipt Email] COD receipt failed:",
-          newOrder.orderId,
-          emailErr.message
-        );
-      }
-    })();
-  }
 
   return res.status(201).json({
     message: "Order placed successfully",
