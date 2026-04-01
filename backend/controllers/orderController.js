@@ -7,6 +7,9 @@ const mongoose = require("mongoose");
 const ProofOfPayment = require("../models/Order/ProofOfPayment");
 const crypto = require("crypto");
 const { logEvent } = require("../services/auditLogService");
+const User = require("../models/User");
+const sendEmail = require("../services/sendEmail");
+const generateReceiptEmail = require("../services/receiptEmailTemplate");
 
 // Generate a user-friendly, unique orderId (e.g., ORD-20250829-3F9A2C)
 const generateOrderId = async () => {
@@ -23,6 +26,27 @@ const generateOrderId = async () => {
     if (!exists) return candidate;
   }
   throw new Error("Failed to generate a unique orderId after several attempts");
+};
+
+// Resolve populated products into plain objects for receipt email generation
+const resolveProductsForReceipt = (populatedProducts) => {
+  return populatedProducts.map((item) => {
+    const prod = item.productId;
+    const colorOption = (prod.colorOptions || []).find(
+      (c) => c._id.toString() === item.color
+    );
+    const lensOption = (prod.lensOptions || []).find(
+      (l) => l._id.toString() === item.lens
+    );
+    return {
+      name: prod.name,
+      quantity: item.quantity,
+      unitPrice: item.price,
+      colorName: colorOption ? colorOption.name : item.color,
+      lensLabel: lensOption ? lensOption.label : item.lens,
+      imageUrl: prod.imageUrls?.[0] ?? null,
+    };
+  });
 };
 
 // Get Order by id or customer
@@ -288,6 +312,48 @@ const order_put = catchAsync(async (req, res, next) => {
         newValues: { status: newStatus },
         metadata,
       });
+
+      // Send receipt email when Gcash payment is approved (pending → processing)
+      if (
+        updatedOrder.paymentMethod === "Gcash" &&
+        oldStatus === "pending" &&
+        newStatus === "processing"
+      ) {
+        (async () => {
+          try {
+            const populatedOrder = await Order.findById(updatedOrder._id)
+              .populate({
+                path: "products.productId",
+                select: "name imageUrls colorOptions lensOptions",
+              })
+              .populate("customer", "email firstname lastname");
+            if (!populatedOrder?.customer?.email) return;
+            const { customer } = populatedOrder;
+            const html = generateReceiptEmail({
+              orderId: updatedOrder.orderId,
+              orderDate: updatedOrder.createdAt || updatedOrder.date,
+              customerFirstname: customer.firstname,
+              customerLastname: customer.lastname,
+              paymentMethod: updatedOrder.paymentMethod,
+              deliveryMethod: updatedOrder.deliveryMethod,
+              totalAmount: updatedOrder.totalAmount,
+              products: resolveProductsForReceipt(populatedOrder.products),
+            });
+            await sendEmail(
+              customer.email,
+              `Payment Approved — Baobab Vision Order ${updatedOrder.orderId}`,
+              `Your GCash payment for order ${updatedOrder.orderId} has been approved. Total: ₱${updatedOrder.totalAmount.toFixed(2)}.`,
+              html
+            );
+          } catch (emailErr) {
+            console.error(
+              "[Receipt Email] Gcash receipt failed:",
+              updatedOrder.orderId,
+              emailErr.message
+            );
+          }
+        })();
+      }
     }
   }
 
@@ -453,6 +519,44 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
   // 6. Clear the cart after checkout
   userCart.items = [];
   await userCart.save();
+
+  // 7. Send receipt email immediately for COD orders (fire-and-forget)
+  if (paymentMethod === "Pay Cash on Pickup") {
+    (async () => {
+      try {
+        const [populatedOrder, customer] = await Promise.all([
+          Order.findById(newOrder._id).populate({
+            path: "products.productId",
+            select: "name imageUrls colorOptions lensOptions",
+          }),
+          User.findById(userId).select("email firstname lastname"),
+        ]);
+        if (!populatedOrder || !customer?.email) return;
+        const html = generateReceiptEmail({
+          orderId: newOrder.orderId,
+          orderDate: newOrder.date,
+          customerFirstname: customer.firstname,
+          customerLastname: customer.lastname,
+          paymentMethod: newOrder.paymentMethod,
+          deliveryMethod: newOrder.deliveryMethod,
+          totalAmount: newOrder.totalAmount,
+          products: resolveProductsForReceipt(populatedOrder.products),
+        });
+        await sendEmail(
+          customer.email,
+          `Your Baobab Vision Order Receipt — ${newOrder.orderId}`,
+          `Thank you for your order ${newOrder.orderId}! Total: ₱${newOrder.totalAmount.toFixed(2)}.`,
+          html
+        );
+      } catch (emailErr) {
+        console.error(
+          "[Receipt Email] COD receipt failed:",
+          newOrder.orderId,
+          emailErr.message
+        );
+      }
+    })();
+  }
 
   return res.status(201).json({
     message: "Order placed successfully",

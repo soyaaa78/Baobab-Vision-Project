@@ -25,6 +25,7 @@ const orderCountsRoute = require("./routes/orderCounts");
 
 // Models
 const Admin = require("./models/Admin");
+const ProductViewStat = require("./models/ProductViewStat");
 // Ensure these models are registered for population
 require("./models/Order/Address");
 require("./models/Order/ProofOfPayment");
@@ -73,6 +74,7 @@ mongoose
     autoIndex: process.env.NODE_ENV !== "production", // ✅ disables auto-indexing in production
   })
   .then(async () => {
+    await ensureAnalyticsIndexes();
     console.log("✅ MongoDB connected");
     await dropLegacyFirstnameIndex(); // ✅ clean legacy index if it exists
   })
@@ -103,6 +105,26 @@ const seedSuperAdmin = async () => {
 };
 
 seedSuperAdmin();
+
+const ensureAnalyticsIndexes = async () => {
+  try {
+    await ProductViewStat.collection.createIndex(
+      { productId: 1 },
+      { name: "productId_1" }
+    );
+    await ProductViewStat.collection.createIndex(
+      { dateKey: 1 },
+      { name: "dateKey_1" }
+    );
+    await ProductViewStat.collection.createIndex(
+      { productId: 1, dateKey: 1 },
+      { unique: true, name: "productId_1_dateKey_1" }
+    );
+    console.log("âœ… Ensured product view analytics indexes");
+  } catch (err) {
+    console.error("âš ï¸ Failed to ensure analytics indexes:", err.message);
+  }
+};
 
 // Drop legacy firstname index if exists
 const dropLegacyFirstnameIndex = async () => {

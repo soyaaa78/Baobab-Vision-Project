@@ -4,6 +4,7 @@ const Product = require("../models/Products");
 const Rating = require("../models/Order/Rating");
 const Order = require("../models/Order");
 const RecommendationStat = require("../models/RecommendationStat");
+const ProductViewStat = require("../models/ProductViewStat");
 const {
   uploadProductFiles,
   uploadMultipleImagesHelper,
@@ -60,6 +61,416 @@ const mapFilesToOptionsByName = (files, colorOptions = []) => {
   });
 
   return mapping;
+};
+
+const MANILA_TIME_ZONE = "Asia/Manila";
+const MANILA_OFFSET = "+08:00";
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_LABELS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const getManilaDateParts = (date = new Date()) => {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: MANILA_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).formatToParts(date);
+  const values = parts.reduce((acc, part) => {
+    if (part.type !== "literal") acc[part.type] = part.value;
+    return acc;
+  }, {});
+
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    weekday: values.weekday,
+  };
+};
+
+const toUtcCalendarDate = ({ year, month, day }) =>
+  new Date(Date.UTC(year, month - 1, day));
+
+const buildDateKey = (date = new Date()) => {
+  const { year, month, day } = getManilaDateParts(date);
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+};
+
+const getStartOfWeek = (date = new Date()) => {
+  const manilaDate = getManilaDateParts(date);
+  const weekdayIndex = Math.max(0, WEEKDAY_LABELS.indexOf(manilaDate.weekday));
+  const start = toUtcCalendarDate(manilaDate);
+  start.setUTCDate(start.getUTCDate() - weekdayIndex);
+  return start;
+};
+
+const buildCurrentWeekDays = (date = new Date()) => {
+  const days = [];
+  const start = getStartOfWeek(date);
+  const end = toUtcCalendarDate(getManilaDateParts(date));
+
+  for (
+    let cursor = new Date(start);
+    cursor <= end;
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  ) {
+    days.push(new Date(cursor));
+  }
+
+  return days;
+};
+
+const formatWeekDayLabel = (date) =>
+  date.toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+const inferProductCategory = (product) => {
+  const specs = Array.isArray(product?.specs)
+    ? product.specs.map((spec) => spec.toLowerCase())
+    : [];
+
+  if (specs.some((spec) => spec.includes("blue") && spec.includes("light"))) {
+    return "Blue Light Glasses";
+  }
+  if (
+    specs.some(
+      (spec) =>
+        spec.includes("uv") ||
+        spec.includes("polarized") ||
+        spec.includes("sun")
+    )
+  ) {
+    return "Sunglasses";
+  }
+  if (specs.some((spec) => spec.includes("prescription"))) {
+    return "Prescription Glasses";
+  }
+
+  return "Eyewear";
+};
+
+const getFaceShapeStatsData = async () => {
+  const stats = await RecommendationStat.aggregate([
+    { $group: { _id: "$faceShape", count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+  ]);
+  const total = stats.reduce((acc, curr) => acc + curr.count, 0);
+
+  return { stats, total };
+};
+
+const getProductStatisticsData = async ({ limit = 10, sortBy = "sales" } = {}) => {
+  const parsedLimit = Math.max(1, parseInt(limit, 10) || 10);
+  const groupedSales = await Order.aggregate([
+    {
+      $match: {
+        status: { $nin: ["cancelled", "cancelled_pending"] },
+      },
+    },
+    { $unwind: "$products" },
+    {
+      $group: {
+        _id: "$products.productId",
+        sales: { $sum: "$products.quantity" },
+      },
+    },
+    { $sort: { [sortBy]: -1, _id: 1 } },
+  ]);
+
+  const topProductIds = groupedSales.slice(0, parsedLimit).map((item) => item._id);
+  const productDocs =
+    topProductIds.length > 0
+      ? await Product.find({ _id: { $in: topProductIds } }).select(
+          "name price imageUrls specs lensOptions"
+        )
+      : [];
+  const productMap = new Map(
+    productDocs.map((product) => [product._id.toString(), product.toObject()])
+  );
+  const bestSellingProducts = groupedSales
+    .slice(0, parsedLimit)
+    .map((item) => {
+      const product = productMap.get(item._id.toString());
+      if (!product) return null;
+      return {
+        ...product,
+        sales: item.sales,
+      };
+    })
+    .filter(Boolean);
+
+  const totalProductsPromise = Product.countDocuments();
+  const neverSoldCountPromise = Product.countDocuments({
+    _id: {
+      $nin: groupedSales.map((item) => item._id),
+    },
+  });
+  const [totalProducts, neverSoldCount] = await Promise.all([
+    totalProductsPromise,
+    neverSoldCountPromise,
+  ]);
+  const salesValues = groupedSales.map((item) => Number(item.sales) || 0);
+  const totalSales = salesValues.reduce((sum, value) => sum + value, 0);
+
+  return {
+    bestSellingProducts,
+    totalStats: {
+      totalProducts,
+      totalSales,
+      averageSales: salesValues.length ? totalSales / salesValues.length : 0,
+      maxSales: salesValues.length ? Math.max(...salesValues) : 0,
+      minSales: salesValues.length ? Math.min(...salesValues) : 0,
+    },
+    neverSoldCount,
+  };
+};
+
+const getTopRatedThisMonthData = async () => {
+  const manilaNow = getManilaDateParts();
+  const monthStart = new Date(
+    `${manilaNow.year}-${String(manilaNow.month).padStart(2, "0")}-01T00:00:00${MANILA_OFFSET}`
+  );
+
+  const result = await Rating.aggregate([
+    { $match: { createdAt: { $gte: monthStart } } },
+    {
+      $lookup: {
+        from: "orders",
+        localField: "orderId",
+        foreignField: "_id",
+        as: "order",
+      },
+    },
+    { $unwind: "$order" },
+    {
+      $match: {
+        $expr: { $eq: [{ $size: "$order.products" }, 1] },
+      },
+    },
+    {
+      $project: {
+        rating: 1,
+        productId: { $arrayElemAt: ["$order.products.productId", 0] },
+      },
+    },
+    {
+      $group: {
+        _id: "$productId",
+        avgRating: { $avg: "$rating" },
+        reviewCount: { $sum: 1 },
+      },
+    },
+    { $sort: { avgRating: -1, reviewCount: -1, _id: 1 } },
+    { $limit: 1 },
+    {
+      $lookup: {
+        from: "products",
+        localField: "_id",
+        foreignField: "_id",
+        as: "product",
+      },
+    },
+    { $unwind: "$product" },
+    {
+      $project: {
+        _id: 0,
+        productId: "$product._id",
+        name: "$product.name",
+        rating: { $round: ["$avgRating", 1] },
+        reviews: "$reviewCount",
+        price: "$product.price",
+        imageUrls: "$product.imageUrls",
+        specs: "$product.specs",
+        lensOptions: "$product.lensOptions",
+      },
+    },
+  ]);
+
+  return result[0] || null;
+};
+
+const getMonthlySalesTrendData = async () => {
+  const manilaNow = getManilaDateParts();
+  const currentYear = manilaNow.year;
+  const monthCount = manilaNow.month;
+  const yearStart = new Date(`${currentYear}-01-01T00:00:00${MANILA_OFFSET}`);
+  const nextYearStart = new Date(`${currentYear + 1}-01-01T00:00:00${MANILA_OFFSET}`);
+
+  const salesRows = await Order.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $gte: yearStart,
+          $lt: nextYearStart,
+        },
+        status: { $nin: ["cancelled", "cancelled_pending"] },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          $month: {
+            date: "$createdAt",
+            timezone: MANILA_TIME_ZONE,
+          },
+        },
+        totalSales: { $sum: "$totalAmount" },
+        orderCount: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  const values = Array.from({ length: monthCount }, () => 0);
+  const orderCounts = Array.from({ length: monthCount }, () => 0);
+
+  salesRows.forEach((row) => {
+    const index = row._id - 1;
+    if (index >= 0 && index < monthCount) {
+      values[index] = Number(row.totalSales || 0);
+      orderCounts[index] = Number(row.orderCount || 0);
+    }
+  });
+
+  return {
+    year: currentYear,
+    labels: MONTH_LABELS.slice(0, monthCount),
+    values,
+    orderCounts,
+    totalSalesYtd: values.reduce((sum, value) => sum + value, 0),
+  };
+};
+
+const getProductViewAnalyticsData = async () => {
+  const weekDays = buildCurrentWeekDays();
+  const dayKeys = weekDays.map((date) => buildDateKey(date));
+
+  const [topViewedThisWeek, mostVisitedOverallRows] = await Promise.all([
+    ProductViewStat.aggregate([
+      { $match: { dateKey: { $in: dayKeys } } },
+      {
+        $group: {
+          _id: "$productId",
+          totalViews: { $sum: "$viewCount" },
+        },
+      },
+      { $sort: { totalViews: -1, _id: 1 } },
+      { $limit: 3 },
+    ]),
+    ProductViewStat.aggregate([
+      {
+        $group: {
+          _id: "$productId",
+          totalViews: { $sum: "$viewCount" },
+          lastViewedAt: { $max: "$lastViewedAt" },
+        },
+      },
+      { $sort: { totalViews: -1, lastViewedAt: -1 } },
+      { $limit: 1 },
+    ]),
+  ]);
+
+  const trackedProductIds = [
+    ...new Set([
+      ...topViewedThisWeek.map((row) => row._id.toString()),
+      ...mostVisitedOverallRows.map((row) => row._id.toString()),
+    ]),
+  ];
+
+  const dailyRows =
+    topViewedThisWeek.length > 0
+      ? await ProductViewStat.aggregate([
+          {
+            $match: {
+              dateKey: { $in: dayKeys },
+              productId: { $in: topViewedThisWeek.map((row) => row._id) },
+            },
+          },
+          {
+            $group: {
+              _id: {
+                productId: "$productId",
+                dateKey: "$dateKey",
+              },
+              views: { $sum: "$viewCount" },
+            },
+          },
+        ])
+      : [];
+
+  const trackedProducts =
+    trackedProductIds.length > 0
+      ? await Product.find({ _id: { $in: trackedProductIds } }).select(
+          "name price imageUrls specs lensOptions"
+        )
+      : [];
+
+  const productMap = new Map(
+    trackedProducts.map((product) => [product._id.toString(), product])
+  );
+  const dailyViewMap = new Map(
+    dailyRows.map((row) => [
+      `${row._id.productId.toString()}:${row._id.dateKey}`,
+      row.views,
+    ])
+  );
+
+  const datasets = topViewedThisWeek.map((row, index) => {
+    const productId = row._id.toString();
+    const product = productMap.get(productId);
+
+    return {
+      productId,
+      label: product?.name || `Product ${index + 1}`,
+      data: dayKeys.map(
+        (dateKey) => dailyViewMap.get(`${productId}:${dateKey}`) || 0
+      ),
+      totalViews: row.totalViews,
+    };
+  });
+
+  const mostVisitedRow = mostVisitedOverallRows[0] || null;
+  const mostVisitedProduct = mostVisitedRow
+    ? (() => {
+        const product = productMap.get(mostVisitedRow._id.toString());
+        return {
+          _id: mostVisitedRow._id,
+          name: product?.name || "Unknown Product",
+          views: mostVisitedRow.totalViews,
+          price: product?.price || 0,
+          imageUrls: product?.imageUrls || [],
+          category: inferProductCategory(product),
+        };
+      })()
+    : null;
+
+  return {
+    trackingReady: true,
+    hasData: Boolean(mostVisitedProduct),
+    week: {
+      labels: weekDays.map(formatWeekDayLabel),
+      datasets,
+    },
+    mostVisitedProduct,
+  };
 };
 
 // Use Firebase storage middleware
@@ -580,17 +991,85 @@ exports.deleteProduct = async (req, res) => {
 
 exports.getFaceShapeStats = async (req, res) => {
   try {
-    const stats = await RecommendationStat.aggregate([
-      { $group: { _id: "$faceShape", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-    ]);
-    const total = stats.reduce((acc, curr) => acc + curr.count, 0);
-    res.json({ stats, total });
+    const data = await getFaceShapeStatsData();
+    res.json(data);
   } catch (err) {
     res.status(500).json({
       message: "Failed to fetch face shape statistics",
       error: err.message,
     });
+  }
+};
+
+exports.trackProductView = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid product id" });
+    }
+
+    const productExists = await Product.exists({ _id: id });
+    if (!productExists) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    await ProductViewStat.updateOne(
+      {
+        productId: id,
+        dateKey: buildDateKey(),
+      },
+      {
+        $inc: { viewCount: 1 },
+        $set: { lastViewedAt: new Date() },
+      },
+      { upsert: true }
+    );
+
+    return res.status(204).send();
+  } catch (err) {
+    console.error("Error tracking product view:", err);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.getStatisticsDashboard = async (req, res) => {
+  try {
+    const [faceShape, productStatistics, topRatedProduct, monthlySalesTrend, viewAnalytics] =
+      await Promise.all([
+        getFaceShapeStatsData(),
+        getProductStatisticsData({ limit: 1 }),
+        getTopRatedThisMonthData(),
+        getMonthlySalesTrendData(),
+        getProductViewAnalyticsData(),
+      ]);
+
+    const mostBoughtProduct = productStatistics.bestSellingProducts[0]
+      ? {
+          ...productStatistics.bestSellingProducts[0],
+          category: inferProductCategory(productStatistics.bestSellingProducts[0]),
+        }
+      : null;
+
+    const topRated = topRatedProduct
+      ? {
+          ...topRatedProduct,
+          category: inferProductCategory(topRatedProduct),
+        }
+      : null;
+
+    return res.status(200).json({
+      message: "Statistics dashboard data retrieved successfully",
+      data: {
+        faceShape,
+        monthlySalesTrend,
+        productViews: viewAnalytics,
+        mostBoughtProduct,
+        topRatedProduct: topRated,
+      },
+    });
+  } catch (err) {
+    console.error("Error getting statistics dashboard:", err);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -750,40 +1229,11 @@ exports.recommendEyewear = async (req, res) => {
 exports.getProductStatistics = async (req, res) => {
   try {
     const { limit = 10, sortBy = "sales" } = req.query;
-
-    const bestSellingProducts = await Product.find()
-      .select("name sales price imageUrls")
-      .sort({ [sortBy]: -1 })
-      .limit(parseInt(limit));
-
-    const totalStats = await Product.aggregate([
-      {
-        $group: {
-          _id: null,
-          totalProducts: { $sum: 1 },
-          totalSales: { $sum: "$sales" },
-          averageSales: { $avg: "$sales" },
-          maxSales: { $max: "$sales" },
-          minSales: { $min: "$sales" },
-        },
-      },
-    ]);
-
-    const neverSoldCount = await Product.countDocuments({ sales: 0 });
+    const data = await getProductStatisticsData({ limit, sortBy });
 
     res.status(200).json({
       message: "Product statistics retrieved successfully",
-      data: {
-        bestSellingProducts,
-        totalStats: totalStats[0] || {
-          totalProducts: 0,
-          totalSales: 0,
-          averageSales: 0,
-          maxSales: 0,
-          minSales: 0,
-        },
-        neverSoldCount,
-      },
+      data,
     });
   } catch (err) {
     console.error("Error getting product statistics:", err);
@@ -930,6 +1380,16 @@ exports.getProductReviews = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+exports.getTopRatedThisMonth = async (req, res) => {
+  try {
+    const data = await getTopRatedThisMonthData();
+    return res.status(200).json({ data });
+  } catch (err) {
+    console.error("Error getting top rated product this month:", err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
 
 function getRecommendationMapping({
   faceShape,

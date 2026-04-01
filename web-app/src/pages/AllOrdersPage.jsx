@@ -29,6 +29,7 @@ const AllOrdersPage = () => {
   const [selectedCancellationOrder, setSelectedCancellationOrder] =
     useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   // Helpers
   const getOrderLabel = (order) =>
@@ -61,6 +62,7 @@ const AllOrdersPage = () => {
     if (!token) return;
     const fetchOrders = async () => {
       try {
+        setLoading(true);
         const response = await axios.get(
           `${SERVER_URL}/api/orders?index=true`,
           {
@@ -73,6 +75,8 @@ const AllOrdersPage = () => {
         setOrderList(Array.isArray(orders) ? orders : [orders]);
       } catch (error) {
         console.error("Error fetching orders:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchOrders();
@@ -181,6 +185,51 @@ const AllOrdersPage = () => {
         return "Progress";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="page" id="allorders">
+        <div className="allorders-header">
+          <h1>All Orders</h1>
+          <p>Manage and track all customer orders</p>
+        </div>
+        <div className="allorders-table-container">
+          <table className="allorders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Order Date</th>
+                <th>Customer</th>
+                <th>Email</th>
+                <th>Products</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th>Delivery Method</th>
+                <th>Payment Method</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i}>
+                  <td><div className="skeleton" style={{ width: '70px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '80px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '100px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '130px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '50px', height: '22px', borderRadius: '12px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '60px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '90px', height: '22px', borderRadius: '12px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '80px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '80px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '100px', height: '30px', borderRadius: '6px' }} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="page" id="allorders">

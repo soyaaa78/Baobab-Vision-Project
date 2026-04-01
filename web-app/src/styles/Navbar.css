@@ -69,6 +69,13 @@
   border-radius: 8px;
 }
 
+.links li .nav-button.active {
+  background: #eab676;
+  color: #252525;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px #25252522;
+}
+
 @media (max-width: 1020px) {
   .nav-logo-wrapper {
     display: none !important;

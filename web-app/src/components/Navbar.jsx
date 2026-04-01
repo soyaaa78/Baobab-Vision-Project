@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
@@ -23,22 +23,22 @@ function Navbar() {
 
         <ul className="links">
           <li>
-            <Link to="/dashboard" className="nav-button">
+            <NavLink to="/dashboard" className="nav-button" end>
               Home
-            </Link>
+            </NavLink>
           </li>
 
           {role !== "staff_order" && (
             <>
               <li>
-                <Link to="catalogue" className="nav-button">
+                <NavLink to="catalogue" className="nav-button">
                   Manage Eyeglass Selections
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link to="statistics" className="nav-button">
+                <NavLink to="statistics" className="nav-button">
                   Statistics
-                </Link>
+                </NavLink>
               </li>
             </>
           )}
@@ -46,35 +46,35 @@ function Navbar() {
           {role !== "staff_product" && (
             <>
               <li>
-                <Link to="manageusers" className="nav-button">
+                <NavLink to="manageusers" className="nav-button">
                   Manage Users
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link to="allorders" className="nav-button">
+                <NavLink to="allorders" className="nav-button">
                   Manage Orders
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link to="reviews" className="nav-button">
+                <NavLink to="reviews" className="nav-button">
                   Manage Reviews
-                </Link>
+                </NavLink>
               </li>
             </>
           )}
 
           {role === "system_admin" && (
             <li>
-              <Link to="audit-logs" className="nav-button">
+              <NavLink to="audit-logs" className="nav-button">
                 Audit Logs
-              </Link>
+              </NavLink>
             </li>
           )}
 
           <li>
-            <Link to="profile" className="nav-button">
+            <NavLink to="profile" className="nav-button">
               Profile
-            </Link>
+            </NavLink>
           </li>
 
           <Button

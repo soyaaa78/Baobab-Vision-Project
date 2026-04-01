@@ -29,6 +29,7 @@ const ManageUsersPage = () => {
     onConfirm: null,
   });
   const [actionLoading, setActionLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [dropdown, setDropdown] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [userList, setUserList] = useState([]);
@@ -150,9 +151,10 @@ const ManageUsersPage = () => {
         console.error("Error fetching orders:", error);
       }
     };
-    fetchStaff();
-    fetchUsers();
-    fetchOrders();
+    setLoading(true);
+    Promise.all([fetchStaff(), fetchUsers(), fetchOrders()]).finally(() => {
+      setLoading(false);
+    });
   }, [SERVER_URL, token]);
 
   const handleUserAction = async (id, action) => {
@@ -397,7 +399,31 @@ const ManageUsersPage = () => {
             </ul>
           </div>
           <div className="manageusers-tab-content-container">
-            {activeTab === "users" && (
+            {loading && (
+              <div className="manageusers-tab-content">
+                <table className="muc-manageusers-table table-users">
+                  <thead>
+                    <tr>
+                      <th>Username</th>
+                      <th>Email</th>
+                      <th>Verification Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="table-tr">
+                        <td><div className="skeleton" style={{ width: '100px', height: '16px' }} /></td>
+                        <td><div className="skeleton" style={{ width: '150px', height: '16px' }} /></td>
+                        <td><div className="skeleton" style={{ width: '80px', height: '20px', borderRadius: '12px' }} /></td>
+                        <td><div className="skeleton" style={{ width: '60px', height: '28px', borderRadius: '6px' }} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {!loading && activeTab === "users" && (
               <div className="manageusers-tab-content">
                 <div>
                   <table className="muc-manageusers-table table-users">
@@ -450,7 +476,7 @@ const ManageUsersPage = () => {
                 </div>
               </div>
             )}{" "}
-            {activeTab === "orders" && (
+            {!loading && activeTab === "orders" && (
               <div className="manageusers-tab-content">
                 <div className="orders-container">
                   {" "}
@@ -807,7 +833,7 @@ const ManageUsersPage = () => {
                 </div>
               </div>
             )}
-            {activeTab === "staff" && (
+            {!loading && activeTab === "staff" && (
               <div className="manageusers-tab-content">
                 <Button
                   className="muc-add-users-btn"

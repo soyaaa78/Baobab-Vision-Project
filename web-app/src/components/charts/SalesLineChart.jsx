@@ -20,20 +20,56 @@ ChartJS.register(
   Legend
 );
 
-export const SalesLineChart = () => {
+const DEFAULT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+const DEFAULT_SALES_DATA = [
+  95000, 102000, 88000, 125000, 138000, 145000, 135000, 142000, 128000,
+  110000, 95000, 165000,
+];
+
+export const SalesLineChart = ({
+  labels: providedLabels,
+  values: providedValues,
+  year: providedYear,
+  title,
+  datasetLabel,
+}) => {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+  const labels =
+    Array.isArray(providedLabels) && providedLabels.length > 0
+      ? providedLabels
+      : DEFAULT_MONTHS.slice(0, currentMonth + 1);
+  const salesData =
+    Array.isArray(providedValues) && providedValues.length > 0
+      ? providedValues
+      : DEFAULT_SALES_DATA.slice(0, currentMonth + 1);
+  const chartYear = providedYear || currentYear;
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: "top",
       },
       title: {
         display: true,
-        text: `Monthly Sales Trend (${currentYear} YTD)`,
+        text: title || `Monthly Sales Trend (${chartYear} YTD)`,
       },
     },
     scales: {
@@ -41,7 +77,7 @@ export const SalesLineChart = () => {
         beginAtZero: true,
         title: {
           display: true,
-          text: "Sales (₱)",
+          text: "Sales (PHP)",
         },
       },
       x: {
@@ -53,32 +89,11 @@ export const SalesLineChart = () => {
     },
   };
 
-  const allMonths = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const allSalesData = [
-    95000, 102000, 88000, 125000, 138000, 145000, 135000, 142000, 128000,
-    110000, 95000, 165000,
-  ];
-
-  const months = allMonths.slice(0, currentMonth + 1);
-  const salesData = allSalesData.slice(0, currentMonth + 1);
   const data = {
-    labels: months,
+    labels,
     datasets: [
       {
-        label: `${currentYear} Monthly Sales`,
+        label: datasetLabel || `${chartYear} Monthly Sales`,
         data: salesData,
         borderColor: "rgb(46, 204, 113)",
         backgroundColor: "rgba(46, 204, 113, 0.1)",

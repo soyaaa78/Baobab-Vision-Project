@@ -17,6 +17,51 @@
   margin: 0 auto;
 }
 
+/* Temporary layout used only while Export PDF is capturing the page */
+.statistics-layout.pdf-exporting {
+  padding: 0.75rem 1rem;
+  gap: 1rem;
+  max-width: none;
+  margin: 0;
+  align-items: flex-start;
+}
+
+.statistics-layout.pdf-exporting .statistics-sidebar {
+  flex: 0 0 240px;
+  min-width: 240px;
+  max-width: 240px;
+  gap: 0.75rem;
+}
+
+.statistics-layout.pdf-exporting .stat-card-content {
+  padding: 0.75rem;
+  gap: 0.75rem;
+}
+
+.statistics-layout.pdf-exporting .content-pic img {
+  width: 72px;
+  height: 72px;
+}
+
+.statistics-layout.pdf-exporting .statistics-bulk {
+  gap: 0.75rem;
+}
+
+.statistics-layout.pdf-exporting .piesect {
+  min-height: 0;
+}
+
+.statistics-layout.pdf-exporting .chart-wrapper {
+  padding: 0.75rem;
+  margin: 0;
+}
+
+.statistics-layout.pdf-exporting .chart-wrapper canvas,
+.statistics-layout.pdf-exporting .piesect canvas,
+.statistics-layout.pdf-exporting .linesect canvas {
+  max-height: 220px;
+}
+
 .statistics-main {
   flex: 2 1 0;
   min-width: 0;
@@ -205,6 +250,235 @@
   color: #dc2626;
   font-weight: 600;
   font-size: 1rem;
+}
+
+/* Export / Print header bar */
+.statistics-page-header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 1.5rem 3rem 0;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 1rem;
+}
+
+.statistics-header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.stat-export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.stat-print-btn {
+  background: #8b5a3c;
+  color: white;
+}
+
+.stat-pdf-btn {
+  background: #252525;
+  color: white;
+}
+
+.stat-export-btn:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+}
+
+.stat-export-btn:active {
+  transform: translateY(0);
+}
+
+/* Print-only header (hidden in normal view) */
+.print-header-stats {
+  display: none;
+}
+
+/* Print / PDF styles */
+@media print {
+  /* Hide navigation bar */
+  .navigation {
+    display: none !important;
+  }
+
+  .page#statistics {
+    min-height: auto !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Fix: header must be full-width and left-aligned in print */
+  .statistics-page-header {
+    justify-content: flex-start !important;
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Show and style the branded print header */
+  .print-header-stats {
+    display: block;
+    width: 100%;
+    margin-bottom: 1rem;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-header-top-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 2px solid #8b5a3c;
+    margin-bottom: 0.5rem;
+  }
+
+  .print-logo-stats {
+    height: 38px;
+    width: auto;
+  }
+
+  .print-header-info-stats {
+    text-align: right;
+  }
+
+  .print-header-info-stats h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #8b5a3c;
+    margin: 0 0 0.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .print-generated-stats {
+    font-size: 0.72rem;
+    color: #64748b;
+    margin: 0.15rem 0;
+  }
+
+  .print-meta-bar-stats {
+    display: flex;
+    justify-content: space-between;
+    background: #f9f4ef;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #8b5a3c;
+    border: 1px solid #e8d5c4;
+  }
+
+  /* Hide the buttons */
+  .statistics-header-actions {
+    display: none !important;
+  }
+
+  /* Fix: preserve the 2-column flex layout instead of stacking everything */
+  .statistics-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    padding: 0 !important;
+    gap: 1.25rem !important;
+    overflow: visible !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .statistics-main {
+    display: block !important;
+    flex: 2 1 0 !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+  }
+
+  /* Fix: sidebar stays as a column beside the charts */
+  .statistics-sidebar {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 0 0 240px !important;
+    width: 240px !important;
+    max-width: 240px !important;
+    min-width: 0 !important;
+    margin-top: 0 !important;
+    gap: 0.75rem !important;
+  }
+
+  .stat-card {
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+    margin-bottom: 0;
+    width: 100%;
+  }
+
+  /* Fix: keep stat card content horizontal (image beside text) */
+  .stat-card-content {
+    flex-direction: row !important;
+    align-items: center !important;
+    padding: 0.75rem !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Fix: shrink product images so cards don't take a full page */
+  .content-pic img {
+    width: 72px !important;
+    height: 72px !important;
+  }
+
+  .statistics-bulk {
+    gap: 0.75rem !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  /* Let large containers split naturally; only keep small cards/wrappers together */
+  .linesect {
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  .piesect,
+  .chart-wrapper {
+    page-break-inside: avoid !important;
+    break-inside: avoid-page !important;
+  }
+
+  /* Fix: remove min-height so the pie chart doesn't force a page break on page 1 */
+  .piesect {
+    min-height: 0 !important;
+  }
+
+  /* Constrain chart canvas height so charts don't eat entire pages */
+  .chart-wrapper canvas,
+  .piesect canvas,
+  .linesect canvas {
+    max-width: 100% !important;
+    max-height: 200px !important;
+    height: auto !important;
+  }
+
+  .piesect,
+  .linesect {
+    box-shadow: none;
+    padding: 0.75rem !important;
+  }
+
+  .chart-wrapper {
+    padding: 0.75rem !important;
+    margin: 0 !important;
+  }
 }
 
 /* Responsive design */
