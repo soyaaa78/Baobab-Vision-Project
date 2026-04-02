@@ -45,3 +45,7 @@ backend/node_modules/
 # Ignore native Android build intermediates
 mobile-app/android/app/.cxx/
 
+# Local AI assistant metadata
+.claude/
+.agents/
+

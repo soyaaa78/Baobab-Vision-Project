@@ -53,8 +53,7 @@ const AllOrdersPage = () => {
   const [selectedCancellationOrder, setSelectedCancellationOrder] =
     useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [pickupModalOpen, setPickupModalOpen] = useState(false);
-  const [pickupTargetOrder, setPickupTargetOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Helpers
   const getOrderLabel = (order) =>
@@ -122,6 +121,7 @@ const AllOrdersPage = () => {
     if (!token) return;
     const fetchOrders = async () => {
       try {
+        setLoading(true);
         const response = await axios.get(
           `${SERVER_URL}/api/orders?index=true`,
           {
@@ -136,12 +136,9 @@ const AllOrdersPage = () => {
           : [ordersRaw];
         setOrderList(orders);
       } catch (error) {
-        if (error.response && error.response.status === 404) {
-          setOrderList([]);
-          showToast({ type: "info", message: "No orders found." });
-        } else {
-          console.error("Error fetching orders:", error);
-        }
+        console.error("Error fetching orders:", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchOrders();
@@ -296,39 +293,50 @@ const AllOrdersPage = () => {
     }
   };
 
-  const getStatusOptionsForOrder = (order) => {
-    const options = [
-      { value: "pending", label: STATUS_LABELS.pending },
-      { value: "processing", label: STATUS_LABELS.processing },
-    ];
-
-    if (order.deliveryMethod === "Third-Party Delivery") {
-      options.push(
-        {
-          value: "ready_for_shipment",
-          label: STATUS_LABELS.ready_for_shipment,
-        },
-        { value: "in_transit", label: STATUS_LABELS.in_transit }
-      );
-    } else {
-      options.push({ value: "ready_to_pickup", label: STATUS_LABELS.ready_to_pickup });
-    }
-
-    options.push(
-      { value: "completed", label: STATUS_LABELS.completed },
-      { value: "cancelled", label: STATUS_LABELS.cancelled },
-      { value: "cancelled_pending", label: STATUS_LABELS.cancelled_pending }
+  if (loading) {
+    return (
+      <div className="page" id="allorders">
+        <div className="allorders-header">
+          <h1>All Orders</h1>
+          <p>Manage and track all customer orders</p>
+        </div>
+        <div className="allorders-table-container">
+          <table className="allorders-table">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Order Date</th>
+                <th>Customer</th>
+                <th>Email</th>
+                <th>Products</th>
+                <th>Total Amount</th>
+                <th>Status</th>
+                <th>Delivery Method</th>
+                <th>Payment Method</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 6 }).map((_, i) => (
+                <tr key={i}>
+                  <td><div className="skeleton" style={{ width: '70px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '80px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '100px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '130px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '50px', height: '22px', borderRadius: '12px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '60px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '90px', height: '22px', borderRadius: '12px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '80px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '80px', height: '16px' }} /></td>
+                  <td><div className="skeleton" style={{ width: '100px', height: '30px', borderRadius: '6px' }} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     );
-
-    if (!options.some((opt) => opt.value === order.status)) {
-      options.splice(2, 0, {
-        value: order.status,
-        label: statusLabel(order.status),
-      });
-    }
-
-    return options;
-  };
+  }
 
   return (
     <div className="page" id="allorders">

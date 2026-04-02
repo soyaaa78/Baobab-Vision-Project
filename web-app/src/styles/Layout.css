@@ -21,9 +21,21 @@ body {
   padding-bottom: 2rem;
 }
 
+@media print {
+    html,
+    body,
+    #root,
+    .layout-container,
+    .page {
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+    }
+}
+
 h1,
 p {
-  line-height: 1.2;
-  margin-top: 0;
-  margin-bottom: 0;
+    line-height: 1.2;
+    margin-top: 0;
+    margin-bottom: 0;
 }

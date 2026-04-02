@@ -9,7 +9,10 @@ const {
   deleteProduct,
   getFaceShapeStats,
   getProductStatistics,
+  getTopRatedThisMonth,
+  getStatisticsDashboard,
   recommendEyewear,
+  trackProductView,
   uploadProductFiles,
   getProductReviews,
   getProductsWith3DModels,
@@ -38,6 +41,9 @@ router.post("/recommend", recommendEyewear);
 router.get("/face-shape-stats", getFaceShapeStats);
 
 router.get("/order-stats", getProductStatistics);
+router.get("/top-rated-this-month", getTopRatedThisMonth);
+router.get("/statistics-dashboard", getStatisticsDashboard);
+router.post("/:id/view", trackProductView);
 
 // Reviews + rating stats for a product
 router.get("/:id/reviews", getProductReviews);

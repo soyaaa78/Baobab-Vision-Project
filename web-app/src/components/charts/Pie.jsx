@@ -16,41 +16,51 @@ const PIE_COLORS = [
   "#FF9F40", // Oblong
 ];
 
-export const PieChart = () => {
+const buildChartState = (stats = []) => ({
+  labels: stats.map((item) => item._id || "Unknown"),
+  datasets: [
+    {
+      label: "Face Shape",
+      data: stats.map((item) => item.count),
+      backgroundColor: PIE_COLORS.slice(0, stats.length),
+    },
+  ],
+});
+
+export const PieChart = ({ stats: providedStats = null, width = 280, height = 280 }) => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
   const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!Array.isArray(providedStats));
   const [error, setError] = useState(null);
-  const [stats, setStats] = useState([]);
+  const [stats, setStats] = useState(Array.isArray(providedStats) ? providedStats : []);
 
   useEffect(() => {
+    if (Array.isArray(providedStats)) {
+      setStats(providedStats);
+      setData(buildChartState(providedStats));
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     const fetchStats = async () => {
       setLoading(true);
       try {
         const res = await axios.get(
           `${SERVER_URL}/api/products/face-shape-stats`
         );
-        const { stats } = res.data;
-        setStats(stats);
-        setData({
-          labels: stats.map((s) => s._id || "Unknown"),
-          datasets: [
-            {
-              label: "Face Shape",
-              data: stats.map((s) => s.count),
-              backgroundColor: PIE_COLORS.slice(0, stats.length),
-            },
-          ],
-        });
+        const { stats: nextStats } = res.data;
+        setStats(nextStats);
+        setData(buildChartState(nextStats));
         setError(null);
-      } catch (err) {
+      } catch {
         setError("Failed to load statistics");
       } finally {
         setLoading(false);
       }
     };
     fetchStats();
-  }, []);
+  }, [SERVER_URL, providedStats]);
 
   const options = {
     plugins: {
@@ -138,7 +148,7 @@ export const PieChart = () => {
         alignItems: "center",
       }}
     >
-      <div style={{ width: 280, height: 280, margin: "0 auto" }}>
+      <div style={{ width, height, margin: "0 auto" }}>
         <Pie options={options} data={data} />
       </div>
       {statGrid}

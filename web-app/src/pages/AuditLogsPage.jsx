@@ -1,12 +1,18 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import ToastContainer from "../components/ToastContainer";
 import { showToast } from "../services/toastService";
 import AuditLogDetailModal from "../components/AuditLogDetailModal";
 import "../styles/AuditLogsPage.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faEye, faFilter } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faEye, faFilter, faPrint, faFilePdf } from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import Cookies from "js-cookie";
+import { jsPDF } from "jspdf";
+import baobablogo from "../assets/bvfull.png";
+import {
+  addPaginatedCanvasToPdf,
+  captureElementCanvas,
+} from "../utils/pdfReportExport";
 
 const AuditLogsPage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -20,6 +26,8 @@ const AuditLogsPage = () => {
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [token, setToken] = useState("");
+  const printRef = useRef(null);
+  const contentRef = useRef(null);
 
   // Event type options for filtering
   const eventTypes = [
@@ -262,6 +270,115 @@ const AuditLogsPage = () => {
     setFilterDateTo("");
   };
 
+  const handlePrint = () => window.print();
+
+  const loadImageAsBase64 = (url) =>
+    fetch(url)
+      .then((r) => r.blob())
+      .then(
+        (blob) =>
+          new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          })
+      );
+
+  const handleExportPDF = async () => {
+    const element = contentRef.current;
+    if (!element) return;
+
+    try {
+      const [logoBase64, canvas] = await Promise.all([
+        loadImageAsBase64(baobablogo),
+        captureElementCanvas(element, { scale: 2 }),
+      ]);
+
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const contentY = 34;
+      const footerY = pageHeight - 12;
+      const availableContentHeight = footerY - contentY;
+      const generatedAt = new Date().toLocaleString();
+
+      const filterParts = [];
+      if (filterEventType !== "all") filterParts.push(`Event: ${filterEventType}`);
+      if (filterAction !== "all") filterParts.push(`Action: ${filterAction}`);
+      if (filterDateFrom) filterParts.push(`From: ${filterDateFrom}`);
+      if (filterDateTo) filterParts.push(`To: ${filterDateTo}`);
+      const filterText = filterParts.length ? `Filters: ${filterParts.join(" | ")}` : "";
+
+      addPaginatedCanvasToPdf({
+        pdf,
+        canvas,
+        contentY,
+        contentWidth: pageWidth,
+        contentHeightPerPage: availableContentHeight,
+        drawPageDecorators: ({ pageNumber, totalPages }) => {
+          pdf.setFillColor(252, 247, 242);
+          pdf.rect(0, 0, pageWidth, 30, "F");
+
+          pdf.addImage(logoBase64, "PNG", 8, 6, 58, 19);
+
+          pdf.setTextColor(139, 90, 60);
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(15);
+          pdf.text("AUDIT LOG REPORT", pageWidth - 8, 14, { align: "right" });
+
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(8);
+          pdf.setTextColor(100, 116, 139);
+          pdf.text(`Generated: ${generatedAt}`, pageWidth - 8, 21, { align: "right" });
+          if (filterText) {
+            pdf.text(filterText, pageWidth - 8, 27, { align: "right" });
+          }
+
+          pdf.setFillColor(139, 90, 60);
+          pdf.rect(0, 30, pageWidth, 1.5, "F");
+          pdf.setFillColor(234, 182, 118);
+          pdf.rect(0, 31.5, pageWidth, 0.8, "F");
+
+          pdf.setFillColor(252, 247, 242);
+          pdf.rect(0, pageHeight - 12, pageWidth, 12, "F");
+          pdf.setFillColor(139, 90, 60);
+          pdf.rect(0, pageHeight - 12, pageWidth, 0.8, "F");
+
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(7);
+          pdf.setTextColor(139, 90, 60);
+          pdf.text(
+            "Baobab Vision Eyewear - CONFIDENTIAL - FOR INTERNAL USE ONLY",
+            8,
+            pageHeight - 4.5
+          );
+
+          pdf.setFont("helvetica", "normal");
+          pdf.setTextColor(100, 116, 139);
+          pdf.text(
+            `Records: ${filteredLogs.length} shown of ${auditLogs.length} total`,
+            pageWidth / 2,
+            pageHeight - 4.5,
+            { align: "center" }
+          );
+          pdf.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - 8, pageHeight - 4.5, {
+            align: "right",
+          });
+        },
+      });
+
+      const dateStr = new Date().toISOString().split("T")[0];
+      pdf.save(`audit-log-${dateStr}.pdf`);
+    } catch {
+      showToast({ type: "error", message: "Failed to export PDF. Please try again." });
+    }
+  };
+
   const hasActiveFilters =
     searchQuery ||
     filterEventType !== "all" ||
@@ -272,9 +389,47 @@ const AuditLogsPage = () => {
   if (loading) {
     return (
       <div className="page" id="auditlogs">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading audit logs...</p>
+        <div className="auditlogs-header">
+          <div>
+            <h1>Audit Logs</h1>
+            <p>Monitor and track all system activities and user actions</p>
+          </div>
+        </div>
+        <div className="auditlogs-table-container">
+          <table className="auditlogs-table">
+            <thead>
+              <tr>
+                <th>Date &amp; Time</th>
+                <th>Actor</th>
+                <th>Event Type</th>
+                <th>Action</th>
+                <th>Target</th>
+                <th>IP Address</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <tr key={i} className="log-row">
+                  <td className="date-cell"><div className="skeleton" style={{ width: '140px', height: '16px' }} /></td>
+                  <td className="actor-cell">
+                    <div className="actor-info">
+                      <div className="skeleton" style={{ width: '100px', height: '16px' }} />
+                      <div className="skeleton" style={{ width: '60px', height: '14px', marginTop: '4px' }} />
+                    </div>
+                  </td>
+                  <td className="event-type-cell"><div className="skeleton" style={{ width: '70px', height: '24px', borderRadius: '20px' }} /></td>
+                  <td className="action-cell"><div className="skeleton" style={{ width: '60px', height: '24px', borderRadius: '20px' }} /></td>
+                  <td className="target-cell">
+                    <div className="skeleton" style={{ width: '80px', height: '16px' }} />
+                    <div className="skeleton" style={{ width: '100px', height: '14px', marginTop: '4px' }} />
+                  </td>
+                  <td className="ip-cell"><div className="skeleton" style={{ width: '90px', height: '16px' }} /></td>
+                  <td className="actions-cell"><div className="skeleton" style={{ width: '70px', height: '32px', borderRadius: '6px' }} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     );
@@ -284,9 +439,42 @@ const AuditLogsPage = () => {
     <div className="page" id="auditlogs">
       <ToastContainer />
 
+      <div ref={printRef}>
+        <div className="print-header">
+          <div className="print-header-top">
+            <img src={baobablogo} alt="Baobab Vision" className="print-logo" />
+            <div className="print-header-info">
+              <h2>Audit Log Report</h2>
+              <p className="print-generated">Generated: {new Date().toLocaleString()}</p>
+              {hasActiveFilters && (
+                <p className="print-filters">
+                  Filters:{filterEventType !== "all" ? ` Event: ${filterEventType}` : ""}
+                  {filterAction !== "all" ? ` | Action: ${filterAction}` : ""}
+                  {filterDateFrom ? ` | From: ${filterDateFrom}` : ""}
+                  {filterDateTo ? ` | To: ${filterDateTo}` : ""}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="print-meta-bar">
+            <span>Records shown: {filteredLogs.length} of {auditLogs.length}</span>
+            <span>CONFIDENTIAL - FOR INTERNAL USE ONLY</span>
+          </div>
+        </div>
+
       <div className="auditlogs-header">
-        <h1>Audit Logs</h1>
-        <p>Monitor and track all system activities and user actions</p>
+        <div>
+          <h1>Audit Logs</h1>
+          <p>Monitor and track all system activities and user actions</p>
+        </div>
+        <div className="auditlogs-header-actions">
+          <button onClick={handlePrint} className="export-btn print-btn-action">
+            <FontAwesomeIcon icon={faPrint} /> Print
+          </button>
+          <button onClick={handleExportPDF} className="export-btn pdf-btn-action">
+            <FontAwesomeIcon icon={faFilePdf} /> Export PDF
+          </button>
+        </div>
       </div>
 
       {/* Search and Filter Section */}
@@ -400,7 +588,7 @@ const AuditLogsPage = () => {
       </div>
 
       {/* Audit Logs Table */}
-      <div className="auditlogs-table-container">
+      <div className="auditlogs-table-container" ref={contentRef}>
         <table className="auditlogs-table">
           <thead>
             <tr>
@@ -481,6 +669,8 @@ const AuditLogsPage = () => {
           </tbody>
         </table>
       </div>
+
+      </div>{/* end printRef */}
 
       {/* Audit Log Detail Modal */}
       <AuditLogDetailModal

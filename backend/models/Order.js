@@ -80,6 +80,12 @@ const orderSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    receiptSentAt: {
+      type: Date,
+    },
+    receiptSendingAt: {
+      type: Date,
+    },
     address: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Address",

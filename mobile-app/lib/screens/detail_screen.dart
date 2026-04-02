@@ -149,6 +149,7 @@ class _DetailScreenState extends State<DetailScreen> {
     }
 
     _fetchRatingStats();
+    _trackProductView();
   }
 
   @override
@@ -173,6 +174,14 @@ class _DetailScreenState extends State<DetailScreen> {
       }
     } catch (_) {
       // ignore network errors for badge
+    }
+  }
+
+  Future<void> _trackProductView() async {
+    try {
+      await ApiClient.postJson('/api/products/${widget.productId}/view', {});
+    } catch (_) {
+      // Ignore analytics failures in the product detail flow.
     }
   }
 

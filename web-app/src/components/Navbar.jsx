@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
@@ -61,34 +61,22 @@ function Navbar() {
 
         <ul className={`links ${isMobileMenuOpen ? "mobile-open" : ""}`}>
           <li>
-            <Link
-              to="/dashboard"
-              className="nav-button"
-              onClick={closeMobileMenu}
-            >
+            <NavLink to="/dashboard" className="nav-button" end>
               Home
-            </Link>
+            </NavLink>
           </li>
 
           {role !== "staff_order" && (
             <>
               <li>
-                <Link
-                  to="catalogue"
-                  className="nav-button"
-                  onClick={closeMobileMenu}
-                >
+                <NavLink to="catalogue" className="nav-button">
                   Manage Eyeglass Selections
-                </Link>
+                </NavLink>
               </li>
               <li>
-                <Link
-                  to="statistics"
-                  className="nav-button"
-                  onClick={closeMobileMenu}
-                >
+                <NavLink to="statistics" className="nav-button">
                   Statistics
-                </Link>
+                </NavLink>
               </li>
             </>
           )}
@@ -96,78 +84,35 @@ function Navbar() {
           {role !== "staff_product" && (
             <>
               <li>
-                <Link
-                  to="manageusers"
-                  className="nav-button"
-                  onClick={closeMobileMenu}
-                >
+                <NavLink to="manageusers" className="nav-button">
                   Manage Users
-                </Link>
-              </li>
-              <li
-                className={`dropdown ${isDropdownOpen ? "dropdown-open" : ""}`}
-              >
-                <span
-                  className={`nav-button dropdown-toggle ${
-                    onAllOrders ? "active" : ""
-                  }`}
-                  onClick={toggleDropdown}
-                >
-                  Manage Orders <span className="caret">▾</span>
-                </span>
-                <ul className="dropdown-menu">
-                  <li>
-                    <Link
-                      to="allorders?scope=pickup"
-                      className={
-                        onAllOrders && scope === "pickup" ? "active" : ""
-                      }
-                      onClick={closeMobileMenu}
-                    >
-                      Pickup Orders
-                    </Link>
-                  </li>
-                  <li>
-                    <Link
-                      to="allorders?scope=third"
-                      className={
-                        onAllOrders && scope === "third" ? "active" : ""
-                      }
-                      onClick={closeMobileMenu}
-                    >
-                      Third Party Orders
-                    </Link>
-                  </li>
-                </ul>
+                </NavLink>
               </li>
               <li>
-                <Link
-                  to="reviews"
-                  className="nav-button"
-                  onClick={closeMobileMenu}
-                >
+                <NavLink to="allorders" className="nav-button">
+                  Manage Orders
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="reviews" className="nav-button">
                   Manage Reviews
-                </Link>
+                </NavLink>
               </li>
             </>
           )}
 
           {role === "system_admin" && (
             <li>
-              <Link
-                to="audit-logs"
-                className="nav-button"
-                onClick={closeMobileMenu}
-              >
+              <NavLink to="audit-logs" className="nav-button">
                 Audit Logs
-              </Link>
+              </NavLink>
             </li>
           )}
 
           <li>
-            <Link to="profile" className="nav-button" onClick={closeMobileMenu}>
+            <NavLink to="profile" className="nav-button">
               Profile
-            </Link>
+            </NavLink>
           </li>
 
           <li className="nav-logout-btn">

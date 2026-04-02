@@ -62,15 +62,30 @@ const EyeglassPage = () => {
     return (
       <div className="page" id="eyeglass-page">
         <div className="eyeglass-page-content">
-          <div className="loading-container">
-            <div className="loading-spinner">
-              <div className="spinner-ring"></div>
-              <div className="spinner-ring"></div>
-              <div className="spinner-ring"></div>
-            </div>
-            <div className="loading-text">
-              <h3>Loading Product Details</h3>
-              <p>Please wait while we fetch the eyeglass information...</p>
+          <div className="skeleton" style={{ width: '140px', height: '36px', borderRadius: '8px', marginBottom: '1.5rem' }} />
+          <div className="eyeglass-card">
+            <div className="card-body" style={{ display: 'flex', gap: '2rem', padding: '1.5rem', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="skeleton" style={{ width: '100%', height: '360px', borderRadius: '12px' }} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="skeleton" style={{ width: '70px', height: '70px', borderRadius: '8px' }} />
+                  ))}
+                </div>
+              </div>
+              <div style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="skeleton" style={{ width: '200px', height: '28px' }} />
+                <div className="skeleton" style={{ width: '100%', height: '16px' }} />
+                <div className="skeleton" style={{ width: '85%', height: '16px' }} />
+                <div className="skeleton" style={{ width: '70%', height: '16px' }} />
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="skeleton" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+                  ))}
+                </div>
+                <div className="skeleton" style={{ width: '160px', height: '16px', marginTop: '8px' }} />
+                <div className="skeleton" style={{ width: '80px', height: '28px' }} />
+              </div>
             </div>
           </div>
         </div>
