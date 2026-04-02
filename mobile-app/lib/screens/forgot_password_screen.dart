@@ -23,7 +23,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Future<void> sendOtp() async {
     setState(() => _isLoading = true);
     final url = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/auth/request-otp');
+        'https://baobab-vision-project-0234.onrender.com/api/auth/request-otp');
 
     try {
       final response = await http.post(
@@ -51,8 +51,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       }
     } catch (e) {
       customDialog(context,
-          title: 'Network Error',
-          content: 'Could not reach the server. Please try again.');
+          title: 'No Internet',
+          content: 'Unexpected error occurred. Please check your connection.');
     } finally {
       setState(() => _isLoading = false);
     }

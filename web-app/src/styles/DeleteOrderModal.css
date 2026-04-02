@@ -1,0 +1,662 @@
+/* Delete Order Modal - Minimalist Design */
+.delete-order-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  padding: 1rem;
+}
+
+.delete-order-modal-container.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+}
+
+.delete-order-modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 450px;
+  position: relative;
+  z-index: 1001;
+  transform: scale(0.95) translateY(10px);
+  transition: all 0.2s ease;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.delete-order-modal-content.active {
+  transform: scale(1) translateY(0);
+}
+
+/* Header */
+.delete-modal-header {
+  padding: 24px 24px 16px 24px;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.delete-modal-header h2 {
+  font-family: "Red Rose", serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.delete-modal-subtitle {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0 0 0;
+  font-weight: 400;
+}
+
+.delete-modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.delete-modal-close:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Body */
+.delete-modal-body {
+  padding: 24px;
+}
+
+.delete-order-details {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.delete-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.delete-detail-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.delete-detail-item:first-child {
+  padding-top: 0;
+}
+
+.delete-detail-label {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.delete-detail-value {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Confirmation Section */
+.delete-confirmation {
+  margin-bottom: 24px;
+}
+
+.delete-confirmation h3 {
+  font-family: "Red Rose", serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px 0;
+}
+
+.delete-confirmation p {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Action Buttons */
+.delete-action-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.delete-btn-primary,
+.delete-btn-secondary {
+  font-family: "Rubik", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 2px solid;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Delete Button (Primary Action) */
+.delete-btn-primary {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
+.delete-btn-primary:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.2);
+}
+
+.delete-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Cancel Button (Secondary Action) */
+.delete-btn-secondary {
+  background: transparent;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+.delete-btn-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+.delete-btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============================= */
+/* COMPREHENSIVE RESPONSIVE DESIGN */
+/* ============================= */
+
+/* Ensure box-sizing for all elements */
+.delete-order-modal-container *,
+.delete-order-modal-content * {
+  box-sizing: border-box;
+}
+
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
+  .delete-order-modal-content {
+    max-width: 480px;
+  }
+}
+
+/* Desktop (1200px - 1399px) */
+@media (max-width: 1399px) {
+  .delete-order-modal-content {
+    max-width: 450px;
+  }
+}
+
+/* Tablet Large (1024px - 1199px) */
+@media (max-width: 1199px) {
+  .delete-order-modal-content {
+    max-width: 420px;
+  }
+
+  .delete-modal-header,
+  .delete-modal-body {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  .delete-modal-header {
+    padding-top: 22px;
+    padding-bottom: 14px;
+  }
+
+  .delete-modal-body {
+    padding-top: 22px;
+    padding-bottom: 22px;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) {
+  .delete-order-modal-content {
+    max-width: 90%;
+    width: 90%;
+  }
+
+  .delete-modal-header,
+  .delete-modal-body {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .delete-modal-header {
+    padding-top: 20px;
+    padding-bottom: 13px;
+  }
+
+  .delete-modal-body {
+    padding-top: 20px;
+    padding-bottom: 20px;
+  }
+
+  .delete-modal-header h2 {
+    font-size: 19px;
+  }
+
+  .delete-modal-subtitle {
+    font-size: 13.5px;
+  }
+
+  .delete-confirmation h3 {
+    font-size: 15px;
+  }
+
+  .delete-confirmation p,
+  .delete-detail-label,
+  .delete-detail-value {
+    font-size: 13.5px;
+  }
+}
+
+/* Mobile Large (640px - 767px) */
+@media (max-width: 767px) {
+  .delete-order-modal-container {
+    padding: 0.75rem;
+  }
+
+  .delete-order-modal-content {
+    max-width: 95%;
+    width: 95%;
+  }
+
+  .delete-modal-header,
+  .delete-modal-body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .delete-modal-header {
+    padding-top: 18px;
+    padding-bottom: 12px;
+  }
+
+  .delete-modal-body {
+    padding-top: 18px;
+    padding-bottom: 18px;
+  }
+
+  .delete-modal-header h2 {
+    font-size: 18px;
+  }
+
+  .delete-modal-subtitle {
+    font-size: 13px;
+  }
+
+  .delete-modal-close {
+    width: 30px;
+    height: 30px;
+    font-size: 17px;
+  }
+
+  .delete-order-details {
+    padding: 14px;
+    margin-bottom: 18px;
+  }
+
+  .delete-detail-item {
+    padding: 7px 0;
+  }
+
+  .delete-confirmation {
+    margin-bottom: 20px;
+  }
+
+  .delete-confirmation h3 {
+    font-size: 15px;
+    margin-bottom: 7px;
+  }
+
+  .delete-confirmation p,
+  .delete-detail-label,
+  .delete-detail-value {
+    font-size: 13px;
+  }
+
+  .delete-action-buttons {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .delete-btn-primary,
+  .delete-btn-secondary {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* Mobile Medium (480px - 639px) */
+@media (max-width: 639px) {
+  .delete-order-modal-container {
+    padding: 0.5rem;
+  }
+
+  .delete-order-modal-content {
+    max-width: calc(100% - 1rem);
+    width: calc(100% - 1rem);
+  }
+
+  .delete-modal-header,
+  .delete-modal-body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .delete-modal-header {
+    padding-top: 16px;
+    padding-bottom: 11px;
+  }
+
+  .delete-modal-body {
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+
+  .delete-modal-header h2 {
+    font-size: 17px;
+  }
+
+  .delete-modal-subtitle {
+    font-size: 12.5px;
+  }
+
+  .delete-modal-close {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .delete-order-details {
+    padding: 13px;
+    margin-bottom: 16px;
+    border-radius: 6px;
+  }
+
+  .delete-detail-item {
+    padding: 6px 0;
+  }
+
+  .delete-confirmation {
+    margin-bottom: 18px;
+  }
+
+  .delete-confirmation h3 {
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .delete-confirmation p,
+  .delete-detail-label,
+  .delete-detail-value {
+    font-size: 12.5px;
+  }
+
+  .delete-action-buttons {
+    gap: 9px;
+  }
+
+  .delete-btn-primary,
+  .delete-btn-secondary {
+    padding: 11px 18px;
+    font-size: 13px;
+  }
+}
+
+/* Mobile Small (375px - 479px) */
+@media (max-width: 479px) {
+  .delete-order-modal-container {
+    padding: 0.25rem;
+  }
+
+  .delete-order-modal-content {
+    max-width: 100%;
+    width: 100%;
+    border-radius: 8px;
+  }
+
+  .delete-modal-header,
+  .delete-modal-body {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .delete-modal-header {
+    padding-top: 14px;
+    padding-bottom: 10px;
+  }
+
+  .delete-modal-body {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .delete-modal-header h2 {
+    font-size: 16px;
+    line-height: 1.2;
+  }
+
+  .delete-modal-subtitle {
+    font-size: 12px;
+  }
+
+  .delete-modal-close {
+    width: 26px;
+    height: 26px;
+    font-size: 15px;
+  }
+
+  .delete-order-details {
+    padding: 12px;
+    margin-bottom: 14px;
+    border-radius: 6px;
+  }
+
+  .delete-detail-item {
+    padding: 5px 0;
+  }
+
+  .delete-confirmation {
+    margin-bottom: 16px;
+  }
+
+  .delete-confirmation h3 {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .delete-confirmation p {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .delete-detail-label,
+  .delete-detail-value {
+    font-size: 12px;
+  }
+
+  .delete-action-buttons {
+    gap: 8px;
+  }
+
+  .delete-btn-primary,
+  .delete-btn-secondary {
+    padding: 10px 16px;
+    font-size: 12.5px;
+  }
+}
+
+/* Mobile Extra Small (320px - 374px) */
+@media (max-width: 374px) {
+  .delete-order-modal-content {
+    border-radius: 0;
+  }
+
+  .delete-modal-header,
+  .delete-modal-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .delete-modal-header {
+    padding-top: 12px;
+    padding-bottom: 9px;
+  }
+
+  .delete-modal-body {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .delete-modal-header h2 {
+    font-size: 15px;
+  }
+
+  .delete-modal-subtitle {
+    font-size: 11.5px;
+  }
+
+  .delete-modal-close {
+    width: 24px;
+    height: 24px;
+    font-size: 14px;
+  }
+
+  .delete-order-details {
+    padding: 11px;
+    margin-bottom: 13px;
+  }
+
+  .delete-detail-item {
+    padding: 4px 0;
+  }
+
+  .delete-confirmation {
+    margin-bottom: 14px;
+  }
+
+  .delete-confirmation h3 {
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+
+  .delete-confirmation p {
+    font-size: 11px;
+  }
+
+  .delete-detail-label,
+  .delete-detail-value {
+    font-size: 11px;
+  }
+
+  .delete-action-buttons {
+    gap: 7px;
+  }
+
+  .delete-btn-primary,
+  .delete-btn-secondary {
+    padding: 9px 14px;
+    font-size: 12px;
+    height: 40px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .delete-modal-close,
+  .delete-btn-primary,
+  .delete-btn-secondary {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  .delete-order-modal-content {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ensure buttons are easily tappable */
+  .delete-btn-primary,
+  .delete-btn-secondary {
+    padding: 12px 20px;
+  }
+}
+
+/* Improved scrolling on mobile */
+@media (max-width: 767px) {
+  .delete-order-modal-content {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Better text wrapping on mobile */
+  .delete-modal-header h2,
+  .delete-modal-subtitle,
+  .delete-confirmation p,
+  .delete-detail-value {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+}

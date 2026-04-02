@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:connectivity_plus/connectivity_plus.dart'; // ✅ Added
 import '../constants.dart';
 import '../screens/home_screen.dart';
 import '../widgets/custom_dialog.dart';
@@ -44,8 +45,19 @@ class _LogInScreenState extends State<LogInScreen> {
 
   // Login function
   Future<void> login() async {
-    var url =
-        Uri.parse('https://baobab-vision-project.onrender.com/api/auth/login');
+    // ✅ Check internet first
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult == ConnectivityResult.none) {
+      customDialog(
+        context,
+        title: 'No Internet',
+        content: 'Please check your internet connection and try again.',
+      );
+      return;
+    }
+
+    var url = Uri.parse(
+        'https://baobab-vision-project-0234.onrender.com/api/auth/login');
 
     try {
       final response = await http.post(
@@ -103,7 +115,7 @@ class _LogInScreenState extends State<LogInScreen> {
       print('❌ Login Exception: $e');
       customDialog(
         context,
-        title: 'Error',
+        title: 'No Internet',
         content: 'Unexpected error occurred. Please check your connection.',
       );
     }
@@ -113,157 +125,167 @@ class _LogInScreenState extends State<LogInScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: WHITE_COLOR,
-      body: SingleChildScrollView(
-        child: SizedBox(
-          height: ScreenUtil().screenHeight,
-          width: ScreenUtil().screenWidth,
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                SizedBox(height: 40.h),
+      body: SafeArea(
+        child: Column(
+          children: [
+            /// Scrollable form content
+            Expanded(
+              child: SingleChildScrollView(
+                child: SizedBox(
+                  width: 1.sw,
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(height: 105.h),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 25.w),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              /// Logo
+                              Center(
+                                child: Image.asset(
+                                  'assets/images/baobab_logo.png',
+                                  height: 150.h,
+                                ),
+                              ),
+                              SizedBox(height: 30.h),
 
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 25.w),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      /// Logo
-                      Center(
-                        child: Image.asset(
-                          'assets/images/baobab_logo.png',
-                          height: 150.h,
+                              /// Username Field
+                              TextFormField(
+                                controller: usernameController,
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter your username'
+                                        : null,
+                                decoration: InputDecoration(
+                                  labelText: 'Username',
+                                  labelStyle: TextStyle(
+                                    fontSize: 15.sp,
+                                    color: BLACK_COLOR,
+                                  ),
+                                  prefixIcon: const Icon(Icons.person),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade100,
+                                ),
+                              ),
+                              SizedBox(height: 20.h),
+
+                              /// Password Field
+                              TextFormField(
+                                controller: passwordController,
+                                obscureText: _isObscure,
+                                validator: (value) =>
+                                    value == null || value.isEmpty
+                                        ? 'Please enter your password'
+                                        : null,
+                                decoration: InputDecoration(
+                                  labelText: 'Password',
+                                  labelStyle: TextStyle(
+                                    fontSize: 15.sp,
+                                    color: BLACK_COLOR,
+                                  ),
+                                  prefixIcon: const Icon(Icons.lock),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _isObscure
+                                          ? Icons.visibility_off
+                                          : Icons.visibility,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _isObscure = !_isObscure;
+                                      });
+                                    },
+                                  ),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.r),
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey.shade100,
+                                ),
+                              ),
+                              SizedBox(height: 30.h),
+
+                              /// Login Button
+                              CustomInkwellButton(
+                                onTap: () {
+                                  if (_formKey.currentState!.validate()) {
+                                    login();
+                                  }
+                                },
+                                height: 50.h,
+                                width: double.infinity,
+                                buttonName: 'Login',
+                                fontSize: 16.sp,
+                              ),
+                              SizedBox(height: 20.h),
+
+                              /// Forgot Password Link
+                              Center(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.pushNamed(
+                                        context, '/forgot-password');
+                                  },
+                                  child: Text(
+                                    'Forgot Password?',
+                                    style: TextStyle(
+                                      color: BLACK_COLOR,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 30.h),
-
-                      /// Username Field
-                      TextFormField(
-                        controller: usernameController,
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Please enter your username'
-                            : null,
-                        decoration: InputDecoration(
-                          labelText: 'Username',
-                          labelStyle: TextStyle(
-                            fontSize: 15.sp,
-                            color: BLACK_COLOR,
-                          ),
-                          prefixIcon: const Icon(Icons.person),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                        ),
-                      ),
-                      SizedBox(height: 20.h),
-
-                      /// Password Field
-                      TextFormField(
-                        controller: passwordController,
-                        obscureText: _isObscure,
-                        validator: (value) => value == null || value.isEmpty
-                            ? 'Please enter your password'
-                            : null,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          labelStyle: TextStyle(
-                            fontSize: 15.sp,
-                            color: BLACK_COLOR,
-                          ),
-                          prefixIcon: const Icon(Icons.lock),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _isObscure
-                                  ? Icons.visibility_off
-                                  : Icons.visibility,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isObscure = !_isObscure;
-                              });
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.r),
-                          ),
-                          filled: true,
-                          fillColor: Colors.grey.shade100,
-                        ),
-                      ),
-                      SizedBox(height: 30.h),
-
-                      /// Login Button
-                      CustomInkwellButton(
-                        onTap: () {
-                          if (_formKey.currentState!.validate()) {
-                            login();
-                          }
-                        },
-                        height: 50.h,
-                        width: double.infinity,
-                        buttonName: 'Login',
-                        fontSize: 16.sp,
-                      ),
-                      SizedBox(height: 20.h),
-
-                      /// Forgot Password Link (moved below login button)
-                      Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/forgot-password');
-                          },
-                          child: Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: BLACK_COLOR,
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.w500,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-
-                /// Register Link (bottom section)
-                Container(
-                  height: 55.h,
-                  width: double.infinity,
-                  color: BLACK_COLOR,
-                  alignment: Alignment.center,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Don't have an account?",
-                        style: TextStyle(
-                          color: Colors.grey.shade300,
-                          fontSize: 14.sp,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () =>
-                            Navigator.popAndPushNamed(context, '/register'),
-                        child: Text(
-                          ' Register Here',
-                          style: TextStyle(
-                            color: WHITE_COLOR,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14.sp,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
+
+            /// Register Link (always visible at the bottom)
+            Container(
+              height: 50.h,
+              width: double.infinity,
+              color: BLACK_COLOR,
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    "Don't have an account?",
+                    style: TextStyle(
+                      color: Colors.grey.shade300,
+                      fontSize: 14.sp,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () =>
+                        Navigator.popAndPushNamed(context, '/register'),
+                    child: Text(
+                      ' Register Here',
+                      style: TextStyle(
+                        color: WHITE_COLOR,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -10,6 +10,7 @@ import 'package:baobab_vision_project/services/storage_service.dart';
 import 'package:baobab_vision_project/services/order_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:baobab_vision_project/services/auth_storage.dart';
+import '../widgets/custom_dialog.dart'; // <-- Import your custom dialogs
 
 class GcashDetailsScreen extends StatefulWidget {
   final String gcashNumber;
@@ -36,6 +37,7 @@ class GcashDetailsScreen extends StatefulWidget {
 class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
   PlatformFile? _pickedFile;
   final TextEditingController _refNumberController = TextEditingController();
+  bool _isSubmitting = false;
 
   Future<void> _pickFile() async {
     final result = await FilePicker.platform.pickFiles(
@@ -55,29 +57,39 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
   }
 
   Future<void> _submitPaymentProof() async {
+    if (_isSubmitting) return;
     if (_pickedFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please upload your payment proof image.')),
+      customDialog(
+        context,
+        title: "Missing Proof",
+        content: "Please upload your payment proof image.",
       );
       return;
     }
     if (_refNumberController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter the reference number.')),
+      customDialog(
+        context,
+        title: "Missing Reference Number",
+        content: "Please enter the reference number.",
       );
       return;
     }
 
+    setState(() {
+      _isSubmitting = true;
+    });
+
     try {
       final token = await AuthStorage.getToken();
       if (token == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Please log in to place your order.'),
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 3),
-          ),
+        customDialog(
+          context,
+          title: "Not Logged In",
+          content: "Please log in to place your order.",
         );
+        setState(() {
+          _isSubmitting = false;
+        });
         return;
       }
 
@@ -103,36 +115,33 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
             'cartClearedAt', DateTime.now().millisecondsSinceEpoch);
       } catch (_) {}
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().replaceFirst('Exception: ', ''),
-          ),
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 3),
-        ),
+      customDialog(
+        context,
+        title: "Error",
+        content: e.toString().replaceFirst('Exception: ', ''),
       );
+      setState(() {
+        _isSubmitting = false;
+      });
+      return;
     }
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: Text('Thank you!'),
-        content: Text('Your order now is pending.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => PendingOrdersScreen()),
-              );
-            },
-            child: Text('See Orders'),
-          ),
-        ],
-      ),
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    // Success Dialog with single "See Orders" button
+    customOptionDialog(
+      context,
+      title: "Thank you!",
+      content: "Your order is now pending.",
+      yesText: "See Orders", // <-- Change button label
+      onYes: () {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => PendingOrdersScreen()),
+        );
+      },
     );
   }
 
@@ -157,6 +166,7 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
             children: [
               // Payment Info Card
               Card(
+                color: Colors.white,
                 elevation: 3,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -177,8 +187,7 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
                       SizedBox(height: 10.h),
                       _buildInfoRow('GCASH Number:', widget.gcashNumber),
                       SizedBox(height: 10.h),
-                      _buildInfoRow(
-                          'Total Amount to Pay:',
+                      _buildInfoRow('Total Amount to Pay:',
                           widget.totalAmount.toStringAsFixed(2),
                           isAmount: true),
                     ],
@@ -188,6 +197,7 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
 
               // QR Code Card
               Card(
+                color: Colors.white,
                 elevation: 3,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -216,6 +226,7 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
 
               // Payment Proof Card
               Card(
+                color: Colors.white,
                 elevation: 3,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -279,7 +290,7 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
 
                       // Submit button
                       ElevatedButton(
-                        onPressed: _submitPaymentProof,
+                        onPressed: _isSubmitting ? null : _submitPaymentProof,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
@@ -287,11 +298,32 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
                           ),
                           minimumSize: Size(double.infinity, 55.h),
                         ),
-                        child: CustomText(
-                          text: 'Submit Payment Proof',
-                          fontSize: ScreenUtil().setSp(18),
-                          color: Colors.white,
-                        ),
+                        child: _isSubmitting
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                      strokeWidth: 2.5,
+                                    ),
+                                  ),
+                                  SizedBox(width: 12),
+                                  CustomText(
+                                    text: 'Submitting...',
+                                    fontSize: ScreenUtil().setSp(18),
+                                    color: Colors.white,
+                                  ),
+                                ],
+                              )
+                            : CustomText(
+                                text: 'Submit Payment Proof',
+                                fontSize: ScreenUtil().setSp(18),
+                                color: Colors.white,
+                              ),
                       ),
                     ],
                   ),
@@ -316,7 +348,7 @@ class _GcashDetailsScreenState extends State<GcashDetailsScreen> {
         CustomText(
           text: value,
           fontSize: ScreenUtil().setSp(16),
-color: isAmount ? BLACK_COLOR : (Colors.grey[800] ?? Colors.grey),
+          color: isAmount ? BLACK_COLOR : (Colors.grey[800] ?? Colors.grey),
           fontWeight: isAmount ? FontWeight.bold : FontWeight.normal,
         ),
       ],

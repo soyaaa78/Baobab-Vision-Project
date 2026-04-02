@@ -2,14 +2,14 @@
   height: 100%;
   padding: 2rem 10%;
   min-height: calc(100vh - 80px);
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+  /* background: #f8f9fa; */
 }
 
 /* Page header */
 .page-header h1 {
   font-family: "Red Rose", serif;
   font-size: 2.5rem;
-  color: #1e293b;
+  color: #111111; /* slightly darker for black hint */
   margin: 0 0 2rem 0;
   font-weight: 700;
   text-align: left;
@@ -38,9 +38,9 @@
   padding: 1rem 2rem;
   font-family: "Rubik", sans-serif;
   font-weight: 600;
-  color: #64748b;
+  color: #222222;
   background: transparent;
-  border: none;
+  border: 1px solid transparent; /* add border for hover accent */
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -60,7 +60,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #8b5a3c69;
+  /* background-color: #8b5a3c69; */
   opacity: 0;
   border-radius: 12px;
   transition: opacity 0.3s ease;
@@ -68,8 +68,10 @@
 }
 
 .tab-button:hover {
-  color: #ffffff;
+  background: rgba(0, 0, 0, 0.04);
+  color: #000000;
   transform: translateY(-1px);
+  border-color: #f8b26a; /* beige hint */
 }
 
 .tab-button:hover:before {
@@ -77,10 +79,11 @@
 }
 
 .tab-button.active {
-  background-color: #8b5a3c;
+  background-color: #000000; /* solid black */
   color: #ffffff;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(94, 80, 63, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  border-color: #000000;
 }
 
 /* Tab Content */
@@ -110,6 +113,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
   overflow: hidden;
+  border-top: 3px solid #f8b26a; /* beige accent */
 }
 
 .card-header {
@@ -123,7 +127,7 @@
 .card-header h2 {
   font-family: "Red Rose", serif;
   font-size: 1.5rem;
-  color: #1e293b;
+  color: #111111; /* darker heading */
   margin: 0;
   font-weight: 600;
 }
@@ -172,7 +176,7 @@
 .info-value {
   font-family: "Rubik", sans-serif;
   font-size: 1rem;
-  color: #1e293b;
+  color: #111111;
   font-weight: 500;
   padding: 0.75rem;
   background: #f8fafc;
@@ -181,6 +185,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  border-left: 3px solid #f8b26a; /* beige accent stripe */
 }
 
 .verification-badge {
@@ -203,9 +208,17 @@
 }
 
 .role-badge {
-  background: linear-gradient(135deg, #8b5a3c 0%, #a0785d 100%);
-  color: white;
-  font-weight: 600;
+  background: #fff;
+  color: #000000;
+  font-family: "Rubik", sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #f8b26a; /* beige outline */
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 /* Password Section */
@@ -220,6 +233,7 @@
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
   overflow: hidden;
+  border-top: 3px solid #f8b26a; /* beige accent */
 }
 
 .password-card .card-header {
@@ -275,8 +289,8 @@
 }
 
 .password-input:focus {
-  border-color: #8b5a3c;
-  box-shadow: 0 0 0 3px rgba(139, 90, 60, 0.1);
+  border-color: #f8b26a; /* beige focus */
+  box-shadow: 0 0 0 3px rgba(248, 178, 106, 0.25);
 }
 
 .password-toggle {
@@ -292,7 +306,7 @@
 }
 
 .password-toggle:hover {
-  color: #8b5a3c;
+  color: #f8b26a;
 }
 
 .password-hint {
@@ -315,7 +329,7 @@
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: linear-gradient(135deg, #8b5a3c 0%, #a0785d 100%);
+  background: #f8b26a; /* beige */
   color: white;
   border: none;
   border-radius: 8px;
@@ -324,8 +338,9 @@
 }
 
 .change-password-btn:hover {
+  background: #e09f4a; /* darker beige, no gradient */
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(139, 90, 60, 0.3);
+  box-shadow: 0 6px 16px rgba(248, 178, 106, 0.35);
 }
 
 .change-password-btn:disabled {
@@ -400,3 +415,4 @@
     padding: 1rem;
   }
 }
+/* End of file */

@@ -4,31 +4,49 @@
   max-width: 1400px;
   margin: 0 auto;
   font-family: "Rubik", sans-serif;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* Dashboard Grid */
+/* Ensure all child elements use border-box */
+.staff-order-content *,
+.staff-order-content *::before,
+.staff-order-content *::after {
+  box-sizing: border-box;
+}
+
+/* Dashboard Container - Flexbox */
 .dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
+  display: flex;
+  flex-direction: column;
   gap: 2rem;
-  grid-template-areas:
-    "stats stats"
-    "orders users";
+  width: 100%;
+}
+
+/* Content Row for side-by-side layout on desktop */
+.dashboard-content-row {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  width: 100%;
 }
 
 /* Stats Section */
 .stats-section {
-  grid-area: stats;
+  width: 100%;
+  margin-bottom: 1rem;
 }
 
 .stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
+  width: 100%;
 }
 
 .stat-card {
+  flex: 1 1 calc(25% - 0.75rem); /* 4 columns on desktop */
+  min-width: 200px;
   background: #ffffff;
   padding: 1rem;
   border-radius: 8px;
@@ -37,6 +55,8 @@
   align-items: center;
   gap: 0.75rem;
   transition: all 0.2s ease;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .stat-icon {
@@ -67,11 +87,19 @@
   color: white;
 }
 
+.stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
 .stat-content h3 {
   font-size: 1.5rem;
   font-weight: 600;
   color: #333;
   margin: 0 0 0.125rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stat-content p {
@@ -81,15 +109,20 @@
   margin: 0;
   text-transform: uppercase;
   letter-spacing: 0.025em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Recent Orders Section */
 .recent-orders {
-  grid-area: orders;
   background: #ffffff;
   padding: 1.5rem;
   border-radius: 12px;
   border: 1px solid #f0f0f0;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .section-header {
@@ -120,6 +153,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .view-all-btn:hover {
@@ -196,11 +231,13 @@
 
 /* New Users Section */
 .new-users-section {
-  grid-area: users;
   background: #ffffff;
   padding: 1.5rem;
   border-radius: 12px;
   border: 1px solid #f0f0f0;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .users-list {
@@ -342,50 +379,113 @@
   color: #333;
 }
 
-/* Responsive Design */
-@media (max-width: 1200px) {
-  .staff-order-content {
-    padding: 1.5rem 2rem;
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .view-all-btn:hover {
+    background: #f8fafc;
+    border-color: #e2e8f0;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
+  .view-all-btn:active {
+    transform: scale(0.98);
+    background: #f1f5f9;
   }
 
-  .dashboard-grid {
-    grid-template-areas:
-      "stats stats"
-      "orders orders"
-      "users users";
+  .order-item:hover,
+  .user-item:hover {
+    background: #fafafa;
+    border-color: #f0f0f0;
   }
 
-  .user-stats-summary {
-    grid-template-columns: 1fr;
+  .order-item:active,
+  .user-item:active {
+    transform: scale(0.99);
   }
 }
 
-@media (max-width: 768px) {
+/* Responsive Design */
+
+/* Stack content on tablets and below */
+@media (max-width: 1024px) {
+  .dashboard-content-row {
+    flex-direction: column;
+  }
+
+  .stat-card {
+    flex: 1 1 calc(50% - 0.5rem); /* 2 columns */
+  }
+}
+
+/* Large Tablets (992px - 1200px) */
+@media (max-width: 1200px) and (min-width: 993px) {
   .staff-order-content {
-    padding: 1rem;
+    padding: 1.75rem 2rem;
   }
 
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .dashboard-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+  .stat-card {
+    flex: 1 1 calc(25% - 0.75rem); /* 4 columns */
   }
 
   .user-stats-summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.875rem;
+  }
+}
+
+/* Medium Tablets (768px - 992px) */
+@media (max-width: 992px) and (min-width: 769px) {
+  .staff-order-content {
+    padding: 1.5rem 1.75rem;
+  }
+
+  .stat-card {
+    flex: 1 1 calc(50% - 0.5rem); /* 2 columns */
+  }
+
+  .user-stats-summary {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.875rem;
+  }
+
+  .recent-orders,
+  .new-users-section {
+    padding: 1.35rem;
+  }
+}
+
+/* Small Tablets / Large Mobile (640px - 768px) */
+@media (max-width: 768px) and (min-width: 641px) {
+  .staff-order-content {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .dashboard-grid {
+    gap: 1.5rem;
+  }
+
+  .dashboard-content-row {
+    flex-direction: column;
+  }
+
+  .stat-card {
+    flex: 1 1 calc(50% - 0.5rem); /* 2 columns */
+  }
+
+  .user-stats-summary {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+
+  .recent-orders,
+  .new-users-section {
+    padding: 1.25rem;
   }
 
   .order-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.75rem;
+    padding: 0.95rem;
   }
 
   .order-details {
@@ -396,37 +496,348 @@
   }
 
   .user-item {
-    flex-direction: column;
-    align-items: flex-start;
-    text-align: center;
+    padding: 0.95rem;
   }
 }
 
-@media (max-width: 480px) {
+/* Mobile (481px - 640px) */
+@media (max-width: 640px) and (min-width: 481px) {
   .staff-order-content {
-    padding: 0.75rem;
+    padding: 1rem;
+  }
+
+  .dashboard-grid {
+    gap: 1.25rem;
+  }
+
+  .dashboard-content-row {
+    flex-direction: column;
+  }
+
+  .stat-card {
+    flex: 1 1 100%; /* Single column */
+  }
+
+  .user-stats-summary {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.625rem;
+  }
+
+  .recent-orders,
+  .new-users-section {
+    padding: 1.15rem;
+  }
+
+  .section-header {
+    flex-direction: row;
+    gap: 0.875rem;
+    flex-wrap: wrap;
+  }
+
+  .order-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem;
+  }
+
+  .order-details {
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .user-item {
+    padding: 0.875rem;
+  }
+}
+
+/* Small Mobile (376px - 480px) */
+@media (max-width: 480px) and (min-width: 376px) {
+  .staff-order-content {
+    padding: 0.875rem;
+  }
+
+  .dashboard-grid {
+    gap: 1rem;
+  }
+
+  .dashboard-content-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .stat-card {
+    flex: 1 1 100%; /* Single column */
+    padding: 0.875rem;
+  }
+
+  .stat-content h3 {
+    font-size: 1.35rem;
+  }
+
+  .stat-content p {
+    font-size: 0.75rem;
   }
 
   .recent-orders,
   .new-users-section {
     padding: 1rem;
+    border-radius: 10px;
   }
 
   .section-header {
     flex-direction: column;
-    gap: 1rem;
+    gap: 0.875rem;
     align-items: stretch;
+  }
+
+  .section-header h2 {
+    font-size: 1.15rem;
   }
 
   .view-all-btn {
     align-self: flex-end;
+    font-size: 0.75rem;
+    padding: 0.45rem 0.875rem;
+  }
+
+  .order-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.75rem;
+  }
+
+  .order-id,
+  .customer-name {
+    font-size: 0.85rem;
+  }
+
+  .order-date {
+    font-size: 0.7rem;
+  }
+
+  .order-amount {
+    font-size: 0.85rem;
+  }
+
+  .order-status {
+    font-size: 0.7rem;
+  }
+
+  .user-item {
+    flex-direction: row;
+    padding: 0.875rem;
   }
 
   .user-avatar {
-    align-self: center;
+    width: 36px;
+    height: 36px;
   }
 
-  .user-info {
-    text-align: center;
+  .avatar-placeholder {
+    font-size: 0.75rem;
+  }
+
+  .user-name {
+    font-size: 0.85rem;
+  }
+
+  .user-email {
+    font-size: 0.75rem;
+  }
+
+  .user-date {
+    font-size: 0.7rem;
+  }
+
+  .user-stats-summary {
+    grid-template-columns: 1fr;
+    gap: 0.625rem;
+  }
+
+  .summary-item {
+    padding: 0.625rem;
+  }
+
+  .summary-label {
+    font-size: 0.65rem;
+  }
+
+  .summary-value {
+    font-size: 1.15rem;
+  }
+}
+
+/* Extra Small Mobile (320px - 375px) */
+@media (max-width: 375px) {
+  .staff-order-content {
+    padding: 0.75rem;
+  }
+
+  .dashboard-grid {
+    gap: 0.875rem;
+  }
+
+  .dashboard-content-row {
+    gap: 0.875rem;
+  }
+
+  .stat-card {
+    padding: 0.75rem;
+  }
+
+  .stat-icon {
+    padding: 0.4rem;
+  }
+
+  .stat-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .stat-content h3 {
+    font-size: 1.25rem;
+  }
+
+  .stat-content p {
+    font-size: 0.7rem;
+  }
+
+  .recent-orders,
+  .new-users-section {
+    padding: 0.875rem;
+    border-radius: 8px;
+  }
+
+  .section-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .view-all-btn {
+    font-size: 0.7rem;
+    padding: 0.4rem 0.75rem;
+  }
+
+  .view-all-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .order-item {
+    padding: 0.7rem;
+  }
+
+  .order-id,
+  .customer-name {
+    font-size: 0.8rem;
+  }
+
+  .order-date {
+    font-size: 0.65rem;
+  }
+
+  .order-amount {
+    font-size: 0.8rem;
+  }
+
+  .order-status {
+    font-size: 0.65rem;
+  }
+
+  .user-item {
+    padding: 0.75rem;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .avatar-placeholder {
+    font-size: 0.7rem;
+  }
+
+  .user-name {
+    font-size: 0.8rem;
+  }
+
+  .user-email {
+    font-size: 0.7rem;
+  }
+
+  .user-date {
+    font-size: 0.65rem;
+  }
+
+  .summary-item {
+    padding: 0.575rem;
+  }
+
+  .summary-label {
+    font-size: 0.625rem;
+  }
+
+  .summary-value {
+    font-size: 1.1rem;
+  }
+}
+
+/* Very Small Mobile (below 320px) */
+@media (max-width: 319px) {
+  .staff-order-content {
+    padding: 0.65rem;
+  }
+
+  .dashboard-grid {
+    gap: 0.75rem;
+  }
+
+  .stat-card {
+    padding: 0.65rem;
+    gap: 0.625rem;
+  }
+
+  .stat-icon {
+    padding: 0.35rem;
+  }
+
+  .stat-icon svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .stat-content h3 {
+    font-size: 1.15rem;
+  }
+
+  .stat-content p {
+    font-size: 0.65rem;
+  }
+
+  .recent-orders,
+  .new-users-section {
+    padding: 0.75rem;
+  }
+
+  .section-header h2 {
+    font-size: 1rem;
+  }
+
+  .view-all-btn {
+    font-size: 0.65rem;
+    padding: 0.375rem 0.65rem;
+  }
+
+  .order-item,
+  .user-item {
+    padding: 0.65rem;
+  }
+
+  .user-avatar {
+    width: 28px;
+    height: 28px;
   }
 }

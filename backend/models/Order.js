@@ -64,6 +64,8 @@ const orderSchema = new mongoose.Schema(
         "pending",
         "processing",
         "ready_to_pickup",
+        "ready_for_shipment",
+        "in_transit",
         "completed",
         "cancelled",
         "cancelled_pending",
@@ -95,6 +97,13 @@ const orderSchema = new mongoose.Schema(
     rating: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Rating",
+    },
+    pickupLocation: {
+      type: String,
+      trim: true,
+    },
+    pickupTime: {
+      type: Date,
     },
   },
   {

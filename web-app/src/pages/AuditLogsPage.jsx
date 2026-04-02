@@ -79,14 +79,18 @@ const AuditLogsPage = () => {
           limit: 100, // Get more logs for better search experience
         },
       });
-
       setAuditLogs(response.data.data || []);
     } catch (error) {
-      console.error("Error fetching audit logs:", error);
-      showToast({
-        type: "error",
-        message: "Failed to fetch audit logs. Please try again.",
-      });
+      if (error.response && error.response.status === 404) {
+        setAuditLogs([]);
+        showToast({ type: "info", message: "No audit logs available yet." });
+      } else {
+        console.error("Error fetching audit logs:", error);
+        showToast({
+          type: "error",
+          message: "Unable to fetch audit logs. Please try again later.",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -100,8 +104,13 @@ const AuditLogsPage = () => {
     if (actor.firstname && actor.lastname) {
       return `${actor.firstname} ${actor.lastname}`;
     }
-
-    return actor.username || actor.email || "Unknown User";
+    if (actor.username) {
+      return actor.username;
+    }
+    if (actor.email) {
+      return actor.email;
+    }
+    return "User";
   };
 
   // Client-side search and filtering
@@ -184,17 +193,30 @@ const AuditLogsPage = () => {
     setDetailModalOpen(true);
   };
 
+  // Format date as: Sep 11, 2025, 2:30 PM
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString("en-US", {
+    const d = new Date(dateString);
+    return d.toLocaleString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      second: "2-digit",
+      hour12: true,
     });
   };
 
+  // Map event types to user-friendly names
+  const eventTypeLabels = {
+    auth: "Login/Logout",
+    product: "Product",
+    user: "User",
+    staff: "Staff",
+    order: "Order",
+    payment: "Payment",
+    admin: "Admin",
+    rating: "Rating",
+  };
   const getEventTypeColor = (eventType) => {
     const colors = {
       auth: "#3b82f6",
@@ -209,6 +231,20 @@ const AuditLogsPage = () => {
     return colors[eventType] || "#6b7280";
   };
 
+  // Map actions to user-friendly names
+  const actionLabels = {
+    create: "Created",
+    update: "Updated",
+    delete: "Deleted",
+    login: "Logged In",
+    logout: "Logged Out",
+    approve: "Approved",
+    decline: "Declined",
+    enable: "Enabled",
+    disable: "Disabled",
+    update_status: "Status Changed",
+    verify_otp: "OTP Verified",
+  };
   const getActionColor = (action) => {
     const colors = {
       create: "#10b981",
@@ -220,6 +256,8 @@ const AuditLogsPage = () => {
       decline: "#ef4444",
       enable: "#10b981",
       disable: "#ef4444",
+      update_status: "#3b82f6",
+      verify_otp: "#10b981",
     };
     return colors[action] || "#6b7280";
   };
@@ -446,7 +484,7 @@ const AuditLogsPage = () => {
             <FontAwesomeIcon icon={faSearch} className="search-icon" />
             <input
               type="text"
-              placeholder="Search audit logs (actor, event, action, target, IP, etc.)"
+              placeholder="Search audit logs (staff, event, activity, target, IP, etc.)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="search-input"
@@ -555,10 +593,9 @@ const AuditLogsPage = () => {
           <thead>
             <tr>
               <th>Date & Time</th>
-              <th>Actor</th>
-              <th>Event Type</th>
-              <th>Action</th>
-              <th>Target</th>
+              <th>Staff</th>
+              <th>Activity Type</th>
+              <th>Activity</th>
               <th>IP Address</th>
               <th>Actions</th>
             </tr>
@@ -582,7 +619,15 @@ const AuditLogsPage = () => {
                         {getActorDisplayName(log)}
                       </span>
                       {log.actorRole && (
-                        <span className="actor-role">{log.actorRole}</span>
+                        <span className="actor-role">
+                          {log.actorRole === "staff_order"
+                            ? "Order Staff"
+                            : log.actorRole === "staff_product"
+                            ? "Product Staff"
+                            : log.actorRole
+                                .replace(/_/g, " ")
+                                .replace(/\b\w/g, (c) => c.toUpperCase())}
+                        </span>
                       )}
                     </div>
                   </td>
@@ -593,7 +638,7 @@ const AuditLogsPage = () => {
                         backgroundColor: getEventTypeColor(log.eventType),
                       }}
                     >
-                      {log.eventType}
+                      {eventTypeLabels[log.eventType] || log.eventType}
                     </span>
                   </td>
                   <td className="action-cell">
@@ -601,22 +646,11 @@ const AuditLogsPage = () => {
                       className="action-badge"
                       style={{ backgroundColor: getActionColor(log.action) }}
                     >
-                      {log.action}
+                      {actionLabels[log.action] ||
+                        log.action
+                          .replace(/_/g, " ")
+                          .replace(/\b\w/g, (c) => c.toUpperCase())}
                     </span>
-                  </td>
-                  <td className="target-cell">
-                    {log.targetModel && (
-                      <div className="target-info">
-                        <span className="target-model">{log.targetModel}</span>
-                        {log.targetId && (
-                          <span className="target-id">
-                            {log.targetId.toString().length > 15
-                              ? `${log.targetId.toString().substring(0, 15)}...`
-                              : log.targetId}
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </td>
                   <td className="ip-cell">{log.ip || "N/A"}</td>
                   <td className="actions-cell">
@@ -644,6 +678,13 @@ const AuditLogsPage = () => {
         onClose={() => setDetailModalOpen(false)}
         log={selectedLog}
         getActorDisplayName={getActorDisplayName}
+        getActorRoleDisplay={(role) =>
+          role === "staff_order"
+            ? "Order Staff"
+            : role === "staff_product"
+            ? "Product Staff"
+            : role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+        }
       />
     </div>
   );

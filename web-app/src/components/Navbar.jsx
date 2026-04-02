@@ -9,10 +9,37 @@ import Cookies from "js-cookie";
 function Navbar() {
   const { logout } = useAuth();
   const role = Cookies.get("role");
+  const location = useLocation();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
+  // Derive active scope from current URL query
+  const params = new URLSearchParams(location.search);
+  const scope = params.get("scope");
+  const onAllOrders = location.pathname.includes("allorders");
+
+  const handleLogout = async () => {
+    await logout();
   };
+
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
+  }, [location]);
 
   return (
     <nav className="navigation">
@@ -21,7 +48,18 @@ function Navbar() {
           <img src={baobablogo} className="logo" alt="Baobab Vision" />
         </div>
 
-        <ul className="links">
+        <button
+          className={`mobile-menu-toggle ${isMobileMenuOpen ? "active" : ""}`}
+          onClick={toggleMobileMenu}
+          aria-label="Toggle navigation menu"
+          aria-expanded={isMobileMenuOpen}
+        >
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+          <span className="hamburger-line"></span>
+        </button>
+
+        <ul className={`links ${isMobileMenuOpen ? "mobile-open" : ""}`}>
           <li>
             <NavLink to="/dashboard" className="nav-button" end>
               Home
@@ -77,14 +115,19 @@ function Navbar() {
             </NavLink>
           </li>
 
-          <Button
-            onClick={handleLogout}
-            children={
-              <div>
-                <p>Log Out</p>
-              </div>
-            }
-          />
+          <li className="nav-logout-btn">
+            <Button
+              onClick={() => {
+                handleLogout();
+                closeMobileMenu();
+              }}
+              children={
+                <div>
+                  <p>Log Out</p>
+                </div>
+              }
+            />
+          </li>
         </ul>
       </div>
     </nav>

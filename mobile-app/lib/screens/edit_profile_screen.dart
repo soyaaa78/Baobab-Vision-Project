@@ -29,7 +29,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   File? _imageFile;
   String? profileImageUrl;
 
-  static const String _apiBase = 'https://baobab-vision-project.onrender.com';
+  static const String _apiBase =
+      'https://baobab-vision-project-0234.onrender.com';
 
   bool _isLoading = false;
   bool _isEditing = false;

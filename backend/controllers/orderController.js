@@ -300,6 +300,8 @@ const order_put = catchAsync(async (req, res, next) => {
     rating,
     cancellationReason,
     declineReason,
+    pickupLocation,
+    pickupTime,
   } = req.body;
 
   if (!id) return next(new AppError("Order identifier not found", 400));
@@ -320,7 +322,9 @@ const order_put = catchAsync(async (req, res, next) => {
     !proofOfPayment &&
     !rating &&
     typeof cancellationReason === "undefined" &&
-    typeof declineReason === "undefined"
+    typeof declineReason === "undefined" &&
+    typeof pickupLocation === "undefined" &&
+    typeof pickupTime === "undefined"
   )
     return next(new AppError("No data to update", 400));
 
@@ -399,6 +403,9 @@ const order_put = catchAsync(async (req, res, next) => {
     updates.cancellationReason = cancellationReason;
   if (typeof declineReason !== "undefined")
     updates.declineReason = declineReason;
+  if (typeof pickupLocation !== "undefined")
+    updates.pickupLocation = pickupLocation;
+  if (typeof pickupTime !== "undefined") updates.pickupTime = pickupTime;
 
   const updatedOrder = await Order.findByIdAndUpdate(id, updates, {
     new: true,

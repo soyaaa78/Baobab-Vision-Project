@@ -43,7 +43,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
     final response = await http.post(
       Uri.parse(
-          'https://baobab-vision-project.onrender.com/api/auth/check-verification-token'),
+          'https://baobab-vision-project-0234.onrender.com/api/auth/check-verification-token'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'token': _currentToken}),
     );
@@ -81,8 +81,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 
   Future<void> loginUserAgain() async {
-    final url =
-        Uri.parse('https://baobab-vision-project.onrender.com/api/auth/login');
+    final url = Uri.parse(
+        'https://baobab-vision-project-0234.onrender.com/api/auth/login');
 
     final response = await http.post(
       url,
@@ -111,7 +111,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
     final response = await http.post(
       Uri.parse(
-          'https://baobab-vision-project.onrender.com/api/auth/resend-verification'),
+          'https://baobab-vision-project-0234.onrender.com/api/auth/resend-verification'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'email': widget.email}),
     );

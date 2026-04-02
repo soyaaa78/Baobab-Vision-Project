@@ -18,9 +18,6 @@ const getProfile = async (req, res) => {
 // Update user profile (including profileImage upload to Firebase)
 const updateProfile = async (req, res) => {
   try {
-    console.log("Update profile request body:", req.body);
-    console.log("Uploaded file:", req.file);
-
     const { firstname, lastname, email, username, phone, address } = req.body;
     const updateData = { firstname, lastname, email, username, phone, address };
 

@@ -1,6 +1,6 @@
 /* Modern Eyeglass Card Design */
 #eyeglass-page {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  /* background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); */
   min-height: 140vh;
   padding: 2rem;
   font-family: "Rubik", sans-serif;
@@ -36,12 +36,14 @@
 }
 
 .spinner-ring:nth-child(1) {
-  border-top-color: #5e503f;
+  /* primary black */
+  border-top-color: #000000;
   animation-delay: 0s;
 }
 
 .spinner-ring:nth-child(2) {
-  border-right-color: #8b7355;
+  /* accent beige */
+  border-right-color: #f8b26a;
   animation-delay: -0.3s;
   width: 85%;
   height: 85%;
@@ -50,7 +52,8 @@
 }
 
 .spinner-ring:nth-child(3) {
-  border-bottom-color: #a68b5b;
+  /* darker accent for depth */
+  border-bottom-color: #e09f4a;
   animation-delay: -0.6s;
   width: 70%;
   height: 70%;
@@ -89,25 +92,23 @@
 
 /* Back Button */
 .back-btn {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: transparent;
+  border: none;
   border-radius: 8px;
-  padding: 0.75rem 1.5rem;
+  padding: 0.25rem 0.5rem;
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #64748b;
+  color: #000000; /* link-like */
   font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: color 0.2s ease;
+  box-shadow: none;
 }
 
 .back-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  text-decoration: underline;
+  color: #2563eb;
 }
 
 /* Main Card */
@@ -118,6 +119,8 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 10px 10px -5px rgba(0, 0, 0, 0.04);
   border: 1px solid #f1f5f9;
+  /* top accent to match ProfilePage cards */
+  /* border-top: 3px solid #000000; */
 }
 
 /* Card Header */
@@ -148,15 +151,15 @@
 
 .action-btn:hover {
   background: #f8fafc;
-  border-color: #cbd5e1;
+  border-color: #f8b26a;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .action-btn.edit:hover {
-  color: #8b5cf6;
-  border-color: #d8b4fe;
-  background: #faf5ff;
+  color: #e09f4a;
+  border-color: #f8b26a;
+  background: #fff7ed;
 }
 
 /* Card Body */
@@ -178,13 +181,15 @@
 
 .main-image-container {
   position: relative;
-  background: linear-gradient(145deg, #f8fafc, #e2e8f0);
+  /* background: #f3eadc;  */
   border-radius: 16px;
   padding: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border: 1px solid #000000; /* black outline as in screenshot */
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
 }
 
 .main-product-image {
@@ -226,27 +231,27 @@
 }
 
 .thumbnail-item {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   border-radius: 12px;
   overflow: hidden;
-  background: #f8fafc;
-  border: 2px solid #e2e8f0;
+  background: #ffffff;
+  border: 1px solid #000000;
   cursor: pointer;
   transition: all 0.3s ease;
 }
 
 .thumbnail-item:hover {
-  border-color: #5e503f;
+  border-color: #000000;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(94, 80, 63, 0.2);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .thumbnail-item.active {
-  border-color: #5e503f;
+  border-color: #000000;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(94, 80, 63, 0.3);
-  background: #fefbf7;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  background: #f3eadc;
 }
 
 .thumbnail-item img {
@@ -269,37 +274,45 @@
   gap: 1rem;
 }
 
-.product-name {
+#product-name {
   font-size: 2rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #111111;
   margin: 0;
   font-family: "Red Rose", serif;
 }
 
-.product-badge {
-  background: linear-gradient(135deg, #5e503f 0%, #6d5a47 100%);
+#product-badge {
+  background: #262626; /* solid dark pill */
   color: #ffffff;
-  padding: 0.5rem 1rem;
-  border-radius: 20px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px; /* fully rounded */
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .product-description {
-  color: #64748b;
+  font-weight: 100;
+  color: #111111;
   line-height: 1.6;
   font-size: 1rem;
   margin: 0;
+  background: #f3eadc9d;
+  border: 1px solid #e4d9c8;
+  border-left: 4px solid #000000; /* black left accent */
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* Selection Sections */
 .selection-title {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: #111111;
   margin: 0 0 1rem 0;
   display: flex;
   align-items: center;
@@ -313,10 +326,10 @@
 
 /* Color Selection */
 .color-selection {
-  background: #f8fafc;
+  background: transparent;
   border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0; /* minimal spacing */
+  border: none;
 }
 
 .color-options {
@@ -329,55 +342,48 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  border-radius: 12px;
-  border: 2px solid #e2e8f0;
-  background: #ffffff;
+  gap: 0.25rem;
+  padding: 0; /* no tile */
+  border: none;
+  background: transparent;
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-width: 80px;
+  min-width: auto;
 }
 
-.color-option:hover {
-  border-color: #cbd5e1;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+.color-option:hover .color-swatch {
+  transform: scale(1.15);
 }
 
-.color-option.selected {
-  border-color: #5e503f;
-  background: #fefbf7;
-  box-shadow: 0 4px 12px rgba(94, 80, 63, 0.2);
+.color-option.selected .color-swatch {
+  border-color: #000000; /* black outline */
+  transform: scale(1.25); /* slightly bigger */
 }
 
 .color-swatch {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e4d9c8; /* default light ring */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
 .color-name {
-  font-size: 0.75rem;
-  font-weight: 500;
-  color: #64748b;
-  text-align: center;
+  display: none; /* hide labels under swatches */
 }
 
 /* Lens Selection */
 .lens-selection {
-  background: #f8fafc;
+  background: transparent;
   border-radius: 12px;
-  padding: 1.5rem;
-  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0 1rem 0;
+  border: none;
 }
 
 .modern-select {
   width: 100%;
   padding: 1rem 1.25rem;
-  border: 2px solid #e2e8f0;
+  border: 1px solid #000000; /* black outline to match screenshot */
   border-radius: 8px;
   background: #ffffff;
   font-size: 1rem;
@@ -393,23 +399,27 @@
 }
 
 .modern-select:hover {
-  border-color: #cbd5e1;
+  border-color: #000000;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .modern-select:focus {
   outline: none;
-  border-color: #5e503f;
-  box-shadow: 0 0 0 3px rgba(94, 80, 63, 0.1);
+  border-color: #f8b26a;
+  box-shadow: 0 0 0 3px rgba(248, 178, 106, 0.25);
 }
 
 /* Price Section */
 .price-section {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: linear-gradient(
+    135deg,
+    #f5e6d2 0%,
+    #e7d6c3 100%
+  ); /* warm beige gradient */
   border-radius: 16px;
   padding: 2rem;
   text-align: center;
-  border: 1px solid #e2e8f0;
+  border: 2px solid #000000; /* black outline */
 }
 
 .price-container {
@@ -423,7 +433,7 @@
 .currency {
   font-size: 1.5rem;
   font-weight: 600;
-  color: #64748b;
+  color: #111111;
 }
 
 .price {
@@ -436,7 +446,7 @@
 .price-label {
   font-size: 1.25rem;
   font-weight: 500;
-  color: #64748b;
+  color: #111111;
 }
 
 .price-subtitle {
@@ -464,27 +474,27 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #5e503f 0%, #6d5a47 100%);
+  background: #000000;
   color: #ffffff;
-  border-color: #5e503f;
+  border-color: #000000;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #6d5a47 0%, #7a6354 100%);
+  background: #111111;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(94, 80, 63, 0.3);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
 }
 
 .btn-secondary {
-  background: #ffffff;
-  color: #5e503f;
-  border-color: #5e503f;
+  background: #f8b26a;
+  color: #ffffff;
+  border-color: #f8b26a;
 }
 
 .btn-secondary:hover {
-  background: #fefbf7;
+  background: #e09f4a;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(94, 80, 63, 0.2);
+  box-shadow: 0 8px 16px rgba(248, 178, 106, 0.35);
 }
 
 /* Responsive Design */

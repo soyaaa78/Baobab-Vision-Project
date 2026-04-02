@@ -3,13 +3,7 @@ import Button from "../components/Button";
 import ConfirmationModal from "../components/ConfirmationModal";
 import "../styles/ManageUsersPage.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faXmark,
-  faCaretDown,
-  faSort,
-  faSortUp,
-  faSortDown,
-} from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { Check, Ban, Trash2 } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -33,10 +27,6 @@ const ManageUsersPage = () => {
   const [dropdown, setDropdown] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [userList, setUserList] = useState([]);
-  const [orderList, setOrderList] = useState([]);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [expandedOrder, setExpandedOrder] = useState(null);
-
   const [addStaffForm, setAddStaffForm] = useState({
     firstname: "",
     lastname: "",
@@ -45,8 +35,6 @@ const ManageUsersPage = () => {
     password: "",
     role: "staff_product", // Default role
   }); // Add status filter state - default to pending
-  const [selectedStatus, setSelectedStatus] = useState("pending");
-
   const openConfirmationModal = (
     action,
     itemType,
@@ -75,13 +63,6 @@ const ManageUsersPage = () => {
     setActionLoading(false);
   };
 
-  const toggleAlertModal = () => {
-    setAlertModal((prev) => !prev);
-  };
-
-  const toggleDropdown = () => {
-    setDropdown((prev) => !prev);
-  };
   const toggleModal = () => {
     setModal((prev) => !prev);
     if (modal) {
@@ -94,10 +75,6 @@ const ManageUsersPage = () => {
         role: "staff_product",
       });
     }
-  };
-
-  const toggleExpandedOrder = (orderId) => {
-    setExpandedOrder((prev) => (prev === orderId ? null : orderId));
   };
 
   const [token, setToken] = useState();
@@ -117,9 +94,14 @@ const ManageUsersPage = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        setStaffList(response.data);
+        setStaffList([...response.data].reverse());
       } catch (error) {
-        console.error("Error fetching staff:", error);
+        if (error.response && error.response.status === 404) {
+          setStaffList([]);
+          showToast({ type: "info", message: "No staff found." });
+        } else {
+          console.error("Error fetching staff:", error);
+        }
       }
     };
     const fetchUsers = async () => {
@@ -129,26 +111,14 @@ const ManageUsersPage = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        setUserList(response.data);
+        setUserList([...response.data].reverse());
       } catch (error) {
-        console.error("Error fetching users:", error);
-      }
-    };
-    const fetchOrders = async () => {
-      try {
-        const response = await axios.get(
-          `${SERVER_URL}/api/orders?index=true`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        // Handle the response structure - check if it's response.data.order or response.data
-        const orders = response.data.order || response.data;
-        setOrderList(Array.isArray(orders) ? orders : [orders]);
-      } catch (error) {
-        console.error("Error fetching orders:", error);
+        if (error.response && error.response.status === 404) {
+          setUserList([]);
+          showToast({ type: "info", message: "No users found." });
+        } else {
+          console.error("Error fetching users:", error);
+        }
       }
     };
     setLoading(true);
@@ -169,7 +139,7 @@ const ManageUsersPage = () => {
       const response = await axios.get(`${SERVER_URL}/api/admin/user-list`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setUserList(response.data);
+      setUserList([...response.data].reverse());
       closeConfirmationModal();
       showToast({
         message: `User ${action.toLowerCase()}d successfully`,
@@ -210,7 +180,7 @@ const ManageUsersPage = () => {
       const response = await axios.get(`${SERVER_URL}/api/admin/staff-list`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setStaffList(response.data);
+      setStaffList([...response.data].reverse());
       closeConfirmationModal();
       showToast({
         message: `Staff ${action.toLowerCase()}d successfully`,
@@ -233,66 +203,6 @@ const ManageUsersPage = () => {
       ...prev,
       [name]: value,
     }));
-  };
-
-  // Add function to update order status
-  const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      await axios.put(
-        `${SERVER_URL}/api/orders?id=${orderId}`,
-        { status: newStatus },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      // Refresh orders list
-      const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const orders = response.data.order || response.data;
-      setOrderList(Array.isArray(orders) ? orders : [orders]);
-    } catch (error) {
-      console.error("Error updating order status:", error);
-    }
-  };
-
-  // Add function to delete order
-  const deleteOrder = async (orderId) => {
-    setActionLoading(true);
-    try {
-      await axios.delete(`${SERVER_URL}/api/orders?id=${orderId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      // Refresh orders list
-      const response = await axios.get(`${SERVER_URL}/api/orders?index=true`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const orders = response.data.order || response.data;
-      setOrderList(Array.isArray(orders) ? orders : [orders]);
-
-      closeConfirmationModal();
-      showToast({
-        message: "Order deleted successfully",
-        type: "success",
-      });
-    } catch (error) {
-      console.error("Error deleting order:", error);
-      showToast({
-        message: "Failed to delete order",
-        type: "error",
-      });
-      setActionLoading(false);
-    }
   };
 
   const handleAddStaff = async (e) => {
@@ -358,15 +268,6 @@ const ManageUsersPage = () => {
       }
     }
   }; // Filter orders by selected status
-  const getFilteredOrders = () => {
-    if (selectedStatus === "all") return orderList;
-    return orderList.filter((order) => order.status === selectedStatus);
-  };
-
-  // Handle status filter change
-  const handleStatusChange = (status) => {
-    setSelectedStatus(status);
-  };
 
   return (
     <>
@@ -443,12 +344,12 @@ const ManageUsersPage = () => {
                       ) : (
                         userList.map((user) => (
                           <tr key={user._id} className="table-tr">
-                            <td>{user.username}</td>
-                            <td>{user.email}</td>
-                            <td>
+                            <td data-label="Username">{user.username}</td>
+                            <td data-label="Email">{user.email}</td>
+                            <td data-label="Verification Status">
                               {user.isVerified ? "Verified" : "Unverified"}
                             </td>
-                            <td>
+                            <td data-label="Actions">
                               <div className="td-action">
                                 <li
                                   className="action-li delete"
@@ -866,11 +767,17 @@ const ManageUsersPage = () => {
                           <td>{staff.lastname || "N/A"}</td>
                           <td>{staff.username}</td>
                           <td>{staff.email}</td>
-                          <td>{staff.role}</td>
+                          <td>
+                            {staff.role === "staff_order"
+                              ? "Order Staff"
+                              : staff.role === "staff_product"
+                              ? "Product Staff"
+                              : staff.role}
+                          </td>
                           <td>
                             {staff.isVerified ? "Verified" : "Unverified"}
                           </td>
-                          <td>
+                          <td data-label="Account Status">
                             <span
                               className={`status-badge ${
                                 staff.isDisabled ? "disabled" : "active"
@@ -879,7 +786,7 @@ const ManageUsersPage = () => {
                               {staff.isDisabled ? "Disabled" : "Active"}
                             </span>
                           </td>
-                          <td>
+                          <td data-label="Actions">
                             <div className="td-action">
                               {staff.isDisabled ? (
                                 <li
