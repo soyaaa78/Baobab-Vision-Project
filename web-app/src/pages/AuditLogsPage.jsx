@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import ToastContainer from "../components/ToastContainer";
 import { showToast } from "../services/toastService";
 import AuditLogDetailModal from "../components/AuditLogDetailModal";
@@ -63,12 +63,7 @@ const AuditLogsPage = () => {
     setToken(t);
   }, []);
 
-  useEffect(() => {
-    if (!token) return;
-    fetchAuditLogs();
-  }, [token]);
-
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = useCallback(async () => {
     try {
       setLoading(true);
       const response = await axios.get(`${SERVER_URL}/api/audit-logs`, {
@@ -94,7 +89,12 @@ const AuditLogsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [SERVER_URL, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    fetchAuditLogs();
+  }, [token, fetchAuditLogs]);
 
   // Helper function to get display name for actor
   const getActorDisplayName = (log) => {

@@ -26,15 +26,6 @@ const AddEyeglassPage = () => {
     setToken(t);
   }, []);
 
-  const handleToggle = (ref, shouldCheck) => {
-    if (ref && ref.current) {
-      const checkboxes = ref.current.querySelectorAll('input[type="checkbox"]');
-      checkboxes.forEach((cb) => {
-        if (!cb.disabled) cb.checked = shouldCheck;
-      });
-    }
-  };
-
   // Per-colorway image drag-and-drop
   const handleColorwayImageDrop = (e, optionIndex) => {
     e.preventDefault();
@@ -93,10 +84,7 @@ const AddEyeglassPage = () => {
       );
     }
   };
-  const [product, setProduct] = useState("");
-  /* const addProduct = () => {
-        setProduct(userdata);
-    } */ /* raph eto yung iibahin para sa adding */
+  /* raph eto yung iibahin para sa adding */
   // --- Add product form state ---
   const [form, setForm] = useState({
     name: "",
@@ -279,20 +267,6 @@ const AddEyeglassPage = () => {
     });
   };
 
-  const handleAddColorToOption = (optionIndex) => {
-    setForm((prev) => {
-      const newColorOptions = [...prev.colorOptions];
-      const opt = newColorOptions[optionIndex];
-      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
-      const type = opt.type;
-      const limit = type === "solid" ? 1 : 2;
-      if (colors.length >= limit) return prev; // do nothing
-      colors.push("#000000");
-      newColorOptions[optionIndex] = { ...opt, colors };
-      return { ...prev, colorOptions: newColorOptions };
-    });
-  };
-
   const handleRemoveColorFromOption = (optionIndex, colorIndex) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
@@ -461,7 +435,7 @@ const AddEyeglassPage = () => {
       });
 
       // 3D models are already uploaded; don't append any 3D files here
-      const res = await axios.post(`${SERVER_URL}/api/products`, formData, {
+      await axios.post(`${SERVER_URL}/api/products`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,

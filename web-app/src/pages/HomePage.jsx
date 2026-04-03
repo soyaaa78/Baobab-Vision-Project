@@ -31,7 +31,6 @@ const HomePage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
   const [token, setToken] = useState();
   const [showCarouselModal, setShowCarouselModal] = useState(false);
-  const [carouselImages, setCarouselImages] = useState([]);
   const [profileData, setProfileData] = useState({ firstname: "" });
   const [eyeglasses, setEyeglasses] = useState([]);
 
@@ -48,7 +47,7 @@ const HomePage = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProfileData(response.data);
-      } catch (error) {
+      } catch {
         // fail silently
       }
     };
@@ -65,7 +64,9 @@ const HomePage = () => {
           },
         });
         setEyeglasses(response.data);
-      } catch (error) {}
+      } catch {
+        // fail silently
+      }
     };
     fetchEyeglasses();
   }, [token, SERVER_URL]);
@@ -77,11 +78,6 @@ const HomePage = () => {
     navigate("/dashboard/catalogue", { state: { deleteMode: true } });
   const handleStatistics = () => navigate("/dashboard/statistics");
   const handleManageGallery = () => setShowCarouselModal(true);
-  const handleImagesUpdate = (updatedImages) => {
-    setCarouselImages(updatedImages);
-    // Here you could also save to backend if needed
-  };
-
   return (
     <>
       <div className="page" id="home">

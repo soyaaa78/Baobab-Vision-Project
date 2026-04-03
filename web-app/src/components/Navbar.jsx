@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import "../styles/Navbar.css";
 import baobablogo from "../assets/bvfull.png";
@@ -11,12 +11,7 @@ function Navbar() {
   const role = Cookies.get("role");
   const location = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Derive active scope from current URL query
-  const params = new URLSearchParams(location.search);
-  const scope = params.get("scope");
-  const onAllOrders = location.pathname.includes("allorders");
 
   const handleLogout = async () => {
     await logout();
@@ -28,17 +23,11 @@ function Navbar() {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
-    setIsDropdownOpen(false);
-  };
-
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
   };
 
   // Close mobile menu when route changes
   useEffect(() => {
     setIsMobileMenuOpen(false);
-    setIsDropdownOpen(false);
   }, [location]);
 
   return (

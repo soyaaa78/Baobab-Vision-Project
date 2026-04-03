@@ -17,7 +17,7 @@ const RespondReviewModal = ({ isOpen, onClose, rating, onSubmit }) => {
     try {
       await onSubmit(rating._id, response.trim());
       onClose();
-    } catch (_) {
+    } catch {
       // handled by parent
     } finally {
       setSaving(false);

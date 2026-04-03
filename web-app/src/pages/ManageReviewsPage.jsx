@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { showToast } from "../services/toastService";
@@ -22,7 +22,7 @@ const ManageReviewsPage = () => {
     setToken(Cookies.get("token") || "");
   }, []);
 
-  const fetchRatings = async () => {
+  const fetchRatings = useCallback(async () => {
     if (!token) return;
     try {
       const res = await axios.get(`${SERVER_URL}/api/ratings?index=true`, {
@@ -42,11 +42,11 @@ const ManageReviewsPage = () => {
         });
       }
     }
-  };
+  }, [SERVER_URL, token]);
 
   useEffect(() => {
     fetchRatings();
-  }, [token]);
+  }, [fetchRatings]);
 
   const filtered = useMemo(() => {
     if (filter === "all") return ratings;

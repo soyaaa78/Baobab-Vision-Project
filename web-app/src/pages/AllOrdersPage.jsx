@@ -8,8 +8,6 @@ import PickupDetailsModal from "../components/PickupDetailsModal";
 import CancellationModal from "../components/CancellationModal";
 import DeleteOrderModal from "../components/DeleteOrderModal";
 import "../styles/AllOrdersPage.css";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { Trash2 } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -53,6 +51,8 @@ const AllOrdersPage = () => {
   const [selectedCancellationOrder, setSelectedCancellationOrder] =
     useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [pickupModalOpen, setPickupModalOpen] = useState(false);
+  const [pickupTargetOrder, setPickupTargetOrder] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Helpers
@@ -291,6 +291,17 @@ const AllOrdersPage = () => {
       default:
         return "Progress";
     }
+  };
+
+  const getStatusOptionsForOrder = (order) => {
+    const flow = getStatusFlow(order);
+    const values = Array.from(
+      new Set([...flow, "cancelled_pending", "cancelled", order.status].filter(Boolean))
+    );
+    return values.map((value) => ({
+      value,
+      label: statusLabel(value),
+    }));
   };
 
   if (loading) {

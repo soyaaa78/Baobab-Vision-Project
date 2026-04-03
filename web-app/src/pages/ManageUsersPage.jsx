@@ -24,9 +24,11 @@ const ManageUsersPage = () => {
   });
   const [actionLoading, setActionLoading] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [dropdown, setDropdown] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [userList, setUserList] = useState([]);
+  const [orderList] = useState([]);
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [expandedOrder, setExpandedOrder] = useState(null);
   const [addStaffForm, setAddStaffForm] = useState({
     firstname: "",
     lastname: "",
@@ -121,11 +123,29 @@ const ManageUsersPage = () => {
         }
       }
     };
+    const fetchOrders = async () => [];
     setLoading(true);
     Promise.all([fetchStaff(), fetchUsers(), fetchOrders()]).finally(() => {
       setLoading(false);
     });
   }, [SERVER_URL, token]);
+
+  const handleStatusChange = (status) => {
+    setSelectedStatus(status);
+  };
+
+  const getFilteredOrders = () => {
+    if (selectedStatus === "all") return orderList;
+    return orderList.filter((order) => order.status === selectedStatus);
+  };
+
+  const toggleExpandedOrder = (orderId) => {
+    setExpandedOrder((prev) => (prev === orderId ? null : orderId));
+  };
+
+  const updateOrderStatus = async () => {};
+
+  const deleteOrder = async () => {};
 
   const handleUserAction = async (id, action) => {
     setActionLoading(true);
