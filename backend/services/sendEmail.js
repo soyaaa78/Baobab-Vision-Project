@@ -1,5 +1,10 @@
 const SibApiV3Sdk = require("sib-api-v3-sdk");
 
+const normalizeEnvValue = (value) => {
+  if (typeof value !== "string") return value;
+  return value.trim().replace(/^['"]|['"]$/g, "").replace(/\r?\n/g, "");
+};
+
 /**
  * Sends an email using Brevo (Sendinblue) SDK.
  * @param {string} to - Recipient email
@@ -8,16 +13,25 @@ const SibApiV3Sdk = require("sib-api-v3-sdk");
  * @param {string} html - Optional HTML content (e.g., buttons)
  */
 const sendEmail = async (to, subject, text, html = null) => {
-  const apiKey = process.env.BREVO_API_KEY;
+  const apiKey = normalizeEnvValue(
+    process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY
+  );
   if (!apiKey) {
-    throw new Error("BREVO_API_KEY environment variable is not set.");
+    throw new Error(
+      "BREVO_API_KEY environment variable is not set (or empty)."
+    );
+  }
+  if (!apiKey.startsWith("xkeysib-")) {
+    throw new Error(
+      "BREVO_API_KEY appears malformed. Ensure it is a single-line Brevo key starting with xkeysib-."
+    );
   }
 
   SibApiV3Sdk.ApiClient.instance.authentications["api-key"].apiKey = apiKey;
   const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
-  const senderEmail = process.env.BREVO_SENDER_EMAIL;
-  const senderName = process.env.BREVO_SENDER_NAME;
+  const senderEmail = normalizeEnvValue(process.env.BREVO_SENDER_EMAIL);
+  const senderName = normalizeEnvValue(process.env.BREVO_SENDER_NAME);
   if (!senderEmail) {
     throw new Error("BREVO_SENDER_EMAIL environment variable is not set.");
   }
@@ -37,9 +51,13 @@ const sendEmail = async (to, subject, text, html = null) => {
   try {
     await apiInstance.sendTransacEmail(sendSmtpEmail);
   } catch (error) {
+    const responseStatus = error?.response?.status;
+    const responseBody = error?.response?.body || error?.response?.text;
     console.error("Failed to send email via Brevo:", {
       message: error.message,
       code: error.code,
+      responseStatus,
+      responseBody,
       stack: error.stack,
     });
     throw new Error(error.message);

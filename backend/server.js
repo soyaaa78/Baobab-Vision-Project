@@ -44,9 +44,10 @@ app.use(
       "https://next-webar-tryon.vercel.app",
       "http://localhost:5173",
       "http://localhost:3000",
+      "https://baobab-vto.netlify.app",
     ],
     credentials: true, // allow cookies/auth headers if needed
-  })
+  }),
 );
 
 // Static folders
