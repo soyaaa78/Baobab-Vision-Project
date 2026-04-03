@@ -30,13 +30,36 @@ const getRequestContext = (req) => {
 
 async function logEvent(
   req,
-  { eventType, action, targetModel, targetId, oldValues, newValues, metadata }
+  {
+    eventType,
+    action,
+    targetModel,
+    targetId,
+    oldValues,
+    newValues,
+    metadata,
+    forceSystem = false,
+  }
 ) {
   try {
     const ctx = getRequestContext(req);
+    let actor = ctx.actor;
+    let actorRole = ctx.actorRole;
+    // Only use 'system' if forceSystem is true (for scheduled jobs, etc.)
+    if (!actor && !forceSystem) {
+      console.warn(
+        "[AuditLog] No user context found for event. This should be avoided except for true system events."
+      );
+      // Optionally, you could throw here to enforce user context
+      // throw new Error("User context required for audit logging");
+    }
+    if (!actor && forceSystem) {
+      actor = "system";
+      actorRole = "system";
+    }
     await AuditLog.create({
-      actor: ctx.actor,
-      actorRole: ctx.actorRole,
+      actor,
+      actorRole,
       ip: ctx.ip,
       userAgent: ctx.userAgent,
       eventType,

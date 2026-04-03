@@ -24,7 +24,6 @@ router.post(
 router.get(
   "/staff-list",
   adminAuth.verifyToken,
-  isSuperAdmin,
   adminController.getAllStaff
 );
 

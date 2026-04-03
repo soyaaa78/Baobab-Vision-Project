@@ -82,7 +82,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     setState(() => isLoading = true);
 
     final url = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/auth/reset-password');
+        'https://baobab-vision-project-0234.onrender.com/api/auth/reset-password');
 
     try {
       final response = await http.post(
@@ -112,12 +112,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         );
       } else {
         customDialog(context,
-            title: 'Error', content: resData['message'] ?? 'Password reset failed.');
+            title: 'Error',
+            content: resData['message'] ?? 'Password reset failed.');
       }
     } catch (e) {
       customDialog(context,
-          title: 'Error',
-          content: 'Something went wrong. Please try again.');
+          title: 'Error', content: 'Something went wrong. Please try again.');
     } finally {
       setState(() => isLoading = false);
     }

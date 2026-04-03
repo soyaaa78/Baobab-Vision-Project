@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:baobab_vision_project/screens/email_otp_verification_screen.dart';
 import 'package:baobab_vision_project/screens/email_verification_screen.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -44,6 +45,16 @@ class _LogInScreenState extends State<LogInScreen> {
 
   // Login function
   Future<void> login() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult == ConnectivityResult.none) {
+      customDialog(
+        context,
+        title: 'No Internet',
+        content: 'Please check your internet connection and try again.',
+      );
+      return;
+    }
+
     try {
       final response = await ApiClient.postJson('/api/auth/login', {
         'username': usernameController.text.trim(),

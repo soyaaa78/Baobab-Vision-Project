@@ -214,8 +214,8 @@ const EyeglassPage = () => {
 
               <div className="details-section">
                 <div className="product-header">
-                  <h1 className="product-name">{eyeglass.name}</h1>
-                  <div className="product-badge">Premium</div>
+                  <h1 id="product-name">{eyeglass.name}</h1>
+                  <div id="product-badge">Premium</div>
                 </div>
 
                 <p className="product-description">{eyeglass.description}</p>

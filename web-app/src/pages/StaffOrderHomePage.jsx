@@ -258,105 +258,108 @@ const StaffOrderHomePage = () => {
             </div>
           </div>
 
-          {/* Recent Orders */}
-          <div className="recent-orders">
-            <div className="section-header">
-              <h2>Recent Orders</h2>
-              <Button className="view-all-btn" onClick={handleManageOrders}>
-                <Eye size={16} />
-                View All
-              </Button>
-            </div>
-            <div className="orders-list">
-              {orders.map((order) => (
-                <div key={order._id} className="order-item">
-                  <div className="order-info">
-                    <div className="order-id">
-                      #
-                      {(
-                        order.orderId || `${order._id.slice(-8)}...`
-                      ).toUpperCase()}
-                    </div>
-                    <div className="customer-name">
-                      {order.customer?.firstName} {order.customer?.lastName}
-                    </div>
-                    <div className="order-date">
-                      {formatDate(order.createdAt)}
-                    </div>
-                  </div>
-                  <div className="order-details">
-                    <div className="order-amount">
-                      {formatCurrency(order.totalAmount)}
-                    </div>
-                    <div
-                      className="order-status"
-                      style={{ color: getStatusColor(order.status) }}
-                    >
-                      {getStatusIcon(order.status)}
-                      <span>
-                        {order.status.replace("_", " ").toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* New Users */}
-          <div className="new-users-section">
-            <div className="section-header">
-              <h2>New Users</h2>
-              <Button className="view-all-btn" onClick={handleCustomers}>
-                <Users size={16} />
-                View All
-              </Button>
-            </div>
-            <div className="users-list">
-              {newUsers.map((user) => (
-                <div key={user._id} className="user-item">
-                  <div className="user-avatar">
-                    {user.profilePicture ? (
-                      <img src={user.profilePicture} alt={user.firstName} />
-                    ) : (
-                      <div className="avatar-placeholder">
-                        {user.firstName?.charAt(0)}
-                        {user.lastName?.charAt(0)}
+          {/* Content Row: Recent Orders & New Users side by side */}
+          <div className="dashboard-content-row">
+            {/* Recent Orders */}
+            <div className="recent-orders">
+              <div className="section-header">
+                <h2>Recent Orders</h2>
+                <Button className="view-all-btn" onClick={handleManageOrders}>
+                  <Eye size={16} />
+                  View All
+                </Button>
+              </div>
+              <div className="orders-list">
+                {orders.map((order) => (
+                  <div key={order._id} className="order-item">
+                    <div className="order-info">
+                      <div className="order-id">
+                        #
+                        {(
+                          order.orderId || `${order._id.slice(-8)}...`
+                        ).toUpperCase()}
                       </div>
-                    )}
-                  </div>
-                  <div className="user-info">
-                    <div className="user-name">
-                      {user.firstName} {user.lastName}
+                      <div className="customer-name">
+                        {order.customer?.firstName} {order.customer?.lastName}
+                      </div>
+                      <div className="order-date">
+                        {formatDate(order.createdAt)}
+                      </div>
                     </div>
-                    <div className="user-email">{user.email}</div>
-                    <div className="user-date">
-                      {user.createdAt && !isNaN(new Date(user.createdAt))
-                        ? `Joined ${formatDate(user.createdAt)}`
-                        : ""}
+                    <div className="order-details">
+                      <div className="order-amount">
+                        {formatCurrency(order.totalAmount)}
+                      </div>
+                      <div
+                        className="order-status"
+                        style={{ color: getStatusColor(order.status) }}
+                      >
+                        {getStatusIcon(order.status)}
+                        <span>
+                          {order.status.replace("_", " ").toUpperCase()}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {newUsers.length === 0 && (
-                <div className="empty-state">
-                  <Users size={32} />
-                  <p>No new users found</p>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
-            <div className="user-stats-summary">
-              <div className="summary-item">
-                <span className="summary-label">Total Users</span>
-                <span className="summary-value">{userStats.totalUsers}</span>
+
+            {/* New Users */}
+            <div className="new-users-section">
+              <div className="section-header">
+                <h2>New Users</h2>
+                <Button className="view-all-btn" onClick={handleCustomers}>
+                  <Users size={16} />
+                  View All
+                </Button>
               </div>
-              <div className="summary-item">
-                <span className="summary-label">New This Week</span>
-                <span className="summary-value">{userStats.newThisWeek}</span>
+              <div className="users-list">
+                {newUsers.map((user) => (
+                  <div key={user._id} className="user-item">
+                    <div className="user-avatar">
+                      {user.profileImage ? (
+                        <img src={user.profileImage} alt={user.firstName} />
+                      ) : (
+                        <div className="avatar-placeholder">
+                          {user.firstName?.charAt(0)}
+                          {user.lastName?.charAt(0)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="user-info">
+                      <div className="user-name">
+                        {user.firstName} {user.lastName}
+                      </div>
+                      <div className="user-email">{user.email}</div>
+                      <div className="user-date">
+                        {user.createdAt && !isNaN(new Date(user.createdAt))
+                          ? `Joined ${formatDate(user.createdAt)}`
+                          : ""}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {newUsers.length === 0 && (
+                  <div className="empty-state">
+                    <Users size={32} />
+                    <p>No new users found</p>
+                  </div>
+                )}
               </div>
-              <div className="summary-item">
-                <span className="summary-label">Active Today</span>
-                <span className="summary-value">{userStats.activeToday}</span>
+              <div className="user-stats-summary">
+                <div className="summary-item">
+                  <span className="summary-label">Total Users</span>
+                  <span className="summary-value">{userStats.totalUsers}</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-label">New This Week</span>
+                  <span className="summary-value">{userStats.newThisWeek}</span>
+                </div>
+                <div className="summary-item">
+                  <span className="summary-label">Active Today</span>
+                  <span className="summary-value">{userStats.activeToday}</span>
+                </div>
               </div>
             </div>
           </div>

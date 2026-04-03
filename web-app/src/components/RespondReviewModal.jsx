@@ -25,50 +25,42 @@ const RespondReviewModal = ({ isOpen, onClose, rating, onSubmit }) => {
   };
 
   return (
-    <div
-      className={`proof-payment-modal-container respond-review-modal ${
-        isOpen ? "active" : ""
-      }`}
-    >
+    <div className="audit-modal-overlay" onClick={onClose}>
       <div
-        className={`modal-overlay ${isOpen ? "active" : ""}`}
-        onClick={onClose}
-      />
-      <div className={`proof-payment-modal-content ${isOpen ? "active" : ""}`}>
-        <div className="modal-header">
-          <div className="header-content">
-            <h2>Respond to Review</h2>
-            <p className="modal-subtitle">
-              Your reply will be visible to the customer
-            </p>
-          </div>
-          <button className="close-button" onClick={onClose} type="button">
+        className="audit-modal respond-review-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="audit-modal-header">
+          <h2>Respond to Review</h2>
+          <button className="audit-modal-close" onClick={onClose} type="button">
             ×
           </button>
         </div>
 
-        <div className="modal-body">
-          <div className="rating-details">
-            <div className="detail-item">
-              <span className="detail-label">Rating</span>
-              <span className="detail-value">⭐ {rating.rating} / 5</span>
-            </div>
-            <div className="detail-item">
-              <span className="detail-label">Comment</span>
-              <span className="detail-value">
-                {rating.comment || "No comment provided"}
-              </span>
+        <div className="audit-modal-content">
+          <div className="audit-section">
+            <div className="audit-info-grid">
+              <div className="audit-info-item">
+                <div>
+                  <label>Rating</label>
+                  <span>⭐ {rating.rating} / 5</span>
+                </div>
+              </div>
+              <div className="audit-info-item" style={{ gridColumn: "1 / -1" }}>
+                <div>
+                  <label>Comment</label>
+                  <span>{rating.comment || "No comment provided"}</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="response-section">
-            <div className="response-section-header">
-              <h4>Admin Response</h4>
-              <p>
-                Add a polite and helpful response to address the customer's
-                feedback.
-              </p>
-            </div>
+          <div className="audit-section">
+            <h3>Admin Response</h3>
+            <p style={{ marginTop: -4, color: "#6b7280" }}>
+              Add a polite and helpful response to address the customer's
+              feedback.
+            </p>
             <div className="form-field">
               <textarea
                 className="form-textarea"
@@ -88,28 +80,25 @@ const RespondReviewModal = ({ isOpen, onClose, rating, onSubmit }) => {
                 </span>
               </div>
             </div>
-            <div className="form-actions">
-              <button
-                className="btn btn-secondary"
-                onClick={onClose}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button
-                className={`btn btn-primary ${saving ? "saving" : ""}`}
-                onClick={handleSubmit}
-                disabled={saving}
-                type="button"
-              >
-                {saving
-                  ? "Saving..."
-                  : rating.adminResponse
-                  ? "Update Response"
-                  : "Post Response"}
-              </button>
-            </div>
           </div>
+        </div>
+
+        <div className="audit-modal-footer" style={{ gap: 12 }}>
+          <button className="btn btn-secondary" onClick={onClose} type="button">
+            Cancel
+          </button>
+          <button
+            className={`btn btn-primary ${saving ? "saving" : ""}`}
+            onClick={handleSubmit}
+            disabled={saving}
+            type="button"
+          >
+            {saving
+              ? "Saving..."
+              : rating.adminResponse
+              ? "Update Response"
+              : "Post Response"}
+          </button>
         </div>
       </div>
     </div>

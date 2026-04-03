@@ -34,7 +34,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
     try {
       final response = await http.post(
         Uri.parse(
-            'https://baobab-vision-project.onrender.com/api/products/recommend'),
+            'https://baobab-vision-project-0234.onrender.com/api/products/recommend'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'faceShape': widget.detectedFaceShape,

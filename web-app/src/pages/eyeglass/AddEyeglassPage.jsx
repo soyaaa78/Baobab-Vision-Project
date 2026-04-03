@@ -14,10 +14,8 @@ const AddEyeglassPage = () => {
   const navigate = useNavigate();
   const handleBack = () => navigate("../catalogue");
   const [productImages, setProductImages] = useState([]);
-  const [colorwayImages, setColorwayImages] = useState([]);
-  // Removed main 3D model input; using per-colorway models instead
+  // Removed global colorway images; use per-colorway image upload
   const [productImageFiles, setProductImageFiles] = useState([]);
-  const [colorwayImageFiles, setColorwayImageFiles] = useState([]);
   const [colorwayModelFiles, setColorwayModelFiles] = useState([]);
 
   const tintedRef = useRef(null);
@@ -36,6 +34,30 @@ const AddEyeglassPage = () => {
       });
     }
   };
+
+  // Per-colorway image drag-and-drop
+  const handleColorwayImageDrop = (e, optionIndex) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setForm((prev) => {
+      const updated = [...prev.colorOptions];
+      updated[optionIndex].imageFile = file;
+      return { ...prev, colorOptions: updated };
+    });
+  };
+
+  // Per-colorway image input change
+  const handleColorwayImageChange = (e, optionIndex) => {
+    const file = e.target.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setForm((prev) => {
+      const updated = [...prev.colorOptions];
+      updated[optionIndex].imageFile = file;
+      return { ...prev, colorOptions: updated };
+    });
+  };
+
   const handleProductImageChange = (e) => {
     const files = Array.from(e.target.files);
     const newPreviews = files.map((file) => ({
@@ -45,17 +67,6 @@ const AddEyeglassPage = () => {
     }));
     setProductImages((prev) => [...prev, ...newPreviews]);
     setProductImageFiles((prev) => [...prev, ...files]);
-  };
-
-  const handleColorwayImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    const newPreviews = files.map((file) => ({
-      id: URL.createObjectURL(file),
-      url: URL.createObjectURL(file),
-      file: file,
-    }));
-    setColorwayImages((prev) => [...prev, ...newPreviews]);
-    setColorwayImageFiles((prev) => [...prev, ...files]);
   };
 
   // 3D model helpers for drag-and-drop per colorway
@@ -78,15 +89,6 @@ const AddEyeglassPage = () => {
     setProductImages((prev) => prev.filter((img) => img.id !== idToRemove));
     if (imageToRemove && imageToRemove.file) {
       setProductImageFiles((prev) =>
-        prev.filter((file) => file !== imageToRemove.file)
-      );
-    }
-  };
-  const handleDeleteColorwayImage = (idToRemove) => {
-    const imageToRemove = colorwayImages.find((img) => img.id === idToRemove);
-    setColorwayImages((prev) => prev.filter((img) => img.id !== idToRemove));
-    if (imageToRemove && imageToRemove.file) {
-      setColorwayImageFiles((prev) =>
         prev.filter((file) => file !== imageToRemove.file)
       );
     }
@@ -229,10 +231,31 @@ const AddEyeglassPage = () => {
   const handleColorOptionChange = (optionIndex, field, value) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      newColorOptions[optionIndex] = {
+      const updated = {
         ...newColorOptions[optionIndex],
         [field]: value,
       };
+
+      // Enforce color constraints on type change
+      if (field === "type") {
+        const colors = Array.isArray(updated.colors)
+          ? [...updated.colors]
+          : ["#000000"];
+        if (value === "solid") {
+          // Exactly one color
+          updated.colors = colors.length ? [colors[0]] : ["#000000"];
+        } else if (value === "split" || value === "swatch") {
+          // Exactly two colors
+          if (colors.length < 2) {
+            const second = colors[0] === "#000000" ? "#ff8800" : "#000000";
+            updated.colors = [colors[0] || "#000000", colors[1] || second];
+          } else if (colors.length > 2) {
+            updated.colors = [colors[0], colors[1]];
+          }
+        }
+      }
+
+      newColorOptions[optionIndex] = updated;
       return {
         ...prev,
         colorOptions: newColorOptions,
@@ -259,31 +282,27 @@ const AddEyeglassPage = () => {
   const handleAddColorToOption = (optionIndex) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      newColorOptions[optionIndex] = {
-        ...newColorOptions[optionIndex],
-        colors: [...newColorOptions[optionIndex].colors, "#000000"],
-      };
-      return {
-        ...prev,
-        colorOptions: newColorOptions,
-      };
+      const opt = newColorOptions[optionIndex];
+      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
+      const type = opt.type;
+      const limit = type === "solid" ? 1 : 2;
+      if (colors.length >= limit) return prev; // do nothing
+      colors.push("#000000");
+      newColorOptions[optionIndex] = { ...opt, colors };
+      return { ...prev, colorOptions: newColorOptions };
     });
   };
 
   const handleRemoveColorFromOption = (optionIndex, colorIndex) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      const newColors = newColorOptions[optionIndex].colors.filter(
-        (_, i) => i !== colorIndex
-      );
-      newColorOptions[optionIndex] = {
-        ...newColorOptions[optionIndex],
-        colors: newColors,
-      };
-      return {
-        ...prev,
-        colorOptions: newColorOptions,
-      };
+      const opt = newColorOptions[optionIndex];
+      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
+      const min = opt.type === "solid" ? 1 : 2;
+      if (colors.length <= min) return prev; // keep required minimum
+      const newColors = colors.filter((_, i) => i !== colorIndex);
+      newColorOptions[optionIndex] = { ...opt, colors: newColors };
+      return { ...prev, colorOptions: newColorOptions };
     });
   };
 
@@ -294,6 +313,7 @@ const AddEyeglassPage = () => {
     }));
     setColorwayModelFiles((prev) => prev.filter((_, i) => i !== index));
   }; // --- Submit handler ---
+
   const handleAddProduct = async (e) => {
     e.preventDefault();
 
@@ -324,6 +344,30 @@ const AddEyeglassPage = () => {
     if (!form.price || parseFloat(form.price) <= 0) {
       setSubmitError("Please enter a valid price.");
       return;
+    }
+
+    // Validate color options per type and require image
+    for (const [idx, opt] of form.colorOptions.entries()) {
+      const type = opt.type || "solid";
+      const count = (opt.colors || []).length;
+      if (type === "solid" && count !== 1) {
+        setSubmitError(
+          `Color Option ${idx + 1}: Solid Color requires exactly 1 color.`
+        );
+        return;
+      }
+      if ((type === "split" || type === "swatch") && count !== 2) {
+        setSubmitError(
+          `Color Option ${idx + 1}: ${
+            type === "split" ? "Split Color" : "Color Swatch"
+          } requires exactly 2 colors.`
+        );
+        return;
+      }
+      if (!opt.imageFile) {
+        setSubmitError(`Color Option ${idx + 1}: Image is required.`);
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -409,8 +453,11 @@ const AddEyeglassPage = () => {
       });
 
       // Add colorway images if any
-      colorwayImageFiles.forEach((file) => {
-        formData.append("colorwayImages", file);
+      // Add per-colorway images
+      form.colorOptions.forEach((opt) => {
+        if (opt.imageFile) {
+          formData.append("colorwayImages", opt.imageFile);
+        }
       });
 
       // 3D models are already uploaded; don't append any 3D files here
@@ -554,39 +601,7 @@ const AddEyeglassPage = () => {
                         </label>
                       </div>
                     </div>
-                    <div>
-                      <label>Colorway Images</label>
-                      <div className="isdc-img-grid" id="colorway-images">
-                        {colorwayImages.map((img, idx) => (
-                          <div key={img.id} className="isdc-img-box">
-                            <img src={img.url} alt={`Upload ${idx}`} />
-                            <a
-                              type="button"
-                              className="isd-img-delete-btn fade"
-                              onClick={() => handleDeleteColorwayImage(img.id)}
-                            >
-                              <div className="isd-img-delete-btn-text">
-                                <p>X</p>
-                                <p>Remove</p>
-                              </div>
-                            </a>
-                          </div>
-                        ))}
-                      </div>
-
-                      <label className="isdc-img-upload-box">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleColorwayImageChange}
-                        />
-                        <span>
-                          +<br />
-                          Add Product
-                        </span>
-                      </label>
-                    </div>
+                    {/* Colorway images are now handled per colorway option below */}
                   </div>
                 </div>
               </div>
@@ -1388,54 +1403,46 @@ const AddEyeglassPage = () => {
                             <option value="swatch">Color Swatch</option>
                           </select>
                         </div>{" "}
-                        <div style={{ marginBottom: "10px" }}>
-                          <label>
-                            Reference Image (from uploaded colorway images):
-                          </label>
-                          <select
-                            value={option.imageUrl}
-                            onChange={(e) =>
-                              handleColorOptionChange(
-                                optionIndex,
-                                "imageUrl",
-                                e.target.value
-                              )
-                            }
-                            style={{
-                              width: "100%",
-                              padding: "8px",
-                              border: "1px solid #ccc",
-                              borderRadius: "4px",
-                              marginTop: "5px",
-                            }}
-                          >
-                            <option value="">
-                              Select a colorway image (optional)
-                            </option>
-                            {colorwayImages.map((img, idx) => (
-                              <option key={img.id} value={img.url}>
-                                Colorway Image {idx + 1}
-                              </option>
-                            ))}
-                          </select>
-                          {option.imageUrl && (
-                            <div style={{ marginTop: "10px" }}>
-                              <img
-                                src={option.imageUrl}
-                                alt="Selected colorway"
-                                style={{
-                                  width: "100px",
-                                  height: "100px",
-                                  objectFit: "cover",
-                                  borderRadius: "4px",
-                                  border: "1px solid #ddd",
-                                }}
-                              />
-                            </div>
-                          )}
-                        </div>
                         <div>
                           <label>Colors:</label>
+                          {/* Preview chip */}
+                          {(() => {
+                            const c = option.colors || ["#000000"];
+                            const c1 = c[0] || "#000000";
+                            const c2 = c[1] || c1;
+                            let bg = c1;
+                            if (option.type === "split") {
+                              // Blend smoothly from first to second color
+                              bg = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
+                            } else if (option.type === "swatch") {
+                              // Glossy swatch: subtle highlight, soft color spot, inner vignette, base fill
+                              bg = [
+                                // highlight glare
+                                `radial-gradient(circle at 28% 22%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%, rgba(255,255,255,0) 40%)`,
+                                // color 2 spot with soft falloff
+                                `radial-gradient(circle at 35% 35%, ${c2} 0%, ${c2} 38%, rgba(0,0,0,0) 62%)`,
+                                // inner shadow/vignette
+                                `radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.14) 78%, rgba(0,0,0,0.22) 100%)`,
+                                // base color fill
+                                `linear-gradient(135deg, ${c1} 0%, ${c1} 100%)`,
+                              ].join(", ");
+                            }
+                            return (
+                              <div
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: "50%",
+                                  border: "2px solid #ddd",
+                                  marginTop: 8,
+                                  boxShadow:
+                                    "inset 0 0 0 2px rgba(255,255,255,0.6)",
+                                  background: bg,
+                                }}
+                                title={`${option.type} preview`}
+                              />
+                            );
+                          })()}
                           <div
                             style={{
                               display: "flex",
@@ -1447,11 +1454,7 @@ const AddEyeglassPage = () => {
                             {option.colors.map((color, colorIndex) => (
                               <div
                                 key={colorIndex}
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "5px",
-                                }}
+                                className="aef-color-container"
                               >
                                 <input
                                   type="color"
@@ -1463,12 +1466,7 @@ const AddEyeglassPage = () => {
                                       e.target.value
                                     )
                                   }
-                                  style={{
-                                    width: "40px",
-                                    height: "40px",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                  }}
+                                  className="aef-color-picker"
                                 />
                                 <button
                                   type="button"
@@ -1478,38 +1476,88 @@ const AddEyeglassPage = () => {
                                       colorIndex
                                     )
                                   }
-                                  style={{
-                                    backgroundColor: "#ff4444",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "50%",
-                                    width: "20px",
-                                    height: "20px",
-                                    cursor: "pointer",
-                                    fontSize: "0.7em",
-                                  }}
+                                  className="aef-color-remove"
+                                  disabled={
+                                    (option.type === "solid" &&
+                                      option.colors.length <= 1) ||
+                                    ((option.type === "split" ||
+                                      option.type === "swatch") &&
+                                      option.colors.length <= 2)
+                                  }
                                 >
                                   ×
                                 </button>
                               </div>
                             ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleAddColorToOption(optionIndex)
+                            {/* Add Color button removed by request */}
+                          </div>
+                          {/* Helper text for constraints */}
+                          <div
+                            style={{
+                              fontSize: "0.8em",
+                              color: "#777",
+                              marginTop: 6,
+                            }}
+                          >
+                            {option.type === "solid" &&
+                              "Solid: exactly 1 color."}
+                            {option.type === "split" &&
+                              "Split: exactly 2 colors (diagonal preview)."}
+                            {option.type === "swatch" &&
+                              "Swatch: exactly 2 colors (radial preview)."}
+                          </div>
+                        </div>
+                        <div style={{ marginBottom: "10px" }}>
+                          <label>
+                            Colorway Image{" "}
+                            <span style={{ color: "red" }}>*</span>
+                          </label>
+                          <div
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) =>
+                              handleColorwayImageDrop(e, optionIndex)
+                            }
+                            style={{
+                              border: "2px dashed #ccc",
+                              padding: "10px",
+                              margin: "10px 0",
+                              borderRadius: "6px",
+                              background: "#fafafa",
+                              textAlign: "center",
+                              cursor: "pointer",
+                            }}
+                            onClick={() =>
+                              document
+                                .getElementById(`cwimg-${optionIndex}`)
+                                ?.click()
+                            }
+                          >
+                            {option.imageFile ? (
+                              <img
+                                src={URL.createObjectURL(option.imageFile)}
+                                alt="Preview"
+                                style={{
+                                  width: "100px",
+                                  height: "100px",
+                                  objectFit: "cover",
+                                  borderRadius: "4px",
+                                  border: "1px solid #ddd",
+                                }}
+                              />
+                            ) : (
+                              <span>
+                                Drag & drop image here, or click to browse
+                              </span>
+                            )}
+                            <input
+                              id={`cwimg-${optionIndex}`}
+                              type="file"
+                              accept="image/*"
+                              style={{ display: "none" }}
+                              onChange={(e) =>
+                                handleColorwayImageChange(e, optionIndex)
                               }
-                              style={{
-                                backgroundColor: "#252525",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "4px",
-                                padding: "8px 12px",
-                                cursor: "pointer",
-                                fontSize: "0.8em",
-                              }}
-                            >
-                              + Add Color
-                            </button>
+                            />
                           </div>
                         </div>
                         <div style={{ marginTop: "10px" }}>

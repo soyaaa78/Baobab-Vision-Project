@@ -1,11 +1,11 @@
 // controllers/authController.js
 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const UserPreferences = require('../models/UserPreferences');
-const sendEmail = require('../services/sendEmail');
-const UserCart = require('../models/UserCart');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const UserPreferences = require("../models/UserPreferences");
+const sendEmail = require("../services/sendEmail");
+const UserCart = require("../models/UserCart");
 
 // REGISTER
 const register = async (req, res) => {
@@ -13,13 +13,21 @@ const register = async (req, res) => {
     const { firstname, lastname, email, username, password } = req.body;
 
     const existingUsername = await User.findOne({ username });
-    if (existingUsername) return res.status(400).json({ message: 'Username already exists' });
+    if (existingUsername)
+      return res.status(400).json({ message: "Username already exists" });
 
     const existingEmail = await User.findOne({ email });
-    if (existingEmail) return res.status(409).json({ message: 'Email already used' });
+    if (existingEmail)
+      return res.status(409).json({ message: "Email already used" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ firstname, lastname, email, username, password: hashedPassword });
+    const newUser = new User({
+      firstname,
+      lastname,
+      email,
+      username,
+      password: hashedPassword,
+    });
 
     const savedUser = await newUser.save();
 
@@ -32,11 +40,12 @@ const register = async (req, res) => {
     res.status(201).json({
       userId: savedUser._id,
       username: savedUser.username,
-      message: 'User registered successfully. Please log in to verify your email.',
+      message:
+        "User registered successfully. Please log in to verify your email.",
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -46,23 +55,25 @@ const login = async (req, res) => {
     const { username, password } = req.body;
 
     const user = await User.findOne({
-      $or: [{ username }, { email: username }]
+      $or: [{ username }, { email: username }],
     });
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Incorrect Password' });
+    if (!isMatch)
+      return res.status(400).json({ message: "Incorrect Password" });
 
     if (!user.isVerified) {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      user.otp = otp;
-      user.otpExpiry = Date.now() + 5 * 60 * 1000;
-      await user.save();
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { otp, otpExpiry: Date.now() + 5 * 60 * 1000 } }
+      );
 
       await sendEmail(
-        user.email, 
-        'Email Verification OTP', 
+        user.email,
+        "Email Verification OTP",
         `
           Hi ${user.firstname},
       
@@ -78,18 +89,21 @@ const login = async (req, res) => {
           The Baobab Vision Team
         `
       );
-      
 
       return res.status(403).json({
-        message: 'Email not verified. OTP sent.',
+        message: "Email not verified. OTP sent.",
         requiresVerification: true,
         email: user.email,
       });
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback', {
-      expiresIn: '1h',
-    });
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || "fallback",
+      {
+        expiresIn: "1h",
+      }
+    );
 
     let userCart = await UserCart.findOne({ userId: user._id });
     if (!userCart) {
@@ -101,7 +115,7 @@ const login = async (req, res) => {
     }
 
     return res.status(200).json({
-      message: 'Login successful',
+      message: "Login successful",
       token,
       userId: user._id,
       cartId: userCart._id,
@@ -110,10 +124,9 @@ const login = async (req, res) => {
       email: user.email,
       username: user.username,
     });
-    
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
@@ -123,25 +136,31 @@ const verifyEmailOtp = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     if (!user.otp || user.otp !== otp || Date.now() > user.otpExpiry) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+      return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    user.isVerified = true;
-    user.otp = null;
-    user.otpExpiry = null;
-    await user.save();
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { isVerified: true, otp: null, otpExpiry: null } }
+    );
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback', {
-      expiresIn: '1h',
-    });
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || "fallback",
+      {
+        expiresIn: "1h",
+      }
+    );
 
-    return res.status(200).json({ message: 'Email verified. Logged in.', token });
+    return res
+      .status(200)
+      .json({ message: "Email verified. Logged in.", token });
   } catch (err) {
-    console.error('Verification error:', err);
-    res.status(500).json({ message: 'Server error during OTP verification' });
+    console.error("Verification error:", err);
+    res.status(500).json({ message: "Server error during OTP verification" });
   }
 };
 
@@ -150,17 +169,19 @@ const resendEmailOtp = async (req, res) => {
   const { email } = req.body;
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    if (user.isVerified) return res.status(400).json({ message: 'Email already verified' });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.isVerified)
+      return res.status(400).json({ message: "Email already verified" });
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.otp = otp;
-    user.otpExpiry = Date.now() + 5 * 60 * 1000;
-    await user.save();
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { otp, otpExpiry: Date.now() + 5 * 60 * 1000 } }
+    );
 
     await sendEmail(
       user.email,
-      'Your Verification OTP',
+      "Your Verification OTP",
       `
         Hi ${user.firstname},
     
@@ -176,11 +197,11 @@ const resendEmailOtp = async (req, res) => {
         The Baobab Vision Team
       `
     );
-    
-    res.status(200).json({ message: 'OTP resent to email' });
+
+    res.status(200).json({ message: "OTP resent to email" });
   } catch (err) {
-    console.error('Resend OTP error:', err);
-    res.status(500).json({ message: 'Failed to resend OTP' });
+    console.error("Resend OTP error:", err);
+    res.status(500).json({ message: "Failed to resend OTP" });
   }
 };
 
@@ -188,16 +209,17 @@ const resendEmailOtp = async (req, res) => {
 const requestOtp = async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: 'Email not found' });
+  if (!user) return res.status(404).json({ message: "Email not found" });
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  user.otp = otp;
-  user.otpExpiry = Date.now() + 5 * 60 * 1000;
-  await user.save();
+  await User.updateOne(
+    { _id: user._id },
+    { $set: { otp, otpExpiry: Date.now() + 5 * 60 * 1000 } }
+  );
 
   await sendEmail(
     user.email,
-    'Password Reset Request - OTP',
+    "Password Reset Request - OTP",
     `
       Hi ${user.firstname},
   
@@ -213,9 +235,8 @@ const requestOtp = async (req, res) => {
       The Baobab Vision Team
     `
   );
-  
-  
-  res.status(200).json({ message: 'OTP sent to email' });
+
+  res.status(200).json({ message: "OTP sent to email" });
 };
 
 // PASSWORD RESET: VERIFY OTP
@@ -224,20 +245,26 @@ const verifyOtp = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     if (!user.otp || user.otp !== otp || Date.now() > user.otpExpiry) {
-      return res.status(400).json({ message: 'Invalid or expired OTP' });
+      return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    const resetToken = jwt.sign({ id: user._id }, process.env.RESET_PASSWORD_SECRET, {
-      expiresIn: '10m',
-    });
+    const resetToken = jwt.sign(
+      { id: user._id },
+      process.env.RESET_PASSWORD_SECRET,
+      {
+        expiresIn: "10m",
+      }
+    );
 
-    return res.status(200).json({ message: 'OTP verified', resetToken });
+    return res.status(200).json({ message: "OTP verified", resetToken });
   } catch (err) {
-    console.error('Error in verify-otp:', err);
-    return res.status(500).json({ message: 'Server error during OTP verification' });
+    console.error("Error in verify-otp:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error during OTP verification" });
   }
 };
 
@@ -245,16 +272,17 @@ const verifyOtp = async (req, res) => {
 const resendOtp = async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: 'User not found' });
+  if (!user) return res.status(404).json({ message: "User not found" });
 
   const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-  user.otp = newOtp;
-  user.otpExpiry = Date.now() + 5 * 60 * 1000;
-  await user.save();
+  await User.updateOne(
+    { _id: user._id },
+    { $set: { otp: newOtp, otpExpiry: Date.now() + 5 * 60 * 1000 } }
+  );
 
   await sendEmail(
     user.email,
-    'Your New OTP - Password Reset',
+    "Your New OTP - Password Reset",
     `
       Hi ${user.firstname},
   
@@ -270,8 +298,8 @@ const resendOtp = async (req, res) => {
       The Baobab Vision Team
     `
   );
-  
-  res.status(200).json({ message: 'OTP resent' });
+
+  res.status(200).json({ message: "OTP resent" });
 };
 
 // PASSWORD RESET: UPDATE PASSWORD
@@ -281,20 +309,19 @@ const resetPassword = async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
     const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedPassword;
-    user.otp = null;
-    user.otpExpiry = null;
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { password: hashedPassword, otp: null, otpExpiry: null } }
+    );
+    console.log("✅ Password updated for:", user.email);
 
-    await user.save();
-    console.log('✅ Password updated for:', user.email);
-
-    res.status(200).json({ message: 'Password reset successful' });
+    res.status(200).json({ message: "Password reset successful" });
   } catch (err) {
-    console.error('Reset password error:', err);
-    res.status(400).json({ message: 'Invalid or expired token' });
+    console.error("Reset password error:", err);
+    res.status(400).json({ message: "Invalid or expired token" });
   }
 };
 

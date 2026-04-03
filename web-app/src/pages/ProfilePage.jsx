@@ -62,9 +62,24 @@ const ProfilePage = () => {
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
+    // Password requirements: 8-32 chars, must include all: uppercase, lowercase, number, special char
+    const pw = passwordForm.newPassword;
+    const lengthValid = pw.length >= 8 && pw.length <= 32;
+    const hasUpper = /[A-Z]/.test(pw);
+    const hasLower = /[a-z]/.test(pw);
+    const hasNumber = /[0-9]/.test(pw);
+    const hasSpecial = /[!@#$%^&*]/.test(pw);
+    if (!lengthValid) {
       showToast({
-        message: "New password must be at least 6 characters long",
+        message: "Password must be 8-32 characters long",
+        type: "error",
+      });
+      return;
+    }
+    if (!hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+      showToast({
+        message:
+          "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*)",
         type: "error",
       });
       return;
@@ -295,7 +310,9 @@ const ProfilePage = () => {
                       </button>
                     </div>
                     <div className="password-hint">
-                      Password must be at least 6 characters long
+                      Password must be 8-32 characters long and include at least
+                      one uppercase letter, one lowercase letter, one number,
+                      and one special character (!@#$%^&*)
                     </div>
                   </div>
 

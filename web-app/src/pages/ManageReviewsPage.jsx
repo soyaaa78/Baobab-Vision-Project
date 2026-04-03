@@ -31,8 +31,16 @@ const ManageReviewsPage = () => {
       const list = res.data.rating || res.data || [];
       setRatings(Array.isArray(list) ? list : [list]);
     } catch (e) {
-      console.error("Failed to load ratings", e);
-      showToast({ type: "error", message: "Failed to fetch reviews" });
+      if (e.response && e.response.status === 404) {
+        setRatings([]);
+        showToast({ type: "info", message: "No reviews available yet." });
+      } else {
+        console.error("Failed to load ratings", e);
+        showToast({
+          type: "error",
+          message: "Unable to fetch reviews. Please try again later.",
+        });
+      }
     }
   };
 
@@ -130,38 +138,45 @@ const ManageReviewsPage = () => {
             ) : (
               filtered.map((r) => (
                 <tr key={r._id}>
-                  <td>
+                  <td data-label="User">
                     {r.userId
                       ? `${r.userId.firstname} ${r.userId.lastname}`
                       : "—"}
                   </td>
-                  <td>
+                  <td data-label="Order">
                     {r.orderId
                       ? r.orderId.orderId || r.orderId._id?.slice(-8)
                       : "—"}
                   </td>
-                  <td>{r.rating} / 5</td>
-                  <td style={{ maxWidth: 300 }}>{r.comment || "—"}</td>
-                  <td style={{ maxWidth: 300 }}>{r.adminResponse || "—"}</td>
-                  <td>
+                  <td data-label="Rating">{r.rating} / 5</td>
+                  <td data-label="Comment" style={{ maxWidth: 300 }}>
+                    {r.comment || "—"}
+                  </td>
+                  <td data-label="Admin Response" style={{ maxWidth: 300 }}>
+                    {r.adminResponse || "—"}
+                  </td>
+                  <td data-label="Responded At">
                     {r.respondedAt
                       ? new Date(r.respondedAt).toLocaleString()
                       : "—"}
                   </td>
-                  <td>
-                    <button
-                      className="filter-btn"
-                      style={{ marginRight: 8 }}
-                      onClick={() => openDetails(r)}
-                    >
-                      View
-                    </button>
-                    <button
-                      className="filter-btn"
-                      onClick={() => openRespond(r)}
-                    >
-                      {r.adminResponse ? "Edit Response" : "Respond"}
-                    </button>
+                  <td data-label="Actions">
+                    <div className="table-actions">
+                      <button
+                        className="filter-btn"
+                        style={{ marginRight: 8 }}
+                        onClick={() => openDetails(r)}
+                      >
+                        View
+                      </button>
+                      <button
+                        className="filter-btn"
+                        style={{ flex: 1 }}
+                        onClick={() => openRespond(r)}
+                      >
+                        {r.adminResponse ? "Edit Response" : "Respond"}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))

@@ -22,7 +22,6 @@ const aliveRoute = require("./routes/aliveRoute");
 const auditLogRoutes = require("./routes/auditLogRoutes");
 const orderCountsRoute = require("./routes/orderCounts");
 
-
 // Models
 const Admin = require("./models/Admin");
 const ProductViewStat = require("./models/ProductViewStat");
@@ -32,12 +31,23 @@ require("./models/Order/ProofOfPayment");
 require("./models/Order/Rating");
 
 const PORT = process.env.PORT || 3001;
+
 const app = express();
 
-app.use(cors());
 app.use(express.json());
 // trust proxy for correct req.ip behind reverse proxies
 app.set("trust proxy", true);
+app.use(
+  cors({
+    origin: [
+      process.env.CLIENT_URL,
+      "https://next-webar-tryon.vercel.app",
+      "http://localhost:5173",
+      "http://localhost:3000",
+    ],
+    credentials: true, // allow cookies/auth headers if needed
+  })
+);
 
 // Static folders
 app.use("/uploads", express.static("uploads"));

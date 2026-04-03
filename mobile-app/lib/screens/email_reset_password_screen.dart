@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -22,10 +23,43 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
   final TextEditingController otpController = TextEditingController();
   bool isLoading = false;
 
+  /// Countdown
+  int secondsRemaining = 300; // 5 minutes = 300 seconds
+  Timer? timer;
+
+  @override
+  void initState() {
+    super.initState();
+    startTimer();
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    otpController.dispose();
+    super.dispose();
+  }
+
+  void startTimer() {
+    timer?.cancel();
+    setState(() {
+      secondsRemaining = 300;
+    });
+    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (secondsRemaining > 0) {
+        setState(() {
+          secondsRemaining--;
+        });
+      } else {
+        t.cancel();
+      }
+    });
+  }
+
   Future<void> verifyOtp() async {
     setState(() => isLoading = true);
     final url = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/auth/verify-otp');
+        'https://baobab-vision-project-0234.onrender.com/api/auth/verify-otp');
 
     try {
       final response = await http.post(
@@ -70,7 +104,7 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
 
   Future<void> resendOtp() async {
     final url = Uri.parse(
-        'https://baobab-vision-project.onrender.com/api/auth/resend-otp');
+        'https://baobab-vision-project-0234.onrender.com/api/auth/resend-otp');
 
     try {
       final response = await http.post(
@@ -82,10 +116,19 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
       print('RESEND OTP RESPONSE: ${response.body}');
       customDialog(context,
           title: 'OTP Sent', content: 'A new OTP has been sent to your email.');
+
+      /// Restart timer when resend
+      startTimer();
     } catch (e) {
       print('RESEND OTP ERROR: $e');
       customDialog(context, title: 'Error', content: 'Failed to resend OTP');
     }
+  }
+
+  String formatTime(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return "$minutes:$secs";
   }
 
   @override
@@ -202,7 +245,7 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
                 ),
               ),
             ),
-            SizedBox(height: 30.h),
+            SizedBox(height: 25.h),
 
             /// Verify Button
             CustomInkwellButton(
@@ -212,13 +255,15 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
               buttonName: isLoading ? 'Verifying...' : 'Verify OTP',
               fontSize: 16.sp,
             ),
-            SizedBox(height: 20.h),
+            SizedBox(height: 13.h),
 
             /// Resend OTP Button
             TextButton(
-              onPressed: resendOtp,
+              onPressed: secondsRemaining == 0 ? resendOtp : null,
               child: Text(
-                'Didn’t get the code? Resend OTP',
+                secondsRemaining == 0
+                    ? 'Didn’t get the code? Resend OTP'
+                    : 'Resend available in ${formatTime(secondsRemaining)}',
                 style: TextStyle(
                   fontSize: 14.sp,
                   color: BLACK_COLOR,

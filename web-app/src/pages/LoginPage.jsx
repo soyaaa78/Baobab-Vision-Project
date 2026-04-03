@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import baobablogo from "../assets/bvfull.png";
@@ -32,10 +32,41 @@ function LoginPage() {
   const navigate = useNavigate();
   const { login, isAuthenticated, loading } = useAuth();
   const [passVisibility, setPassVisibility] = useState(true);
+  const [slides, setSlides] = useState([]);
+  const [activeSlide, setActiveSlide] = useState(0);
+  const slideIntervalRef = useRef(null);
 
   const togglePasswordVisibility = () => {
     setPassVisibility((prev) => !prev);
   };
+
+  // Fetch slideshow images for background left panel
+  useEffect(() => {
+    const fetchSlides = async () => {
+      try {
+        const res = await axios.get(`${SERVER_URL}/api/slideshow/all-images`);
+        if (Array.isArray(res.data) && res.data.length) {
+          const ordered = res.data
+            .sort((a, b) => (a.position || 0) - (b.position || 0))
+            .map((img) => img.imagePath);
+          setSlides(ordered);
+        }
+      } catch (e) {
+        // silent fail; keep default static background color
+      }
+    };
+    fetchSlides();
+  }, [SERVER_URL]);
+
+  // Cycle slides every 7 seconds
+  useEffect(() => {
+    if (!slides.length) return;
+    slideIntervalRef.current && clearInterval(slideIntervalRef.current);
+    slideIntervalRef.current = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % slides.length);
+    }, 7000);
+    return () => clearInterval(slideIntervalRef.current);
+  }, [slides]);
 
   // Redirect to dashboard if already authenticated
   useEffect(() => {
@@ -116,102 +147,150 @@ function LoginPage() {
     <div className="login-container">
       {/* Left Side - Gradient Background */}
       <div className="login-left">
-        <div className="gradient-overlay">
-          <div className="logo-section">
-            <img
-              src={baobablogo}
-              alt="Baobab Vision Logo"
-              className="logo-image"
-            />
-            <p className="logo-description">
-              Heya, bud. Ready to take on the world?
-            </p>
+        {slides.length > 0 && (
+          <div className="login-left-slideshow" aria-hidden="true">
+            {slides.map((url, idx) => (
+              <div
+                key={idx}
+                className={`login-bg-slide ${
+                  idx === activeSlide ? "active" : ""
+                }`}
+                style={{ backgroundImage: `url(${url})` }}
+              />
+            ))}
+            <div className="login-left-overlay" />
+          </div>
+        )}
+        {/* Decorative diagonal stripes with pure CSS infinite marquees */}
+        <div className="hero-stripes">
+          <div className="stripe stripe-main single">
+            <div className="stripe-marquee" aria-hidden="true">
+              <div className="stripe-marquee-track">
+                <span className="stripe-marquee-text">BAOBAB VISION</span>
+                <span className="stripe-marquee-text">BAOBAB VISION</span>
+                <span className="stripe-marquee-text">BAOBAB VISION</span>
+                <span className="stripe-marquee-text">BAOBAB VISION</span>
+              </div>
+            </div>
+          </div>
+          <div className="stripe stripe-bottom single">
+            <div className="stripe-marquee" aria-hidden="true">
+              <div className="stripe-marquee-track reverse">
+                <span className="stripe-marquee-text">
+                  READY TO TAKE ON THE WORLD
+                </span>
+                <span className="stripe-marquee-text">
+                  READY TO TAKE ON THE WORLD
+                </span>
+                <span className="stripe-marquee-text">
+                  READY TO TAKE ON THE WORLD
+                </span>
+                <span className="stripe-marquee-text">
+                  READY TO TAKE ON THE WORLD
+                </span>
+              </div>
+            </div>
           </div>
         </div>
+        <div className="gradient-overlay" />
       </div>
 
       {/* Right Side - Sign In Form */}
       <div className="login-right">
-        <div className="form-container">
-          <h2 className="form-title">SIGN IN</h2>
+        <div className="auth-card-group">
+          <div className="brand-floating" aria-hidden="false">
+            <img
+              src={baobablogo}
+              alt="Baobab Vision"
+              className="brand-floating-logo"
+            />
+            <p className="brand-floating-tagline">
+              Heya, bud. Ready to take on the world?
+            </p>
+          </div>
+          <div className="form-container">
+            <h2 className="form-title">SIGN IN</h2>
 
-          {step === "login" ? (
-            <form onSubmit={handleLogin} className="login-form">
-              <div className="input-group">
-                <FontAwesomeIcon icon={faUser} className="input-icon" />
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="form-input"
-                />
-              </div>
+            {step === "login" ? (
+              <form onSubmit={handleLogin} className="login-form">
+                <div className="input-group">
+                  <FontAwesomeIcon icon={faUser} className="input-icon" />
+                  <input
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    required
+                    className="form-input"
+                  />
+                </div>
 
-              <div className="input-group">
-                <FontAwesomeIcon icon={faLock} className="input-icon" />
-                <input
-                  type={passVisibility ? "password" : "text"}
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="form-input"
-                />
-                <div
-                  className="password-toggle"
-                  onClick={togglePasswordVisibility}
+                <div className="input-group">
+                  <FontAwesomeIcon icon={faLock} className="input-icon" />
+                  <input
+                    type={passVisibility ? "password" : "text"}
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="form-input"
+                  />
+                  <div
+                    className="password-toggle"
+                    onClick={togglePasswordVisibility}
+                  >
+                    <FontAwesomeIcon
+                      icon={passVisibility ? faEye : faEyeSlash}
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="login-btn">
+                  LOGIN
+                </button>
+
+                {(error || success) && (
+                  <div className="form-message-box">
+                    {error && <p className="form-error">{error}</p>}
+                    {success && <p className="form-success">{success}</p>}
+                  </div>
+                )}
+              </form>
+            ) : (
+              <form onSubmit={handleVerify} className="login-form">
+                <div className="input-group">
+                  <input
+                    type="text"
+                    placeholder="Enter 6-digit OTP"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                    required
+                    className="form-input"
+                  />
+                </div>
+
+                <button type="submit" className="login-btn">
+                  VERIFY
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  className="resend-btn"
                 >
-                  <FontAwesomeIcon icon={passVisibility ? faEye : faEyeSlash} />
-                </div>
-              </div>
+                  Resend Verification Code
+                </button>
 
-              <button type="submit" className="login-btn">
-                LOGIN
-              </button>
-
-              {(error || success) && (
-                <div className="form-message-box">
-                  {error && <p className="form-error">{error}</p>}
-                  {success && <p className="form-success">{success}</p>}
-                </div>
-              )}
-            </form>
-          ) : (
-            <form onSubmit={handleVerify} className="login-form">
-              <div className="input-group">
-                <input
-                  type="text"
-                  placeholder="Enter 6-digit OTP"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  maxLength={6}
-                  required
-                  className="form-input"
-                />
-              </div>
-
-              <button type="submit" className="login-btn">
-                VERIFY
-              </button>
-
-              <button
-                type="button"
-                onClick={handleResendOtp}
-                className="resend-btn"
-              >
-                Resend Verification Code
-              </button>
-
-              {(error || success) && (
-                <div className="form-message-box">
-                  {error && <p className="form-error">{error}</p>}
-                  {success && <p className="form-success">{success}</p>}
-                </div>
-              )}
-            </form>
-          )}
+                {(error || success) && (
+                  <div className="form-message-box">
+                    {error && <p className="form-error">{error}</p>}
+                    {success && <p className="form-success">{success}</p>}
+                  </div>
+                )}
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>

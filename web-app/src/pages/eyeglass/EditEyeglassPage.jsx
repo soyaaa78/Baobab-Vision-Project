@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import "../../styles/eyeglass/AddEyeglassPage.css";
+import "../../styles/EditEyeglass.css";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -76,6 +76,24 @@ const EditEyeglassPage = () => {
         const data = response.data;
         setEyeglass(data);
         setOriginalEyeglass(JSON.parse(JSON.stringify(data))); // Deep copy for comparison
+        // Process colorOptions to include existing images as imageFile references
+        const processedColorOptions = (data.colorOptions || []).map(
+          (option) => ({
+            ...option,
+            imageFile: option.imageUrl
+              ? {
+                  // Create a mock file object that represents the existing image
+                  name: `existing_${option.name || "colorway"}.jpg`,
+                  type: "image/jpeg",
+                  size: 0,
+                  lastModified: Date.now(),
+                  // Store the URL for preview purposes
+                  preview: option.imageUrl,
+                }
+              : null,
+          })
+        );
+
         setForm({
           name: data.name || "",
           description: data.description || "",
@@ -88,12 +106,12 @@ const EditEyeglassPage = () => {
             data.lensOptions && data.lensOptions.length > 0
               ? ensureBuiltInLensOption(data.lensOptions)
               : [{ label: "Built-in UV400 Lenses", price: 0, type: "builtin" }],
-          colorOptions: data.colorOptions || [],
+          colorOptions: processedColorOptions,
           stock: data.stock || 0,
           recommendedFor: !!data.recommendedFor,
         });
         setProductImages(
-          (data.imageUrls || []).map((url, idx) => ({
+          (data.imageUrls || []).map((url) => ({
             id: url,
             url,
           }))
@@ -122,10 +140,10 @@ const EditEyeglassPage = () => {
       }
     };
 
-    if (id) {
+    if (id && TOKEN) {
       fetchEyeglass();
     }
-  }, [id]);
+  }, [id, TOKEN, SERVER_URL]);
 
   // Check if any changes were made
   const hasChanges = () => {
@@ -219,13 +237,27 @@ const EditEyeglassPage = () => {
     setProductImages((prev) => [...prev, ...newPreviews]);
   };
 
-  const handleColorwayImageChange = (e) => {
-    const files = Array.from(e.target.files);
-    const newPreviews = files.map((file) => ({
-      id: URL.createObjectURL(file),
-      url: URL.createObjectURL(file),
-    }));
-    setColorwayImages((prev) => [...prev, ...newPreviews]);
+  // Per-colorway image drag-and-drop
+  const handleColorwayImageDrop = (e, optionIndex) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setForm((prev) => {
+      const updated = [...prev.colorOptions];
+      updated[optionIndex].imageFile = file;
+      return { ...prev, colorOptions: updated };
+    });
+  };
+
+  // Per-colorway image input change
+  const handleColorwayImageChange = (e, optionIndex) => {
+    const file = e.target.files[0];
+    if (!file || !file.type.startsWith("image/")) return;
+    setForm((prev) => {
+      const updated = [...prev.colorOptions];
+      updated[optionIndex].imageFile = file;
+      return { ...prev, colorOptions: updated };
+    });
   };
 
   const handleDeleteProductImage = (idToRemove) => {
@@ -352,10 +384,29 @@ const EditEyeglassPage = () => {
   const handleColorOptionChange = (optionIndex, field, value) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      newColorOptions[optionIndex] = {
+      const updated = {
         ...newColorOptions[optionIndex],
         [field]: value,
       };
+
+      // Enforce color constraints when type changes
+      if (field === "type") {
+        const colors = Array.isArray(updated.colors)
+          ? [...updated.colors]
+          : ["#000000"];
+        if (value === "solid") {
+          updated.colors = colors.length ? [colors[0]] : ["#000000"];
+        } else if (value === "split" || value === "swatch") {
+          if (colors.length < 2) {
+            const second = colors[0] === "#000000" ? "#ff8800" : "#000000";
+            updated.colors = [colors[0] || "#000000", colors[1] || second];
+          } else if (colors.length > 2) {
+            updated.colors = [colors[0], colors[1]];
+          }
+        }
+      }
+
+      newColorOptions[optionIndex] = updated;
       return {
         ...prev,
         colorOptions: newColorOptions,
@@ -394,30 +445,26 @@ const EditEyeglassPage = () => {
   const handleAddColorToOption = (optionIndex) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      newColorOptions[optionIndex] = {
-        ...newColorOptions[optionIndex],
-        colors: [...newColorOptions[optionIndex].colors, "#000000"],
-      };
-      return {
-        ...prev,
-        colorOptions: newColorOptions,
-      };
+      const opt = newColorOptions[optionIndex];
+      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
+      const type = opt.type;
+      const limit = type === "solid" ? 1 : 2;
+      if (colors.length >= limit) return prev; // do nothing
+      colors.push("#000000");
+      newColorOptions[optionIndex] = { ...opt, colors };
+      return { ...prev, colorOptions: newColorOptions };
     });
   };
   const handleRemoveColorFromOption = (optionIndex, colorIndex) => {
     setForm((prev) => {
       const newColorOptions = [...prev.colorOptions];
-      const newColors = newColorOptions[optionIndex].colors.filter(
-        (_, i) => i !== colorIndex
-      );
-      newColorOptions[optionIndex] = {
-        ...newColorOptions[optionIndex],
-        colors: newColors,
-      };
-      return {
-        ...prev,
-        colorOptions: newColorOptions,
-      };
+      const opt = newColorOptions[optionIndex];
+      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
+      const min = opt.type === "solid" ? 1 : 2;
+      if (colors.length <= min) return prev; // keep required minimum
+      const newColors = colors.filter((_, i) => i !== colorIndex);
+      newColorOptions[optionIndex] = { ...opt, colors: newColors };
+      return { ...prev, colorOptions: newColorOptions };
     });
   };
   // 3D model helpers for drag-and-drop per colorway
@@ -477,127 +524,116 @@ const EditEyeglassPage = () => {
 
   // Update handler
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleUpdate = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    try {
-      const updatedEyeglass = {};
-      if (form.name !== eyeglass.name) updatedEyeglass.name = form.name;
-      if (form.description !== eyeglass.description)
-        updatedEyeglass.description = form.description;
-      if (form.price !== eyeglass.price.toString()) {
-        updatedEyeglass.price = parseFloat(form.price);
-      }
 
-      // Only include specs and lensOptions if they have changed
-      if (JSON.stringify(form.specs) !== JSON.stringify(eyeglass.specs)) {
-        updatedEyeglass.specs = form.specs || [];
-      }
-      if (
-        JSON.stringify(form.lensOptions) !==
-        JSON.stringify(eyeglass.lensOptions)
-      ) {
-        updatedEyeglass.lensOptions = form.lensOptions || [];
-      }
-      if (form.stock !== eyeglass.stock) updatedEyeglass.stock = form.stock;
-      if (form.recommendedFor !== eyeglass.recommendedFor)
-        updatedEyeglass.recommendedFor = form.recommendedFor;
-
-      const newImageUrls = productImages.map((img) => img.url);
-      if (JSON.stringify(newImageUrls) !== JSON.stringify(eyeglass.imageUrls)) {
-        updatedEyeglass.imageUrls = newImageUrls;
-      }
-      const newColorOptions = colorwayImages.map((img) => ({
-        name: img.name || "",
-        imageUrl: img.url,
-      }));
-      const oldColorOptions = (eyeglass.colorOptions || []).map((opt) => ({
-        name: opt.name || "",
-        imageUrl: opt.imageUrl,
-      }));
-      if (JSON.stringify(newColorOptions) !== JSON.stringify(oldColorOptions)) {
-        updatedEyeglass.colorOptions = newColorOptions;
-      }
-      if (
-        JSON.stringify(form.colorOptions) !==
-        JSON.stringify(eyeglass.colorOptions)
-      ) {
-        updatedEyeglass.colorOptions = form.colorOptions || [];
-      }
-      // Handle colorOptions with 3D models - ensure removals are tracked
-      const updatedColorOptions = form.colorOptions.map((opt, index) => {
-        const modelFile = colorwayModelFiles[index];
-        const result = { ...opt };
-
-        if (modelFile === null) {
-          // Model was explicitly removed
-          result.model3dUrl = null;
-        } else if (modelFile && modelFile.originalUrl) {
-          // Existing model kept
-          result.model3dUrl = modelFile.originalUrl;
-        } else if (modelFile && modelFile.rawFile) {
-          // New model will be uploaded later
-          // Keep existing model3dUrl for now, will be updated after upload
-        }
-
-        return result;
-      });
-
-      // Collect any new model files to append to the main request
-      const pendingFiles = (colorwayModelFiles || [])
-        .map((entry, idx) => ({ f: entry?.rawFile, idx }))
-        .filter(({ f }) => f instanceof File);
-
-      // Always include colorOptions in update to handle model removals. New models will be handled server-side.
-      updatedEyeglass.colorOptions = updatedColorOptions;
-
-      // Always include colorOptions in update to handle model removals (new models handled server-side)
-      updatedEyeglass.colorOptions = updatedColorOptions;
-
-      // Build FormData for fields (no 3D files attached here)
-      const formData = new FormData();
-      Object.entries(updatedEyeglass).forEach(([k, v]) => {
-        if (k === "lensOptions" || k === "specs" || k === "colorOptions") {
-          formData.append(k, JSON.stringify(v));
-        } else if (v !== undefined) {
-          formData.append(k, v);
-        }
-      });
-
-      // Append any new per-colorway 3D model files and their target indices
-      if (pendingFiles.length) {
-        const order = [];
-        pendingFiles.forEach(({ f, idx }) => {
-          formData.append("colorwayModels3d", f);
-          order.push(idx);
+    // Validate color options
+    for (const [idx, opt] of form.colorOptions.entries()) {
+      const type = opt.type || "solid";
+      const count = (opt.colors || []).length;
+      if (type === "solid" && count !== 1) {
+        setModal({
+          open: true,
+          title: "Invalid Color Option",
+          message: `Color Option ${
+            idx + 1
+          }: Solid Color requires exactly 1 color.`,
+          variant: "error",
         });
-        formData.append("colorwayModelTargets", JSON.stringify(order));
+        setIsSubmitting(false);
+        return;
       }
+      if ((type === "split" || type === "swatch") && count !== 2) {
+        setModal({
+          open: true,
+          title: "Invalid Color Option",
+          message: `Color Option ${idx + 1}: ${
+            type === "split" ? "Split Color" : "Color Swatch"
+          } requires exactly 2 colors.`,
+          variant: "error",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      if (
+        !opt.imageFile ||
+        (!opt.imageFile.preview && !(opt.imageFile instanceof File))
+      ) {
+        setModal({
+          open: true,
+          title: "Missing Colorway Image",
+          message: `Color Option ${idx + 1}: Image is required.`,
+          variant: "error",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
-      await axios.put(
-        `${SERVER_URL}/api/products?id=${eyeglass._id}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${TOKEN}`,
-          },
-        }
-      );
-      setModal({
-        open: true,
-        title: "Product Updated",
-        message: `"${form.name}" has been updated successfully.`,
-        variant: "success",
-        onPrimary: () => window.location.reload(),
+    // Build FormData for all fields and files
+    const formData = new FormData();
+    Object.entries(form).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        formData.append(key, JSON.stringify(value));
+      } else {
+        formData.append(key, value);
+      }
+    });
+
+    // Add product images
+    productImages.forEach((img) => {
+      if (img.file) formData.append("productImages", img.file);
+    });
+
+    // Add colorway images and models (only new files)
+    form.colorOptions.forEach((opt, idx) => {
+      // Only append if it's a new file (not an existing image with preview property)
+      if (opt.imageFile && opt.imageFile instanceof File) {
+        formData.append(
+          "colorwayImages",
+          opt.imageFile,
+          `colorway_${idx}_${opt.imageFile.name}`
+        );
+      }
+      if (colorwayModelFiles[idx] && colorwayModelFiles[idx].rawFile) {
+        formData.append(
+          "colorwayModels3d",
+          colorwayModelFiles[idx].rawFile,
+          `colorway_${idx}_${colorwayModelFiles[idx].rawFile.name}`
+        );
+      }
+    });
+
+    // Add product ID for update
+    formData.append("id", id);
+
+    try {
+      await axios.put(`${SERVER_URL}/api/products?id=${id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${TOKEN}`,
+          "Content-Type": "multipart/form-data",
+        },
       });
-    } catch (error) {
-      console.error(error);
-      const msg = error.response?.data?.message || "Failed to update eyeglass.";
       setModal({
         open: true,
-        title: "Update Failed",
-        message: msg,
+        title: "Success",
+        message: "Product updated successfully.",
+        variant: "success",
+        onPrimary: handleBack,
+      });
+    } catch (err) {
+      const errorMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Failed to update product.";
+      setModal({
+        open: true,
+        title: "Error",
+        message: errorMsg,
         variant: "error",
+        onPrimary: null,
       });
     } finally {
       setIsSubmitting(false);
@@ -642,10 +678,10 @@ const EditEyeglassPage = () => {
 
   return (
     <>
-      <div className="page" id="add-eyeglass">
-        <div className="add-eyeglass-content">
-          <div className="ae-header">
-            <div className="ae-header-text">
+      <div className="page" id="edit-eyeglass">
+        <div className="edit-eyeglass-content">
+          <div className="ee-header">
+            <div className="ee-header-text">
               <h1>Edit Product</h1>
               <p style={{ color: "#666666" }}>
                 Got the wrong color? A typo in the description, perhaps?
@@ -654,15 +690,15 @@ const EditEyeglassPage = () => {
             <Button className="" onClick={handleBack} children={<p>Back</p>} />
           </div>
 
-          <div className="add-eyeglass-form-container">
-            <form className="add-eyeglass-form" onSubmit={handleUpdate}>
+          <div className="edit-eyeglass-form-container">
+            <form className="edit-eyeglass-form" onSubmit={handleUpdate}>
               {/* Basic Info Section */}
-              <div className="aef-section aef-basic-sect">
+              <div className="eef-section eef-basic-sect">
                 <div className="section-details bsd">
                   <div className="bsd-header">
                     <h2>Basic Info</h2>
                   </div>
-                  <div className="aef-sect-fields bsd-upper">
+                  <div className="eef-sect-fields bsd-upper">
                     <div className="bsdf-input bsdfu-name">
                       <label htmlFor="title">Product Name</label>
                       <input
@@ -692,7 +728,7 @@ const EditEyeglassPage = () => {
                     <h2>Product Price</h2>
                   </div>
 
-                  <div className="aef-sect-fields bsd-lower">
+                  <div className="eef-sect-fields bsd-lower">
                     <div className="bsdf-input bsdfl-price">
                       <label htmlFor="price">Price</label>
                       <input
@@ -711,12 +747,12 @@ const EditEyeglassPage = () => {
               </div>
 
               {/* Product Media Section */}
-              <div className="aef-section aef-image-sect">
+              <div className="eef-section eef-image-sect">
                 <div className="section-details isd">
                   <div className="isd-header">
                     <h2>Product Media</h2>
                   </div>
-                  <div className="aef-sect-fields isd-content">
+                  <div className="eef-sect-fields isd-content">
                     <div>
                       <label>Product Images</label>
                       <div className="isdc-img-grid" id="product-images">
@@ -750,56 +786,17 @@ const EditEyeglassPage = () => {
                         </label>
                       </div>
                     </div>
-
-                    <div>
-                      <label>Colorway Images</label>
-                      <div className="isdc-img-grid" id="colorway-images">
-                        {colorwayImages.map((img, idx) => (
-                          <div key={img.id} className="isdc-img-box">
-                            <img
-                              src={img.url}
-                              alt={img.name || `Colorway ${idx}`}
-                            />
-                            <a
-                              type="button"
-                              className="isd-img-delete-btn fade"
-                              onClick={() => handleDeleteColorwayImage(img.id)}
-                            >
-                              <div className="isd-img-delete-btn-text">
-                                <p>X</p>
-                                <p>Remove</p>
-                              </div>
-                            </a>
-                          </div>
-                        ))}
-                      </div>
-
-                      <label className="isdc-img-upload-box">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleColorwayImageChange}
-                        />
-                        <span>
-                          +<br />
-                          Add Product
-                        </span>
-                      </label>
-                    </div>
-
-                    {/* Removed legacy top-level Virtual Try-On 3D Model input */}
                   </div>
                 </div>
               </div>
 
               {/* Categories and Specifications Section */}
-              <div className="aef-section aef-category-sect">
+              <div className="eef-section eef-category-sect">
                 <div className="section-details csd">
                   <div className="csd-header">
                     <h2>Categories and Specifications</h2>
                   </div>
-                  <div className="aef-sect-fields csd-content">
+                  <div className="eef-sect-fields csd-content">
                     {/* Face Shape Classification */}
                     <div className="csdc-header">
                       <p style={{ fontFamily: "Rubik" }}>
@@ -971,7 +968,7 @@ const EditEyeglassPage = () => {
                     </div>
 
                     {/* Lens Options Inclusions */}
-                    <div className="aef-sect-fields csd-lower">
+                    <div className="eef-sect-fields csd-lower">
                       <div>
                         <p style={{ fontFamily: "Rubik" }}>
                           Lens Options Inclusions
@@ -989,7 +986,7 @@ const EditEyeglassPage = () => {
                       </div>
                       <div className="csdl-lens-container">
                         {/* Built-in UV400 Lenses (Always included) */}
-                        <div className="aef-sect-fields csd-lens" id="builtin">
+                        <div className="eef-sect-fields csd-lens" id="builtin">
                           <div className="bsdf-input csdfl-lens-options">
                             <label style={{ marginBottom: "10px" }}>
                               <b>
@@ -1009,7 +1006,7 @@ const EditEyeglassPage = () => {
                           </div>
                         </div>
 
-                        <div className="aef-sect-fields csd-lens" id="tinted">
+                        <div className="eef-sect-fields csd-lens" id="tinted">
                           <div
                             className="bsdf-input csdfl-lens-options"
                             // ref={tintedRef} // No longer needed
@@ -1061,7 +1058,7 @@ const EditEyeglassPage = () => {
                           </div>
                         </div>
                         <div
-                          className="aef-sect-fields csd-lens"
+                          className="eef-sect-fields csd-lens"
                           id="sun-adaptive"
                         >
                           <div
@@ -1121,7 +1118,7 @@ const EditEyeglassPage = () => {
               </div>
 
               {/* Color Options Section */}
-              <div className="aef-section aef-color-sect">
+              <div className="eef-section eef-color-sect">
                 <div className="section-details">
                   <div className="section-header">
                     <h2>Color Options</h2>
@@ -1135,7 +1132,7 @@ const EditEyeglassPage = () => {
                       Add color options for this product
                     </p>
                   </div>
-                  <div className="aef-sect-fields">
+                  <div className="eef-sect-fields">
                     {form.colorOptions.map((option, optionIndex) => (
                       <div
                         key={optionIndex}
@@ -1221,6 +1218,44 @@ const EditEyeglassPage = () => {
                         </div>
                         <div style={{ marginBottom: "10px" }}>
                           <label>Colors:</label>
+                          {/* Preview chip (blended) */}
+                          {(() => {
+                            const c = option.colors || ["#000000"];
+                            const c1 = c[0] || "#000000";
+                            const c2 = c[1] || c1;
+                            let bg = c1;
+                            if (option.type === "split") {
+                              // Smooth diagonal blend
+                              bg = `linear-gradient(135deg, ${c1} 0%, ${c2} 100%)`;
+                            } else if (option.type === "swatch") {
+                              // Glossy swatch: subtle highlight, soft color spot, inner vignette, base fill
+                              bg = [
+                                // highlight glare
+                                `radial-gradient(circle at 28% 22%, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%, rgba(255,255,255,0) 40%)`,
+                                // color 2 spot with soft falloff
+                                `radial-gradient(circle at 35% 35%, ${c2} 0%, ${c2} 38%, rgba(0,0,0,0) 62%)`,
+                                // inner shadow/vignette
+                                `radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 62%, rgba(0,0,0,0.14) 78%, rgba(0,0,0,0.22) 100%)`,
+                                // base color fill
+                                `linear-gradient(135deg, ${c1} 0%, ${c1} 100%)`,
+                              ].join(", ");
+                            }
+                            return (
+                              <div
+                                style={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: "50%",
+                                  border: "2px solid #ddd",
+                                  marginTop: 8,
+                                  boxShadow:
+                                    "inset 0 0 0 2px rgba(255,255,255,0.6)",
+                                  background: bg,
+                                }}
+                                title={`${option.type} preview`}
+                              />
+                            );
+                          })()}
                           <div
                             style={{
                               display: "flex",
@@ -1232,11 +1267,7 @@ const EditEyeglassPage = () => {
                             {option.colors.map((color, colorIndex) => (
                               <div
                                 key={colorIndex}
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "5px",
-                                }}
+                                className="eef-color-container"
                               >
                                 <input
                                   type="color"
@@ -1248,12 +1279,7 @@ const EditEyeglassPage = () => {
                                       e.target.value
                                     )
                                   }
-                                  style={{
-                                    width: "40px",
-                                    height: "40px",
-                                    border: "none",
-                                    borderRadius: "4px",
-                                  }}
+                                  className="eef-color-picker"
                                 />
                                 <button
                                   type="button"
@@ -1263,64 +1289,95 @@ const EditEyeglassPage = () => {
                                       colorIndex
                                     )
                                   }
-                                  style={{
-                                    backgroundColor: "#ff4444",
-                                    color: "white",
-                                    border: "none",
-                                    borderRadius: "50%",
-                                    width: "20px",
-                                    height: "20px",
-                                    cursor: "pointer",
-                                    fontSize: "0.7em",
-                                  }}
+                                  className="eef-color-remove"
+                                  disabled={
+                                    (option.type === "solid" &&
+                                      option.colors.length <= 1) ||
+                                    ((option.type === "split" ||
+                                      option.type === "swatch") &&
+                                      option.colors.length <= 2)
+                                  }
                                 >
                                   ×
                                 </button>
                               </div>
                             ))}
-                            <button
-                              type="button"
-                              onClick={() =>
-                                handleAddColorToOption(optionIndex)
-                              }
-                              style={{
-                                backgroundColor: "#4CAF50",
-                                color: "white",
-                                border: "none",
-                                borderRadius: "4px",
-                                padding: "8px 12px",
-                                cursor: "pointer",
-                                fontSize: "0.8em",
-                              }}
-                            >
-                              + Add Color
-                            </button>
+                            {/* Add Color button removed by request */}
+                          </div>
+                          {/* Helper text for constraints */}
+                          <div
+                            style={{
+                              fontSize: "0.8em",
+                              color: "#777",
+                              marginTop: 6,
+                            }}
+                          >
+                            {option.type === "solid" &&
+                              "Solid: exactly 1 color."}
+                            {option.type === "split" &&
+                              "Split: exactly 2 colors (diagonal preview)."}
+                            {option.type === "swatch" &&
+                              "Swatch: exactly 2 colors (radial preview)."}
                           </div>
                         </div>
+                        {/* Per-colorway image upload and preview */}
                         <div style={{ marginBottom: "10px" }}>
-                          <label>Image URL:</label>
-                          <input
-                            type="text"
-                            value={option.imageUrl}
-                            onChange={(e) =>
-                              handleColorOptionChange(
-                                optionIndex,
-                                "imageUrl",
-                                e.target.value
-                              )
+                          <label>
+                            Colorway Image{" "}
+                            <span style={{ color: "red" }}>*</span>
+                          </label>
+                          <div
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) =>
+                              handleColorwayImageDrop(e, optionIndex)
                             }
-                            placeholder="Paste image URL or upload below"
                             style={{
-                              width: "100%",
-                              padding: "8px",
-                              border: "1px solid #ccc",
-                              borderRadius: "4px",
-                              marginTop: "5px",
+                              border: "2px dashed #ccc",
+                              padding: "10px",
+                              margin: "10px 0",
+                              borderRadius: "6px",
+                              background: "#fafafa",
+                              textAlign: "center",
+                              cursor: "pointer",
                             }}
-                          />
+                            onClick={() =>
+                              document
+                                .getElementById(`cwimg-${optionIndex}`)
+                                ?.click()
+                            }
+                          >
+                            {option.imageFile ? (
+                              <img
+                                src={
+                                  option.imageFile.preview ||
+                                  URL.createObjectURL(option.imageFile)
+                                }
+                                alt="Preview"
+                                style={{
+                                  width: "100px",
+                                  height: "100px",
+                                  objectFit: "cover",
+                                  borderRadius: "4px",
+                                  border: "1px solid #ddd",
+                                }}
+                              />
+                            ) : (
+                              <span>
+                                Drag & drop image here, or click to browse
+                              </span>
+                            )}
+                            <input
+                              id={`cwimg-${optionIndex}`}
+                              type="file"
+                              accept="image/*"
+                              style={{ display: "none" }}
+                              onChange={(e) =>
+                                handleColorwayImageChange(e, optionIndex)
+                              }
+                            />
+                          </div>
                         </div>
-                        {/* Per-colorway Virtual Try-On 3D Model */}
-                        <div style={{ marginBottom: "10px" }}>
+                        <div style={{ marginTop: "10px" }}>
                           <label>Virtual Try-On 3D Model (optional)</label>
                           <div
                             onDragOver={(e) => e.preventDefault()}
@@ -1338,7 +1395,7 @@ const EditEyeglassPage = () => {
                             }}
                             onClick={() =>
                               document
-                                .getElementById(`edit-cw3d-${optionIndex}`)
+                                .getElementById(`cw3d-${optionIndex}`)
                                 ?.click()
                             }
                           >
@@ -1346,7 +1403,7 @@ const EditEyeglassPage = () => {
                               Drag & drop .glb here, or click to browse
                             </div>
                             <input
-                              id={`edit-cw3d-${optionIndex}`}
+                              id={`cw3d-${optionIndex}`}
                               type="file"
                               accept=".glb"
                               style={{ display: "none" }}
@@ -1418,7 +1475,7 @@ const EditEyeglassPage = () => {
                       type="button"
                       onClick={handleAddColorOption}
                       style={{
-                        backgroundColor: "#2196F3",
+                        backgroundColor: "#222222",
                         color: "white",
                         border: "none",
                         borderRadius: "4px",
@@ -1426,6 +1483,7 @@ const EditEyeglassPage = () => {
                         cursor: "pointer",
                         fontSize: "0.9em",
                         marginTop: "10px",
+                        width: "fit-content",
                       }}
                     >
                       + Add Color Option
@@ -1435,13 +1493,13 @@ const EditEyeglassPage = () => {
               </div>
 
               {/* Additional Product Fields Section */}
-              <div className="aef-section aef-additional-sect">
+              <div className="eef-section eef-additional-sect">
                 <div className="section-details">
                   <div className="section-header">
                     <h2>Additional Product Information</h2>
                   </div>
                   <div
-                    className="aef-sect-fields"
+                    className="eef-sect-fields"
                     style={{
                       display: "flex",
                       gap: "20px",
@@ -1492,103 +1550,20 @@ const EditEyeglassPage = () => {
               </div>
 
               {/* Action Buttons */}
-              <div
-                className="csd-post-button-container"
-                style={{
-                  margin: "30px 0 0 0",
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: "16px",
-                  alignItems: "center",
-                  paddingTop: "20px",
-                  borderTop: "1px solid #e5e5e5",
-                }}
-              >
+              <div className="eef-submit-container">
                 <button
                   type="submit"
                   disabled={isSubmitting || !hasChanges()}
-                  style={{
-                    background: isSubmitting
-                      ? "#6c757d"
-                      : !hasChanges()
-                      ? "#e9ecef"
-                      : "#28a745",
-                    color: !hasChanges() ? "#6c757d" : "#ffffff",
-                    padding: "12px 28px",
-                    borderRadius: "8px",
-                    border: `2px solid ${
-                      isSubmitting
-                        ? "#6c757d"
-                        : !hasChanges()
-                        ? "#e9ecef"
-                        : "#28a745"
-                    }`,
-                    cursor:
-                      !hasChanges() || isSubmitting ? "not-allowed" : "pointer",
-                    fontSize: "15px",
-                    fontWeight: "600",
-                    fontFamily: "inherit",
-                    transition: "all 0.2s ease-in-out",
-                    boxShadow: !hasChanges()
-                      ? "none"
-                      : "0 2px 4px rgba(40, 167, 69, 0.2)",
-                    minWidth: "140px",
-                    height: "48px",
-                    opacity: !hasChanges() || isSubmitting ? 0.7 : 1,
-                  }}
-                  onMouseEnter={(e) => {
-                    if (hasChanges() && !isSubmitting) {
-                      e.target.style.background = "#218838";
-                      e.target.style.borderColor = "#218838";
-                      e.target.style.transform = "translateY(-1px)";
-                      e.target.style.boxShadow =
-                        "0 4px 8px rgba(40, 167, 69, 0.3)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (hasChanges() && !isSubmitting) {
-                      e.target.style.background = "#28a745";
-                      e.target.style.borderColor = "#28a745";
-                      e.target.style.transform = "translateY(0)";
-                      e.target.style.boxShadow =
-                        "0 2px 4px rgba(40, 167, 69, 0.2)";
-                    }
-                  }}
+                  className={`eef-submit-btn ${
+                    !hasChanges() || isSubmitting ? "disabled" : ""
+                  }`}
                 >
                   {isSubmitting ? "Updating..." : "Update Eyeglass"}
                 </button>
                 <button
                   type="button"
                   onClick={handleDelete}
-                  style={{
-                    background: "#dc3545",
-                    color: "#ffffff",
-                    padding: "12px 28px",
-                    borderRadius: "8px",
-                    border: "2px solid #dc3545",
-                    cursor: "pointer",
-                    fontSize: "15px",
-                    fontWeight: "600",
-                    fontFamily: "inherit",
-                    transition: "all 0.2s ease-in-out",
-                    boxShadow: "0 2px 4px rgba(220, 53, 69, 0.2)",
-                    minWidth: "140px",
-                    height: "48px",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = "#c82333";
-                    e.target.style.borderColor = "#c82333";
-                    e.target.style.transform = "translateY(-1px)";
-                    e.target.style.boxShadow =
-                      "0 4px 8px rgba(220, 53, 69, 0.3)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = "#dc3545";
-                    e.target.style.borderColor = "#dc3545";
-                    e.target.style.transform = "translateY(0)";
-                    e.target.style.boxShadow =
-                      "0 2px 4px rgba(220, 53, 69, 0.2)";
-                  }}
+                  className="eef-submit-btn eef-delete-btn"
                 >
                   Delete Eyeglass
                 </button>

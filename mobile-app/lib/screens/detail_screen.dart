@@ -45,7 +45,7 @@ Future<void> addToCart(
   String? prescriptionImage,
 ) async {
   final url =
-      Uri.parse('https://baobab-vision-project.onrender.com/api/cart/add');
+      Uri.parse('https://baobab-vision-project-0234.onrender.com/api/cart/add');
 
   final body = json.encode({
     'productId': productId,
@@ -314,8 +314,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                               color: WHITE_COLOR,
                                               borderRadius:
                                                   BorderRadius.vertical(
-                                                      top:
-                                                          Radius.circular(20)),
+                                                      top: Radius.circular(20)),
                                             ),
                                             child: Column(
                                               children: [

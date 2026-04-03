@@ -1,269 +1,298 @@
-/* RespondReviewModal styles */
-:root {
-  --accent-color: #f4b06b;
-  --accent-dark: #e79a49;
-  --text-primary: #1a202c;
-  --text-inverted: #ffffff;
-  --text-muted: #6b7280;
-  --border-light: #e5e7eb;
-  --bg-white: #ffffff;
-  --bg-gray-50: #f9fafb;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-  --radius: 8px;
-  --radius-lg: 12px;
-}
-
+/* Base tweaks to integrate with audit modal */
 .respond-review-modal {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
-    sans-serif;
+  font-family: "Rubik", sans-serif;
 }
 
-.respond-review-modal .modal-header {
-  background: var(--bg-white);
-  color: var(--text-primary);
-  border-bottom: 4px solid var(--accent-color);
-  padding: 1.5rem 2rem;
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  position: relative;
-}
-
-.respond-review-modal .modal-header .header-content h2 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.respond-review-modal .modal-header .modal-subtitle {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  font-weight: 400;
-}
-
-.respond-review-modal .close-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 0.5rem;
-  border-radius: var(--radius);
-  transition: all 0.15s ease;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.respond-review-modal .close-button:hover {
-  background: var(--bg-gray-50);
-  color: var(--text-primary);
-}
-
-.respond-review-modal .modal-body {
-  padding: 2rem;
-  background: var(--bg-white);
-}
-
-.respond-review-modal .rating-details {
-  background: var(--bg-gray-50);
-  border-radius: var(--radius);
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  border: 1px solid var(--border-light);
-}
-
-.respond-review-modal .detail-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0.75rem;
-}
-
-.respond-review-modal .detail-item:last-child {
-  margin-bottom: 0;
-}
-
-.respond-review-modal .detail-label {
-  font-weight: 600;
-  color: var(--text-muted);
-  min-width: 4rem;
-  font-size: 0.9rem;
-}
-
-.respond-review-modal .detail-value {
-  color: var(--text-primary);
-  font-weight: 500;
-  text-align: right;
-  flex: 1;
-  margin-left: 1rem;
-}
-
-.respond-review-modal .response-section-header {
-  margin-bottom: 1rem;
-}
-
-.respond-review-modal .response-section-header h4 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.respond-review-modal .response-section-header p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
+/* Form */
 .respond-review-modal .form-field {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
-
 .respond-review-modal .form-textarea {
   width: 100%;
-  border: 2px solid var(--border-light);
-  border-radius: var(--radius);
-  padding: 0.875rem;
-  font-size: 0.95rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
   line-height: 1.5;
-  color: var(--text-primary);
-  background: var(--bg-white);
+  color: #111827;
+  background: #fff;
   resize: vertical;
-  min-height: 100px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
-  font-family: inherit;
+  min-height: 120px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
-
 .respond-review-modal .form-textarea:focus {
   outline: none;
-  border-color: var(--accent-color);
-  box-shadow: 0 0 0 3px rgba(244, 176, 107, 0.1);
+  border-color: #f8b26a;
+  box-shadow: 0 0 0 3px rgba(248, 178, 106, 0.1);
 }
-
 .respond-review-modal .form-textarea::placeholder {
-  color: var(--text-muted);
+  color: #9ca3af;
 }
-
 .respond-review-modal .form-helper {
   display: flex;
   justify-content: flex-end;
-  margin-top: 0.5rem;
+  margin-top: 8px;
 }
-
 .respond-review-modal .char-count {
-  font-size: 0.8rem;
-  color: var(--text-muted);
+  font-size: 12px;
+  color: #9ca3af;
 }
-
 .respond-review-modal .char-count.warning {
   color: #f59e0b;
   font-weight: 500;
 }
 
-.respond-review-modal .form-actions {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border-light);
-}
-
+/* Buttons match global modal footer styles; keep palette */
 .respond-review-modal .btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: var(--radius);
-  border: 2px solid;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.15s ease;
-  min-width: 7rem;
+  transition: all 0.2s ease;
+  min-width: 100px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  text-decoration: none;
-  position: relative;
-  overflow: hidden;
 }
-
 .respond-review-modal .btn:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
-
 .respond-review-modal .btn-secondary {
-  background: var(--bg-white);
-  border-color: var(--border-light);
-  color: var(--text-muted);
+  background: #fff;
+  border-color: #e5e7eb;
+  color: #6b7280;
 }
-
 .respond-review-modal .btn-secondary:hover:not(:disabled) {
-  background: var(--bg-gray-50);
+  background: #f9fafb;
   border-color: #d1d5db;
-  color: var(--text-primary);
+  color: #374151;
 }
-
 .respond-review-modal .btn-primary {
-  background: var(--accent-color);
-  border-color: var(--accent-color);
-  color: var(--text-inverted);
-  box-shadow: var(--shadow-sm);
+  background: #f8b26a;
+  border-color: #f8b26a;
+  color: #fff;
 }
-
 .respond-review-modal .btn-primary:hover:not(:disabled) {
-  background: var(--accent-dark);
-  border-color: var(--accent-dark);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-1px);
+  background: #f7a84a;
+  border-color: #f7a84a;
 }
-
 .respond-review-modal .btn-primary:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(1px);
 }
 
-.respond-review-modal .btn.saving {
-  opacity: 0.8;
+/* ============================= */
+/* COMPREHENSIVE RESPONSIVE DESIGN */
+/* ============================= */
+
+/* Ensure box-sizing for all elements */
+.respond-review-modal * {
+  box-sizing: border-box;
 }
 
-/* Animation improvements */
-.respond-review-modal .proof-payment-modal-content {
-  animation: modalSlideIn 0.2s ease-out;
-}
-
-@keyframes modalSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
+  .respond-review-modal .form-textarea {
+    min-height: 140px;
   }
 }
 
-/* Responsive improvements */
-@media (max-width: 640px) {
-  .respond-review-modal .modal-header {
-    padding: 1.25rem 1.5rem;
+/* Desktop (1200px - 1399px) */
+@media (max-width: 1399px) {
+  .respond-review-modal .form-textarea {
+    min-height: 130px;
+  }
+}
+
+/* Tablet Large (1024px - 1199px) */
+@media (max-width: 1199px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 18px;
   }
 
-  .respond-review-modal .modal-body {
-    padding: 1.5rem;
+  .respond-review-modal .form-textarea {
+    min-height: 120px;
+    padding: 11px;
+    font-size: 13.5px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 9px 18px;
+    font-size: 13.5px;
+    min-width: 90px;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 16px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 110px;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 9px 16px;
+    font-size: 13px;
+    min-width: 85px;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 11.5px;
+  }
+}
+
+/* Mobile Large (640px - 767px) */
+@media (max-width: 767px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 14px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 100px;
+    padding: 10px;
+    font-size: 13px;
+    border-radius: 6px;
   }
 
   .respond-review-modal .form-actions {
-    flex-direction: column;
+    flex-direction: column-reverse;
+    gap: 8px;
   }
 
   .respond-review-modal .btn {
     width: 100%;
+    padding: 10px 16px;
+    font-size: 13px;
+    min-width: auto;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 11px;
+  }
+
+  .respond-review-modal .form-helper {
+    margin-top: 7px;
+  }
+}
+
+/* Mobile Medium (480px - 639px) */
+@media (max-width: 639px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 13px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 95px;
+    padding: 9px;
+    font-size: 12.5px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 9px 14px;
+    font-size: 12.5px;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 10.5px;
+  }
+}
+
+/* Mobile Small (375px - 479px) */
+@media (max-width: 479px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 12px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 90px;
+    padding: 8px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 8px 13px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 10px;
+  }
+
+  .respond-review-modal .form-helper {
+    margin-top: 6px;
+  }
+}
+
+/* Mobile Extra Small (320px - 374px) */
+@media (max-width: 374px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 11px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 85px;
+    padding: 7px;
+    font-size: 11.5px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 7px 12px;
+    font-size: 11.5px;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 9.5px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .respond-review-modal .btn {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 100px;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Ensure buttons are easily tappable */
+  .respond-review-modal .btn {
+    padding: 10px 20px;
+  }
+}
+
+/* Improved textarea handling on mobile */
+@media (max-width: 767px) {
+  .respond-review-modal .form-textarea {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Better resize handle on mobile */
+  .respond-review-modal .form-textarea {
+    resize: vertical;
+    max-height: 200px;
+  }
+}
+
+/* Focus improvements for mobile */
+@media (max-width: 767px) {
+  .respond-review-modal .form-textarea:focus {
+    border-width: 2px;
+    padding: 9px; /* Adjust for border width */
   }
 }

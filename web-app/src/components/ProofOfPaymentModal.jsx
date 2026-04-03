@@ -94,150 +94,115 @@ const ProofOfPaymentModal = ({
         </div>
 
         <div className="proof-payment-modal-body">
-          <div className="proof-details-section">
-            <div className="detail-item">
-              <span className="detail-label">Reference Number</span>
-              <span className="detail-value">
-                {proofOfPayment.referenceNumber || "N/A"}
-              </span>
-            </div>
-          </div>
+          {!showDeclineForm ? (
+            <>
+              <div className="proof-details-section">
+                <div className="section-label">Reference Number</div>
+                <div className="section-value">
+                  {proofOfPayment.referenceNumber || "N/A"}
+                </div>
+              </div>
 
-          <div className="proof-image-section">
-            <div className="image-header">
-              <h3>Payment Document</h3>
-            </div>
-            <div className="proof-image-container">
-              {imageLoading && (
-                <div className="image-loading">
-                  <div className="loading-spinner"></div>
-                  <p>Loading payment document...</p>
+              <div className="proof-image-section">
+                <div className="section-label">Payment Document</div>
+                <div className="proof-image-container">
+                  {imageLoading && (
+                    <div className="image-loading">
+                      <div className="loading-spinner"></div>
+                      <p>Loading payment document...</p>
+                    </div>
+                  )}
+                  {imageError && (
+                    <div className="image-error">
+                      <div className="error-icon">⚠️</div>
+                      <p>Unable to load payment document</p>
+                      <button
+                        className="retry-button"
+                        onClick={() => {
+                          setImageError(false);
+                          setImageLoading(true);
+                        }}
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  )}
+                  <img
+                    src={proofOfPayment.proofOfPaymentImage}
+                    alt="Proof of Payment Document"
+                    className={`proof-image ${
+                      imageLoading || imageError ? "hidden" : ""
+                    }`}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                  />
                 </div>
-              )}
-              {imageError && (
-                <div className="image-error">
-                  <div className="error-icon">⚠️</div>
-                  <p>Unable to load payment document</p>
-                  <button
-                    className="retry-button"
-                    onClick={() => {
-                      setImageError(false);
-                      setImageLoading(true);
-                    }}
-                  >
-                    Retry
-                  </button>
-                </div>
-              )}
-              <img
-                src={proofOfPayment.proofOfPaymentImage}
-                alt="Proof of Payment Document"
-                className={`proof-image ${
-                  imageLoading || imageError ? "hidden" : ""
-                }`}
-                onLoad={handleImageLoad}
-                onError={handleImageError}
+              </div>
+            </>
+          ) : (
+            <div className="decline-form-section">
+              <div className="section-label">Reason for Declining Payment</div>
+              <div className="section-description">
+                Please provide a clear reason for declining this payment. This
+                will be visible to the customer.
+              </div>
+              <textarea
+                id="decline-reason"
+                className={`form-textarea ${reasonError ? "error" : ""}`}
+                placeholder="e.g., Payment amount doesn't match, invalid receipt, suspicious transaction..."
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                rows={4}
+                maxLength={500}
               />
+              <div className="char-counter">{declineReason.length}/1000</div>
+              {reasonError && <div className="form-error">{reasonError}</div>}
             </div>
-          </div>
+          )}
         </div>
 
         {order?.status === "pending" && (
-          <div className="payment-action-section">
-            <div className="action-header">
-              <h3>Payment Verification</h3>
-              <p>Review the payment proof and take action</p>
-            </div>
-            {!showDeclineForm ? (
-              <div className="action-buttons-group">
+          <div className="modal-footer">
+            {showDeclineForm ? (
+              <>
                 <button
-                  className="accept-payment-btn"
-                  onClick={handleAcceptPayment}
+                  className="btn-cancel"
+                  onClick={() => {
+                    setShowDeclineForm(false);
+                    setDeclineReason("");
+                    setReasonError("");
+                  }}
                   disabled={isProcessing}
+                  type="button"
                 >
-                  {isProcessing ? "Processing..." : "Accept Payment"}
+                  Cancel
                 </button>
                 <button
-                  className="decline-payment-btn"
+                  className="btn-primary"
+                  onClick={handleSubmitCancellation}
+                  disabled={isProcessing || !declineReason.trim()}
+                  type="button"
+                >
+                  {isProcessing ? "Submitting..." : "Submit Cancellation"}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="btn-cancel"
                   onClick={handleDeclinePayment}
                   disabled={isProcessing}
                 >
                   Decline Payment
                 </button>
-              </div>
-            ) : (
-              <div className="decline-form">
-                <div className="decline-form-header">
-                  <h4>Decline Payment</h4>
-                  <p>
-                    Please provide a clear reason for declining this payment.
-                    This will be visible to the customer.
-                  </p>
-                </div>
-                <div className="form-field">
-                  <label htmlFor="decline-reason" className="form-label">
-                    Reason for Declining Payment{" "}
-                    <span className="required">*</span>
-                  </label>
-                  <textarea
-                    id="decline-reason"
-                    className={`form-textarea ${reasonError ? "error" : ""}`}
-                    placeholder="e.g., Payment amount doesn't match, invalid receipt, suspicious transaction..."
-                    value={declineReason}
-                    onChange={(e) => setDeclineReason(e.target.value)}
-                    rows={4}
-                    maxLength={500}
-                  />
-                  <div className="form-helper">
-                    <span
-                      className={`char-count ${
-                        declineReason.length > 450 ? "warning" : ""
-                      }`}
-                    >
-                      {declineReason.length}/500
-                    </span>
-                  </div>
-                  {reasonError && (
-                    <div className="form-error" role="alert">
-                      <span className="error-icon">⚠️</span>
-                      {reasonError}
-                    </div>
-                  )}
-                </div>
-                <div className="decline-form-actions">
-                  <button
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      setShowDeclineForm(false);
-                      setDeclineReason("");
-                      setReasonError("");
-                    }}
-                    disabled={isProcessing}
-                    type="button"
-                  >
-                    <span className="btn-icon">←</span>
-                    Back
-                  </button>
-                  <button
-                    className="btn btn-danger"
-                    onClick={handleSubmitCancellation}
-                    disabled={isProcessing || !declineReason.trim()}
-                    type="button"
-                  >
-                    {isProcessing ? (
-                      <>
-                        <span className="btn-spinner"></span>
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <span className="btn-icon">✕</span>
-                        Submit Cancellation
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+                <button
+                  className="btn-primary"
+                  onClick={handleAcceptPayment}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? "Processing..." : "Accept Payment"}
+                </button>
+              </>
             )}
           </div>
         )}
