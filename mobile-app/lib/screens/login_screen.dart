@@ -3,8 +3,8 @@ import 'package:baobab_vision_project/screens/email_otp_verification_screen.dart
 import 'package:baobab_vision_project/screens/email_verification_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_client.dart';
 import '../constants.dart';
 import '../screens/home_screen.dart';
 import '../widgets/custom_dialog.dart';
@@ -44,21 +44,24 @@ class _LogInScreenState extends State<LogInScreen> {
 
   // Login function
   Future<void> login() async {
-    var url =
-        Uri.parse('https://baobab-vision-project.onrender.com/api/auth/login');
-
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': usernameController.text.trim(),
-          'password': passwordController.text.trim(),
-        }),
-      );
+      final response = await ApiClient.postJson('/api/auth/login', {
+        'username': usernameController.text.trim(),
+        'password': passwordController.text.trim(),
+      });
 
+      print('🔄 LOGIN URL: ${ApiClient.baseUrl}/api/auth/login');
+      print('🔄 LOGIN STATUS: ${response.statusCode}');
       print('🔄 LOGIN RESPONSE: ${response.body}');
-      final resData = jsonDecode(response.body);
+
+      Map<String, dynamic> resData = {};
+      final rawBody = response.body.trim();
+      if (rawBody.startsWith('{')) {
+        final decoded = jsonDecode(rawBody);
+        if (decoded is Map<String, dynamic>) {
+          resData = decoded;
+        }
+      }
       print('🔄 LOGIN RESPONSE (decoded): $resData');
 
       if (response.statusCode == 403 &&
@@ -93,10 +96,13 @@ class _LogInScreenState extends State<LogInScreen> {
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         // Show login failed message if something went wrong
+        final fallbackMessage = rawBody.isNotEmpty
+            ? rawBody
+            : 'Request failed (${response.statusCode})';
         customDialog(
           context,
           title: 'Login Failed',
-          content: resData['message'] ?? 'Invalid login',
+          content: (resData['message'] ?? fallbackMessage).toString(),
         );
       }
     } catch (e) {

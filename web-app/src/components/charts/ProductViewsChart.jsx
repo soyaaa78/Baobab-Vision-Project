@@ -20,6 +20,8 @@ ChartJS.register(
   Legend
 );
 
+const MAX_POINTS = 120;
+
 const buildFallbackChart = () => {
   const currentDate = new Date();
   const currentDay = currentDate.getDay();
@@ -67,20 +69,65 @@ const buildFallbackChart = () => {
   };
 };
 
+const toSafeNumber = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+};
+
+const sanitizeWeeklySeries = (labels, datasets) => {
+  if (!Array.isArray(labels) || !Array.isArray(datasets)) {
+    return { labels: [], datasets: [] };
+  }
+
+  const trimmedLabels = labels.slice(-MAX_POINTS);
+  const expectedLength = trimmedLabels.length;
+
+  const trimmedDatasets = datasets.map((dataset) => {
+    const rawData = Array.isArray(dataset?.data) ? dataset.data : [];
+    const trimmedData = rawData.slice(-MAX_POINTS).map(toSafeNumber);
+    const alignedData = trimmedData.slice(-expectedLength);
+
+    return {
+      ...dataset,
+      data: alignedData,
+    };
+  });
+
+  return {
+    labels: trimmedLabels.slice(-expectedLength),
+    datasets: trimmedDatasets,
+  };
+};
+
+const buildEmptyDataset = (labels) => [
+  {
+    label: "No views recorded yet",
+    data: labels.map(() => 0),
+    borderColor: "rgba(148, 163, 184, 0.95)",
+    backgroundColor: "rgba(148, 163, 184, 0.12)",
+    tension: 0.25,
+    borderDash: [6, 6],
+    pointRadius: 2,
+    pointHoverRadius: 3,
+    fill: false,
+  },
+];
+
 export const ProductViewsChart = ({
   labels: providedLabels,
   datasets: providedDatasets,
   title,
-  emptyMessage = "No product view data yet.",
 }) => {
   const fallback = buildFallbackChart();
+  const sanitized = sanitizeWeeklySeries(providedLabels, providedDatasets);
+  const hasProvidedDatasets =
+    Array.isArray(providedDatasets) && providedDatasets.length > 0;
   const labels =
-    Array.isArray(providedLabels) && providedLabels.length > 0
-      ? providedLabels
-      : fallback.labels;
+    sanitized.labels.length > 0 ? sanitized.labels : fallback.labels;
   const datasets =
-    Array.isArray(providedDatasets) && providedDatasets.length > 0
-      ? providedDatasets.map((dataset, index) => {
+    hasProvidedDatasets
+      ? sanitized.datasets.map((dataset, index) => {
           const palette = [
             {
               borderColor: "rgb(241, 188, 15)",
@@ -102,7 +149,7 @@ export const ProductViewsChart = ({
             tension: dataset.tension ?? 0.4,
           };
         })
-      : fallback.datasets;
+      : buildEmptyDataset(labels);
 
   const options = {
     responsive: true,
@@ -133,50 +180,9 @@ export const ProductViewsChart = ({
     },
   };
 
-  const hasAnyData =
-    Array.isArray(providedDatasets) && providedDatasets.length > 0
-      ? providedDatasets.some((dataset) =>
-          Array.isArray(dataset.data) && dataset.data.some((value) => Number(value) > 0)
-        )
-      : true;
-
-  if (Array.isArray(providedDatasets) && providedDatasets.length === 0) {
-    return (
-      <div
-        style={{
-          minHeight: "220px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#64748b",
-          fontStyle: "italic",
-          textAlign: "center",
-          padding: "1rem",
-        }}
-      >
-        {emptyMessage}
-      </div>
-    );
-  }
-
-  if (Array.isArray(providedDatasets) && !hasAnyData) {
-    return (
-      <div
-        style={{
-          minHeight: "220px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#64748b",
-          fontStyle: "italic",
-          textAlign: "center",
-          padding: "1rem",
-        }}
-      >
-        {emptyMessage}
-      </div>
-    );
-  }
-
-  return <Line options={options} data={{ labels, datasets }} />;
+  return (
+    <div className="chart-canvas-shell">
+      <Line options={options} data={{ labels, datasets }} />
+    </div>
+  );
 };

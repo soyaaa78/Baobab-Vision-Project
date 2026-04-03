@@ -142,6 +142,68 @@ const formatWeekDayLabel = (date) =>
     day: "numeric",
   });
 
+const STAT_RANGE_OPTIONS = {
+  "7d": { key: "7d", label: "Past 7 Days", days: 7 },
+  "30d": { key: "30d", label: "Past 30 Days", days: 30 },
+  "90d": { key: "90d", label: "Past 90 Days", days: 90 },
+  ytd: { key: "ytd", label: "Year to Date", days: null },
+};
+
+const parseStatisticsRange = (rawRange) => {
+  const normalized = String(rawRange || "")
+    .trim()
+    .toLowerCase();
+  return STAT_RANGE_OPTIONS[normalized] || STAT_RANGE_OPTIONS["30d"];
+};
+
+const buildTrailingDays = (days, date = new Date()) => {
+  const count = Math.max(1, Number(days) || 1);
+  const end = toUtcCalendarDate(getManilaDateParts(date));
+  const start = new Date(end);
+  start.setUTCDate(end.getUTCDate() - (count - 1));
+
+  const output = [];
+  for (
+    let cursor = new Date(start);
+    cursor <= end;
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  ) {
+    output.push(new Date(cursor));
+  }
+
+  return output;
+};
+
+const buildYtdDays = (date = new Date()) => {
+  const today = getManilaDateParts(date);
+  const start = toUtcCalendarDate({ year: today.year, month: 1, day: 1 });
+  const end = toUtcCalendarDate(today);
+  const output = [];
+
+  for (
+    let cursor = new Date(start);
+    cursor <= end;
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  ) {
+    output.push(new Date(cursor));
+  }
+
+  return output;
+};
+
+const buildRangeDays = (range, date = new Date()) =>
+  range.days ? buildTrailingDays(range.days, date) : buildYtdDays(date);
+
+const buildManilaBoundaryFromDateKey = (dateKey) =>
+  new Date(`${dateKey}T00:00:00${MANILA_OFFSET}`);
+
+const formatRangeDayLabel = (date) =>
+  date.toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric",
+  });
+
 const inferProductCategory = (product) => {
   const specs = Array.isArray(product?.specs)
     ? product.specs.map((spec) => spec.toLowerCase())
@@ -307,19 +369,73 @@ const getTopRatedThisMonthData = async () => {
   return result[0] || null;
 };
 
-const getMonthlySalesTrendData = async () => {
+const getMonthlySalesTrendData = async (range) => {
   const manilaNow = getManilaDateParts();
   const currentYear = manilaNow.year;
-  const monthCount = manilaNow.month;
-  const yearStart = new Date(`${currentYear}-01-01T00:00:00${MANILA_OFFSET}`);
-  const nextYearStart = new Date(`${currentYear + 1}-01-01T00:00:00${MANILA_OFFSET}`);
+  const rangeDays = buildRangeDays(range);
+  const dayKeys = rangeDays.map((date) => buildDateKey(date));
+  const startDate = buildManilaBoundaryFromDateKey(dayKeys[0]);
+  const endDateExclusive = buildManilaBoundaryFromDateKey(dayKeys[dayKeys.length - 1]);
+  endDateExclusive.setUTCDate(endDateExclusive.getUTCDate() + 1);
 
-  const salesRows = await Order.aggregate([
+  if (range.key === "ytd") {
+    const monthCount = manilaNow.month;
+    const yearStart = new Date(`${currentYear}-01-01T00:00:00${MANILA_OFFSET}`);
+    const nextYearStart = new Date(`${currentYear + 1}-01-01T00:00:00${MANILA_OFFSET}`);
+
+    const salesRows = await Order.aggregate([
+      {
+        $match: {
+          createdAt: {
+            $gte: yearStart,
+            $lt: nextYearStart,
+          },
+          status: { $nin: ["cancelled", "cancelled_pending"] },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            $month: {
+              date: "$createdAt",
+              timezone: MANILA_TIME_ZONE,
+            },
+          },
+          totalSales: { $sum: "$totalAmount" },
+          orderCount: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    const values = Array.from({ length: monthCount }, () => 0);
+    const orderCounts = Array.from({ length: monthCount }, () => 0);
+
+    salesRows.forEach((row) => {
+      const index = row._id - 1;
+      if (index >= 0 && index < monthCount) {
+        values[index] = Number(row.totalSales || 0);
+        orderCounts[index] = Number(row.orderCount || 0);
+      }
+    });
+
+    return {
+      year: currentYear,
+      labels: MONTH_LABELS.slice(0, monthCount),
+      values,
+      orderCounts,
+      totalSales: values.reduce((sum, value) => sum + value, 0),
+      rangeLabel: range.label,
+      rangeKey: range.key,
+    };
+  }
+
+  const dailyRows = await Order.aggregate([
     {
       $match: {
         createdAt: {
-          $gte: yearStart,
-          $lt: nextYearStart,
+          $gte: startDate,
+          $lt: endDateExclusive,
         },
         status: { $nin: ["cancelled", "cancelled_pending"] },
       },
@@ -327,7 +443,8 @@ const getMonthlySalesTrendData = async () => {
     {
       $group: {
         _id: {
-          $month: {
+          $dateToString: {
+            format: "%Y-%m-%d",
             date: "$createdAt",
             timezone: MANILA_TIME_ZONE,
           },
@@ -339,29 +456,27 @@ const getMonthlySalesTrendData = async () => {
     { $sort: { _id: 1 } },
   ]);
 
-  const values = Array.from({ length: monthCount }, () => 0);
-  const orderCounts = Array.from({ length: monthCount }, () => 0);
+  const dailyMap = new Map(
+    dailyRows.map((row) => [row._id, { sales: Number(row.totalSales || 0), count: Number(row.orderCount || 0) }])
+  );
 
-  salesRows.forEach((row) => {
-    const index = row._id - 1;
-    if (index >= 0 && index < monthCount) {
-      values[index] = Number(row.totalSales || 0);
-      orderCounts[index] = Number(row.orderCount || 0);
-    }
-  });
+  const values = dayKeys.map((key) => dailyMap.get(key)?.sales || 0);
+  const orderCounts = dayKeys.map((key) => dailyMap.get(key)?.count || 0);
 
   return {
     year: currentYear,
-    labels: MONTH_LABELS.slice(0, monthCount),
+    labels: rangeDays.map(formatRangeDayLabel),
     values,
     orderCounts,
-    totalSalesYtd: values.reduce((sum, value) => sum + value, 0),
+    totalSales: values.reduce((sum, value) => sum + value, 0),
+    rangeLabel: range.label,
+    rangeKey: range.key,
   };
 };
 
-const getProductViewAnalyticsData = async () => {
-  const weekDays = buildCurrentWeekDays();
-  const dayKeys = weekDays.map((date) => buildDateKey(date));
+const getProductViewAnalyticsData = async (range) => {
+  const rangeDays = buildRangeDays(range);
+  const dayKeys = rangeDays.map((date) => buildDateKey(date));
 
   const [topViewedThisWeek, mostVisitedOverallRows] = await Promise.all([
     ProductViewStat.aggregate([
@@ -440,9 +555,7 @@ const getProductViewAnalyticsData = async () => {
     return {
       productId,
       label: product?.name || `Product ${index + 1}`,
-      data: dayKeys.map(
-        (dateKey) => dailyViewMap.get(`${productId}:${dateKey}`) || 0
-      ),
+      data: dayKeys.map((dateKey) => dailyViewMap.get(`${productId}:${dateKey}`) || 0),
       totalViews: row.totalViews,
     };
   });
@@ -465,8 +578,17 @@ const getProductViewAnalyticsData = async () => {
   return {
     trackingReady: true,
     hasData: Boolean(mostVisitedProduct),
+    range: {
+      key: range.key,
+      label: range.label,
+      totalPoints: dayKeys.length,
+    },
+    series: {
+      labels: rangeDays.map(formatRangeDayLabel),
+      datasets,
+    },
     week: {
-      labels: weekDays.map(formatWeekDayLabel),
+      labels: rangeDays.map(formatWeekDayLabel),
       datasets,
     },
     mostVisitedProduct,
@@ -1034,13 +1156,14 @@ exports.trackProductView = async (req, res) => {
 
 exports.getStatisticsDashboard = async (req, res) => {
   try {
+    const selectedRange = parseStatisticsRange(req.query?.range);
     const [faceShape, productStatistics, topRatedProduct, monthlySalesTrend, viewAnalytics] =
       await Promise.all([
         getFaceShapeStatsData(),
         getProductStatisticsData({ limit: 1 }),
         getTopRatedThisMonthData(),
-        getMonthlySalesTrendData(),
-        getProductViewAnalyticsData(),
+        getMonthlySalesTrendData(selectedRange),
+        getProductViewAnalyticsData(selectedRange),
       ]);
 
     const mostBoughtProduct = productStatistics.bestSellingProducts[0]
@@ -1060,6 +1183,8 @@ exports.getStatisticsDashboard = async (req, res) => {
     return res.status(200).json({
       message: "Statistics dashboard data retrieved successfully",
       data: {
+        selectedRange: selectedRange.key,
+        selectedRangeLabel: selectedRange.label,
         faceShape,
         monthlySalesTrend,
         productViews: viewAnalytics,

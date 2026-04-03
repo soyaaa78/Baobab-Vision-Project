@@ -40,6 +40,57 @@ const DEFAULT_SALES_DATA = [
   110000, 95000, 165000,
 ];
 
+const MAX_POINTS = 120;
+const MIN_YEAR = 2000;
+const MAX_YEAR = 2100;
+
+const toSafeNumber = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return parsed;
+};
+
+const toSafeYear = (value, fallbackYear) => {
+  const year = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isInteger(year) || year < MIN_YEAR || year > MAX_YEAR) {
+    return fallbackYear;
+  }
+  return year;
+};
+
+const toSafeLabel = (value, fallbackIndex) => {
+  const fallbackLabel = DEFAULT_MONTHS[fallbackIndex % 12];
+  if (typeof value !== "string" && typeof value !== "number") return fallbackLabel;
+  const raw = String(value).trim();
+  if (!raw) return fallbackLabel;
+  return raw.length > 18 ? `${raw.slice(0, 18)}...` : raw;
+};
+
+const buildSanitizedSalesSeries = (providedLabels, providedValues, fallbackCount) => {
+  const fallbackLabels = DEFAULT_MONTHS.slice(0, fallbackCount);
+  const fallbackValues = DEFAULT_SALES_DATA.slice(0, fallbackCount);
+
+  if (!Array.isArray(providedLabels) || !Array.isArray(providedValues)) {
+    return { labels: fallbackLabels, values: fallbackValues };
+  }
+
+  const maxPoints = Math.max(1, MAX_POINTS);
+  const trimmedLabels = providedLabels.slice(-maxPoints);
+  const trimmedValues = providedValues.slice(-maxPoints).map(toSafeNumber);
+  const pairCount = Math.min(trimmedLabels.length, trimmedValues.length);
+
+  if (pairCount === 0) {
+    return { labels: fallbackLabels, values: fallbackValues };
+  }
+
+  return {
+    labels: trimmedLabels
+      .slice(0, pairCount)
+      .map((label, index) => toSafeLabel(label, index)),
+    values: trimmedValues.slice(0, pairCount),
+  };
+};
+
 export const SalesLineChart = ({
   labels: providedLabels,
   values: providedValues,
@@ -50,15 +101,13 @@ export const SalesLineChart = ({
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  const labels =
-    Array.isArray(providedLabels) && providedLabels.length > 0
-      ? providedLabels
-      : DEFAULT_MONTHS.slice(0, currentMonth + 1);
-  const salesData =
-    Array.isArray(providedValues) && providedValues.length > 0
-      ? providedValues
-      : DEFAULT_SALES_DATA.slice(0, currentMonth + 1);
-  const chartYear = providedYear || currentYear;
+  const fallbackCount = currentMonth + 1;
+  const { labels, values: salesData } = buildSanitizedSalesSeries(
+    providedLabels,
+    providedValues,
+    fallbackCount
+  );
+  const chartYear = toSafeYear(providedYear, currentYear);
 
   const options = {
     responsive: true,
@@ -103,5 +152,9 @@ export const SalesLineChart = ({
     ],
   };
 
-  return <Line options={options} data={data} />;
+  return (
+    <div className="chart-canvas-shell">
+      <Line options={options} data={data} />
+    </div>
+  );
 };
