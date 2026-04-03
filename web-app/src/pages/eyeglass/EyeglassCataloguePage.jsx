@@ -1,17 +1,11 @@
 import React, { useState, useEffect } from "react";
 import "../../styles/eyeglass/EyeglassCataloguePage.css";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Button from "../../components/Button.jsx";
 import EyeglassPreview from "../../components/EyeglassPreview.jsx";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faXmark,
-  faCaretDown,
-  faSort,
-  faSortUp,
-  faSortDown,
-} from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Cookies from "js-cookie";
 
 const EyeglassCataloguePage = () => {
@@ -23,7 +17,7 @@ const EyeglassCataloguePage = () => {
   const [eyeglasses, setEyeglasses] = useState([]);
   const [sortBy, setSortBy] = useState("latest");
   const [alertModal, setAlertModal] = useState(false);
-  const [alertModalContent, setAlertModalContent] = useState("Delete");
+  const alertModalContent = "Delete";
   const [itemToDelete, setItemToDelete] = useState(null);
   const [originalEyeglasses, setOriginalEyeglasses] = useState([]);
   const [TOKEN, setToken] = useState();
@@ -106,11 +100,13 @@ const EyeglassCataloguePage = () => {
         const fetchedData = response.data.reverse();
         setOriginalEyeglasses(fetchedData);
         setEyeglasses(fetchedData);
-      } catch (error) {}
+      } catch {
+        // fail silently
+      }
     };
 
     fetchEyeglasses();
-  }, []);
+  }, [SERVER_URL, TOKEN]);
 
   return (
     <>

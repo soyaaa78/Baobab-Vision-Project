@@ -63,6 +63,11 @@
   max-height: 220px;
 }
 
+.statistics-layout.pdf-exporting .chart-canvas-shell {
+  height: 220px;
+  min-height: 220px;
+}
+
 .statistics-main {
   flex: 2 1 0;
   min-width: 0;
@@ -81,6 +86,7 @@
 /* Chart wrapper improvements */
 .chart-wrapper {
   width: 100%;
+  min-width: 0;
   background: #ffffff;
   border-radius: 16px;
   padding: 2rem;
@@ -89,12 +95,21 @@
   margin: 1rem 0;
 }
 
+.chart-canvas-shell {
+  position: relative;
+  width: 100%;
+  height: clamp(240px, 34vh, 360px);
+  min-height: 240px;
+}
+
 .chart-wrapper p {
   margin-top: 1rem;
   color: #64748b;
   font-size: 0.9rem;
   text-align: center;
   font-style: italic;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 #stat-piechart {
@@ -157,6 +172,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  min-width: 0;
 }
 
 .content-text {
@@ -164,6 +180,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .card-header {
@@ -181,6 +198,8 @@
   margin: 0.25rem 0;
   font-size: 0.9rem;
   font-weight: 500;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .content-text p:nth-child(2) {
@@ -241,6 +260,8 @@
   justify-content: center;
   align-items: center;
   gap: 1rem;
+  width: 100%;
+  min-width: 0;
 }
 
 /* Special styling for different metrics */
@@ -270,7 +291,34 @@
 
 .statistics-header-actions {
   display: flex;
+  align-items: center;
   gap: 0.75rem;
+}
+
+.statistics-range-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 0.35rem 0.5rem;
+}
+
+.statistics-range-control label {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.statistics-range-control select {
+  border: none;
+  background: transparent;
+  color: #1e293b;
+  font-size: 0.85rem;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
 }
 
 .stat-export-btn {
@@ -472,6 +520,11 @@
     max-width: 100% !important;
     max-height: 200px !important;
     height: auto !important;
+  }
+
+  .chart-canvas-shell {
+    height: 200px !important;
+    min-height: 200px !important;
   }
 
   .piesect,

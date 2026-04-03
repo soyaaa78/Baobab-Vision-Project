@@ -20,8 +20,6 @@ ChartJS.register(
 
 export const BarChart = () => {
     const options = {};
-    const data = {};
-
     return <Bar options={options} data={barChartData} />;
 
 }

@@ -4,10 +4,24 @@ import 'package:http/http.dart' as http;
 import 'auth_storage.dart';
 
 class ApiClient {
-  static const String baseUrl = String.fromEnvironment(
+  static const String _configuredBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: 'https://baobab-vision-project-0234.onrender.com',
   );
+  static final String baseUrl = _normalizeBaseUrl(_configuredBaseUrl);
+
+  static String _normalizeBaseUrl(String raw) {
+    final trimmed = raw.trim().replaceFirst(RegExp(r'/+$'), '');
+    if (trimmed.endsWith('/api')) {
+      return trimmed.substring(0, trimmed.length - 4);
+    }
+    return trimmed;
+  }
+
+  static Uri _buildUri(String path) {
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    return Uri.parse('$baseUrl$normalizedPath');
+  }
 
   static Future<Map<String, String>> _headers({bool json = true}) async {
     final token = await AuthStorage.getToken();
@@ -19,14 +33,14 @@ class ApiClient {
 
   static Future<http.Response> postJson(
       String path, Map<String, dynamic> body) async {
-    final url = Uri.parse('$baseUrl$path');
+    final url = _buildUri(path);
     final headers = await _headers(json: true);
     return http.post(url, headers: headers, body: jsonEncode(body));
   }
 
   static Future<http.Response> putJson(
       String path, Map<String, dynamic> body) async {
-    final url = Uri.parse('$baseUrl$path');
+    final url = _buildUri(path);
     final headers = await _headers(json: true);
     return http.put(url, headers: headers, body: jsonEncode(body));
   }
@@ -36,7 +50,7 @@ class ApiClient {
     String fieldName,
     File file,
   ) async {
-    final url = Uri.parse('$baseUrl$path');
+    final url = _buildUri(path);
     final token = await AuthStorage.getToken();
     final request = http.MultipartRequest('POST', url);
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
@@ -51,7 +65,7 @@ class ApiClient {
     List<File> files, {
     Map<String, String>? fields,
   }) async {
-    final url = Uri.parse('$baseUrl$path');
+    final url = _buildUri(path);
     final token = await AuthStorage.getToken();
     final request = http.MultipartRequest('POST', url);
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
@@ -67,7 +81,7 @@ class ApiClient {
   }
 
   static Future<http.Response> get(String path, {bool json = true}) async {
-    final url = Uri.parse('$baseUrl$path');
+    final url = _buildUri(path);
     final headers = await _headers(json: json);
     return http.get(url, headers: headers);
   }

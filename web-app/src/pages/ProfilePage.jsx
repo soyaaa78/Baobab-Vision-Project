@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { User, Lock, Eye, EyeOff } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -37,12 +37,7 @@ const ProfilePage = () => {
     setToken(t);
   }, []);
 
-  useEffect(() => {
-    if (!token) return;
-    fetchProfile();
-  }, [token]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await axios.get(`${SERVER_URL}/api/admin/profile`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -52,7 +47,12 @@ const ProfilePage = () => {
       console.error("Error fetching profile:", error);
       showToast({ message: "Failed to load profile data", type: "error" });
     }
-  };
+  }, [SERVER_URL, token]);
+
+  useEffect(() => {
+    if (!token) return;
+    fetchProfile();
+  }, [token, fetchProfile]);
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();

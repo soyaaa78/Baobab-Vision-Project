@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import "../../styles/EditEyeglass.css";
 import { useNavigate } from "react-router-dom";
 import Button from "../../components/Button";
@@ -40,8 +40,6 @@ const EditEyeglassPage = () => {
     stock: 0,
     recommendedFor: false,
   });
-  const tintedRef = useRef(null);
-  const sunAdaptiveRef = useRef(null);
 
   // Helper function to ensure built-in lens option is always included
   const ensureBuiltInLensOption = (lensOptions) => {
@@ -221,13 +219,6 @@ const EditEyeglassPage = () => {
     return false;
   };
 
-  const handleToggle = (ref, shouldCheck) => {
-    const checkboxes = ref.current.querySelectorAll('input[type="checkbox"]');
-    checkboxes.forEach((cb) => {
-      cb.checked = shouldCheck;
-    });
-  };
-
   const handleProductImageChange = (e) => {
     const files = Array.from(e.target.files);
     const newPreviews = files.map((file) => ({
@@ -264,9 +255,6 @@ const EditEyeglassPage = () => {
     setProductImages((prev) => prev.filter((img) => img.id !== idToRemove));
   };
 
-  const handleDeleteColorwayImage = (idToRemove) => {
-    setColorwayImages((prev) => prev.filter((img) => img.id !== idToRemove));
-  };
   const [modal, setModal] = useState({
     open: false,
     title: "",
@@ -300,21 +288,6 @@ const EditEyeglassPage = () => {
       });
     }
   };
-  const handleSpecsChange = (spec) => {
-    setForm((prev) => {
-      const specs = new Set(prev.specs);
-      if (specs.has(spec)) {
-        specs.delete(spec);
-      } else {
-        specs.add(spec);
-      }
-      return {
-        ...prev,
-        specs: Array.from(specs),
-      };
-    });
-  };
-
   // --- Lens Options Handler (match AddEyeglassPage logic) ---
   const handleLensOptionsChange = (label, type, price) => {
     setForm((prev) => {
@@ -440,19 +413,6 @@ const EditEyeglassPage = () => {
         ...prev,
         colorOptions: newColorOptions,
       };
-    });
-  };
-  const handleAddColorToOption = (optionIndex) => {
-    setForm((prev) => {
-      const newColorOptions = [...prev.colorOptions];
-      const opt = newColorOptions[optionIndex];
-      const colors = Array.isArray(opt.colors) ? [...opt.colors] : [];
-      const type = opt.type;
-      const limit = type === "solid" ? 1 : 2;
-      if (colors.length >= limit) return prev; // do nothing
-      colors.push("#000000");
-      newColorOptions[optionIndex] = { ...opt, colors };
-      return { ...prev, colorOptions: newColorOptions };
     });
   };
   const handleRemoveColorFromOption = (optionIndex, colorIndex) => {

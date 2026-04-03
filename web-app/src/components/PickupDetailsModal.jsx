@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "../styles/PickupDetailsModal.css";
 
-const PickupDetailsModal = ({ isOpen, onClose, order, onConfirm }) => {
+const PickupDetailsModal = ({ isOpen, onClose, onConfirm }) => {
   const [location, setLocation] = useState("");
   const [dateTime, setDateTime] = useState("");
   const [submitting, setSubmitting] = useState(false);

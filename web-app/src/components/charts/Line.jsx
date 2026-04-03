@@ -1,4 +1,4 @@
-import { Chart, Line } from 'react-chartjs-2';
+import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS,
     CategoryScale,
     LinearScale,
@@ -22,8 +22,6 @@ ChartJS.register(
 
 export const LineGraph = () => {
     const options = {};
-    const data = {};
-
     return <Line options={options} data={lineChartData} />;
 
 }

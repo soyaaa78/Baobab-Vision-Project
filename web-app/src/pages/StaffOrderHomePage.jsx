@@ -150,7 +150,6 @@ const StaffOrderHomePage = () => {
   }, [token, SERVER_URL]);
 
   const handleManageOrders = () => navigate("/dashboard/allorders");
-  const handleOrderAnalytics = () => navigate("/dashboard/order-analytics");
   const handleCustomers = () => navigate("/dashboard/manageusers");
 
   const getStatusIcon = (status) => {

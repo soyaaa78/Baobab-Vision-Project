@@ -51,12 +51,12 @@ const EyeglassPage = () => {
         );
         console.log("Eyeglass API response:", response.data);
         setEyeglass(response.data);
-      } catch (error) {
+      } catch {
         setEyeglass(null);
       }
     };
     if (id) fetchEyeglass();
-  }, [id, SERVER_URL]);
+  }, [id, SERVER_URL, TOKEN]);
 
   if (!eyeglass) {
     return (

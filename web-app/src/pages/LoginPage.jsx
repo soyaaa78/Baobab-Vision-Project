@@ -9,12 +9,6 @@ import {
   faUser,
   faLock,
 } from "@fortawesome/free-solid-svg-icons";
-import {
-  faFacebookF,
-  faTwitter,
-  faInstagram,
-  faLinkedinIn,
-} from "@fortawesome/free-brands-svg-icons";
 import "../styles/LoginPage.css";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -28,7 +22,6 @@ function LoginPage() {
   const [step, setStep] = useState("login");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { login, isAuthenticated, loading } = useAuth();
   const [passVisibility, setPassVisibility] = useState(true);
@@ -51,7 +44,7 @@ function LoginPage() {
             .map((img) => img.imagePath);
           setSlides(ordered);
         }
-      } catch (e) {
+      } catch {
         // silent fail; keep default static background color
       }
     };

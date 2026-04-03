@@ -41,10 +41,42 @@ const chartStateBox = (message, minHeight = 220) => (
   </div>
 );
 
+const toFiniteNumber = (value) => {
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+};
+
+const formatCount = (value) => {
+  const num = toFiniteNumber(value);
+  return (num ?? 0).toLocaleString();
+};
+
+const formatCurrency = (value) => {
+  const num = toFiniteNumber(value);
+  return (num ?? 0).toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
+const formatSafeYear = (value, fallbackYear) => {
+  const year = Number.parseInt(String(value ?? ""), 10);
+  if (!Number.isInteger(year) || year < 2000 || year > 2100) return fallbackYear;
+  return year;
+};
+
+const RANGE_OPTIONS = [
+  { value: "7d", label: "Past 7 Days" },
+  { value: "30d", label: "Past 30 Days" },
+  { value: "90d", label: "Past 90 Days" },
+  { value: "ytd", label: "Year to Date" },
+];
+
 function StatisticsPage() {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
   const [token, setToken] = useState();
   const [statisticsData, setStatisticsData] = useState(null);
+  const [selectedRange, setSelectedRange] = useState("30d");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const printRef = useRef(null);
@@ -64,6 +96,7 @@ function StatisticsPage() {
         const response = await axios.get(
           `${SERVER_URL}/api/products/statistics-dashboard`,
           {
+            params: { range: selectedRange },
             headers: {
               Authorization: `Bearer ${token}`,
             },
@@ -79,7 +112,7 @@ function StatisticsPage() {
     };
 
     fetchStatisticsDashboard();
-  }, [SERVER_URL, token]);
+  }, [SERVER_URL, token, selectedRange]);
 
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
@@ -93,7 +126,13 @@ function StatisticsPage() {
 
   const faceShapeStats = statisticsData?.faceShape?.stats || [];
   const monthlySalesTrend = statisticsData?.monthlySalesTrend || null;
+  const safeMonthlyYear = formatSafeYear(monthlySalesTrend?.year, currentYear);
   const weeklyProductViews = statisticsData?.productViews?.week || null;
+  const productViewSeries = statisticsData?.productViews?.series || weeklyProductViews;
+  const selectedRangeLabel =
+    statisticsData?.selectedRangeLabel ||
+    RANGE_OPTIONS.find((option) => option.value === selectedRange)?.label ||
+    "Past 30 Days";
   const mostVisitedProduct = statisticsData?.productViews?.mostVisitedProduct || null;
   const mostBoughtProduct = statisticsData?.mostBoughtProduct || null;
   const topRatedProduct = statisticsData?.topRatedProduct || null;
@@ -267,6 +306,20 @@ function StatisticsPage() {
             </div>
           </div>
           <div className="statistics-header-actions">
+            <div className="statistics-range-control">
+              <label htmlFor="stats-range-select">Range</label>
+              <select
+                id="stats-range-select"
+                value={selectedRange}
+                onChange={(event) => setSelectedRange(event.target.value)}
+              >
+                {RANGE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
             <button onClick={handlePrint} className="stat-export-btn stat-print-btn">
               <FontAwesomeIcon icon={faPrint} /> Print
             </button>
@@ -300,16 +353,16 @@ function StatisticsPage() {
                     <SalesLineChart
                       labels={monthlySalesTrend.labels}
                       values={monthlySalesTrend.values}
-                      year={monthlySalesTrend.year}
-                      title={`Monthly Sales Trend (${monthlySalesTrend.year} YTD)`}
-                      datasetLabel={`${monthlySalesTrend.year} Monthly Sales`}
+                      year={safeMonthlyYear}
+                      title={`Sales Trend (${selectedRangeLabel})`}
+                      datasetLabel={`${selectedRangeLabel} Sales`}
                     />
                   ) : (
                     chartStateBox("No sales trend data available yet.")
                   )}
                   <p>
                     {monthlySalesTrend
-                      ? `${monthlySalesTrend.year} sales year-to-date through ${currentMonth} ${currentDay}`
+                      ? `${selectedRangeLabel} sales snapshot as of ${currentMonth} ${currentDay}, ${currentYear}`
                       : `${currentYear} sales year-to-date through ${currentMonth} ${currentDay}`}
                   </p>
                 </div>
@@ -320,15 +373,15 @@ function StatisticsPage() {
                     chartStateBox("Failed to load chart data.")
                   ) : (
                     <ProductViewsChart
-                      labels={weeklyProductViews?.labels || []}
-                      datasets={weeklyProductViews?.datasets || []}
-                      title={`Product Views This Week (${currentYear})`}
+                      labels={productViewSeries?.labels || []}
+                      datasets={productViewSeries?.datasets || []}
+                      title={`Product Views (${selectedRangeLabel})`}
                       emptyMessage="View tracking is now live. This chart will populate as customers open product pages."
                     />
                   )}
                   <p>
                     {statisticsData?.productViews?.hasData
-                      ? `Product views for the current week - ${dayOfWeek} update (${currentMonth} ${currentDay}, ${currentYear})`
+                      ? `Product views for ${selectedRangeLabel.toLowerCase()} - ${dayOfWeek} update (${currentMonth} ${currentDay}, ${currentYear})`
                       : "Product view tracking is enabled. Data will appear here once new visits are recorded."}
                   </p>
                 </div>
@@ -348,9 +401,9 @@ function StatisticsPage() {
                   ) : mostVisitedProduct ? (
                     <>
                       <p>{mostVisitedProduct.name}</p>
-                      <p>Views: {mostVisitedProduct.views.toLocaleString()}</p>
+                      <p>Views: {formatCount(mostVisitedProduct.views)}</p>
                       <p>Category: {mostVisitedProduct.category}</p>
-                      <p>Price: {"\u20B1"}{mostVisitedProduct.price}</p>
+                      <p>Price: {"\u20B1"}{formatCurrency(mostVisitedProduct.price)}</p>
                     </>
                   ) : (
                     <p>No view data yet</p>
@@ -376,9 +429,9 @@ function StatisticsPage() {
                   ) : mostBoughtProduct ? (
                     <>
                       <p>{mostBoughtProduct.name}</p>
-                      <p>Sales: {mostBoughtProduct.sales}</p>
+                      <p>Sales: {formatCount(mostBoughtProduct.sales)}</p>
                       <p>Category: {mostBoughtProduct.category}</p>
-                      <p>Price: {"\u20B1"}{mostBoughtProduct.price}</p>
+                      <p>Price: {"\u20B1"}{formatCurrency(mostBoughtProduct.price)}</p>
                     </>
                   ) : (
                     <p>No data available</p>
@@ -402,9 +455,9 @@ function StatisticsPage() {
                   ) : topRatedProduct ? (
                     <>
                       <p>{topRatedProduct.name}</p>
-                      <p>Rating: {topRatedProduct.rating}/5.0</p>
-                      <p>Reviews: {topRatedProduct.reviews}</p>
-                      <p>Price: {"\u20B1"}{topRatedProduct.price}</p>
+                      <p>Rating: {formatCount(topRatedProduct.rating)}/5.0</p>
+                      <p>Reviews: {formatCount(topRatedProduct.reviews)}</p>
+                      <p>Price: {"\u20B1"}{formatCurrency(topRatedProduct.price)}</p>
                     </>
                   ) : (
                     <p>No ratings this month</p>
