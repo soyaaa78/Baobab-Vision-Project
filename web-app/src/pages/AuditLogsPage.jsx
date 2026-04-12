@@ -13,6 +13,11 @@ import {
   addPaginatedCanvasToPdf,
   captureElementCanvas,
 } from "../utils/pdfReportExport";
+import {
+  buildAuditChangeExportText,
+  buildAuditMetadataExportText,
+  buildAuditTargetExportText,
+} from "../utils/auditExportFormat";
 
 const AuditLogsPage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -28,6 +33,7 @@ const AuditLogsPage = () => {
   const [token, setToken] = useState("");
   const printRef = useRef(null);
   const contentRef = useRef(null);
+  const exportContentRef = useRef(null);
 
   // Event type options for filtering
   const eventTypes = [
@@ -193,6 +199,13 @@ const AuditLogsPage = () => {
     setDetailModalOpen(true);
   };
 
+  const getActorRoleDisplay = (role) => {
+    if (!role) return "N/A";
+    if (role === "staff_order") return "Order Staff";
+    if (role === "staff_product") return "Product Staff";
+    return role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
   // Format date as: Sep 11, 2025, 2:30 PM
   const formatDate = (dateString) => {
     const d = new Date(dateString);
@@ -285,7 +298,7 @@ const AuditLogsPage = () => {
       );
 
   const handleExportPDF = async () => {
-    const element = contentRef.current;
+    const element = exportContentRef.current || contentRef.current;
     if (!element) return;
 
     try {
@@ -620,13 +633,7 @@ const AuditLogsPage = () => {
                       </span>
                       {log.actorRole && (
                         <span className="actor-role">
-                          {log.actorRole === "staff_order"
-                            ? "Order Staff"
-                            : log.actorRole === "staff_product"
-                            ? "Product Staff"
-                            : log.actorRole
-                                .replace(/_/g, " ")
-                                .replace(/\b\w/g, (c) => c.toUpperCase())}
+                          {getActorRoleDisplay(log.actorRole)}
                         </span>
                       )}
                     </div>
@@ -670,6 +677,89 @@ const AuditLogsPage = () => {
         </table>
       </div>
 
+      <div
+        ref={exportContentRef}
+        style={{
+          position: "fixed",
+          left: "-100000px",
+          top: 0,
+          width: "2200px",
+          background: "#ffffff",
+          color: "#0f172a",
+          padding: "12px 16px",
+          boxSizing: "border-box",
+          fontSize: "12px",
+        }}
+      >
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            tableLayout: "fixed",
+          }}
+        >
+          <thead>
+            <tr>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "150px", textAlign: "left" }}>Date & Time</th>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "140px", textAlign: "left" }}>Staff</th>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "110px", textAlign: "left" }}>Role</th>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "95px", textAlign: "left" }}>Type</th>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "95px", textAlign: "left" }}>Action</th>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "170px", textAlign: "left" }}>Target</th>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "120px", textAlign: "left" }}>IP</th>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "270px", textAlign: "left" }}>Device</th>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "420px", textAlign: "left" }}>Metadata</th>
+              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "420px", textAlign: "left" }}>Changes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredLogs.length === 0 ? (
+              <tr>
+                <td colSpan="10" style={{ border: "1px solid #cbd5e1", padding: "8px", textAlign: "center" }}>
+                  {hasActiveFilters
+                    ? "No audit logs match your search criteria"
+                    : "No audit logs found"}
+                </td>
+              </tr>
+            ) : (
+              filteredLogs.map((log) => (
+                <tr key={`export-${log._id}`}>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>{formatDate(log.createdAt)}</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>{getActorDisplayName(log)}</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>{getActorRoleDisplay(log.actorRole)}</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>
+                    {eventTypeLabels[log.eventType] || log.eventType || "N/A"}
+                  </td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>
+                    {actionLabels[log.action] ||
+                      (log.action
+                        ? log.action
+                            .replace(/_/g, " ")
+                            .replace(/\b\w/g, (c) => c.toUpperCase())
+                        : "N/A")}
+                  </td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                    {buildAuditTargetExportText(log)}
+                  </td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                    {log.ip || "N/A"}
+                  </td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                    {log.userAgent || "N/A"}
+                  </td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                    {buildAuditMetadataExportText(log)}
+                  </td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                    {buildAuditChangeExportText(log)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
       </div>{/* end printRef */}
 
       {/* Audit Log Detail Modal */}
@@ -678,13 +768,7 @@ const AuditLogsPage = () => {
         onClose={() => setDetailModalOpen(false)}
         log={selectedLog}
         getActorDisplayName={getActorDisplayName}
-        getActorRoleDisplay={(role) =>
-          role === "staff_order"
-            ? "Order Staff"
-            : role === "staff_product"
-            ? "Product Staff"
-            : role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-        }
+        getActorRoleDisplay={getActorRoleDisplay}
       />
     </div>
   );

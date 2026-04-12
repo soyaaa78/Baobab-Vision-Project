@@ -43,6 +43,7 @@ app.use(
       process.env.CLIENT_URL,
       "https://next-webar-tryon.vercel.app",
       "http://localhost:5173",
+      "http://localhost:5174",
       "http://localhost:3000",
       "https://baobab-vto.netlify.app",
     ],
@@ -54,7 +55,7 @@ app.use(
 app.use("/uploads", express.static("uploads"));
 app.use(
   "/userprofileuploads",
-  express.static(path.join(__dirname, "userprofileuploads"))
+  express.static(path.join(__dirname, "userprofileuploads")),
 );
 
 // API Routes
@@ -121,15 +122,15 @@ const ensureAnalyticsIndexes = async () => {
   try {
     await ProductViewStat.collection.createIndex(
       { productId: 1 },
-      { name: "productId_1" }
+      { name: "productId_1" },
     );
     await ProductViewStat.collection.createIndex(
       { dateKey: 1 },
-      { name: "dateKey_1" }
+      { name: "dateKey_1" },
     );
     await ProductViewStat.collection.createIndex(
       { productId: 1, dateKey: 1 },
-      { unique: true, name: "productId_1_dateKey_1" }
+      { unique: true, name: "productId_1_dateKey_1" },
     );
     console.log("âœ… Ensured product view analytics indexes");
   } catch (err) {
@@ -145,7 +146,7 @@ const dropLegacyFirstnameIndex = async () => {
       .indexInformation({ full: true });
 
     const hasFirstnameIndex = indexInfo.some(
-      (index) => index.name === "firstname_1"
+      (index) => index.name === "firstname_1",
     );
     if (hasFirstnameIndex) {
       await mongoose.connection.db.collection("users").dropIndex("firstname_1");
