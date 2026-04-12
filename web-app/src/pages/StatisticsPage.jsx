@@ -11,9 +11,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPrint, faFilePdf } from "@fortawesome/free-solid-svg-icons";
 import { jsPDF } from "jspdf";
 import {
-  addPaginatedCanvasToPdf,
-  captureElementCanvas,
-} from "../utils/pdfReportExport";
+  buildChartSections,
+  buildHighlightCards,
+} from "../utils/statisticsPdfExport";
 
 const cardSkeleton = (
   <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -72,6 +72,76 @@ const RANGE_OPTIONS = [
   { value: "ytd", label: "Year to Date" },
 ];
 
+const PAGE_MARGIN = 10;
+const PAGE_HEADER_HEIGHT = 24;
+const PAGE_FOOTER_HEIGHT = 12;
+
+const drawPdfFrame = ({
+  pdf,
+  pageWidth,
+  pageHeight,
+  logoBase64,
+  generatedAt,
+  reportDate,
+  pageNumber,
+}) => {
+  pdf.setFillColor(252, 247, 242);
+  pdf.rect(0, 0, pageWidth, 30, "F");
+
+  pdf.addImage(logoBase64, "PNG", 8, 6, 55, 18);
+
+  pdf.setTextColor(139, 90, 60);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(14);
+  pdf.text("STATISTICS REPORT", pageWidth - 8, 14, { align: "right" });
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.setTextColor(100, 116, 139);
+  pdf.text(`Generated: ${generatedAt}`, pageWidth - 8, 21, { align: "right" });
+  pdf.text(reportDate, pageWidth - 8, 27, { align: "right" });
+
+  pdf.setFillColor(139, 90, 60);
+  pdf.rect(0, 30, pageWidth, 1.5, "F");
+  pdf.setFillColor(234, 182, 118);
+  pdf.rect(0, 31.5, pageWidth, 0.8, "F");
+
+  pdf.setFillColor(252, 247, 242);
+  pdf.rect(0, pageHeight - 12, pageWidth, 12, "F");
+  pdf.setFillColor(139, 90, 60);
+  pdf.rect(0, pageHeight - 12, pageWidth, 0.8, "F");
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(7);
+  pdf.setTextColor(139, 90, 60);
+  pdf.text(
+    "Baobab Vision Eyewear - CONFIDENTIAL - FOR INTERNAL USE ONLY",
+    8,
+    pageHeight - 4.5
+  );
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setTextColor(100, 116, 139);
+  pdf.text(`Page ${pageNumber}`, pageWidth - 8, pageHeight - 4.5, {
+    align: "right",
+  });
+};
+
+const fitBox = (sourceWidth, sourceHeight, maxWidth, maxHeight) => {
+  if (!sourceWidth || !sourceHeight) {
+    return { width: maxWidth, height: maxHeight };
+  }
+
+  const widthRatio = maxWidth / sourceWidth;
+  const heightRatio = maxHeight / sourceHeight;
+  const scale = Math.min(widthRatio, heightRatio);
+
+  return {
+    width: sourceWidth * scale,
+    height: sourceHeight * scale,
+  };
+};
+
 function StatisticsPage() {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
   const [token, setToken] = useState();
@@ -80,7 +150,9 @@ function StatisticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const printRef = useRef(null);
-  const contentRef = useRef(null);
+  const pieChartRef = useRef(null);
+  const salesChartRef = useRef(null);
+  const viewsChartRef = useRef(null);
 
   useEffect(() => {
     const t = Cookies.get("token");
@@ -151,61 +223,31 @@ function StatisticsPage() {
           })
       );
 
-  const waitForImageLoad = (imgEl) =>
-    new Promise((resolve) => {
-      if (!imgEl) {
-        resolve();
-        return;
-      }
-      if (imgEl.complete && imgEl.naturalWidth > 0) {
-        resolve();
-        return;
-      }
-      const onDone = () => {
-        imgEl.removeEventListener("load", onDone);
-        imgEl.removeEventListener("error", onDone);
-        resolve();
-      };
-      imgEl.addEventListener("load", onDone, { once: true });
-      imgEl.addEventListener("error", onDone, { once: true });
-    });
-
-  const waitForNextFrame = () =>
-    new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  const getChartImage = (containerRef) => {
+    const canvas = containerRef.current?.querySelector("canvas");
+    if (!canvas) return null;
+    return {
+      dataUrl: canvas.toDataURL("image/png"),
+      width: canvas.width,
+      height: canvas.height,
+    };
+  };
 
   const handleExportPDF = async () => {
-    const element = contentRef.current;
-    if (!element) return;
-
-    let externalImgs = [];
-    let originalSrcs = [];
     try {
-      element.classList.add("pdf-exporting");
-
-      externalImgs = Array.from(element.querySelectorAll("img")).filter(
-        (img) =>
-          img.src.startsWith("http") &&
-          !img.src.startsWith(window.location.origin)
-      );
-
-      const [logoBase64, ...imgBase64s] = await Promise.all([
+      const [logoBase64, mostVisitedImage, mostBoughtImage, topRatedImage] =
+        await Promise.all([
         loadImageAsBase64(baobablogo),
-        ...externalImgs.map((img) => loadImageAsBase64(img.src).catch(() => null)),
+        mostVisitedProduct?.imageUrls?.[0]
+          ? loadImageAsBase64(mostVisitedProduct.imageUrls[0]).catch(() => null)
+          : Promise.resolve(null),
+        mostBoughtProduct?.imageUrls?.[0]
+          ? loadImageAsBase64(mostBoughtProduct.imageUrls[0]).catch(() => null)
+          : Promise.resolve(null),
+        topRatedProduct?.imageUrls?.[0]
+          ? loadImageAsBase64(topRatedProduct.imageUrls[0]).catch(() => null)
+          : Promise.resolve(null),
       ]);
-
-      originalSrcs = externalImgs.map((img) => img.src);
-      externalImgs.forEach((img, i) => {
-        if (imgBase64s[i]) img.src = imgBase64s[i];
-      });
-
-      await Promise.all(
-        externalImgs.map((img, i) =>
-          imgBase64s[i] ? waitForImageLoad(img) : Promise.resolve()
-        )
-      );
-      await waitForNextFrame();
-
-      const canvas = await captureElementCanvas(element, { scale: 2 });
 
       const pdf = new jsPDF({
         orientation: "landscape",
@@ -215,73 +257,160 @@ function StatisticsPage() {
 
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const contentY = 34;
-      const footerY = pageHeight - 12;
-      const availableContentHeight = footerY - contentY;
       const generatedAt = new Date().toLocaleString();
       const reportDate = `${dayOfWeek}, ${currentMonth} ${currentDay}, ${currentYear}`;
+      const highlightCards = buildHighlightCards({
+        mostVisitedProduct,
+        mostBoughtProduct,
+        topRatedProduct,
+      }).map((card, index) => ({
+        ...card,
+        imageBase64: [mostVisitedImage, mostBoughtImage, topRatedImage][index] || null,
+      }));
+      const chartSections = buildChartSections({
+        faceShapeStats,
+        monthlySalesTrend,
+        productViews: statisticsData?.productViews,
+        selectedRangeLabel,
+        currentMonth,
+        currentDay,
+        currentYear,
+        dayOfWeek,
+      }).map((section, index) => ({
+        ...section,
+        chartImage: [
+          getChartImage(pieChartRef),
+          getChartImage(salesChartRef),
+          getChartImage(viewsChartRef),
+        ][index],
+      }));
 
-      addPaginatedCanvasToPdf({
-        pdf,
-        canvas,
-        contentY,
-        contentWidth: pageWidth,
-        contentHeightPerPage: availableContentHeight,
-        drawPageDecorators: ({ pageNumber, totalPages }) => {
-          pdf.setFillColor(252, 247, 242);
-          pdf.rect(0, 0, pageWidth, 30, "F");
+      let pageNumber = 1;
+      let cursorY = 38;
+      const contentBottom = pageHeight - PAGE_FOOTER_HEIGHT - 6;
+      const contentWidth = pageWidth - PAGE_MARGIN * 2;
 
-          pdf.addImage(logoBase64, "PNG", 8, 6, 55, 18);
+      const startPage = () => {
+        drawPdfFrame({
+          pdf,
+          pageWidth,
+          pageHeight,
+          logoBase64,
+          generatedAt,
+          reportDate,
+          pageNumber,
+        });
+        cursorY = 38;
+      };
 
-          pdf.setTextColor(139, 90, 60);
+      const ensureSpace = (requiredHeight) => {
+        if (cursorY + requiredHeight <= contentBottom) return;
+        pdf.addPage();
+        pageNumber += 1;
+        startPage();
+      };
+
+      const drawSummaryCards = () => {
+        const gap = 6;
+        const cardWidth = (contentWidth - gap * 2) / 3;
+        const cardHeight = 42;
+        ensureSpace(cardHeight);
+
+        highlightCards.forEach((card, index) => {
+          const x = PAGE_MARGIN + index * (cardWidth + gap);
+          pdf.setFillColor(255, 255, 255);
+          pdf.setDrawColor(226, 232, 240);
+          pdf.roundedRect(x, cursorY, cardWidth, cardHeight, 3, 3, "FD");
+
+          pdf.setFillColor(248, 178, 106);
+          pdf.rect(x, cursorY, cardWidth, 1.2, "F");
+
+          pdf.setTextColor(30, 41, 59);
           pdf.setFont("helvetica", "bold");
-          pdf.setFontSize(14);
-          pdf.text("STATISTICS REPORT", pageWidth - 8, 14, { align: "right" });
+          pdf.setFontSize(10);
+          pdf.text(card.title, x + 3, cursorY + 6);
+
+          let textX = x + 3;
+          const textWidth = cardWidth - 6;
+          if (card.imageBase64) {
+            pdf.addImage(card.imageBase64, "PNG", x + cardWidth - 18, cursorY + 5, 13, 13);
+          }
+
+          pdf.setFontSize(9);
+          pdf.text(card.name, textX, cursorY + 12);
 
           pdf.setFont("helvetica", "normal");
           pdf.setFontSize(8);
-          pdf.setTextColor(100, 116, 139);
-          pdf.text(`Generated: ${generatedAt}`, pageWidth - 8, 21, {
-            align: "right",
-          });
-          pdf.text(reportDate, pageWidth - 8, 27, { align: "right" });
+          const metricLines = pdf.splitTextToSize(card.lines.join("\n"), textWidth - 16);
+          pdf.text(metricLines, textX, cursorY + 18);
+        });
 
-          pdf.setFillColor(139, 90, 60);
-          pdf.rect(0, 30, pageWidth, 1.5, "F");
-          pdf.setFillColor(234, 182, 118);
-          pdf.rect(0, 31.5, pageWidth, 0.8, "F");
+        cursorY += cardHeight + 8;
+      };
 
-          pdf.setFillColor(252, 247, 242);
-          pdf.rect(0, pageHeight - 12, pageWidth, 12, "F");
-          pdf.setFillColor(139, 90, 60);
-          pdf.rect(0, pageHeight - 12, pageWidth, 0.8, "F");
+      const drawChartSection = (section) => {
+        const titleHeight = 8;
+        const chartBounds = section.chartImage
+          ? fitBox(section.chartImage.width, section.chartImage.height, contentWidth - 8, 62)
+          : null;
+        const imageHeight = chartBounds ? chartBounds.height : 16;
+        const captionLines = pdf.splitTextToSize(section.caption, contentWidth - 6);
+        const sectionHeight = titleHeight + imageHeight + captionLines.length * 4 + 8;
+        ensureSpace(sectionHeight);
 
-          pdf.setFont("helvetica", "bold");
-          pdf.setFontSize(7);
-          pdf.setTextColor(139, 90, 60);
-          pdf.text(
-            "Baobab Vision Eyewear - CONFIDENTIAL - FOR INTERNAL USE ONLY",
-            8,
-            pageHeight - 4.5
+        pdf.setFillColor(255, 255, 255);
+        pdf.setDrawColor(226, 232, 240);
+        pdf.roundedRect(PAGE_MARGIN, cursorY, contentWidth, sectionHeight, 3, 3, "FD");
+
+        pdf.setTextColor(139, 90, 60);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(11);
+        pdf.text(section.title, PAGE_MARGIN + 4, cursorY + 7);
+
+        if (section.chartImage && chartBounds) {
+          const imageX = PAGE_MARGIN + 4 + ((contentWidth - 8 - chartBounds.width) / 2);
+          pdf.addImage(
+            section.chartImage.dataUrl,
+            "PNG",
+            imageX,
+            cursorY + 10,
+            chartBounds.width,
+            chartBounds.height
           );
-
-          pdf.setFont("helvetica", "normal");
+        } else {
+          pdf.setFont("helvetica", "italic");
+          pdf.setFontSize(9);
           pdf.setTextColor(100, 116, 139);
-          pdf.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - 8, pageHeight - 4.5, {
-            align: "right",
-          });
-        },
-      });
+          pdf.text(section.emptyMessage, PAGE_MARGIN + 4, cursorY + 20);
+        }
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(
+          captionLines,
+          PAGE_MARGIN + 4,
+          cursorY + 10 + imageHeight + 2
+        );
+
+        cursorY += sectionHeight + 6;
+      };
+
+      startPage();
+
+      pdf.setTextColor(30, 41, 59);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(11);
+      pdf.text(`Range: ${selectedRangeLabel}`, PAGE_MARGIN, cursorY);
+      cursorY += 6;
+
+      drawSummaryCards();
+      chartSections.forEach(drawChartSection);
 
       const dateStr = new Date().toISOString().split("T")[0];
       pdf.save(`statistics-report-${dateStr}.pdf`);
     } catch (err) {
       console.error("PDF export failed:", err);
-    } finally {
-      externalImgs.forEach((img, i) => {
-        if (originalSrcs[i]) img.src = originalSrcs[i];
-      });
-      element.classList.remove("pdf-exporting");
     }
   };
 
@@ -329,11 +458,11 @@ function StatisticsPage() {
           </div>
         </div>
 
-        <div className="statistics-layout" ref={contentRef}>
+        <div className="statistics-layout">
           <div className="statistics-main">
             <div className="statistics-bulk">
               <div className="piesect">
-                <div className="chart-wrapper" id="stat-piechart">
+                <div className="chart-wrapper" id="stat-piechart" ref={pieChartRef}>
                   {loading
                     ? chartStateBox("Loading chart...", 320)
                     : error
@@ -344,7 +473,7 @@ function StatisticsPage() {
                 </div>
               </div>
               <div className="linesect">
-                <div className="chart-wrapper">
+                <div className="chart-wrapper" ref={salesChartRef}>
                   {loading ? (
                     chartStateBox("Loading chart...")
                   ) : error ? (
@@ -366,7 +495,7 @@ function StatisticsPage() {
                       : `${currentYear} sales year-to-date through ${currentMonth} ${currentDay}`}
                   </p>
                 </div>
-                <div className="chart-wrapper">
+                <div className="chart-wrapper" ref={viewsChartRef}>
                   {loading ? (
                     chartStateBox("Loading chart...")
                   ) : error ? (

@@ -1,4 +1,5 @@
 import html2canvas from "html2canvas";
+import { computeEffectiveCanvasHeight } from "./pdfCanvasTrim";
 
 const DEFAULT_CAPTURE_OPTIONS = {
   scale: 2,
@@ -61,9 +62,14 @@ export function addPaginatedCanvasToPdf({
     return 0;
   }
 
+  const effectiveCanvasHeight = computeEffectiveCanvasHeight(canvas);
+  if (!effectiveCanvasHeight) {
+    return 0;
+  }
+
   const pxPerUnit = canvas.width / contentWidth;
   const sliceHeightPx = Math.max(1, Math.floor(contentHeightPerPage * pxPerUnit));
-  const totalPages = Math.max(1, Math.ceil(canvas.height / sliceHeightPx));
+  const totalPages = Math.max(1, Math.ceil(effectiveCanvasHeight / sliceHeightPx));
 
   for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
     if (pageIndex > 0) {
@@ -76,7 +82,7 @@ export function addPaginatedCanvasToPdf({
     const sourceOffsetY = pageIndex * sliceHeightPx;
     const currentSliceHeightPx = Math.min(
       sliceHeightPx,
-      canvas.height - sourceOffsetY
+      effectiveCanvasHeight - sourceOffsetY
     );
     const sliceCanvas = buildSliceCanvas(
       canvas,
