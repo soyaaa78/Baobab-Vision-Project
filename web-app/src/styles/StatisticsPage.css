@@ -353,6 +353,12 @@
   transform: translateY(0);
 }
 
+.stat-export-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
 /* Print-only header (hidden in normal view) */
 .print-header-stats {
   display: none;
