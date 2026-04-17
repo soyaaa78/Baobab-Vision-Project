@@ -117,6 +117,7 @@
 /* Mobile menu toggle */
 .mobile-menu-toggle {
   display: none;
+  position: relative;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
