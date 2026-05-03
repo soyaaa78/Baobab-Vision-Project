@@ -20,23 +20,8 @@ const buildPublicR2Url = (baseUrl, objectKey) => {
   return `${normalizedBase}/${encodedKey}`;
 };
 
-const parseFirebasePath = (imageUrl) => {
-  if (typeof imageUrl !== "string" || !imageUrl.includes("firebasestorage.googleapis.com")) {
-    return null;
-  }
-
-  const marker = "/o/";
-  const markerIndex = imageUrl.indexOf(marker);
-  if (markerIndex === -1) return null;
-
-  const pathAndQuery = imageUrl.slice(markerIndex + marker.length);
-  const pathPart = pathAndQuery.split("?")[0] || "";
-  const decodedPath = decodeURIComponent(pathPart).replace(/^\/+/, "");
-
-  if (!decodedPath) return null;
-
-  return decodedPath;
-};
+const isLegacyFirebaseUrl = (imageUrl) =>
+  typeof imageUrl === "string" && imageUrl.includes("firebasestorage.googleapis.com");
 
 const parseR2KeyFromHttpUrl = (imageUrl, r2PublicBaseUrl) => {
   try {
@@ -79,9 +64,8 @@ const parseR2Key = (imageUrl, options = {}) => {
 };
 
 const parseStorageDeletionTarget = (imageUrl, options = {}) => {
-  const firebasePath = parseFirebasePath(imageUrl);
-  if (firebasePath) {
-    return { provider: "firebase", path: firebasePath };
+  if (isLegacyFirebaseUrl(imageUrl)) {
+    return { provider: "legacy_noop" };
   }
 
   const r2Key = parseR2Key(imageUrl, options);

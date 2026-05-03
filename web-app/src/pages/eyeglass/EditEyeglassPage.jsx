@@ -224,6 +224,7 @@ const EditEyeglassPage = () => {
     const newPreviews = files.map((file) => ({
       id: URL.createObjectURL(file),
       url: URL.createObjectURL(file),
+      file,
     }));
     setProductImages((prev) => [...prev, ...newPreviews]);
   };
@@ -543,11 +544,26 @@ const EditEyeglassPage = () => {
     });
 
     // Add product images
-    productImages.forEach((img) => {
-      if (img.file) formData.append("productImages", img.file);
+    const productImageExistingUrls = [];
+    const productImageTargets = [];
+    productImages.forEach((img, idx) => {
+      if (img.file) {
+        formData.append("productImages", img.file);
+        productImageTargets.push(idx);
+        productImageExistingUrls.push("");
+      } else {
+        productImageExistingUrls.push(img.url);
+      }
     });
+    formData.append(
+      "productImageExistingUrls",
+      JSON.stringify(productImageExistingUrls)
+    );
+    formData.append("productImageTargets", JSON.stringify(productImageTargets));
 
     // Add colorway images and models (only new files)
+    const colorwayImageTargets = [];
+    const colorwayModelTargets = [];
     form.colorOptions.forEach((opt, idx) => {
       // Only append if it's a new file (not an existing image with preview property)
       if (opt.imageFile && opt.imageFile instanceof File) {
@@ -556,6 +572,7 @@ const EditEyeglassPage = () => {
           opt.imageFile,
           `colorway_${idx}_${opt.imageFile.name}`
         );
+        colorwayImageTargets.push(idx);
       }
       if (colorwayModelFiles[idx] && colorwayModelFiles[idx].rawFile) {
         formData.append(
@@ -563,8 +580,11 @@ const EditEyeglassPage = () => {
           colorwayModelFiles[idx].rawFile,
           `colorway_${idx}_${colorwayModelFiles[idx].rawFile.name}`
         );
+        colorwayModelTargets.push(idx);
       }
     });
+    formData.append("colorwayImageTargets", JSON.stringify(colorwayImageTargets));
+    formData.append("colorwayModelTargets", JSON.stringify(colorwayModelTargets));
 
     // Add product ID for update
     formData.append("id", id);

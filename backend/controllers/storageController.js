@@ -208,7 +208,7 @@ exports.upload3dModels = catchAsync(async (req, res, next) => {
   }
 });
 
-// Delete image from cloud storage (supports R2 + legacy Firebase URLs)
+// Delete image from cloud storage (R2 delete; legacy Firebase URLs are no-op)
 exports.deleteImage = catchAsync(async (req, res, next) => {
   const { imageUrl } = req.body;
 
@@ -228,6 +228,34 @@ exports.deleteImage = catchAsync(async (req, res, next) => {
       ? 400
       : 500;
     return next(new AppError("Failed to delete image", statusCode));
+  }
+});
+
+exports.serveR2Asset = catchAsync(async (req, res, next) => {
+  const key = req.params[0];
+
+  if (!key) {
+    return next(new AppError("Asset key is required", 400));
+  }
+
+  try {
+    const object = await storageService.getObjectStream(key);
+
+    if (object.ContentType) {
+      res.setHeader("Content-Type", object.ContentType);
+    }
+    if (object.ContentLength) {
+      res.setHeader("Content-Length", object.ContentLength);
+    }
+    if (object.ETag) {
+      res.setHeader("ETag", object.ETag);
+    }
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+
+    object.Body.pipe(res);
+  } catch (error) {
+    console.error("Storage asset read error:", error);
+    return next(new AppError("Asset not found", 404));
   }
 });
 

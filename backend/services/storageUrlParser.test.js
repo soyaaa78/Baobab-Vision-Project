@@ -6,14 +6,13 @@ const {
   buildPublicR2Url,
 } = require("./storageUrlParser");
 
-test("parses Firebase download URL into storage path", () => {
+test("parses Firebase download URL as legacy no-op target", () => {
   const target = parseStorageDeletionTarget(
     "https://firebasestorage.googleapis.com/v0/b/demo-bucket/o/products%2Fimages%2Fabc.jpg?alt=media&token=1"
   );
 
   assert.deepEqual(target, {
-    provider: "firebase",
-    path: "products/images/abc.jpg",
+    provider: "legacy_noop",
   });
 });
 

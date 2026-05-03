@@ -1,6 +1,5 @@
 const { parseStorageDeletionTarget } = require("./storageUrlParser");
 const r2StorageService = require("./r2StorageService");
-const firebaseLegacyStorageService = require("./firebaseLegacyStorageService");
 
 const getParserOptions = () => ({
   r2PublicBaseUrl: process.env.R2_PUBLIC_BASE_URL,
@@ -21,19 +20,21 @@ const deleteByUrl = async (imageUrl) => {
 
   if (target.provider === "r2") {
     await r2StorageService.deleteByKey(target.key);
-    return;
+    return { noop: false, provider: "r2" };
   }
 
-  if (target.provider === "firebase") {
-    await firebaseLegacyStorageService.deleteByPath(target.path);
-    return;
+  if (target.provider === "legacy_noop") {
+    return { noop: true, provider: "legacy_noop" };
   }
 
   throw new Error(`Unsupported storage provider: ${target.provider}`);
 };
 
+const getObjectStream = (key) => r2StorageService.getObjectStream(key);
+
 module.exports = {
   uploadSingleImage,
   uploadMultipleImages,
   deleteByUrl,
+  getObjectStream,
 };

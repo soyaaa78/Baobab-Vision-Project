@@ -9,7 +9,11 @@ const {
   uploadProductFiles,
   uploadMultipleImagesHelper,
   uploadSingleImageHelper,
-} = require("./firebaseStorageController");
+} = require("./storageController");
+const {
+  applyTargetedUrls,
+  mergeOrderedUrls,
+} = require("../services/colorwayTargetMapper");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const { logEvent } = require("../services/auditLogService");
@@ -595,7 +599,7 @@ const getProductViewAnalyticsData = async (range) => {
   };
 };
 
-// Use Firebase storage middleware
+// Use R2 storage middleware
 exports.uploadProductFiles = uploadProductFiles;
 
 // Create product
@@ -675,7 +679,7 @@ exports.createProduct = catchAsync(async (req, res, next) => {
     let colorwayModels3dUrls = [];
     let colorwayModelsMap = [];
 
-    // Handle uploaded files with Firebase Storage
+    // Handle uploaded files with R2 storage
     if (req.files) {
       // Upload product images
       if (req.files.productImages && req.files.productImages.length > 0) {
@@ -985,17 +989,23 @@ exports.updateProduct = async (req, res) => {
     const oldValues = product.toObject();
     // Normalize/parse incoming fields (multipart sends JSON fields as strings)
     const body = { ...req.body };
-    ["colorOptions", "lensOptions", "specs", "colorwayModelTargets"].forEach(
-      (k) => {
-        if (typeof body[k] === "string") {
-          try {
-            body[k] = JSON.parse(body[k]);
-          } catch (e) {
-            // ignore parse error; leave as-is
-          }
+    [
+      "colorOptions",
+      "lensOptions",
+      "specs",
+      "productImageExistingUrls",
+      "productImageTargets",
+      "colorwayImageTargets",
+      "colorwayModelTargets",
+    ].forEach((k) => {
+      if (typeof body[k] === "string") {
+        try {
+          body[k] = JSON.parse(body[k]);
+        } catch (e) {
+          // ignore parse error; leave as-is
         }
       }
-    );
+    });
 
     Object.keys(body).forEach((key) => {
       if (body[key] !== undefined) {
@@ -1024,7 +1034,11 @@ exports.updateProduct = async (req, res) => {
           req.files.productImages,
           "products/images"
         );
-        product.imageUrls = urls;
+        product.imageUrls = mergeOrderedUrls(
+          body.productImageExistingUrls,
+          urls,
+          body.productImageTargets
+        );
       }
 
       // Replace colorway images
@@ -1039,10 +1053,15 @@ exports.updateProduct = async (req, res) => {
           Array.isArray(product.colorOptions) &&
           product.colorOptions.length
         ) {
-          product.colorOptions = product.colorOptions.map((opt, idx) => ({
-            ...opt,
-            imageUrl: urls[idx] || opt.imageUrl,
-          }));
+          const targets = Array.isArray(body.colorwayImageTargets)
+            ? body.colorwayImageTargets
+            : [];
+          product.colorOptions = applyTargetedUrls(
+            product.colorOptions,
+            urls,
+            targets,
+            "imageUrl"
+          );
         }
       }
 
@@ -1083,21 +1102,12 @@ exports.updateProduct = async (req, res) => {
           Array.isArray(product.colorOptions) &&
           product.colorOptions.length
         ) {
-          const byOptionIdx = {};
-          urls.forEach((url, fileIdx) => {
-            const optIdx = mapping[fileIdx];
-            if (
-              typeof optIdx === "number" &&
-              optIdx >= 0 &&
-              byOptionIdx[optIdx] == null
-            ) {
-              byOptionIdx[optIdx] = url;
-            }
-          });
-          product.colorOptions = product.colorOptions.map((opt, idx) => ({
-            ...(opt.toObject?.() || opt),
-            model3dUrl: byOptionIdx[idx] || opt.model3dUrl,
-          }));
+          product.colorOptions = applyTargetedUrls(
+            product.colorOptions,
+            urls,
+            mapping,
+            "model3dUrl"
+          );
         }
       }
     }

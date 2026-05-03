@@ -6,7 +6,7 @@ const {
 } = require("../controllers/userProfileController");
 const authenticateUser = require("../middlewares/authMiddleware");
 const multer = require("multer");
-// Use memory storage for Firebase compatibility
+// Use memory storage for R2 uploads.
 const upload = multer({ storage: multer.memoryStorage() });
 
 // GET user profile
