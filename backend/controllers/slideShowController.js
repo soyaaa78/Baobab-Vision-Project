@@ -1,15 +1,14 @@
 const SlideshowImage = require("../models/SlideshowImage");
-const { uploadSingleImageHelper } = require("./firebaseStorageController");
+const { uploadSingleImageHelper, deleteImage: deleteStoredImage } = require("./storageController");
 
-// POST new image upload (to Firebase)
+// POST new image upload to R2.
 const uploadImage = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded" });
   }
 
   try {
-    // Upload image to Firebase Storage
-    const firebaseUrl = await uploadSingleImageHelper(
+    const imageUrl = await uploadSingleImageHelper(
       req.file,
       "slideshow/images"
     );
@@ -17,7 +16,7 @@ const uploadImage = async (req, res) => {
     const last = await SlideshowImage.findOne().sort({ position: -1 });
     const nextPosition = last ? last.position + 1 : 1;
     const newImage = new SlideshowImage({
-      imagePath: firebaseUrl,
+      imagePath: imageUrl,
       position: nextPosition,
     });
     await newImage.save();
@@ -39,20 +38,15 @@ const getAllImages = async (req, res) => {
   }
 };
 
-// DELETE image by id (removes from Firebase and db record)
-const {
-  deleteImage: deleteFirebaseImage,
-} = require("./firebaseStorageController");
+// DELETE image by id (removes from R2 when applicable and db record).
 const deleteImage = async (req, res) => {
   const { id } = req.params;
   try {
     const doc = await SlideshowImage.findById(id);
     if (!doc) return res.status(404).json({ message: "Image not found" });
 
-    // Delete from Firebase Storage
     if (doc.imagePath) {
-      // Use the Firebase controller to delete by URL
-      await deleteFirebaseImage(
+      await deleteStoredImage(
         { body: { imageUrl: doc.imagePath } },
         {
           status: () => ({ json: () => {} }),

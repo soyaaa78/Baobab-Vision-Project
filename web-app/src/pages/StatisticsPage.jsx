@@ -8,12 +8,13 @@ import baobablogo from "../assets/bvfull.png";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPrint, faFilePdf } from "@fortawesome/free-solid-svg-icons";
+import { faPrint, faFilePdf, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { jsPDF } from "jspdf";
 import {
   buildChartSections,
   buildHighlightCards,
 } from "../utils/statisticsPdfExport";
+import { getPdfExportButtonLabel } from "../utils/pdfExportUi";
 
 const cardSkeleton = (
   <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -148,6 +149,7 @@ function StatisticsPage() {
   const [statisticsData, setStatisticsData] = useState(null);
   const [selectedRange, setSelectedRange] = useState("30d");
   const [loading, setLoading] = useState(true);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [error, setError] = useState(null);
   const printRef = useRef(null);
   const pieChartRef = useRef(null);
@@ -234,6 +236,8 @@ function StatisticsPage() {
   };
 
   const handleExportPDF = async () => {
+    if (isExportingPdf) return;
+    setIsExportingPdf(true);
     try {
       const [logoBase64, mostVisitedImage, mostBoughtImage, topRatedImage] =
         await Promise.all([
@@ -411,6 +415,8 @@ function StatisticsPage() {
       pdf.save(`statistics-report-${dateStr}.pdf`);
     } catch (err) {
       console.error("PDF export failed:", err);
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -452,8 +458,13 @@ function StatisticsPage() {
             <button onClick={handlePrint} className="stat-export-btn stat-print-btn">
               <FontAwesomeIcon icon={faPrint} /> Print
             </button>
-            <button onClick={handleExportPDF} className="stat-export-btn stat-pdf-btn">
-              <FontAwesomeIcon icon={faFilePdf} /> Export PDF
+            <button
+              onClick={handleExportPDF}
+              className="stat-export-btn stat-pdf-btn"
+              disabled={isExportingPdf}
+            >
+              <FontAwesomeIcon icon={isExportingPdf ? faSpinner : faFilePdf} spin={isExportingPdf} />
+              {getPdfExportButtonLabel(isExportingPdf)}
             </button>
           </div>
         </div>

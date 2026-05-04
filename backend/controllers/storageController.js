@@ -1,22 +1,7 @@
-const { initializeApp } = require("firebase/app");
-const {
-  getStorage,
-  ref,
-  getDownloadURL,
-  uploadBytesResumable,
-  deleteObject,
-} = require("firebase/storage");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const multer = require("multer");
-
-const firebaseConfig = {
-  storageBucket: process.env.FIREBASE_STORAGEBUCKET,
-};
-
-// Initialize Firebase
-initializeApp(firebaseConfig);
-const storage = getStorage();
+const storageService = require("../services/storageService");
 
 // Helper function to determine content type based on file extension
 const getContentType = (filename) => {
@@ -38,7 +23,7 @@ const getContentType = (filename) => {
   return contentTypes[ext] || "application/octet-stream";
 };
 
-// Multer configuration for memory storage (for Firebase)
+// Multer configuration for memory storage
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -53,26 +38,27 @@ const upload = multer({
       );
       if (extname) {
         return cb(null, true);
-      } else {
-        cb(
-          new AppError(
-            "Only USD, USDC, USDZ, GLB, and GLTF files are allowed for 3D models",
-            400
-          )
-        );
       }
-    } else {
-      // Allow image files for product and colorway images (including HEIC/HEIF from iOS)
-      const allowedTypes = /jpeg|jpg|png|gif|webp|heic|heif/;
-      const ext = (file.originalname || "").toLowerCase().split(".").pop();
-      const hasAllowedExt = allowedTypes.test(ext || "");
-      const hasImageMime = !!file.mimetype && /image\//.test(file.mimetype);
-
-      if (hasAllowedExt || hasImageMime) {
-        return cb(null, true);
-      }
-      cb(new AppError("Only image files are allowed", 400));
+      cb(
+        new AppError(
+          "Only USD, USDC, USDZ, GLB, and GLTF files are allowed for 3D models",
+          400
+        )
+      );
+      return;
     }
+
+    // Allow image files for product and colorway images (including HEIC/HEIF from iOS)
+    const allowedTypes = /jpeg|jpg|png|gif|webp|heic|heif/;
+    const ext = (file.originalname || "").toLowerCase().split(".").pop();
+    const hasAllowedExt = allowedTypes.test(ext || "");
+    const hasImageMime = !!file.mimetype && /image\//.test(file.mimetype);
+
+    if (hasAllowedExt || hasImageMime) {
+      return cb(null, true);
+    }
+
+    cb(new AppError("Only image files are allowed", 400));
   },
 });
 
@@ -96,30 +82,22 @@ exports.upload3dFields = upload.fields([
   { name: "colorwayModels3d", maxCount: 10 },
 ]);
 
-// Upload single image
-const uploadSingleImage = async (file, folder, customName = null) => {
-  const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-  const fileName = customName || `${uniqueSuffix}-${file.originalname}`;
-  const storageRef = ref(storage, `${folder}/${fileName}`);
-  const metadata = {
+// Upload single file
+const uploadSingleImage = async (file, folder, customName = null) =>
+  storageService.uploadSingleImage(file, folder, {
+    customName,
     contentType: file.mimetype || getContentType(file.originalname),
-  };
+  });
 
-  const snapshot = await uploadBytesResumable(
-    storageRef,
-    file.buffer,
-    metadata
+// Upload multiple files
+const uploadMultipleImages = async (files, folder) =>
+  Promise.all(
+    (files || []).map((file) =>
+      storageService.uploadSingleImage(file, folder, {
+        contentType: file.mimetype || getContentType(file.originalname),
+      })
+    )
   );
-
-  const downloadURL = await getDownloadURL(snapshot.ref);
-  return downloadURL;
-};
-
-// Upload multiple images
-const uploadMultipleImages = async (files, folder) => {
-  const uploadPromises = files.map((file) => uploadSingleImage(file, folder));
-  return await Promise.all(uploadPromises);
-};
 
 // Upload product images
 exports.uploadProductImages = catchAsync(async (req, res, next) => {
@@ -135,7 +113,6 @@ exports.uploadProductImages = catchAsync(async (req, res, next) => {
   const uploadResults = {};
 
   try {
-    // Upload product images
     if (req.files.productImages) {
       uploadResults.productImageUrls = await uploadMultipleImages(
         req.files.productImages,
@@ -143,7 +120,6 @@ exports.uploadProductImages = catchAsync(async (req, res, next) => {
       );
     }
 
-    // Upload colorway images
     if (req.files.colorwayImages) {
       uploadResults.colorwayImageUrls = await uploadMultipleImages(
         req.files.colorwayImages,
@@ -151,7 +127,6 @@ exports.uploadProductImages = catchAsync(async (req, res, next) => {
       );
     }
 
-    // Upload 3D model
     if (req.files.model3d) {
       uploadResults.model3dUrl = await uploadSingleImage(
         req.files.model3d[0],
@@ -164,7 +139,7 @@ exports.uploadProductImages = catchAsync(async (req, res, next) => {
       ...uploadResults,
     });
   } catch (error) {
-    console.error("Firebase upload error:", error);
+    console.error("Storage upload error:", error);
     return next(new AppError("Failed to upload files to storage", 500));
   }
 });
@@ -181,7 +156,7 @@ exports.uploadProofOfPaymentImages = catchAsync(async (req, res, next) => {
       .status(200)
       .json({ message: "Proof of payment uploaded successfully!", url });
   } catch (error) {
-    console.error("Firebase upload error (proof of payment):", error);
+    console.error("Storage upload error (proof of payment):", error);
     return next(new AppError("Failed to upload proof of payment files", 500));
   }
 });
@@ -198,7 +173,7 @@ exports.uploadRatingPictures = catchAsync(async (req, res, next) => {
       .status(200)
       .json({ message: "Rating pictures uploaded successfully!", urls });
   } catch (error) {
-    console.error("Firebase upload error (rating pictures):", error);
+    console.error("Storage upload error (rating pictures):", error);
     return next(new AppError("Failed to upload rating pictures", 500));
   }
 });
@@ -228,12 +203,12 @@ exports.upload3dModels = catchAsync(async (req, res, next) => {
       ...result,
     });
   } catch (error) {
-    console.error("Firebase 3D upload error:", error);
+    console.error("Storage 3D upload error:", error);
     return next(new AppError("Failed to upload 3D models", 500));
   }
 });
 
-// Delete image from Firebase Storage
+// Delete image from cloud storage (R2 delete; legacy Firebase URLs are no-op)
 exports.deleteImage = catchAsync(async (req, res, next) => {
   const { imageUrl } = req.body;
 
@@ -242,21 +217,45 @@ exports.deleteImage = catchAsync(async (req, res, next) => {
   }
 
   try {
-    // Extract the file path from the download URL
-    const decodedUrl = decodeURIComponent(imageUrl);
-    const startIndex = decodedUrl.indexOf("/o/") + 3;
-    const endIndex = decodedUrl.indexOf("?");
-    const filePath = decodedUrl.substring(startIndex, endIndex);
-
-    const imageRef = ref(storage, filePath);
-    await deleteObject(imageRef);
+    await storageService.deleteByUrl(imageUrl);
 
     res.status(200).json({
       message: "Image deleted successfully!",
     });
   } catch (error) {
-    console.error("Firebase delete error:", error);
-    return next(new AppError("Failed to delete image", 500));
+    console.error("Storage delete error:", error);
+    const statusCode = /Unsupported image URL format/i.test(error.message)
+      ? 400
+      : 500;
+    return next(new AppError("Failed to delete image", statusCode));
+  }
+});
+
+exports.serveR2Asset = catchAsync(async (req, res, next) => {
+  const key = req.params[0];
+
+  if (!key) {
+    return next(new AppError("Asset key is required", 400));
+  }
+
+  try {
+    const object = await storageService.getObjectStream(key);
+
+    if (object.ContentType) {
+      res.setHeader("Content-Type", object.ContentType);
+    }
+    if (object.ContentLength) {
+      res.setHeader("Content-Length", object.ContentLength);
+    }
+    if (object.ETag) {
+      res.setHeader("ETag", object.ETag);
+    }
+    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+
+    object.Body.pipe(res);
+  } catch (error) {
+    console.error("Storage asset read error:", error);
+    return next(new AppError("Asset not found", 404));
   }
 });
 

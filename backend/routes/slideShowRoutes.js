@@ -1,6 +1,6 @@
 const express = require("express");
 const multer = require("multer");
-const path = require("path");
+const { verifyToken: authenticateAdmin } = require("../middlewares/adminAuthMiddleware");
 const {
   uploadImage,
   getAllImages,
@@ -9,17 +9,17 @@ const {
 
 const router = express.Router();
 
-// Use memory storage for Firebase uploads
+// Use memory storage for R2 uploads.
 const upload = multer({ storage: multer.memoryStorage() });
 
 // POST new image upload
-router.post("/upload-image", upload.single("image"), uploadImage);
+router.post("/upload-image", authenticateAdmin, upload.single("image"), uploadImage);
 
 // GET all images
 router.get("/all-images", getAllImages);
 
 // DELETE image
-router.delete("/:id", deleteImage);
+router.delete("/:id", authenticateAdmin, deleteImage);
 
 // (Reorder removed)
 

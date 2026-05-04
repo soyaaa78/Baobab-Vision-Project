@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import axios from "axios";
 import "../styles/CarouselManagementModal.css";
+import Cookies from "js-cookie";
 
 const CarouselManagementModal = ({ isOpen, onClose }) => {
   const [images, setImages] = useState([]);
@@ -8,6 +9,7 @@ const CarouselManagementModal = ({ isOpen, onClose }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef(null);
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+  const token = Cookies.get("token");
 
   // Fetch all images from backend
   const fetchImages = useCallback(async () => {
@@ -66,6 +68,7 @@ const CarouselManagementModal = ({ isOpen, onClose }) => {
           {
             headers: {
               "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
             },
             onUploadProgress: (progressEvent) => {
               const progress = Math.round(
@@ -105,7 +108,11 @@ const CarouselManagementModal = ({ isOpen, onClose }) => {
     if (!confirm("Delete this image?")) return;
     setLoading(true);
     try {
-      await axios.delete(`${SERVER_URL}/api/slideshow/${id}`);
+      await axios.delete(`${SERVER_URL}/api/slideshow/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       await fetchImages();
     } catch (error) {
       console.error("Failed to delete image:", error);

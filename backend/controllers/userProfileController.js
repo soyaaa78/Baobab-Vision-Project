@@ -1,5 +1,5 @@
 const User = require("../models/User");
-const { uploadSingleImageHelper } = require("./firebaseStorageController");
+const { uploadSingleImageHelper } = require("./storageController");
 
 // Get user profile (excluding sensitive info)
 const getProfile = async (req, res) => {
@@ -15,13 +15,13 @@ const getProfile = async (req, res) => {
   }
 };
 
-// Update user profile (including profileImage upload to Firebase)
+// Update user profile, including optional profileImage upload to R2.
 const updateProfile = async (req, res) => {
   try {
     const { firstname, lastname, email, username, phone, address } = req.body;
     const updateData = { firstname, lastname, email, username, phone, address };
 
-    // If a file is uploaded, store it in Firebase Storage and use the download URL
+    // If a file is uploaded, store it in R2 and use the public URL.
     if (req.file) {
       try {
         // Use a dedicated folder for profile images
@@ -31,7 +31,7 @@ const updateProfile = async (req, res) => {
         );
         updateData.profileImage = downloadUrl;
       } catch (uploadErr) {
-        console.error("Firebase profile image upload failed:", uploadErr);
+        console.error("R2 profile image upload failed:", uploadErr);
         return res
           .status(500)
           .json({ message: "Failed to upload profile image" });

@@ -4,7 +4,14 @@ import { showToast } from "../services/toastService";
 import AuditLogDetailModal from "../components/AuditLogDetailModal";
 import "../styles/AuditLogsPage.css";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSearch, faEye, faFilter, faPrint, faFilePdf } from "@fortawesome/free-solid-svg-icons";
+import {
+  faSearch,
+  faEye,
+  faFilter,
+  faPrint,
+  faFilePdf,
+  faSpinner,
+} from "@fortawesome/free-solid-svg-icons";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { jsPDF } from "jspdf";
@@ -18,6 +25,26 @@ import {
   buildAuditMetadataExportText,
   buildAuditTargetExportText,
 } from "../utils/auditExportFormat";
+import {
+  AUDIT_PDF_CELL_TEXT_STYLE,
+  AUDIT_PDF_COLUMN_WIDTHS,
+  AUDIT_PDF_EXPORT_FONT_SIZE_PX,
+} from "../utils/auditPdfExportLayout";
+import { getPdfExportButtonLabel } from "../utils/pdfExportUi";
+
+const exportHeaderCellStyle = {
+  border: "1px solid #cbd5e1",
+  padding: "6px",
+  textAlign: "left",
+  ...AUDIT_PDF_CELL_TEXT_STYLE,
+};
+
+const exportBodyCellStyle = {
+  border: "1px solid #cbd5e1",
+  padding: "6px",
+  verticalAlign: "top",
+  ...AUDIT_PDF_CELL_TEXT_STYLE,
+};
 
 const AuditLogsPage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -31,6 +58,7 @@ const AuditLogsPage = () => {
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [token, setToken] = useState("");
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
   const printRef = useRef(null);
   const contentRef = useRef(null);
   const exportContentRef = useRef(null);
@@ -298,9 +326,11 @@ const AuditLogsPage = () => {
       );
 
   const handleExportPDF = async () => {
+    if (isExportingPdf) return;
     const element = exportContentRef.current || contentRef.current;
     if (!element) return;
 
+    setIsExportingPdf(true);
     try {
       const [logoBase64, canvas] = await Promise.all([
         loadImageAsBase64(baobablogo),
@@ -389,6 +419,8 @@ const AuditLogsPage = () => {
       pdf.save(`audit-log-${dateStr}.pdf`);
     } catch {
       showToast({ type: "error", message: "Failed to export PDF. Please try again." });
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -484,8 +516,13 @@ const AuditLogsPage = () => {
           <button onClick={handlePrint} className="export-btn print-btn-action">
             <FontAwesomeIcon icon={faPrint} /> Print
           </button>
-          <button onClick={handleExportPDF} className="export-btn pdf-btn-action">
-            <FontAwesomeIcon icon={faFilePdf} /> Export PDF
+          <button
+            onClick={handleExportPDF}
+            className="export-btn pdf-btn-action"
+            disabled={isExportingPdf}
+          >
+            <FontAwesomeIcon icon={isExportingPdf ? faSpinner : faFilePdf} spin={isExportingPdf} />
+            {getPdfExportButtonLabel(isExportingPdf)}
           </button>
         </div>
       </div>
@@ -688,7 +725,7 @@ const AuditLogsPage = () => {
           color: "#0f172a",
           padding: "12px 16px",
           boxSizing: "border-box",
-          fontSize: "12px",
+          fontSize: `${AUDIT_PDF_EXPORT_FONT_SIZE_PX}px`,
         }}
       >
         <table
@@ -700,22 +737,22 @@ const AuditLogsPage = () => {
         >
           <thead>
             <tr>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "150px", textAlign: "left" }}>Date & Time</th>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "140px", textAlign: "left" }}>Staff</th>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "110px", textAlign: "left" }}>Role</th>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "95px", textAlign: "left" }}>Type</th>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "95px", textAlign: "left" }}>Action</th>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "170px", textAlign: "left" }}>Target</th>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "120px", textAlign: "left" }}>IP</th>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "270px", textAlign: "left" }}>Device</th>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "420px", textAlign: "left" }}>Metadata</th>
-              <th style={{ border: "1px solid #cbd5e1", padding: "6px", width: "420px", textAlign: "left" }}>Changes</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.dateTime}px` }}>Date & Time</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.staff}px` }}>Staff</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.role}px` }}>Role</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.type}px` }}>Type</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.action}px` }}>Action</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.target}px` }}>Target</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.ip}px` }}>IP</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.device}px` }}>Device</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.metadata}px` }}>Metadata</th>
+              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.changes}px` }}>Changes</th>
             </tr>
           </thead>
           <tbody>
             {filteredLogs.length === 0 ? (
               <tr>
-                <td colSpan="10" style={{ border: "1px solid #cbd5e1", padding: "8px", textAlign: "center" }}>
+                <td colSpan="10" style={{ ...exportBodyCellStyle, textAlign: "center" }}>
                   {hasActiveFilters
                     ? "No audit logs match your search criteria"
                     : "No audit logs found"}
@@ -724,13 +761,13 @@ const AuditLogsPage = () => {
             ) : (
               filteredLogs.map((log) => (
                 <tr key={`export-${log._id}`}>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>{formatDate(log.createdAt)}</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>{getActorDisplayName(log)}</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>{getActorRoleDisplay(log.actorRole)}</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>
+                  <td style={exportBodyCellStyle}>{formatDate(log.createdAt)}</td>
+                  <td style={exportBodyCellStyle}>{getActorDisplayName(log)}</td>
+                  <td style={exportBodyCellStyle}>{getActorRoleDisplay(log.actorRole)}</td>
+                  <td style={exportBodyCellStyle}>
                     {eventTypeLabels[log.eventType] || log.eventType || "N/A"}
                   </td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top" }}>
+                  <td style={exportBodyCellStyle}>
                     {actionLabels[log.action] ||
                       (log.action
                         ? log.action
@@ -738,19 +775,19 @@ const AuditLogsPage = () => {
                             .replace(/\b\w/g, (c) => c.toUpperCase())
                         : "N/A")}
                   </td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                  <td style={exportBodyCellStyle}>
                     {buildAuditTargetExportText(log)}
                   </td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                  <td style={exportBodyCellStyle}>
                     {log.ip || "N/A"}
                   </td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                  <td style={exportBodyCellStyle}>
                     {log.userAgent || "N/A"}
                   </td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                  <td style={exportBodyCellStyle}>
                     {buildAuditMetadataExportText(log)}
                   </td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "6px", verticalAlign: "top", wordBreak: "break-word" }}>
+                  <td style={exportBodyCellStyle}>
                     {buildAuditChangeExportText(log)}
                   </td>
                 </tr>
