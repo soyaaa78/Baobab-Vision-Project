@@ -192,9 +192,16 @@ class _DetailScreenState extends State<DetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final String? colorImage = (widget.colorOptions.isNotEmpty &&
+            selectedColorIndex < widget.colorOptions.length)
+        ? widget.colorOptions[selectedColorIndex].imageUrl
+        : null;
     final List<String> allImages = [
-      widget.colorOptions[selectedColorIndex].imageUrl,
-      ...widget.prodImages
+      ...widget.prodImages,
+      if (colorImage != null &&
+          colorImage.isNotEmpty &&
+          !widget.prodImages.contains(colorImage))
+        colorImage,
     ];
 
     return Scaffold(

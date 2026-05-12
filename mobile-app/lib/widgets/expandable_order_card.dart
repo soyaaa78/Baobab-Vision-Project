@@ -124,49 +124,40 @@ class _ExpandableOrderCardState extends State<ExpandableOrderCard>
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          widget.orderId,
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: isCompact ? 14 : 16,
-                                            color: Colors.black87,
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
+                                  Text(
+                                    widget.orderId,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: isCompact ? 14 : 16,
+                                      color: Colors.black87,
+                                    ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: isCompact ? 4 : 6),
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: isCompact ? 6 : 8,
+                                        vertical: isCompact ? 2 : 4,
                                       ),
-                                      SizedBox(width: isCompact ? 6 : 8),
-                                      Flexible(
-                                        child: Container(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: isCompact ? 6 : 8,
-                                            vertical: isCompact ? 2 : 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                _getStatusColor(widget.status),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            _getStatusDisplayText(
-                                                widget.status),
-                                            style: TextStyle(
-                                              fontSize: isCompact ? 11 : 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
-                                            ),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
-                                        ),
+                                      decoration: BoxDecoration(
+                                        color: _getStatusColor(widget.status),
+                                        borderRadius:
+                                            BorderRadius.circular(12),
                                       ),
-                                    ],
+                                      child: Text(
+                                        _getStatusDisplayText(widget.status),
+                                        style: TextStyle(
+                                          fontSize: isCompact ? 11 : 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
                                   ),
                                   SizedBox(height: isCompact ? 4 : 6),
                                   if (widget.additionalInfo != null &&
