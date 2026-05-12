@@ -21,9 +21,15 @@ const CarouselManagementModal = ({ isOpen, onClose }) => {
       const imageData = response.data.map((doc) => {
         const imagePath =
           typeof doc.imagePath === "string" ? doc.imagePath : "";
-        const url = imagePath.startsWith("http")
-          ? imagePath
-          : `${SERVER_URL}/${imagePath.replace(/^\/+/, "")}`;
+        let url;
+        if (!imagePath.startsWith("http")) {
+          url = `${SERVER_URL}/${imagePath.replace(/^\/+/, "")}`;
+        } else if (/https?:\/\/localhost(:\d+)?\//.test(imagePath)) {
+          const pathPart = imagePath.replace(/https?:\/\/localhost(:\d+)?\//, "");
+          url = `${SERVER_URL}/${pathPart}`;
+        } else {
+          url = imagePath;
+        }
         return {
           id: doc._id,
           url,
