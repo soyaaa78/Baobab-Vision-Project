@@ -96,55 +96,23 @@ const EyeglassPage = () => {
   // Prepare images and color options
   const colorOptions = eyeglass.colorOptions || [];
 
-  // First image should be from selected color option, fallback to first imageUrl or placeholder
-  let firstImage = placeholder;
-  if (colorOptions.length > 0 && colorOptions[selectedColor]?.imageUrl) {
-    firstImage = colorOptions[selectedColor].imageUrl;
-    console.log(
-      `First image set from color option ${selectedColor}:`,
-      firstImage
-    );
-    console.log("Selected color option:", colorOptions[selectedColor]);
-  } else if (eyeglass.imageUrls && eyeglass.imageUrls.length > 0) {
-    // Fallback to first image from imageUrls if color option doesn't have imageUrl
-    firstImage = eyeglass.imageUrls[0];
-    console.log("First image using fallback from imageUrls[0]:", firstImage);
-  } else {
-    console.log("First image using placeholder:", firstImage);
-    console.log("Color options available:", colorOptions.length);
-    console.log("Selected color index:", selectedColor);
-    if (colorOptions.length > 0) {
-      console.log("First color option object:", colorOptions[selectedColor]);
-      console.log(
-        "Available properties in color option:",
-        Object.keys(colorOptions[selectedColor] || {})
-      );
-      console.log("imageurl property:", colorOptions[selectedColor]?.imageurl);
-      console.log("imageUrl property:", colorOptions[selectedColor]?.imageUrl);
-      console.log(
-        "image_url property:",
-        colorOptions[selectedColor]?.image_url
-      );
-      console.log("image property:", colorOptions[selectedColor]?.image);
-    }
-  }
-
-  // Rest of images from data.imageUrls
-  const restImages = eyeglass.imageUrls || [];
-  console.log("Rest images from imageUrls:", restImages);
-
-  // Combine: first image + rest of images
-  const allImages = [firstImage, ...restImages];
-  console.log("All images combined:", allImages);
+  // Thumbnail/main image uses the first uploaded product image. The selected
+  // color's image is appended to the gallery so it remains accessible.
+  const productImages = eyeglass.imageUrls && eyeglass.imageUrls.length > 0
+    ? eyeglass.imageUrls
+    : [placeholder];
+  const colorImage = colorOptions[selectedColor]?.imageUrl;
+  const allImages = colorImage && !productImages.includes(colorImage)
+    ? [...productImages, colorImage]
+    : productImages;
   const lensOptions = eyeglass.lensOptions || [
     { label: "Built-in UV400 Lenses (FREE)", price: 0, type: "builtin" },
   ];
 
-  // Main image logic: if first image and color selected, tint it
   let mainImage = allImages[selectedImageIndex] || placeholder;
 
-  // If the first image is selected and a color is selected, apply a color overlay
-  const isFirstImage = selectedImageIndex === 0 && colorOptions[selectedColor];
+  // Apply color overlay only when the user is actively viewing the color-option image
+  const isFirstImage = !!colorImage && mainImage === colorImage;
 
   return (
     <>
