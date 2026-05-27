@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:baobab_vision_project/screens/email_otp_verification_screen.dart';
 import 'package:baobab_vision_project/screens/email_verification_screen.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_client.dart';
 import '../constants.dart';
 import '../screens/home_screen.dart';
 import '../widgets/custom_dialog.dart';
@@ -44,20 +45,34 @@ class _LogInScreenState extends State<LogInScreen> {
 
   // Login function
   Future<void> login() async {
-    var url = Uri.parse('http://192.168.100.56:3001/api/auth/login');
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    if (connectivityResult == ConnectivityResult.none) {
+      customDialog(
+        context,
+        title: 'No Internet',
+        content: 'Please check your internet connection and try again.',
+      );
+      return;
+    }
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'username': usernameController.text.trim(),
-          'password': passwordController.text.trim(),
-        }),
-      );
+      final response = await ApiClient.postJson('/api/auth/login', {
+        'username': usernameController.text.trim(),
+        'password': passwordController.text.trim(),
+      });
 
+      print('🔄 LOGIN URL: ${ApiClient.baseUrl}/api/auth/login');
+      print('🔄 LOGIN STATUS: ${response.statusCode}');
       print('🔄 LOGIN RESPONSE: ${response.body}');
-      final resData = jsonDecode(response.body);
+
+      Map<String, dynamic> resData = {};
+      final rawBody = response.body.trim();
+      if (rawBody.startsWith('{')) {
+        final decoded = jsonDecode(rawBody);
+        if (decoded is Map<String, dynamic>) {
+          resData = decoded;
+        }
+      }
       print('🔄 LOGIN RESPONSE (decoded): $resData');
 
       if (response.statusCode == 403 &&
@@ -92,10 +107,13 @@ class _LogInScreenState extends State<LogInScreen> {
         Navigator.pushReplacementNamed(context, '/home');
       } else {
         // Show login failed message if something went wrong
+        final fallbackMessage = rawBody.isNotEmpty
+            ? rawBody
+            : 'Request failed (${response.statusCode})';
         customDialog(
           context,
           title: 'Login Failed',
-          content: resData['message'] ?? 'Invalid login',
+          content: (resData['message'] ?? fallbackMessage).toString(),
         );
       }
     } catch (e) {
@@ -128,6 +146,7 @@ class _LogInScreenState extends State<LogInScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      /// Logo
                       Center(
                         child: Image.asset(
                           'assets/images/baobab_logo.png',
@@ -149,7 +168,11 @@ class _LogInScreenState extends State<LogInScreen> {
                             color: BLACK_COLOR,
                           ),
                           prefixIcon: const Icon(Icons.person),
-                          border: const OutlineInputBorder(),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
                         ),
                       ),
                       SizedBox(height: 20.h),
@@ -180,28 +203,14 @@ class _LogInScreenState extends State<LogInScreen> {
                               });
                             },
                           ),
-                          border: const OutlineInputBorder(),
-                        ),
-                      ),
-                      SizedBox(height: 25.h),
-
-                      /// Forgot Password Link
-                      Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            Navigator.pushNamed(context, '/forgot-password');
-                          },
-                          child: Text(
-                            'Forgot Password?',
-                            style: TextStyle(
-                              color: Theme.of(context).primaryColor,
-                              fontSize: 14.sp,
-                              decoration: TextDecoration.underline,
-                            ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10.r),
                           ),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
                         ),
                       ),
-                      SizedBox(height: 25.h),
+                      SizedBox(height: 30.h),
 
                       /// Login Button
                       CustomInkwellButton(
@@ -210,18 +219,37 @@ class _LogInScreenState extends State<LogInScreen> {
                             login();
                           }
                         },
-                        height: 45.h,
+                        height: 50.h,
                         width: double.infinity,
                         buttonName: 'Login',
                         fontSize: 16.sp,
+                      ),
+                      SizedBox(height: 20.h),
+
+                      /// Forgot Password Link (moved below login button)
+                      Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/forgot-password');
+                          },
+                          child: Text(
+                            'Forgot Password?',
+                            style: TextStyle(
+                              color: BLACK_COLOR,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w500,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                /// Register Link
+                /// Register Link (bottom section)
                 Container(
-                  height: 50.h,
+                  height: 55.h,
                   width: double.infinity,
                   color: BLACK_COLOR,
                   alignment: Alignment.center,

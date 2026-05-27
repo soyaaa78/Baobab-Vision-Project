@@ -9,10 +9,12 @@ const {
 } = require("../controllers/orderController");
 const authenticate = require("../middlewares/authMiddleware");
 
+router.use(authenticate);
+
 router.get("/", order_get);
 router.post("/", order_post);
 router.put("/", order_put);
 router.delete("/", order_delete);
-router.post("/checkout", authenticate, checkoutFromCart);
+router.post("/checkout", checkoutFromCart);
 
 module.exports = router;

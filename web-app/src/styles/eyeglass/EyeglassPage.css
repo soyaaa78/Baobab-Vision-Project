@@ -1,0 +1,536 @@
+/* Modern Eyeglass Card Design */
+#eyeglass-page {
+  /* background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); */
+  min-height: 140vh;
+  padding: 2rem;
+  font-family: "Rubik", sans-serif;
+}
+
+/* Loading Styles */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 3rem;
+}
+
+.loading-spinner {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 2rem;
+}
+
+.spinner-ring {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 3px solid transparent;
+  border-radius: 50%;
+  animation: spin 1.5s linear infinite;
+}
+
+.spinner-ring:nth-child(1) {
+  /* primary black */
+  border-top-color: #000000;
+  animation-delay: 0s;
+}
+
+.spinner-ring:nth-child(2) {
+  /* accent beige */
+  border-right-color: #f8b26a;
+  animation-delay: -0.3s;
+  width: 85%;
+  height: 85%;
+  top: 7.5%;
+  left: 7.5%;
+}
+
+.spinner-ring:nth-child(3) {
+  /* darker accent for depth */
+  border-bottom-color: #e09f4a;
+  animation-delay: -0.6s;
+  width: 70%;
+  height: 70%;
+  top: 15%;
+  left: 15%;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text h3 {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  font-family: "Red Rose", serif;
+}
+
+.loading-text p {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 400;
+}
+
+.eyeglass-page-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Back Button */
+.back-btn {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #000000; /* link-like */
+  font-weight: 500;
+  transition: color 0.2s ease;
+  box-shadow: none;
+}
+
+.back-btn:hover {
+  text-decoration: underline;
+  color: #2563eb;
+}
+
+/* Main Card */
+.eyeglass-card {
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f5f9;
+  /* top accent to match ProfilePage cards */
+  /* border-top: 3px solid #000000; */
+}
+
+/* Card Header */
+.card-header {
+  padding: 1.5rem 2rem 0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.card-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.action-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #64748b;
+}
+
+.action-btn:hover {
+  background: #f8fafc;
+  border-color: #f8b26a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn.edit:hover {
+  color: #e09f4a;
+  border-color: #f8b26a;
+  background: #fff7ed;
+}
+
+/* Card Body */
+.card-body {
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  /* margin-bottom: 2rem; */
+  align-items: start;
+}
+
+/* Image Section */
+.image-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.main-image-container {
+  position: relative;
+  /* background: #f3eadc;  */
+  border-radius: 16px;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #000000; /* black outline as in screenshot */
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+}
+
+.main-product-image {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  border-radius: 12px;
+  transition: transform 0.3s ease;
+}
+
+.main-image-container:hover .main-product-image {
+  transform: scale(1.05);
+}
+
+.image-overlay {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.rating {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #f59e0b;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail-gallery {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.thumbnail-item {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #000000;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.thumbnail-item:hover {
+  border-color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.thumbnail-item.active {
+  border-color: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  background: #f3eadc;
+}
+
+.thumbnail-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Details Section */
+.details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.product-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+#product-name {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111111;
+  margin: 0;
+  font-family: "Red Rose", serif;
+}
+
+#product-badge {
+  background: #262626; /* solid dark pill */
+  color: #ffffff;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px; /* fully rounded */
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.product-description {
+  font-weight: 100;
+  color: #111111;
+  line-height: 1.6;
+  font-size: 1rem;
+  margin: 0;
+  background: #f3eadc9d;
+  border: 1px solid #e4d9c8;
+  border-left: 4px solid #000000; /* black left accent */
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Selection Sections */
+.selection-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #111111;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.required {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* Color Selection */
+.color-selection {
+  background: transparent;
+  border-radius: 12px;
+  padding: 0.5rem 0; /* minimal spacing */
+  border: none;
+}
+
+.color-options {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.color-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0; /* no tile */
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  min-width: auto;
+}
+
+.color-option:hover .color-swatch {
+  transform: scale(1.15);
+}
+
+.color-option.selected .color-swatch {
+  border-color: #000000; /* black outline */
+  transform: scale(1.25); /* slightly bigger */
+}
+
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #e4d9c8; /* default light ring */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.color-name {
+  display: none; /* hide labels under swatches */
+}
+
+/* Lens Selection */
+.lens-selection {
+  background: transparent;
+  border-radius: 12px;
+  padding: 0.5rem 0 1rem 0;
+  border: none;
+}
+
+.modern-select {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  border: 1px solid #000000; /* black outline to match screenshot */
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 1rem;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.75rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 3rem;
+}
+
+.modern-select:hover {
+  border-color: #000000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.modern-select:focus {
+  outline: none;
+  border-color: #f8b26a;
+  box-shadow: 0 0 0 3px rgba(248, 178, 106, 0.25);
+}
+
+/* Price Section */
+.price-section {
+  background: linear-gradient(
+    135deg,
+    #f5e6d2 0%,
+    #e7d6c3 100%
+  ); /* warm beige gradient */
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  border: 2px solid #000000; /* black outline */
+}
+
+.price-container {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.currency {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111111;
+}
+
+.price {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #1e293b;
+  font-family: "Red Rose", serif;
+}
+
+.price-label {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #111111;
+}
+
+.price-subtitle {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  flex: 1;
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
+}
+
+.btn-primary {
+  background: #000000;
+  color: #ffffff;
+  border-color: #000000;
+}
+
+.btn-primary:hover {
+  background: #111111;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.btn-secondary {
+  background: #f8b26a;
+  color: #ffffff;
+  border-color: #f8b26a;
+}
+
+.btn-secondary:hover {
+  background: #e09f4a;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(248, 178, 106, 0.35);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .card-body {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .eyeglass-page-content {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  #eyeglass-page {
+    padding: 1rem;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+
+  .product-name {
+    font-size: 1.5rem;
+  }
+
+  .price {
+    font-size: 2rem;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .color-options {
+    justify-content: center;
+  }
+}

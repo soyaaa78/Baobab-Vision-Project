@@ -1,0 +1,1338 @@
+/* Modern Gradient Login Page Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.login-container {
+  display: flex;
+  height: 100vh;
+  font-family: "Arial", sans-serif;
+}
+
+/* Left Side - Baobab Vision Brand Background */
+.login-left {
+  width: 35vw;
+  background: #2d291c;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Diagonal decorative stripes */
+.hero-stripes {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2; /* above slideshow, below overlay content */
+  overflow: hidden;
+}
+
+.hero-stripes .stripe {
+  position: absolute;
+  width: 200%;
+
+  left: -50%;
+  height: 190px;
+  transform: rotate(-32deg);
+  border-radius: 8px;
+  will-change: transform;
+  transition: transform 1.2s ease;
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.18));
+  /* background: #171717; */
+  background: linear-gradient(
+    90deg,
+    #ffd885 0%,
+    #ffc341 55%rgba (255, 179, 38, 0.548) 26 100%
+  );
+  overflow: hidden; /* contain scrolling text */
+}
+
+.hero-stripes .stripe-mid {
+  top: 27%;
+  height: 160px;
+  background: linear-gradient(90deg, #ffe9bc 0%, #ffd165 55%, #ffb938 100%);
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.16));
+}
+
+.hero-stripes .stripe-accent {
+  top: 40%;
+  height: 135px;
+  background: linear-gradient(90deg, #fff4d8 0%, #ffdf8f 50%, #ffb938 100%);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.14));
+}
+
+.hero-stripes .stripe-main {
+  top: 12%;
+}
+.hero-stripes .stripe-bottom {
+  top: 42%;
+}
+.hero-stripes .stripe.single {
+  height: 110px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-stripes .stripe:hover {
+    transform: rotate(-32deg) translateY(-4px);
+  }
+}
+
+/* Stripe marquee (pure CSS loop) */
+.stripe-marquee {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.stripe-marquee-track {
+  display: flex;
+  width: fit-content;
+  animation: stripe-marquee 38s linear infinite;
+}
+.stripe-marquee-track.reverse {
+  animation: stripe-marquee-reverse 38s linear infinite;
+}
+.stripe-marquee-text {
+  font-family: "Red Rose", "Rubik", sans-serif;
+  font-weight: 600;
+  font-size: 3rem;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  padding: 0 2.5rem;
+  color: #3b2a10;
+  opacity: 0.6;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.07);
+}
+@keyframes stripe-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+@keyframes stripe-marquee-reverse {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+@media (max-width: 1400px) {
+  .stripe-marquee-text {
+    font-size: 2rem;
+  }
+  .hero-stripes .stripe.single {
+    height: 100px;
+  }
+  .hero-stripes .stripe-main {
+    top: 14%;
+  }
+  .hero-stripes .stripe-bottom {
+    top: 44%;
+  }
+}
+@media (max-width: 1100px) {
+  .stripe-marquee-text {
+    font-size: 1.75rem;
+  }
+  .hero-stripes .stripe.single {
+    height: 90px;
+  }
+  .hero-stripes .stripe-main {
+    top: 16%;
+  }
+  .hero-stripes .stripe-bottom {
+    top: 46%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stripe-marquee-track,
+  .stripe-marquee-track.reverse {
+    animation: none;
+  }
+}
+
+/* remove unused mid/accent variants from simplified design */
+
+/* Improve legibility on very bright mid/accent stripes */
+.stripe.stripe-mid .stripe-parallax {
+  mix-blend-mode: normal;
+}
+.stripe.stripe-accent .stripe-parallax {
+  mix-blend-mode: normal;
+  opacity: 0.55;
+}
+
+/* (Removed old responsive sizing rules for previous JS scroller) */
+
+/* Subtle gradient mask so text fades at edges */
+.stripe.single::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 189, 110, 0) 0%,
+    rgba(255, 189, 110, 0.8) 15%,
+    rgba(255, 189, 110, 0.8) 85%,
+    rgba(255, 189, 110, 0) 100%
+  );
+  mix-blend-mode: soft-light;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stripe-scroller {
+    animation: none !important;
+  }
+}
+
+/* Slideshow background */
+.login-left-slideshow {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* Visible grain texture overlay */
+.login-left-slideshow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: radial-gradient(
+      circle at 25% 25%,
+      rgba(255, 255, 255, 0.1) 1px,
+      transparent 1px
+    ),
+    radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.15) 1px, transparent 1px),
+    radial-gradient(
+      circle at 50% 10%,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px
+    ),
+    radial-gradient(circle at 10% 90%, rgba(0, 0, 0, 0.12) 1px, transparent 1px),
+    radial-gradient(
+      circle at 90% 30%,
+      rgba(255, 255, 255, 0.06) 1px,
+      transparent 1px
+    );
+  background-size: 4px 4px, 3px 3px, 5px 5px, 6px 6px, 2px 2px;
+  background-position: 0 0, 1px 1px, 2px 0, 0 2px, 3px 3px;
+  opacity: 1;
+  mix-blend-mode: soft-light;
+  animation: grain-shimmer 6s ease-in-out infinite alternate;
+}
+
+@keyframes grain-shimmer {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(1px, -1px) scale(1.01);
+    opacity: 1;
+  }
+}
+
+.login-bg-slide {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.1;
+  transform: scale(1.06);
+  transition: opacity 1.2s ease, transform 7s linear;
+  /* Convert images to black & white while keeping slight depth */
+  filter: grayscale(100%) brightness(0.7) contrast(1.5);
+}
+
+.login-bg-slide.active {
+  opacity: 0.4;
+  transform: scale(1);
+  z-index: 1;
+}
+
+.login-left-overlay {
+  position: absolute;
+  inset: 0;
+  /* backdrop-filter: blur(2px); */
+  /* Slightly lighter overlay since the image is dimmed */
+  background: #ffff9415;
+  z-index: 1; /* keep overlay under stripes for richer yellow; stripes supply structure */
+}
+
+.gradient-overlay {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 60px;
+  color: white;
+  z-index: 5; /* above slides + stripes */
+}
+
+.logo-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* align-items: ; */
+  justify-content: center;
+  max-width: 400px;
+}
+
+.logo-image {
+  width: 280px;
+  height: auto;
+  margin-bottom: 20px;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-size: 4rem;
+  font-weight: bold;
+  margin-bottom: 30px;
+  letter-spacing: 2px;
+  font-family: "Red Rose", serif;
+}
+
+.logo-description {
+  color: #2a383d;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  font-family: "Red Rose", sans-serif;
+}
+
+/* Social Media Icons */
+.social-icons {
+  display: flex;
+  gap: 20px;
+  align-self: flex-start;
+}
+
+.social-icon {
+  width: 50px;
+  height: 50px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.social-icon:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.social-icon svg {
+  font-size: 1.2rem;
+  color: white;
+}
+
+/* Right Side - Form */
+.login-right {
+  flex: 1;
+  background-color: #fcf7f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.form-container {
+  background: white;
+  padding: 34px 60px 56px; /* reduced top padding to bring brand to top */
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 450px;
+}
+
+/* Brand block inside form */
+.brand-floating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  text-align: center;
+  /* margin-bottom: 22px; */
+}
+.brand-floating-logo {
+  width: 210px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin: 2px auto 20px;
+  /* margin-bottom: 3rem; */
+}
+.brand-floating-tagline {
+  font-family: "Red Rose", sans-serif;
+  font-size: 0.95rem;
+  color: #2a383d;
+  letter-spacing: 0.25px;
+  margin: 0;
+  opacity: 0.85;
+}
+@media (max-width: 540px) {
+  .form-brand-logo {
+    width: 170px;
+  }
+  .form-brand-tagline {
+    font-size: 0.9rem;
+  }
+}
+
+.form-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #252525;
+  margin-bottom: 40px;
+  text-align: center;
+  letter-spacing: 1px;
+  font-family: "Red Rose", serif;
+}
+
+/* Form Styles */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 15px;
+  color: #2a383d;
+  font-size: 1.1rem;
+  z-index: 2;
+}
+
+.form-input {
+  width: 100%;
+  padding: 15px 15px 15px 45px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background-color: #fcf7f2;
+  font-family: "Rubik", sans-serif;
+}
+
+/* Center OTP input text fully */
+.login-form .input-group input[placeholder*="OTP"] {
+  text-align: center !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #eab676;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(234, 182, 118, 0.1);
+}
+
+.password-toggle {
+  position: absolute;
+  right: 15px;
+  cursor: pointer;
+  color: #2a383d;
+  font-size: 1rem;
+}
+
+.password-toggle:hover {
+  color: #eab676;
+}
+
+/* Form Options */
+.form-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.checkbox-container input[type="checkbox"] {
+  margin-right: 8px;
+  accent-color: #eab676;
+}
+
+.forgot-password {
+  color: #eab676;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s ease;
+}
+
+.forgot-password:hover {
+  color: #a9927d;
+  text-decoration: underline;
+}
+
+/* Buttons */
+.login-btn {
+  background: #171717;
+  color: #ffffff;
+  border: none;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.3s ease;
+  margin-top: 20px;
+  letter-spacing: 0.75px;
+  font-family: "Rubik", sans-serif;
+  box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.4);
+}
+
+.login-btn:hover {
+  background: #000000;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.55),
+    0 4px 10px -2px rgba(0, 0, 0, 0.35);
+}
+
+.login-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.45);
+}
+
+.resend-btn {
+  background: transparent;
+  color: #eab676;
+  border: 2px solid #eab676;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 15px;
+  font-family: "Rubik", sans-serif;
+}
+
+.resend-btn:hover {
+  background: #eab676;
+  color: white;
+}
+
+/* Account Options */
+.account-options {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.account-options p {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.account-buttons {
+  display: flex;
+  gap: 15px;
+  flex-direction: column;
+}
+
+.account-btn {
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
+}
+
+.account-btn.individual {
+  background: #a9927d;
+  color: white;
+  border-color: #a9927d;
+}
+
+.account-btn.individual:hover {
+  background: #8b7a6b;
+  border-color: #8b7a6b;
+}
+
+.account-btn.corporate {
+  background: #252525;
+  color: white;
+  border-color: #252525;
+}
+
+.account-btn.corporate:hover {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+}
+
+/* Message Box */
+.form-message-box {
+  margin-top: 20px;
+}
+
+.form-error,
+.form-success {
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.form-error {
+  background-color: #fee;
+  color: #c33;
+  border: 1px solid #fcc;
+}
+
+.form-success {
+  background-color: #efe;
+  color: #3c3;
+  border: 1px solid #cfc;
+}
+
+/* Responsive Design */
+
+/* Large Desktops (1400px and below) */
+@media (max-width: 1400px) {
+  .login-left {
+    width: 38vw;
+  }
+
+  .gradient-overlay {
+    padding: 50px;
+  }
+
+  .logo-image {
+    width: 240px;
+  }
+
+  .logo-text {
+    font-size: 3.5rem;
+  }
+
+  .form-container {
+    padding: 32px 50px 50px;
+    max-width: 420px;
+  }
+
+  .brand-floating-logo {
+    width: 190px;
+  }
+}
+
+/* Medium Desktops (1200px and below) */
+@media (max-width: 1200px) {
+  .login-left {
+    width: 40vw;
+  }
+
+  .gradient-overlay {
+    padding: 40px;
+  }
+
+  .logo-text {
+    font-size: 3rem;
+  }
+
+  .form-container {
+    padding: 30px 45px 45px;
+    max-width: 400px;
+  }
+
+  .brand-floating-logo {
+    width: 180px;
+  }
+
+  .form-title {
+    font-size: 1.8rem;
+    margin-bottom: 35px;
+  }
+}
+
+/* Small Desktops & Large Tablets (1024px and below) */
+@media (max-width: 1024px) {
+  .login-left {
+    width: 42vw;
+  }
+
+  .gradient-overlay {
+    padding: 35px;
+  }
+
+  .logo-image {
+    width: 200px;
+  }
+
+  .logo-text {
+    font-size: 2.8rem;
+  }
+
+  .logo-description {
+    font-size: 1rem;
+  }
+
+  .hero-stripes .stripe.single {
+    height: 85px;
+  }
+
+  .hero-stripes .stripe-main {
+    top: 18%;
+  }
+
+  .hero-stripes .stripe-bottom {
+    top: 50%;
+  }
+
+  .stripe-marquee-text {
+    font-size: 1.5rem;
+  }
+
+  .form-container {
+    padding: 28px 40px 40px;
+    max-width: 380px;
+  }
+
+  .brand-floating-logo {
+    width: 170px;
+  }
+
+  .brand-floating-tagline {
+    font-size: 0.9rem;
+  }
+
+  .form-input {
+    padding: 14px 14px 14px 42px;
+    font-size: 0.95rem;
+  }
+
+  .login-btn {
+    padding: 14px;
+    font-size: 1rem;
+  }
+}
+
+/* Tablets (992px and below) */
+@media (max-width: 992px) {
+  .login-container {
+    flex-direction: column;
+  }
+
+  .login-left {
+    width: 100%;
+    min-height: 320px;
+    max-height: 35vh;
+  }
+
+  .gradient-overlay {
+    padding: 30px;
+    justify-content: center;
+  }
+
+  .logo-section {
+    max-width: 100%;
+    text-align: center;
+    align-items: center;
+  }
+
+  .logo-image {
+    width: 180px;
+    margin: 0 auto 15px;
+  }
+
+  .logo-text {
+    font-size: 2.5rem;
+    margin-bottom: 20px;
+  }
+
+  .hero-stripes .stripe.single {
+    height: 75px;
+  }
+
+  .hero-stripes .stripe-main {
+    top: 20%;
+  }
+
+  .hero-stripes .stripe-bottom {
+    top: 55%;
+  }
+
+  .stripe-marquee-text {
+    font-size: 1.3rem;
+    padding: 0 2rem;
+  }
+
+  .logo-description {
+    font-size: 0.95rem;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .social-icons {
+    justify-content: center;
+    align-self: center;
+    margin-top: 15px;
+  }
+
+  .login-right {
+    flex: 1;
+    padding: 15px 20px;
+    min-height: 65vh;
+  }
+
+  .form-container {
+    padding: 26px 35px 38px;
+    max-width: 480px;
+  }
+
+  .brand-floating-logo {
+    width: 160px;
+    margin-bottom: 15px;
+  }
+
+  .form-title {
+    font-size: 1.75rem;
+    margin-bottom: 30px;
+  }
+}
+
+/* Large Mobile (767px and below) */
+@media (max-width: 767px) {
+  .login-left {
+    min-height: 280px;
+    max-height: 30vh;
+  }
+
+  .gradient-overlay {
+    padding: 25px 20px;
+  }
+
+  .logo-image {
+    width: 150px;
+  }
+
+  .logo-text {
+    font-size: 2.2rem;
+    margin-bottom: 15px;
+  }
+
+  .logo-description {
+    font-size: 0.9rem;
+  }
+
+  .hero-stripes .stripe.single {
+    height: 65px;
+  }
+
+  .hero-stripes .stripe-main {
+    top: 22%;
+  }
+
+  .hero-stripes .stripe-bottom {
+    top: 60%;
+  }
+
+  .stripe-marquee-text {
+    font-size: 1.1rem;
+    padding: 0 1.5rem;
+  }
+
+  .social-icon {
+    width: 45px;
+    height: 45px;
+  }
+
+  .social-icon svg {
+    font-size: 1.1rem;
+  }
+
+  .login-right {
+    padding: 12px 18px;
+  }
+
+  .form-container {
+    padding: 24px 30px 35px;
+    max-width: 440px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .brand-floating {
+    margin-bottom: 25px;
+  }
+
+  .brand-floating-logo {
+    width: 150px;
+    margin-bottom: 12px;
+  }
+
+  .brand-floating-tagline {
+    font-size: 0.88rem;
+  }
+
+  .form-title {
+    font-size: 1.65rem;
+    margin-bottom: 28px;
+  }
+
+  .login-form {
+    gap: 22px;
+  }
+
+  .form-input {
+    padding: 13px 13px 13px 40px;
+    font-size: 0.93rem;
+  }
+
+  .input-icon {
+    left: 13px;
+    font-size: 1rem;
+  }
+
+  .password-toggle {
+    right: 13px;
+    font-size: 0.95rem;
+  }
+
+  .login-btn {
+    padding: 13px;
+    font-size: 0.98rem;
+    margin-top: 15px;
+  }
+
+  .resend-btn {
+    padding: 11px;
+    font-size: 0.95rem;
+  }
+
+  .account-buttons {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+/* Medium Mobile (639px and below) */
+@media (max-width: 639px) {
+  .login-left {
+    min-height: 260px;
+    max-height: 28vh;
+  }
+
+  .gradient-overlay {
+    padding: 20px 18px;
+  }
+
+  .logo-image {
+    width: 140px;
+  }
+
+  .logo-text {
+    font-size: 2rem;
+    margin-bottom: 12px;
+  }
+
+  .logo-description {
+    font-size: 0.88rem;
+  }
+
+  .social-icons {
+    gap: 15px;
+  }
+
+  .social-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .hero-stripes .stripe.single {
+    height: 55px;
+  }
+
+  .hero-stripes .stripe-main {
+    top: 25%;
+  }
+
+  .hero-stripes .stripe-bottom {
+    top: 65%;
+  }
+
+  .stripe-marquee-text {
+    font-size: 1rem;
+    padding: 0 1.2rem;
+  }
+
+  .login-right {
+    padding: 10px 16px;
+  }
+
+  .form-container {
+    padding: 22px 26px 32px;
+    max-width: 400px;
+  }
+
+  .brand-floating-logo {
+    width: 140px;
+  }
+
+  .form-title {
+    font-size: 1.55rem;
+    margin-bottom: 26px;
+  }
+
+  .login-form {
+    gap: 20px;
+  }
+}
+
+/* Small Mobile (479px and below) */
+@media (max-width: 479px) {
+  .login-left {
+    min-height: 240px;
+    max-height: 26vh;
+  }
+
+  .gradient-overlay {
+    padding: 18px 15px;
+  }
+
+  .logo-image {
+    width: 120px;
+  }
+
+  .logo-text {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    letter-spacing: 1.5px;
+  }
+
+  .logo-description {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .social-icons {
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .hero-stripes .stripe.single {
+    height: 50px;
+  }
+
+  .hero-stripes .stripe-main {
+    top: 28%;
+  }
+
+  .hero-stripes .stripe-bottom {
+    top: 68%;
+  }
+
+  .stripe-marquee-text {
+    font-size: 0.9rem;
+    padding: 0 1rem;
+  }
+
+  .social-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .social-icon svg {
+    font-size: 1rem;
+  }
+
+  .login-right {
+    padding: 8px 14px;
+  }
+
+  .form-container {
+    padding: 20px 22px 30px;
+    max-width: 100%;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+
+  .brand-floating {
+    margin-bottom: 22px;
+  }
+
+  .brand-floating-logo {
+    width: 130px;
+    margin-bottom: 10px;
+  }
+
+  .brand-floating-tagline {
+    font-size: 0.85rem;
+  }
+
+  .form-title {
+    font-size: 1.45rem;
+    margin-bottom: 24px;
+    letter-spacing: 0.8px;
+  }
+
+  .login-form {
+    gap: 18px;
+  }
+
+  .form-input {
+    padding: 12px 12px 12px 38px;
+    font-size: 0.9rem;
+    border-radius: 7px;
+  }
+
+  .input-icon {
+    left: 12px;
+    font-size: 0.95rem;
+  }
+
+  .password-toggle {
+    right: 12px;
+    font-size: 0.9rem;
+  }
+
+  .login-btn {
+    padding: 12px;
+    font-size: 0.95rem;
+    margin-top: 12px;
+    border-radius: 7px;
+    letter-spacing: 0.6px;
+  }
+
+  .resend-btn {
+    padding: 10px;
+    font-size: 0.9rem;
+    margin-top: 12px;
+    border-radius: 7px;
+  }
+
+  .form-message-box {
+    margin-top: 15px;
+  }
+
+  .form-error,
+  .form-success {
+    padding: 10px;
+    font-size: 0.85rem;
+  }
+
+  .form-options {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .checkbox-container,
+  .forgot-password {
+    font-size: 0.85rem;
+  }
+
+  .account-options {
+    margin-top: 30px;
+  }
+
+  .account-options p {
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+  }
+
+  .account-btn {
+    padding: 11px 18px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Extra Small Mobile (374px and below) */
+@media (max-width: 374px) {
+  .login-left {
+    min-height: 220px;
+    max-height: 24vh;
+  }
+
+  .gradient-overlay {
+    padding: 15px 12px;
+  }
+
+  .logo-image {
+    width: 110px;
+  }
+
+  .logo-text {
+    font-size: 1.6rem;
+  }
+
+  .logo-description {
+    font-size: 0.82rem;
+  }
+
+  .login-right {
+    padding: 6px 12px;
+  }
+
+  .form-container {
+    padding: 18px 20px 28px;
+    border-radius: 8px;
+  }
+
+  .brand-floating-logo {
+    width: 120px;
+  }
+
+  .brand-floating-tagline {
+    font-size: 0.82rem;
+  }
+
+  .form-title {
+    font-size: 1.35rem;
+    margin-bottom: 22px;
+  }
+
+  .login-form {
+    gap: 16px;
+  }
+
+  .form-input {
+    padding: 11px 11px 11px 36px;
+    font-size: 0.88rem;
+  }
+
+  .input-icon {
+    left: 11px;
+    font-size: 0.9rem;
+  }
+
+  .login-btn {
+    padding: 11px;
+    font-size: 0.92rem;
+  }
+
+  .resend-btn {
+    padding: 9px;
+    font-size: 0.88rem;
+  }
+}
+
+/* Very Small Mobile (320px) */
+@media (max-width: 320px) {
+  .login-left {
+    min-height: 200px;
+    max-height: 22vh;
+  }
+
+  .gradient-overlay {
+    padding: 12px 10px;
+  }
+
+  .logo-image {
+    width: 100px;
+  }
+
+  .logo-text {
+    font-size: 1.5rem;
+  }
+
+  .logo-description {
+    font-size: 0.8rem;
+  }
+
+  .social-icons {
+    gap: 10px;
+  }
+
+  .social-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+  .login-right {
+    padding: 5px 10px;
+  }
+
+  .form-container {
+    padding: 16px 18px 26px;
+  }
+
+  .brand-floating-logo {
+    width: 110px;
+  }
+
+  .brand-floating-tagline {
+    font-size: 0.8rem;
+  }
+
+  .form-title {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+  }
+
+  .login-form {
+    gap: 15px;
+  }
+
+  .form-input {
+    padding: 10px 10px 10px 34px;
+    font-size: 0.86rem;
+  }
+
+  .input-icon {
+    left: 10px;
+    font-size: 0.88rem;
+  }
+
+  .password-toggle {
+    right: 10px;
+    font-size: 0.88rem;
+  }
+
+  .login-btn {
+    padding: 10px;
+    font-size: 0.9rem;
+    margin-top: 10px;
+  }
+
+  .resend-btn {
+    padding: 8px;
+    font-size: 0.86rem;
+    margin-top: 10px;
+  }
+
+  .form-error,
+  .form-success {
+    padding: 9px;
+    font-size: 0.82rem;
+  }
+
+  .account-btn {
+    padding: 10px 16px;
+    font-size: 0.82rem;
+  }
+}

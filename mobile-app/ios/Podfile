@@ -1,5 +1,5 @@
-# Uncomment this line to define a global platform for your project
-# platform :ios, '16.0'
+# Define a global platform for the project. Match Flutter's current iOS support.
+platform :ios, '13.0'
 
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
@@ -40,5 +40,18 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # Speed up builds and reduce binary size where appropriate
+    target.build_configurations.each do |config|
+      # Use Swift concurrency back-deployment if needed by pods
+      config.build_settings['OTHER_SWIFT_FLAGS'] ||= '$(inherited)'
+      config.build_settings['DEAD_CODE_STRIPPING'] = 'YES'
+
+      # Disable bitcode (deprecated) to speed up and avoid warnings
+      config.build_settings['ENABLE_BITCODE'] = 'NO'
+
+      # Exclude i386 on device builds to prevent unnecessary slices
+      config.build_settings['EXCLUDED_ARCHS[sdk=iphonesimulator*]'] = 'i386'
+    end
   end
 end

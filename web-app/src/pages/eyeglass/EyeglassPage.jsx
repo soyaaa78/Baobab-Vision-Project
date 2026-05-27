@@ -1,0 +1,256 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import Button from "../../components/Button";
+import "../../styles/eyeglass/EyeglassPage.css";
+import placeholder from "../../assets/placeholder.png";
+import { Edit3, ArrowLeft, Star } from "lucide-react";
+import axios from "axios";
+import Cookies from "js-cookie";
+
+const EyeglassPage = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+  const [eyeglass, setEyeglass] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(0);
+  const [selectedLens, setSelectedLens] = useState(0);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [TOKEN, setToken] = useState();
+  useEffect(() => {
+    const t = Cookies.get("token");
+    setToken(t);
+  }, []);
+
+  // Log when color selection changes
+  useEffect(() => {
+    if (eyeglass && eyeglass.colorOptions) {
+      console.log("=== COLOR SELECTION CHANGED ===");
+      console.log("Selected color index:", selectedColor);
+      console.log(
+        "Selected color option:",
+        eyeglass.colorOptions[selectedColor]
+      );
+      console.log(
+        "New first image URL:",
+        eyeglass.colorOptions[selectedColor]?.imageUrl
+      );
+      console.log("================================");
+    }
+  }, [selectedColor, eyeglass]);
+
+  React.useEffect(() => {
+    const fetchEyeglass = async () => {
+      try {
+        const response = await axios.get(
+          `${SERVER_URL}/api/products?id=${id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${TOKEN}`,
+            },
+          }
+        );
+        console.log("Eyeglass API response:", response.data);
+        setEyeglass(response.data);
+      } catch {
+        setEyeglass(null);
+      }
+    };
+    if (id) fetchEyeglass();
+  }, [id, SERVER_URL, TOKEN]);
+
+  if (!eyeglass) {
+    return (
+      <div className="page" id="eyeglass-page">
+        <div className="eyeglass-page-content">
+          <div className="skeleton" style={{ width: '140px', height: '36px', borderRadius: '8px', marginBottom: '1.5rem' }} />
+          <div className="eyeglass-card">
+            <div className="card-body" style={{ display: 'flex', gap: '2rem', padding: '1.5rem', flexWrap: 'wrap' }}>
+              <div style={{ flex: '1 1 300px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="skeleton" style={{ width: '100%', height: '360px', borderRadius: '12px' }} />
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="skeleton" style={{ width: '70px', height: '70px', borderRadius: '8px' }} />
+                  ))}
+                </div>
+              </div>
+              <div style={{ flex: '1 1 280px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div className="skeleton" style={{ width: '200px', height: '28px' }} />
+                <div className="skeleton" style={{ width: '100%', height: '16px' }} />
+                <div className="skeleton" style={{ width: '85%', height: '16px' }} />
+                <div className="skeleton" style={{ width: '70%', height: '16px' }} />
+                <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} className="skeleton" style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+                  ))}
+                </div>
+                <div className="skeleton" style={{ width: '160px', height: '16px', marginTop: '8px' }} />
+                <div className="skeleton" style={{ width: '80px', height: '28px' }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Prepare images and color options
+  const colorOptions = eyeglass.colorOptions || [];
+
+  // Thumbnail/main image uses the first uploaded product image. The selected
+  // color's image is appended to the gallery so it remains accessible.
+  const productImages = eyeglass.imageUrls && eyeglass.imageUrls.length > 0
+    ? eyeglass.imageUrls
+    : [placeholder];
+  const colorImage = colorOptions[selectedColor]?.imageUrl;
+  const allImages = colorImage && !productImages.includes(colorImage)
+    ? [...productImages, colorImage]
+    : productImages;
+  const lensOptions = eyeglass.lensOptions || [
+    { label: "Built-in UV400 Lenses (FREE)", price: 0, type: "builtin" },
+  ];
+
+  let mainImage = allImages[selectedImageIndex] || placeholder;
+
+  // Apply color overlay only when the user is actively viewing the color-option image
+  const isFirstImage = !!colorImage && mainImage === colorImage;
+
+  return (
+    <>
+      <div className="page" id="eyeglass-page">
+        <div className="eyeglass-page-content">
+          <Button className="back-btn" onClick={() => navigate("../catalogue")}>
+            <ArrowLeft size={16} />
+            <span>Back to Catalogue</span>
+          </Button>
+
+          <div className="eyeglass-card">
+            <div className="card-header">
+              <div className="card-actions">
+                <button
+                  className="action-btn edit"
+                  onClick={() =>
+                    navigate(`/dashboard/editeyeglasses/${eyeglass._id}`)
+                  }
+                >
+                  <p>Edit</p>
+                  {/* <Edit3 size={20} /> */}
+                </button>
+              </div>
+            </div>
+
+            <div className="card-body">
+              <div className="image-section">
+                <div
+                  className="main-image-container"
+                  style={{ position: "relative" }}
+                >
+                  <img
+                    className="main-product-image"
+                    src={mainImage}
+                    alt={eyeglass.name}
+                    style={
+                      isFirstImage
+                        ? {
+                            boxShadow: `0 0 0 6px ${
+                              colorOptions[selectedColor]?.colors?.[0] || "#ccc"
+                            }44`,
+                            background:
+                              colorOptions[selectedColor]?.colors?.[0] ||
+                              undefined,
+                            borderRadius: "12px",
+                            transition: "box-shadow 0.3s, background 0.3s",
+                          }
+                        : {}
+                    }
+                  />
+                </div>
+
+                <div className="thumbnail-gallery">
+                  {allImages.map((img, idx) => (
+                    <div
+                      key={idx}
+                      className={`thumbnail-item ${
+                        selectedImageIndex === idx ? "active" : ""
+                      }`}
+                      onClick={() => setSelectedImageIndex(idx)}
+                    >
+                      <img src={img} alt={`View ${idx + 1}`} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="details-section">
+                <div className="product-header">
+                  <h1 id="product-name">{eyeglass.name}</h1>
+                  <div id="product-badge">Premium</div>
+                </div>
+
+                <p className="product-description">{eyeglass.description}</p>
+
+                <div className="color-selection">
+                  <h3 className="selection-title">Available Colors</h3>
+                  <div className="color-options">
+                    {colorOptions.map((opt, idx) => (
+                      <div
+                        key={idx}
+                        className={`color-option ${
+                          selectedColor === idx ? "selected" : ""
+                        }`}
+                        onClick={() => {
+                          setSelectedColor(idx);
+                          setSelectedImageIndex(0); // Reset to first image when color changes
+                        }}
+                        title={opt.name}
+                      >
+                        <div
+                          className="color-swatch"
+                          style={{
+                            background: (opt.colors && opt.colors[0]) || "#ccc",
+                          }}
+                        />
+                        <span className="color-name">{opt.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="lens-selection">
+                  <h3 className="selection-title">
+                    Lens Options <span className="required">*</span>
+                  </h3>
+                  <div className="lens-dropdown">
+                    <select
+                      value={selectedLens}
+                      onChange={(e) => setSelectedLens(Number(e.target.value))}
+                      className="modern-select"
+                    >
+                      {lensOptions.map((opt, idx) => (
+                        <option key={idx} value={idx}>
+                          {opt.label} {opt.price ? `(₱${opt.price})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="price-section">
+                  <div className="price-container">
+                    <span className="currency">₱</span>
+                    <span className="price">
+                      {eyeglass.price?.toLocaleString() || "0.00"}
+                    </span>
+                    <span className="price-label">PHP</span>
+                  </div>
+                  <div className="price-subtitle">Inclusive of all taxes</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default EyeglassPage;

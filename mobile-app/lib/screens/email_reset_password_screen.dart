@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -14,16 +15,51 @@ class EmailResetPasswordScreen extends StatefulWidget {
   const EmailResetPasswordScreen({super.key, required this.email});
 
   @override
-  State<EmailResetPasswordScreen> createState() => _EmailResetPasswordScreenState();
+  State<EmailResetPasswordScreen> createState() =>
+      _EmailResetPasswordScreenState();
 }
 
 class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
   final TextEditingController otpController = TextEditingController();
   bool isLoading = false;
 
+  /// Countdown
+  int secondsRemaining = 300; // 5 minutes = 300 seconds
+  Timer? timer;
+
+  @override
+  void initState() {
+    super.initState();
+    startTimer();
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    otpController.dispose();
+    super.dispose();
+  }
+
+  void startTimer() {
+    timer?.cancel();
+    setState(() {
+      secondsRemaining = 300;
+    });
+    timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (secondsRemaining > 0) {
+        setState(() {
+          secondsRemaining--;
+        });
+      } else {
+        t.cancel();
+      }
+    });
+  }
+
   Future<void> verifyOtp() async {
     setState(() => isLoading = true);
-    final url = Uri.parse('http://10.0.2.2:3001/api/auth/verify-otp');
+    final url = Uri.parse(
+        'https://baobab-vision-project-0234.onrender.com/api/auth/verify-otp');
 
     try {
       final response = await http.post(
@@ -53,18 +89,22 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
         );
       } else {
         final resData = jsonDecode(response.body);
-        customDialog(context, title: 'Invalid OTP', content: resData['message'] ?? 'OTP error');
+        customDialog(context,
+            title: 'Invalid OTP', content: resData['message'] ?? 'OTP error');
       }
     } catch (e) {
       print('VERIFY OTP EXCEPTION: $e');
-      customDialog(context, title: 'Error', content: 'Failed to verify. Check your network or try again.');
+      customDialog(context,
+          title: 'Error',
+          content: 'Failed to verify. Check your network or try again.');
     } finally {
       setState(() => isLoading = false);
     }
   }
 
   Future<void> resendOtp() async {
-    final url = Uri.parse('http://10.0.2.2:3001/api/auth/resend-otp');
+    final url = Uri.parse(
+        'https://baobab-vision-project-0234.onrender.com/api/auth/resend-otp');
 
     try {
       final response = await http.post(
@@ -74,11 +114,21 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
       );
 
       print('RESEND OTP RESPONSE: ${response.body}');
-      customDialog(context, title: 'OTP Sent', content: 'A new OTP has been sent to your email.');
+      customDialog(context,
+          title: 'OTP Sent', content: 'A new OTP has been sent to your email.');
+
+      /// Restart timer when resend
+      startTimer();
     } catch (e) {
       print('RESEND OTP ERROR: $e');
       customDialog(context, title: 'Error', content: 'Failed to resend OTP');
     }
+  }
+
+  String formatTime(int seconds) {
+    final minutes = (seconds ~/ 60).toString().padLeft(2, '0');
+    final secs = (seconds % 60).toString().padLeft(2, '0');
+    return "$minutes:$secs";
   }
 
   @override
@@ -86,30 +136,67 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
     return Scaffold(
       backgroundColor: WHITE_COLOR,
       appBar: AppBar(
-        title: const Text('Verify Your Email'),
-        centerTitle: true,
+        backgroundColor: WHITE_COLOR,
         elevation: 0,
-        backgroundColor: Theme.of(context).primaryColor,
+        centerTitle: true,
+        title: Text(
+          'Verify Your Email',
+          style: TextStyle(
+            fontSize: 18.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.black87),
       ),
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 30.h),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            /// Icon Header
+            Icon(
+              Icons.mark_email_read_outlined,
+              size: 80.sp,
+              color: Colors.blueAccent,
+            ),
+            SizedBox(height: 20.h),
+
+            /// Title
             Text(
-              'Check your email',
-              style: TextStyle(fontSize: 22.sp, fontWeight: FontWeight.w600),
+              'Check Your Email',
+              style: TextStyle(
+                fontSize: 22.sp,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+              textAlign: TextAlign.center,
             ),
             SizedBox(height: 10.h),
+
+            /// Subtitle
             Text(
-              'We’ve sent an OTP to:',
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey[700]),
+              'We’ve sent a One-Time Password (OTP) to:',
+              style: TextStyle(
+                fontSize: 14.sp,
+                color: Colors.grey[700],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
             ),
+            SizedBox(height: 6.h),
+
+            /// Email Display
             Text(
               widget.email,
-              style: TextStyle(fontSize: 15.sp, fontWeight: FontWeight.w500, color: BLACK_COLOR),
+              style: TextStyle(
+                fontSize: 15.sp,
+                fontWeight: FontWeight.w600,
+                color: BLACK_COLOR,
+              ),
+              textAlign: TextAlign.center,
             ),
-            SizedBox(height: 30.h),
+            SizedBox(height: 40.h),
 
             /// OTP Input
             TextFormField(
@@ -117,11 +204,48 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
               keyboardType: TextInputType.number,
               decoration: InputDecoration(
                 labelText: 'Enter OTP',
+                labelStyle: TextStyle(
+                  fontSize: 14.sp,
+                  color: Colors.grey[700],
+                ),
                 prefixIcon: const Icon(Icons.lock_outline),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: 14.h,
+                  horizontal: 12.w,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: BorderSide(
+                    color: Colors.grey.shade400,
+                    width: 1.2,
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: const BorderSide(
+                    color: Colors.blueAccent,
+                    width: 1.5,
+                  ),
+                ),
+                errorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: const BorderSide(
+                    color: Colors.redAccent,
+                    width: 1.2,
+                  ),
+                ),
+                focusedErrorBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  borderSide: const BorderSide(
+                    color: Colors.redAccent,
+                    width: 1.5,
+                  ),
+                ),
               ),
             ),
-            SizedBox(height: 30.h),
+            SizedBox(height: 25.h),
 
             /// Verify Button
             CustomInkwellButton(
@@ -131,19 +255,19 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
               buttonName: isLoading ? 'Verifying...' : 'Verify OTP',
               fontSize: 16.sp,
             ),
-            SizedBox(height: 16.h),
+            SizedBox(height: 13.h),
 
-            /// Resend Button
-            Center(
-              child: TextButton(
-                onPressed: resendOtp,
-                child: Text(
-                  'Didn’t get the code? Resend OTP',
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.w500,
-                  ),
+            /// Resend OTP Button
+            TextButton(
+              onPressed: secondsRemaining == 0 ? resendOtp : null,
+              child: Text(
+                secondsRemaining == 0
+                    ? 'Didn’t get the code? Resend OTP'
+                    : 'Resend available in ${formatTime(secondsRemaining)}',
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: BLACK_COLOR,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),

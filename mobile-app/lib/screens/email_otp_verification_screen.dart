@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:baobab_vision_project/constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:baobab_vision_project/widgets/custom_dialog.dart'; // ✅ Import custom dialog
 
 class EmailOtpVerificationScreen extends StatefulWidget {
   final String email;
@@ -23,9 +25,12 @@ class _EmailOtpVerificationScreenState
 
   String get _otp => _controllers.map((c) => c.text).join();
 
-  void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
+  // ✅ Updated to use customDialog instead of SnackBar
+  void _showCustomDialog(String message) {
+    customDialog(
+      context,
+      title: "Notice",
+      content: message,
     );
   }
 
@@ -42,79 +47,82 @@ class _EmailOtpVerificationScreenState
   }
 
   Future<void> _verifyOtp() async {
-  if (_otp.length != 6 || _otp.contains(RegExp(r'[^0-9]'))) {
-    _showSnackBar('Enter all 6 digits');
-    return;
-  }
+    if (_otp.length != 6 || _otp.contains(RegExp(r'[^0-9]'))) {
+      _showCustomDialog('Enter all 6 digits');
+      return;
+    }
 
-  setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
 
-  try {
-    final response = await http.post(
-      Uri.parse('http://192.168.100.56:3001/api/auth/verify-email-otp'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': widget.email, 'otp': _otp}),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse(
+            'https://baobab-vision-project-0234.onrender.com/api/auth/verify-email-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': widget.email, 'otp': _otp}),
+      );
 
-    final res = jsonDecode(response.body);
+      final res = jsonDecode(response.body);
 
-    if (response.statusCode == 200) {
-      // ✅ Now fetch profile after successful verification
-      final token = res['token'];
-      if (token != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', token);
+      if (response.statusCode == 200) {
+        final token = res['token'];
+        if (token != null) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('token', token);
 
-        final profileRes = await http.get(
-          Uri.parse('http://192.168.100.56:3001/api/user/profile'),
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'application/json',
-          },
-        );
+          final profileRes = await http.get(
+            Uri.parse(
+                'https://baobab-vision-project-0234.onrender.com/api/user/profile'),
+            headers: {
+              'Authorization': 'Bearer $token',
+              'Content-Type': 'application/json',
+            },
+          );
 
-        if (profileRes.statusCode == 200) {
-          final profileData = jsonDecode(profileRes.body);
+          if (profileRes.statusCode == 200) {
+            final profileData = jsonDecode(profileRes.body);
 
-          await prefs.setString('firstname', profileData['firstname'] ?? '');
-          await prefs.setString('lastname', profileData['lastname'] ?? '');
-          await prefs.setString('email', profileData['email'] ?? '');
+            await prefs.setString('firstname', profileData['firstname'] ?? '');
+            await prefs.setString('lastname', profileData['lastname'] ?? '');
+            await prefs.setString('email', profileData['email'] ?? '');
 
-          if (profileData['profileImage'] != null && profileData['profileImage'].toString().isNotEmpty) {
-            String imgPath = profileData['profileImage'];
-            if (imgPath.startsWith('/')) imgPath = imgPath.substring(1);
-            await prefs.setString('profileImageUrl', 'http://192.168.100.56:3001/$imgPath');
-          } else {
-            await prefs.remove('profileImageUrl');
+            if (profileData['profileImage'] != null &&
+                profileData['profileImage'].toString().isNotEmpty) {
+              String imgPath = profileData['profileImage'];
+              if (imgPath.startsWith('/')) imgPath = imgPath.substring(1);
+              await prefs.setString('profileImageUrl',
+                  'https://baobab-vision-project-0234.onrender.com/$imgPath');
+            } else {
+              await prefs.remove('profileImageUrl');
+            }
           }
         }
+
+        setState(() => _isLoading = false);
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        setState(() => _isLoading = false);
+        _showCustomDialog(res['message'] ?? 'Invalid or expired OTP');
       }
-
+    } catch (e) {
       setState(() => _isLoading = false);
-      Navigator.pushReplacementNamed(context, '/home'); // ✅ Safe to navigate now
-    } else {
-      setState(() => _isLoading = false);
-      _showSnackBar(res['message'] ?? 'Invalid or expired OTP');
+      _showCustomDialog('Verification failed. Try again.');
     }
-  } catch (e) {
-    setState(() => _isLoading = false);
-    _showSnackBar('Verification failed. Try again.');
   }
-}
-
 
   Future<void> _resendOtp() async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.100.56:3001/api/auth/resend-email-otp'),
+        Uri.parse(
+            'https://baobab-vision-project-0234.onrender.com/api/auth/resend-email-otp'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': widget.email}),
       );
 
       final res = jsonDecode(response.body);
-      _showSnackBar(res['message'] ?? 'OTP resent');
+      _showCustomDialog(res['message'] ?? 'OTP resent');
     } catch (e) {
-      _showSnackBar('Failed to resend OTP');
+      _showCustomDialog('Failed to resend OTP');
     }
   }
 
@@ -134,120 +142,147 @@ class _EmailOtpVerificationScreenState
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: WHITE_COLOR,
+      backgroundColor: WHITE_COLOR, // ✅ White background only
       body: Center(
-        child: Card(
-          elevation: 4,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          margin: const EdgeInsets.symmetric(horizontal: 24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'Account Verification',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: BLACK_COLOR,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
+          child: Card(
+            elevation: 10,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            color: Colors.white,
+            shadowColor: Colors.black26, // ✅ Makes content standout
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 36.h),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Account Verification',
+                    style: TextStyle(
+                      fontSize: 26.sp,
+                      fontWeight: FontWeight.bold,
+                      color: BLACK_COLOR,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Column(
-                  children: [
-                    Text(
-                      'Your code was sent to you via email',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: Colors.black87,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _maskedEmail(widget.email),
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // OTP Input Fields
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(6, (index) {
-                    return SizedBox(
-                      width: 40,
-                      child: TextField(
-                        controller: _controllers[index],
-                        focusNode: _focusNodes[index],
-                        maxLength: 1,
-                        keyboardType: TextInputType.number,
+                  SizedBox(height: 12.h),
+                  Column(
+                    children: [
+                      Text(
+                        'Enter the 6-digit code sent to your email',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.black87,
+                          fontSize: 14.sp,
+                        ),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 20),
-                        decoration: const InputDecoration(
-                          counterText: '',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: (val) {
-                          if (val.length == 1 && index < 5) {
-                            _focusNodes[index + 1].requestFocus();
-                          } else if (val.isEmpty && index > 0) {
-                            _focusNodes[index - 1].requestFocus();
-                          }
-                        },
                       ),
-                    );
-                  }),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Verify Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 45,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _verifyOtp,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: BLACK_COLOR,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text(
-                            'Verify',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Resend
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("Didn't receive code? "),
-                    GestureDetector(
-                      onTap: _resendOtp,
-                      child: const Text(
-                        'Request again',
-                        style: TextStyle(
-                          color: Colors.blue,
+                      SizedBox(height: 4.h),
+                      Text(
+                        _maskedEmail(widget.email),
+                        style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
+                          color: Colors.black54,
+                          fontSize: 13.sp,
                         ),
                       ),
+                    ],
+                  ),
+                  SizedBox(height: 30.h),
+
+                  // ✅ Flexible OTP Input Fields
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: List.generate(6, (index) {
+                      return Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
+                          child: TextField(
+                            controller: _controllers[index],
+                            focusNode: _focusNodes[index],
+                            maxLength: 1,
+                            keyboardType: TextInputType.number,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontSize: 22.sp, fontWeight: FontWeight.bold),
+                            decoration: InputDecoration(
+                              counterText: '',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                                borderSide: const BorderSide(
+                                    color: Colors.grey, width: 1.5),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                                borderSide: const BorderSide(
+                                    color: Colors.blue, width: 2),
+                              ),
+                              fillColor: Colors.grey[100],
+                              filled: true,
+                            ),
+                            onChanged: (val) {
+                              if (val.length == 1 && index < 5) {
+                                _focusNodes[index + 1].requestFocus();
+                              } else if (val.isEmpty && index > 0) {
+                                _focusNodes[index - 1].requestFocus();
+                              }
+                            },
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+
+                  SizedBox(height: 40.h),
+
+                  // Verify Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50.h,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _verifyOtp,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: BLACK_COLOR,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        elevation: 5,
+                      ),
+                      child: _isLoading
+                          ? const CircularProgressIndicator(color: Colors.white)
+                          : Text(
+                              'Verify',
+                              style: TextStyle(
+                                  color: Colors.white, fontSize: 18.sp),
+                            ),
                     ),
-                  ],
-                ),
-              ],
+                  ),
+
+                  SizedBox(height: 20.h),
+
+                  // Resend
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "Didn't receive code? ",
+                        style: TextStyle(fontSize: 14.sp),
+                      ),
+                      GestureDetector(
+                        onTap: _resendOtp,
+                        child: Text(
+                          'Request again',
+                          style: TextStyle(
+                            color: BLACK_COLOR,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

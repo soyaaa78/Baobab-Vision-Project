@@ -1,5 +1,5 @@
+import 'package:baobab_vision_project/constants.dart';
 import 'package:flutter/material.dart';
-import '../constants.dart';
 
 class CancelledOrderCard extends StatelessWidget {
   final String productId;
@@ -12,6 +12,9 @@ class CancelledOrderCard extends StatelessWidget {
   final String deliveryMethod;
   final String paymentMethod;
   final String cancellationStatus; // e.g., Pending, Approved, Rejected
+  final String cancellationReason; // Reason for cancellation
+  final String
+      reasonType; // Type of reason: 'Admin Declined' or 'User Cancelled'
 
   const CancelledOrderCard({
     super.key,
@@ -25,27 +28,27 @@ class CancelledOrderCard extends StatelessWidget {
     required this.deliveryMethod,
     required this.paymentMethod,
     required this.cancellationStatus,
+    this.cancellationReason = '',
+    this.reasonType = '',
   });
 
   @override
   Widget build(BuildContext context) {
-    final int total = int.tryParse(prodPrice) != null
-        ? int.parse(prodPrice) * quantity
-        : 0;
+    final int total =
+        int.tryParse(prodPrice) != null ? int.parse(prodPrice) * quantity : 0;
+    final String normalized = cancellationStatus.toLowerCase();
 
-    Color statusColor;
-    switch (cancellationStatus.toLowerCase()) {
-      case 'approved':
-        statusColor = Colors.green;
-        break;
-      case 'rejected':
-        statusColor = Colors.red;
-        break;
-      default:
-        statusColor = Colors.orange;
-    }
+    final Color statusColor =
+        normalized == 'cancelled' ? Colors.red : Colors.orange;
+
+    final String displayText = normalized == 'cancelled'
+        ? 'Cancelled'
+        : (normalized == 'pending cancellation'
+            ? 'Pending Cancellation'
+            : 'Cancelled - $cancellationStatus');
 
     return Card(
+      color:Colors.white,
       elevation: 3,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -128,7 +131,7 @@ class CancelledOrderCard extends StatelessWidget {
 
                   const SizedBox(height: 8),
 
-                  // Description & Payment
+                  // Delivery & Payment
                   Text(
                     deliveryMethod,
                     style: TextStyle(
@@ -149,12 +152,69 @@ class CancelledOrderCard extends StatelessWidget {
                       Icon(Icons.cancel, size: 18, color: statusColor),
                       const SizedBox(width: 6),
                       Text(
-                        "Cancelled - $cancellationStatus",
+                        displayText,
                         style: TextStyle(
                             fontWeight: FontWeight.bold, color: statusColor),
                       ),
                     ],
                   ),
+
+                  // Cancellation Reason (if available)
+                  if (cancellationReason.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: reasonType == 'Admin Declined'
+                            ? Colors.red[50]
+                            : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: reasonType == 'Admin Declined'
+                                ? Colors.red[200]!
+                                : Colors.grey[300]!),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                reasonType == 'Admin Declined'
+                                    ? Icons.admin_panel_settings
+                                    : Icons.person,
+                                size: 14,
+                                color: reasonType == 'Admin Declined'
+                                    ? Colors.red[600]
+                                    : Colors.grey[600],
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                reasonType == 'Admin Declined'
+                                    ? "Payment Declined by Admin:"
+                                    : "Cancellation Reason:",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: reasonType == 'Admin Declined'
+                                      ? Colors.red[700]
+                                      : Colors.grey[700],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            cancellationReason,
+                            style: TextStyle(
+                              color: Colors.grey[800],
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

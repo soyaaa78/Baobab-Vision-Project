@@ -1,133 +1,194 @@
-import React from 'react'
-import '../styles/Home.css';
-import { Link } from 'react-router-dom';
-import EyeglassPreview from '../components/EyeglassPreview';
+import React, { useState, useEffect } from "react";
+import "../styles/HomePage.css";
+import EyeglassPreview from "../components/EyeglassPreview";
+import Button from "../components/Button.jsx";
+import CarouselManagementModal from "../components/CarouselManagementModal.jsx";
+import { useNavigate } from "react-router-dom";
+import { PieChart } from "../components/charts/Pie.jsx";
+import { ProductViewsChart } from "../components/charts/ProductViewsChart.jsx";
+import axios from "axios";
 import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend,
-} from 'chart.js';
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import Cookies from "js-cookie";
 
 ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
 );
 
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
+const HomePage = () => {
+  const SERVER_URL = import.meta.env.VITE_SERVER_URL;
+  const [token, setToken] = useState();
+  const [showCarouselModal, setShowCarouselModal] = useState(false);
+  const [profileData, setProfileData] = useState({ firstname: "" });
+  const [eyeglasses, setEyeglasses] = useState([]);
 
-function HomePage() {
-    return (
-        <>
-            <div className='page' id='home'>
-                <div className='home-content'>
+  useEffect(() => {
+    const t = Cookies.get("token");
+    setToken(t);
+  }, []);
 
-                    <div className='home-left'>
+  useEffect(() => {
+    if (!token) return;
+    const fetchProfile = async () => {
+      try {
+        const response = await axios.get(`${SERVER_URL}/api/admin/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setProfileData(response.data);
+      } catch {
+        // fail silently
+      }
+    };
+    fetchProfile();
+  }, [token, SERVER_URL]);
 
-                        <div className='left-hero'>
-                            <h1> ¿Cómo estás? </h1>
-                            <p>We aren't actually Spanish, the devs who made this.</p>
-                            <p>Or maybe we are? You never know ;)</p>
+  useEffect(() => {
+    if (!token) return;
+    const fetchEyeglasses = async () => {
+      try {
+        const response = await axios.get(`${SERVER_URL}/api/products/for-you`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setEyeglasses(response.data);
+      } catch {
+        // fail silently
+      }
+    };
+    fetchEyeglasses();
+  }, [token, SERVER_URL]);
 
-                            <div className='hero-cta-buttons'>
-                                <Link to='home' className='home-button' id='home1'>Add a New Pair</Link>
-                                <Link to='home' className='home-button' id='home2'>Delete an Existing Pair</Link>
-                                <Link to='/dashboard/editeyeglasses' className='home-button' id='home3'>Edit an Existing Pair</Link>
-                            </div>
-                        </div>
+  const navigate = useNavigate();
+  const handleAdd = () => navigate("/dashboard/addeyeglasses");
+  const handleCatalogue = () => navigate("/dashboard/catalogue");
+  const handleDelete = () =>
+    navigate("/dashboard/catalogue", { state: { deleteMode: true } });
+  const handleStatistics = () => navigate("/dashboard/statistics");
+  const handleManageGallery = () => setShowCarouselModal(true);
+  return (
+    <>
+      <div className="page" id="home">
+        <div className="home-content">
+          <div className="home-left">
+            <div className="left-hero">
+              <h1>
+                {`Hello${
+                  profileData.firstname ? ` ${profileData.firstname}!` : "!"
+                }`}
+              </h1>
+              <p>
+                Here’s a quick look at your eyewear selections, sales
+                statistics, and user activity
+              </p>
 
-                        <div className='left-bottom'>
-
-                            <h2>Statistics</h2>
-                            <p>Your number-crunching digest, as usual. Care to take a look?</p>
-
-                            <div className='charts-container'>
-                                <div className='chart-bg'>
-                                    <div className='charts'>
-                                        <Bar
-                                            data={{
-                                                labels: ["Square", "Circle", "Triangle"],
-                                                datasets: [
-                                                    {
-                                                        label: "Face Shapes",
-                                                        data: [10, 18, 16, 20],
-                                                        backgroundColor: '#799EE3',
-                                                    }
-                                                ],
-                                            }}
-                                        />
-
-                                        <Bar
-                                            data={{
-                                                labels: ["Square", "Circle", "Triangle"],
-                                                datasets: [
-                                                    {
-                                                        label: "Face Shapes",
-                                                        data: [10, 18, 16, 20],
-                                                        backgroundColor: '#799EE3',
-                                                    }
-                                                ],
-                                            }}
-                                        />
-
-
-                                    </div>
-
-                                    <div className='quip'>
-                                        <p>Want to see more?</p>
-                                        <div className='stats-button-container'>
-                                            <Link to='statistics' className='home-button' id='stats-cta'>View Full Statistics</Link>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-
-
-                        </div>
-
-                    </div>
-
-                    <div className='home-right'>
-
-                        <div className='catalogue-preview'>
-                            <div className='preview-bg'>
-                                <p>Manage Eyeglass Selections</p>
-                                <div className='preview-items-container'>
-                                    <div className='preview-items'>
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-                                        <EyeglassPreview />
-
-                                    </div>
-                                </div>
-
-                                <div className='quip'>
-                                    <p>Want to see more?</p>
-                                    <div className='stats-button-container'> {/* change to button */}
-                                        <Link to='statistics' className='home-button' id='stats-cta'>View Full Catalogue</Link>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
+              <div className="hero-cta-buttons">
+                <Button
+                  className={"home-buttons"}
+                  onClick={handleAdd}
+                  children={<p>Add a New Pair</p>}
+                />
+                <Button
+                  className={"home-buttons"}
+                  onClick={handleDelete}
+                  children={<p>Delete an Existing Pair</p>}
+                />
+                <Button
+                  className={"home-buttons"}
+                  onClick={handleManageGallery}
+                  children={<p>Manage Gallery Images</p>}
+                />
+              </div>
             </div>
-        </>
-    );
+
+            <div className="left-bottom">
+              <div className="charts-container">
+                <div className="chart-bg">
+                  <div className="left-bottom-text">
+                    <h2>Statistics</h2>
+                    <p>
+                      Your number-crunching digest, as usual. Care to take a
+                      look?
+                    </p>
+                  </div>
+                  <div className="charts">
+                    <div className="home-chart-wrapper">
+                      <PieChart width="325px" height="325px" />
+                    </div>
+
+                    <div className="home-chart-wrapper" id="productview">
+                      <ProductViewsChart />
+                    </div>
+                  </div>
+
+                  <div className="quip">
+                    <p>Want to see more?</p>
+                    <Button
+                      className=""
+                      onClick={handleStatistics}
+                      children={<p>See Statistics</p>}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="home-right">
+            <div className="catalogue-preview">
+              <div className="cattext">
+                <h2>Manage Eyeglass Selections</h2>
+                <p>Got something to check out? Look no further.</p>
+              </div>
+              <div className="right-preview">
+                <div className="preview-bg">
+                  <div className="preview-items-container">
+                    <div className="preview-items">
+                      {(Array.isArray(eyeglasses)
+                        ? eyeglasses.slice(0, 8)
+                        : []
+                      ).map((eyeglass) => (
+                        <EyeglassPreview
+                          key={eyeglass._id}
+                          eyeglass={eyeglass}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="quip">
+                    <p>Want to see more?</p>
+                    <Button
+                      className=""
+                      onClick={handleCatalogue}
+                      children={<p>See Full Catalogue</p>}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <CarouselManagementModal
+        isOpen={showCarouselModal}
+        onClose={() => setShowCarouselModal(false)}
+      />
+    </>
+  );
 };
 
 export default HomePage;

@@ -1,31 +1,183 @@
-const express = require("express");
 const Order = require("../models/Order");
 const Product = require("../models/Products");
 const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const UserCart = require("../models/UserCart");
+const mongoose = require("mongoose");
+const ProofOfPayment = require("../models/Order/ProofOfPayment");
+const crypto = require("crypto");
+const { logEvent } = require("../services/auditLogService");
+const sendEmail = require("../services/sendEmail");
+const generateReceiptEmail = require("../services/receiptEmailTemplate");
+
+const isStaffUser = (req) =>
+  req.user &&
+  (req.user.role === "system_admin" || req.user.role?.startsWith("staff"));
+
+const isOrderOwner = (order, userId) => {
+  const customerId =
+    order?.customer && typeof order.customer === "object"
+      ? order.customer._id?.toString?.()
+      : order?.customer?.toString?.();
+
+  return Boolean(customerId && userId && customerId === userId);
+};
+
+const RECEIPT_SEND_LOCK_TIMEOUT_MS = 15 * 60 * 1000;
+
+// Generate a user-friendly, unique orderId (e.g., ORD-20250829-3F9A2C)
+const generateOrderId = async () => {
+  const pad = (n) => (n < 10 ? `0${n}` : `${n}`);
+  const now = new Date();
+  const yyyymmdd = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(
+    now.getDate()
+  )}`;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const rand = crypto.randomBytes(3).toString("hex").toUpperCase();
+    const candidate = `BV-${yyyymmdd}-${rand}`;
+    const exists = await Order.exists({ orderId: candidate });
+    if (!exists) return candidate;
+  }
+  throw new Error("Failed to generate a unique orderId after several attempts");
+};
+
+// Resolve populated products into plain objects for receipt email generation
+const resolveProductsForReceipt = (populatedProducts) => {
+  return populatedProducts.map((item) => {
+    const prod = item.productId;
+    const colorOption = (prod.colorOptions || []).find(
+      (c) => c._id.toString() === item.color
+    );
+    const lensOption = (prod.lensOptions || []).find(
+      (l) => l._id.toString() === item.lens
+    );
+    return {
+      name: prod.name,
+      quantity: item.quantity,
+      unitPrice: item.price,
+      colorName: colorOption ? colorOption.name : item.color,
+      lensLabel: lensOption ? lensOption.label : item.lens,
+      imageUrl: prod.imageUrls?.[0] ?? null,
+    };
+  });
+};
+
+const sendReceiptEmailForOrder = async ({ orderId, subject, text }) => {
+  const staleLockCutoff = new Date(Date.now() - RECEIPT_SEND_LOCK_TIMEOUT_MS);
+  const populatedOrder = await Order.findOneAndUpdate(
+    {
+      _id: orderId,
+      receiptSentAt: null,
+      $or: [{ receiptSendingAt: null }, { receiptSendingAt: { $lt: staleLockCutoff } }],
+    },
+    {
+      $set: { receiptSendingAt: new Date() },
+    },
+    { new: true }
+  )
+    .populate({
+      path: "products.productId",
+      select: "name imageUrls colorOptions lensOptions",
+    })
+    .populate("customer", "email firstname lastname");
+
+  if (!populatedOrder?.customer?.email) {
+    if (populatedOrder?._id) {
+      await Order.findByIdAndUpdate(populatedOrder._id, {
+        $unset: { receiptSendingAt: 1 },
+      });
+    }
+    return;
+  }
+
+  const { customer } = populatedOrder;
+  const html = generateReceiptEmail({
+    orderId: populatedOrder.orderId,
+    orderDate: populatedOrder.createdAt || populatedOrder.date,
+    customerFirstname: customer.firstname,
+    customerLastname: customer.lastname,
+    paymentMethod: populatedOrder.paymentMethod,
+    deliveryMethod: populatedOrder.deliveryMethod,
+    totalAmount: populatedOrder.totalAmount,
+    products: resolveProductsForReceipt(populatedOrder.products),
+  });
+
+  try {
+    await sendEmail(customer.email, subject, text, html);
+    await Order.findByIdAndUpdate(orderId, {
+      receiptSentAt: new Date(),
+      $unset: { receiptSendingAt: 1 },
+    });
+  } catch (error) {
+    await Order.findByIdAndUpdate(orderId, {
+      $unset: { receiptSendingAt: 1 },
+    });
+    throw error;
+  }
+};
 
 // Get Order by id or customer
 const order_get = catchAsync(async (req, res, next) => {
-  const { id, customer, index } = req.query;
+  const { id, customer, index, status, deliveryMethod } = req.query;
+  const staffUser = isStaffUser(req);
 
   let order;
+  // Build query object
+  let queryObj = {};
 
-  if (!id && !customer && !index)
-    return next(new AppError("Order identifier not found", 400));
+  if (index && !staffUser) {
+    return next(new AppError("Only staff can list all orders.", 403));
+  }
+
+  if (customer && !staffUser && customer !== req.userId) {
+    return next(new AppError("You can only access your own orders.", 403));
+  }
 
   if (id) {
+    // Find by ID
     order = await Order.findById(id)
       .populate("customer", "-password")
-      .populate("products.productId");
-  } else if (customer) {
-    order = await Order.find({ customer })
-      .populate("customer", "-password")
-      .populate("products.productId");
-  } else if (index) {
-    order = await Order.find()
-      .populate("customer", "-password")
-      .populate("products.productId");
+      .populate("products.productId")
+      .populate("address")
+      .populate("proofOfPayment")
+      .populate("rating");
+
+    if (!order) return next(new AppError("Order not found.", 404));
+    if (!staffUser && !isOrderOwner(order, req.userId)) {
+      return next(new AppError("You are not allowed to access this order.", 403));
+    }
+  } else {
+    // Build query for list
+    if (customer) queryObj.customer = customer;
+    if (typeof status !== "undefined") {
+      if (Array.isArray(status)) {
+        queryObj.status = { $in: status };
+      } else {
+        queryObj.status = status;
+      }
+    }
+    if (deliveryMethod) queryObj.deliveryMethod = deliveryMethod;
+    // If no id/customer/index, use req.userId if available
+    if (!customer && !index && req.userId) {
+      queryObj.customer = req.userId;
+    }
+    // If index is provided, ignore customer/status and get all
+    if (index) {
+      order = await Order.find()
+        .populate("customer", "-password")
+        .populate("products.productId")
+        .populate("address")
+        .populate("proofOfPayment")
+        .populate("rating");
+    } else {
+      order = await Order.find(queryObj)
+        .populate("customer", "-password")
+        .populate("products.productId")
+        .populate("address")
+        .populate("proofOfPayment")
+        .populate("rating");
+    }
   }
 
   if (!order) return next(new AppError("Order not found.", 404));
@@ -38,12 +190,36 @@ const order_get = catchAsync(async (req, res, next) => {
 
 // Create Order
 const order_post = catchAsync(async (req, res, next) => {
-  const { customer, products, address, contactNumber, paymentMethod } =
-    req.body;
+  const {
+    customer,
+    products,
+    address,
+    contactNumber,
+    paymentMethod,
+    deliveryMethod,
+    thirdPartyDelivery,
+    proofOfPayment,
+    rating,
+    cancellationReason,
+    declineReason,
+  } = req.body;
+  const staffUser = isStaffUser(req);
+  const effectiveCustomer = staffUser ? customer : req.userId;
 
-  if (!customer || !products)
+  if (!effectiveCustomer || !products)
     return next(new AppError("Cannot create order, missing fields.", 400));
+  if (!staffUser && customer && customer !== req.userId) {
+    return next(new AppError("You can only create orders for your own account.", 403));
+  }
   const date = Date.now();
+
+  // Generate friendly orderId
+  let orderId;
+  try {
+    orderId = await generateOrderId();
+  } catch (e) {
+    return next(new AppError("Could not generate order id", 500));
+  }
 
   let totalAmount = 0;
   if (Array.isArray(products)) {
@@ -54,14 +230,37 @@ const order_post = catchAsync(async (req, res, next) => {
     }, 0);
   }
 
+  // Basic validation between delivery fields
+  if (
+    typeof deliveryMethod !== "undefined" &&
+    deliveryMethod === "Third-Party Delivery" &&
+    !thirdPartyDelivery
+  ) {
+    return next(
+      new AppError(
+        "thirdPartyDelivery is required when deliveryMethod is 'Third-Party Delivery'",
+        400
+      )
+    );
+  }
+
   const newOrder = new Order({
-    customer,
+    orderId,
+    customer: effectiveCustomer,
     products,
     date,
-    address,
+    address, // expecting an Address ObjectId if provided
     contactNumber,
     totalAmount,
     paymentMethod,
+    // Optional new fields
+    deliveryMethod,
+    // Only set thirdPartyDelivery if provided (schema default handles otherwise)
+    ...(thirdPartyDelivery ? { thirdPartyDelivery } : {}),
+    ...(proofOfPayment ? { proofOfPayment } : {}),
+    ...(rating ? { rating } : {}),
+    ...(cancellationReason ? { cancellationReason } : {}),
+    ...(declineReason ? { declineReason } : {}),
   });
   await newOrder.save();
 
@@ -79,12 +278,13 @@ const order_post = catchAsync(async (req, res, next) => {
 
   return res
     .status(201)
-    .json({ message: "Order Successfully Created", newOrder });
+    .json({ message: "Order Successfully Created", order: newOrder });
 });
 
 // Update Order
 const order_put = catchAsync(async (req, res, next) => {
-  const { id } = req.query;
+  let { id } = req.query;
+  if (!id && req.body && req.body.id) id = req.body.id;
   const {
     customer,
     products,
@@ -94,9 +294,19 @@ const order_put = catchAsync(async (req, res, next) => {
     totalAmount,
     paymentMethod,
     status,
+    deliveryMethod,
+    thirdPartyDelivery,
+    proofOfPayment,
+    rating,
+    cancellationReason,
+    declineReason,
+    pickupLocation,
+    pickupTime,
   } = req.body;
 
   if (!id) return next(new AppError("Order identifier not found", 400));
+  if (!mongoose.Types.ObjectId.isValid(id))
+    return next(new AppError("Invalid order id format", 400));
 
   if (
     !customer &&
@@ -104,24 +314,98 @@ const order_put = catchAsync(async (req, res, next) => {
     !date &&
     !address &&
     !contactNumber &&
-    !totalAmount &&
+    typeof totalAmount === "undefined" &&
     !paymentMethod &&
-    !status
+    !status &&
+    !deliveryMethod &&
+    !thirdPartyDelivery &&
+    !proofOfPayment &&
+    !rating &&
+    typeof cancellationReason === "undefined" &&
+    typeof declineReason === "undefined" &&
+    typeof pickupLocation === "undefined" &&
+    typeof pickupTime === "undefined"
   )
     return next(new AppError("No data to update", 400));
 
   const order = await Order.findById(id);
   if (!order) return next(new AppError("Order not found. Invalid ID.", 404));
 
+  const staffUser = isStaffUser(req);
+  const owner = isOrderOwner(order, req.userId);
+
+  if (!staffUser && !owner) {
+    return next(new AppError("You are not allowed to update this order.", 403));
+  }
+
+  if (!staffUser) {
+    const customerEditableFields = [
+      "address",
+      "contactNumber",
+      "proofOfPayment",
+      "cancellationReason",
+      "status",
+    ];
+    const attemptedFields = Object.entries({
+      customer,
+      products,
+      date,
+      totalAmount,
+      paymentMethod,
+      deliveryMethod,
+      thirdPartyDelivery,
+      rating,
+      declineReason,
+    }).filter(([, value]) => typeof value !== "undefined");
+
+    if (attemptedFields.length > 0) {
+      return next(
+        new AppError(
+          `Customers can only update: ${customerEditableFields.join(", ")}.`,
+          403
+        )
+      );
+    }
+
+    if (typeof status !== "undefined") {
+      const validCustomerCancellation =
+        status === "cancelled_pending" && order.status === "pending";
+      if (!validCustomerCancellation) {
+        return next(
+          new AppError(
+            "Customers can only request cancellation for pending orders.",
+            403
+          )
+        );
+      }
+    }
+  }
+
   let updates = {};
-  if (customer) updates.customer = customer;
-  if (products) updates.products = products;
-  if (date) updates.date = date;
-  if (address) updates.address = address;
-  if (contactNumber) updates.contactNumber = contactNumber;
-  if (totalAmount) updates.totalAmount = totalAmount;
-  if (paymentMethod) updates.paymentMethod = paymentMethod;
-  if (status) updates.status = status;
+  if (typeof customer !== "undefined") updates.customer = customer;
+  if (typeof products !== "undefined") updates.products = products;
+  if (typeof date !== "undefined") updates.date = date;
+  if (typeof address !== "undefined") updates.address = address;
+  if (typeof contactNumber !== "undefined")
+    updates.contactNumber = contactNumber;
+  if (typeof totalAmount !== "undefined") updates.totalAmount = totalAmount;
+  if (typeof paymentMethod !== "undefined")
+    updates.paymentMethod = paymentMethod;
+  if (typeof status !== "undefined") updates.status = status;
+  if (typeof deliveryMethod !== "undefined")
+    updates.deliveryMethod = deliveryMethod;
+  if (typeof thirdPartyDelivery !== "undefined")
+    updates.thirdPartyDelivery = thirdPartyDelivery;
+  if (typeof proofOfPayment !== "undefined")
+    updates.proofOfPayment = proofOfPayment;
+  if (typeof rating !== "undefined") updates.rating = rating;
+  if (typeof cancellationReason !== "undefined")
+    updates.cancellationReason = cancellationReason;
+  if (typeof declineReason !== "undefined")
+    updates.declineReason = declineReason;
+  if (typeof pickupLocation !== "undefined")
+    updates.pickupLocation = pickupLocation;
+  if (typeof pickupTime !== "undefined") updates.pickupTime = pickupTime;
 
   const updatedOrder = await Order.findByIdAndUpdate(id, updates, {
     new: true,
@@ -129,6 +413,76 @@ const order_put = catchAsync(async (req, res, next) => {
   });
 
   if (!updatedOrder) return next(new AppError("Order not found", 404));
+
+  // Audit: Log staff actions on order updates
+  if (
+    req.user &&
+    (req.user.role === "system_admin" || req.user.role?.startsWith("staff"))
+  ) {
+    const oldStatus = order.status;
+    const newStatus = updatedOrder.status;
+
+    // Log status updates
+    if (status && oldStatus !== newStatus) {
+      const ordId = updatedOrder.orderId || updatedOrder._id?.toString();
+      let action = `Status Updated to ${newStatus} for order ${ordId}`;
+      const metadata = { oldStatus, newStatus, orderId: ordId };
+
+      // Special logging for payment approval/disapproval
+      if (updatedOrder.paymentMethod === "Gcash") {
+        if (oldStatus === "pending" && newStatus === "processing") {
+          action = `Payment Approved for order ${ordId}`;
+        } else if (oldStatus === "pending" && newStatus === "cancelled") {
+          action = `Payment Disapproved for order ${ordId}`;
+        }
+      }
+
+      // Special logging for cancellation approval
+      if (oldStatus === "cancelled_pending" && newStatus === "cancelled") {
+        action = `Cancellation Approved for order ${ordId}`;
+      } else if (
+        oldStatus === "cancelled_pending" &&
+        newStatus === "processing"
+      ) {
+        action = `Cancellation Disapproved for order ${ordId}`;
+      }
+
+      logEvent(req, {
+        eventType: "order",
+        action,
+        targetModel: "Order",
+        targetId: updatedOrder._id,
+        oldValues: { status: oldStatus },
+        newValues: { status: newStatus },
+        metadata,
+      });
+
+    }
+  }
+
+  if (status && order.status === "pending" && updatedOrder.status === "processing") {
+    (async () => {
+      try {
+        const isGcash = updatedOrder.paymentMethod === "Gcash";
+        await sendReceiptEmailForOrder({
+          orderId: updatedOrder._id,
+          subject: isGcash
+            ? `Payment Approved - Baobab Vision Order ${updatedOrder.orderId}`
+            : `Order Confirmed - Baobab Vision Order ${updatedOrder.orderId}`,
+          text: isGcash
+            ? `Your GCash payment for order ${updatedOrder.orderId} has been approved. Total: PHP ${updatedOrder.totalAmount.toFixed(2)}.`
+            : `Your order ${updatedOrder.orderId} has been confirmed and is now being processed. Total: PHP ${updatedOrder.totalAmount.toFixed(2)}.`,
+        });
+      } catch (emailErr) {
+        console.error(
+          "[Receipt Email] Failed:",
+          updatedOrder.orderId,
+          updatedOrder.paymentMethod,
+          emailErr.message
+        );
+      }
+    })();
+  }
 
   return res
     .status(200)
@@ -140,6 +494,9 @@ const order_delete = catchAsync(async (req, res, next) => {
   const { id } = req.query;
 
   if (!id) return next(new AppError("Order identifier not found", 400));
+  if (!isStaffUser(req)) {
+    return next(new AppError("Only staff can delete orders.", 403));
+  }
 
   const order = await Order.findById(id);
   if (!order) return next(new AppError("Order not found", 404));
@@ -148,6 +505,22 @@ const order_delete = catchAsync(async (req, res, next) => {
 
   if (!deletedOrder) return next(new AppError("Order not found", 404));
 
+  // Audit: Log staff order deletion
+  if (
+    req.user &&
+    (req.user.role === "system_admin" || req.user.role?.startsWith("staff"))
+  ) {
+    const ordId = deletedOrder.orderId || id;
+    logEvent(req, {
+      eventType: "order",
+      action: `Deleted order ${ordId}`,
+      targetModel: "Order",
+      targetId: id,
+      oldValues: deletedOrder.toObject(),
+      metadata: { orderId: ordId },
+    });
+  }
+
   return res
     .status(200)
     .json({ message: "Order Successfully Deleted", deletedOrder });
@@ -155,7 +528,17 @@ const order_delete = catchAsync(async (req, res, next) => {
 
 const checkoutFromCart = catchAsync(async (req, res, next) => {
   const userId = req.userId; // from auth middleware
-  const { address, contactNumber, paymentMethod } = req.body;
+  const {
+    address,
+    contactNumber,
+    paymentMethod,
+    deliveryMethod,
+    thirdPartyDelivery,
+    proofOfPayment,
+    rating,
+    proofOfPaymentImage,
+    referenceNumber,
+  } = req.body;
 
   if (!paymentMethod) {
     return next(new AppError("Payment method is required", 400));
@@ -164,7 +547,8 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
   // 1. Get user's cart
   const userCart = await UserCart.findOne({ userId }).populate({
     path: "items.productId",
-    select: "price name",
+    // Need lensOptions to compute add-on price correctly
+    select: "price name lensOptions",
   });
 
   if (!userCart || userCart.items.length === 0) {
@@ -173,9 +557,10 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
 
   // 2. Map cart items into Order's product format
   const products = userCart.items.map((item) => {
-    const lensPrice = item.productId.lensOptions?.find(
-      (lens) => lens._id.toString() === item.lensOption
-    )?.price || 0;
+    const lensPrice =
+      item.productId.lensOptions?.find(
+        (lens) => lens._id.toString() === item.lensOption
+      )?.price || 0;
 
     const price = item.productId.price + lensPrice;
 
@@ -194,8 +579,31 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
     0
   );
 
+  // Basic validation between delivery fields
+  if (
+    typeof deliveryMethod !== "undefined" &&
+    deliveryMethod === "Third-Party Delivery" &&
+    !thirdPartyDelivery
+  ) {
+    return next(
+      new AppError(
+        "thirdPartyDelivery is required when deliveryMethod is 'Third-Party Delivery'",
+        400
+      )
+    );
+  }
+
   // 4. Create order
+  // Generate friendly orderId
+  let orderId;
+  try {
+    orderId = await generateOrderId();
+  } catch (e) {
+    return next(new AppError("Could not generate order id", 500));
+  }
+
   const newOrder = new Order({
+    orderId,
     customer: userId,
     products,
     date: new Date(),
@@ -204,9 +612,30 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
     totalAmount,
     paymentMethod,
     status: "pending",
+    deliveryMethod,
+    ...(thirdPartyDelivery ? { thirdPartyDelivery } : {}),
+    ...(proofOfPayment ? { proofOfPayment } : {}),
+    ...(rating ? { rating } : {}),
   });
 
   await newOrder.save();
+
+  // If a proof image URL and reference are provided (e.g., GCASH), create POP and attach
+  if (proofOfPaymentImage && referenceNumber) {
+    try {
+      const pop = await ProofOfPayment.create({
+        userId: userId,
+        orderId: newOrder._id,
+        proofOfPaymentImage: proofOfPaymentImage,
+        referenceNumber: referenceNumber,
+      });
+      newOrder.proofOfPayment = pop._id;
+      await newOrder.save();
+    } catch (err) {
+      // Do not fail the entire checkout; log and proceed
+      console.error("Failed to attach proof of payment during checkout:", err);
+    }
+  }
 
   // 5. Update sales count for products
   for (const item of products) {
@@ -226,7 +655,6 @@ const checkoutFromCart = catchAsync(async (req, res, next) => {
     order: newOrder,
   });
 });
-
 
 module.exports = {
   order_get,

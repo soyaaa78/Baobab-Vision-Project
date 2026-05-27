@@ -85,8 +85,6 @@ const updateCartQuantity = async (req, res) => {
       res.status(500).json({ message: 'Server error' });
     }
   };
-  
-  
 
 // Controller function to get the user's cart
 // Controller function to get the user's cart

@@ -1,0 +1,298 @@
+/* Base tweaks to integrate with audit modal */
+.respond-review-modal {
+  font-family: "Rubik", sans-serif;
+}
+
+/* Form */
+.respond-review-modal .form-field {
+  margin-bottom: 20px;
+}
+.respond-review-modal .form-textarea {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #111827;
+  background: #fff;
+  resize: vertical;
+  min-height: 120px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+.respond-review-modal .form-textarea:focus {
+  outline: none;
+  border-color: #f8b26a;
+  box-shadow: 0 0 0 3px rgba(248, 178, 106, 0.1);
+}
+.respond-review-modal .form-textarea::placeholder {
+  color: #9ca3af;
+}
+.respond-review-modal .form-helper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+.respond-review-modal .char-count {
+  font-size: 12px;
+  color: #9ca3af;
+}
+.respond-review-modal .char-count.warning {
+  color: #f59e0b;
+  font-weight: 500;
+}
+
+/* Buttons match global modal footer styles; keep palette */
+.respond-review-modal .btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.respond-review-modal .btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.respond-review-modal .btn-secondary {
+  background: #fff;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+.respond-review-modal .btn-secondary:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+}
+.respond-review-modal .btn-primary {
+  background: #f8b26a;
+  border-color: #f8b26a;
+  color: #fff;
+}
+.respond-review-modal .btn-primary:hover:not(:disabled) {
+  background: #f7a84a;
+  border-color: #f7a84a;
+}
+.respond-review-modal .btn-primary:active {
+  transform: translateY(1px);
+}
+
+/* ============================= */
+/* COMPREHENSIVE RESPONSIVE DESIGN */
+/* ============================= */
+
+/* Ensure box-sizing for all elements */
+.respond-review-modal * {
+  box-sizing: border-box;
+}
+
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
+  .respond-review-modal .form-textarea {
+    min-height: 140px;
+  }
+}
+
+/* Desktop (1200px - 1399px) */
+@media (max-width: 1399px) {
+  .respond-review-modal .form-textarea {
+    min-height: 130px;
+  }
+}
+
+/* Tablet Large (1024px - 1199px) */
+@media (max-width: 1199px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 18px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 120px;
+    padding: 11px;
+    font-size: 13.5px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 9px 18px;
+    font-size: 13.5px;
+    min-width: 90px;
+  }
+}
+
+/* Tablet (768px - 1023px) */
+@media (max-width: 1023px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 16px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 110px;
+    padding: 10px;
+    font-size: 13px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 9px 16px;
+    font-size: 13px;
+    min-width: 85px;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 11.5px;
+  }
+}
+
+/* Mobile Large (640px - 767px) */
+@media (max-width: 767px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 14px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 100px;
+    padding: 10px;
+    font-size: 13px;
+    border-radius: 6px;
+  }
+
+  .respond-review-modal .form-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .respond-review-modal .btn {
+    width: 100%;
+    padding: 10px 16px;
+    font-size: 13px;
+    min-width: auto;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 11px;
+  }
+
+  .respond-review-modal .form-helper {
+    margin-top: 7px;
+  }
+}
+
+/* Mobile Medium (480px - 639px) */
+@media (max-width: 639px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 13px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 95px;
+    padding: 9px;
+    font-size: 12.5px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 9px 14px;
+    font-size: 12.5px;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 10.5px;
+  }
+}
+
+/* Mobile Small (375px - 479px) */
+@media (max-width: 479px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 12px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 90px;
+    padding: 8px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 8px 13px;
+    font-size: 12px;
+    border-radius: 6px;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 10px;
+  }
+
+  .respond-review-modal .form-helper {
+    margin-top: 6px;
+  }
+}
+
+/* Mobile Extra Small (320px - 374px) */
+@media (max-width: 374px) {
+  .respond-review-modal .form-field {
+    margin-bottom: 11px;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 85px;
+    padding: 7px;
+    font-size: 11.5px;
+  }
+
+  .respond-review-modal .btn {
+    padding: 7px 12px;
+    font-size: 11.5px;
+  }
+
+  .respond-review-modal .char-count {
+    font-size: 9.5px;
+  }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+  .respond-review-modal .btn {
+    min-height: 44px;
+    min-width: 44px;
+    touch-action: manipulation;
+  }
+
+  .respond-review-modal .form-textarea {
+    min-height: 100px;
+    touch-action: manipulation;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  /* Ensure buttons are easily tappable */
+  .respond-review-modal .btn {
+    padding: 10px 20px;
+  }
+}
+
+/* Improved textarea handling on mobile */
+@media (max-width: 767px) {
+  .respond-review-modal .form-textarea {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Better resize handle on mobile */
+  .respond-review-modal .form-textarea {
+    resize: vertical;
+    max-height: 200px;
+  }
+}
+
+/* Focus improvements for mobile */
+@media (max-width: 767px) {
+  .respond-review-modal .form-textarea:focus {
+    border-width: 2px;
+    padding: 9px; /* Adjust for border width */
+  }
+}

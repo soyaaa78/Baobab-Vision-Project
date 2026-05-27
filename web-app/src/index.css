@@ -1,6 +1,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Red+Rose:wght@300..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap');
 :root {
+
+  --basecolor: #FCF7F2;
+  --darkcolor: #252525;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
@@ -15,16 +19,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
 
-
-body {
-  margin: 0;
-}
 
 h1 {
   margin: 0;
@@ -44,6 +39,20 @@ h1 {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* Skeleton loader */
+.skeleton {
+  background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+  display: block;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
 }
 
 /* unused below */

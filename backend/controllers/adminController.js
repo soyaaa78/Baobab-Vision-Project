@@ -3,12 +3,15 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../services/sendEmail");
+const { logEvent } = require("../services/auditLogService");
+const crypto = require("crypto");
 
 // LOGIN
 exports.login = async (req, res) => {
   const { username, password } = req.body;
   try {
     const admin = await Admin.findOne({ username });
+
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
     const isMatch = await bcrypt.compare(password, admin.password);
@@ -23,16 +26,29 @@ exports.login = async (req, res) => {
     }
 
     if (!admin.isVerified) {
+      // Only update OTP fields, not the whole document
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       admin.otp = otp;
       admin.otpExpiry = Date.now() + 5 * 60 * 1000;
-      await admin.save();
+      await Admin.updateOne(
+        { _id: admin._id },
+        { $set: { otp: admin.otp, otpExpiry: admin.otpExpiry } }
+      );
 
       await sendEmail(
         admin.email,
         "Staff Email Verification",
         `Your OTP code is: ${otp}`
       );
+
+      // Audit: OTP sent for verification
+      logEvent(req, {
+        eventType: "auth",
+        action: "Staff login verification OTP sent",
+        targetModel: "Admin",
+        targetId: admin._id,
+        metadata: { email: admin.email },
+      });
 
       return res.status(403).json({
         message: "Email not verified. OTP sent.",
@@ -42,11 +58,22 @@ exports.login = async (req, res) => {
       });
     }
 
-    const token = jwt.sign(
-      { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET || "fallback",
-      { expiresIn: "1h" }
-    );
+    const jti = crypto.randomUUID();
+    const tokenPayload = { id: admin._id, role: admin.role, jti };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || "fallback", {
+      expiresIn: "1h",
+    });
+    // Ensure actor context exists for audit log
+    req.user = { id: admin._id, role: admin.role, jti };
+
+    // Audit: staff login
+    logEvent(req, {
+      eventType: "auth",
+      action: `Staff logged in (${username})`,
+      targetModel: "Admin",
+      targetId: admin._id,
+      metadata: { username },
+    });
 
     return res.status(200).json({
       message: "Login successful",
@@ -59,10 +86,15 @@ exports.login = async (req, res) => {
   }
 };
 
-// CREATE STAFF (Super Admin only)
+// CREATE STAFF (System Admin only)
 exports.createStaff = async (req, res) => {
-  const { firstname, lastname, username, email, password, permissions } =
+  const { firstname, lastname, username, email, password, permissions, role } =
     req.body;
+
+  // Only allow creation of staff_product or staff_order roles
+  if (!role || !["staff_product", "staff_order"].includes(role)) {
+    return res.status(400).json({ message: "Invalid staff role" });
+  }
 
   try {
     const existing = await Admin.findOne({ $or: [{ username }, { email }] });
@@ -77,11 +109,20 @@ exports.createStaff = async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      role: "admin",
+      role,
       permissions: permissions || [],
     });
 
     await staff.save();
+
+    // Audit: add staff account
+    logEvent(req, {
+      eventType: "staff",
+      action: `Created staff account (${username})`,
+      targetModel: "Admin",
+      targetId: staff._id,
+      newValues: { firstname, lastname, username, email, role, permissions },
+    });
 
     await sendEmail(
       staff.email,
@@ -99,10 +140,13 @@ exports.createStaff = async (req, res) => {
   }
 };
 
-// GET ALL STAFF (Super Admin only)
+// GET ALL STAFF (System Admin only)
 exports.getAllStaff = async (req, res) => {
   try {
-    const staff = await Admin.find({ role: "admin" }).select("-password");
+    // Get all staff_product and staff_order roles
+    const staff = await Admin.find({
+      role: { $in: ["staff_product", "staff_order"] },
+    }).select("-password");
     res.status(200).json(staff);
   } catch (err) {
     console.error("Get all staff error:", err);
@@ -120,17 +164,28 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// UPDATE STAFF PERMISSIONS (Super Admin only)
+// UPDATE STAFF PERMISSIONS (System Admin only)
 exports.updatePermissions = async (req, res) => {
   const { id } = req.params;
   const { permissions } = req.body;
 
   try {
     const staff = await Admin.findById(id);
-    if (!staff) return res.status(404).json({ message: "Staff not found" });
+    if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
 
     staff.permissions = permissions;
     await staff.save();
+
+    // Audit: update staff permissions
+    logEvent(req, {
+      eventType: "staff",
+      action: `Updated staff permissions (${staff.username})`,
+      targetModel: "Admin",
+      targetId: staff._id,
+      newValues: { permissions },
+    });
 
     res.status(200).json({ message: "Permissions updated" });
   } catch (err) {
@@ -149,18 +204,28 @@ exports.verifyStaffOtp = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
-    admin.isVerified = true;
-    admin.otp = null;
-    admin.otpExpiry = null;
-    await admin.save();
-
-    const token = jwt.sign(
-      { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET || "fallback",
-      {
-        expiresIn: "1h",
-      }
+    // Only update relevant fields, do not save incomplete document
+    await Admin.updateOne(
+      { _id: admin._id },
+      { $set: { isVerified: true, otp: null, otpExpiry: null } }
     );
+
+    const jti = crypto.randomUUID();
+    const tokenPayload = { id: admin._id, role: admin.role, jti };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET || "fallback", {
+      expiresIn: "1h",
+    });
+    // Ensure actor context exists for audit log
+    req.user = { id: admin._id, role: admin.role, jti };
+
+    // Audit: staff verification
+    logEvent(req, {
+      eventType: "auth",
+      action: `Staff email verified (${email})`,
+      targetModel: "Admin",
+      targetId: admin._id,
+      metadata: { email },
+    });
 
     return res
       .status(200)
@@ -186,6 +251,14 @@ exports.resendOtp = async (req, res) => {
     await admin.save();
 
     await sendEmail(admin.email, "Verification OTP", `Your new OTP is: ${otp}`);
+    // Audit: resend otp
+    logEvent(req, {
+      eventType: "auth",
+      action: "Staff verification OTP resent",
+      targetModel: "Admin",
+      targetId: admin._id,
+      metadata: { email },
+    });
     res.status(200).json({ message: "OTP resent to email" });
   } catch (err) {
     console.error("Resend OTP error:", err);
@@ -200,6 +273,15 @@ exports.disableUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     user.isDisabled = true;
     await user.save();
+    // Audit: disable user
+    logEvent(req, {
+      eventType: "user",
+      action: `Disabled user account (${
+        user.username || user.email || user._id
+      })`,
+      targetModel: "User",
+      targetId: user._id,
+    });
     res.status(200).json({ message: "User disabled" });
   } catch (err) {
     console.error("Disable user error:", err);
@@ -214,6 +296,15 @@ exports.enableUser = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
     user.isDisabled = false;
     await user.save();
+    // Audit: enable user
+    logEvent(req, {
+      eventType: "user",
+      action: `Enabled user account (${
+        user.username || user.email || user._id
+      })`,
+      targetModel: "User",
+      targetId: user._id,
+    });
     res.status(200).json({ message: "User enabled" });
   } catch (err) {
     console.error("Enable user error:", err);
@@ -226,6 +317,15 @@ exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findByIdAndDelete(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
+    // Audit: delete user
+    logEvent(req, {
+      eventType: "user",
+      action: `Deleted user account (${
+        user?.username || user?.email || req.params.id
+      })`,
+      targetModel: "User",
+      targetId: req.params.id,
+    });
     res.status(200).json({ message: "User deleted" });
   } catch (err) {
     console.error("Delete user error:", err);
@@ -237,9 +337,22 @@ exports.deleteUser = async (req, res) => {
 exports.disableStaff = async (req, res) => {
   try {
     const staff = await Admin.findById(req.params.id);
-    if (!staff) return res.status(404).json({ message: "Staff not found" });
-    staff.isDisabled = true;
-    await staff.save();
+    if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    await Admin.findByIdAndUpdate(
+      req.params.id,
+      { isDisabled: true },
+      { runValidators: false }
+    );
+    // Audit: disable staff
+    logEvent(req, {
+      eventType: "staff",
+      action: `Disabled staff account (${staff.username})`,
+      targetModel: "Admin",
+      targetId: req.params.id,
+    });
     res.status(200).json({ message: "Staff disabled" });
   } catch (err) {
     console.error("Disable staff error:", err);
@@ -251,9 +364,22 @@ exports.disableStaff = async (req, res) => {
 exports.enableStaff = async (req, res) => {
   try {
     const staff = await Admin.findById(req.params.id);
-    if (!staff) return res.status(404).json({ message: "Staff not found" });
-    staff.isDisabled = false;
-    await staff.save();
+    if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    await Admin.findByIdAndUpdate(
+      req.params.id,
+      { isDisabled: false },
+      { runValidators: false }
+    );
+    // Audit: enable staff
+    logEvent(req, {
+      eventType: "staff",
+      action: `Enabled staff account (${staff.username})`,
+      targetModel: "Admin",
+      targetId: req.params.id,
+    });
     res.status(200).json({ message: "Staff enabled" });
   } catch (err) {
     console.error("Enable staff error:", err);
@@ -264,11 +390,112 @@ exports.enableStaff = async (req, res) => {
 // DELETE STAFF
 exports.deleteStaff = async (req, res) => {
   try {
-    const staff = await Admin.findByIdAndDelete(req.params.id);
-    if (!staff) return res.status(404).json({ message: "Staff not found" });
+    const staff = await Admin.findById(req.params.id);
+    if (!staff || !["staff_product", "staff_order"].includes(staff.role)) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+    await Admin.findByIdAndDelete(req.params.id);
+    // Audit: delete staff
+    logEvent(req, {
+      eventType: "staff",
+      action: `Deleted staff account (${staff.username})`,
+      targetModel: "Admin",
+      targetId: req.params.id,
+    });
     res.status(200).json({ message: "Staff deleted" });
   } catch (err) {
     console.error("Delete staff error:", err);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// GET STAFF PROFILE
+exports.getStaffProfile = async (req, res) => {
+  try {
+    const staff = await Admin.findById(req.user.id).select(
+      "-password -otp -otpExpiry"
+    );
+    if (!staff) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+    res.status(200).json(staff);
+  } catch (err) {
+    console.error("Get staff profile error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// CHANGE STAFF PASSWORD
+exports.changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const staff = await Admin.findById(req.user.id);
+    if (!staff) {
+      return res.status(404).json({ message: "Staff not found" });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, staff.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    if (newPassword.length < 6) {
+      return res
+        .status(400)
+        .json({ message: "New password must be at least 6 characters long" });
+    }
+
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    await Admin.findByIdAndUpdate(
+      req.user.id,
+      { password: hashedNewPassword },
+      { runValidators: false }
+    );
+
+    res.status(200).json({ message: "Password changed successfully" });
+    // Audit: staff changed password (no sensitive values)
+    logEvent(req, {
+      eventType: "admin",
+      action: "Changed account password",
+      targetModel: "Admin",
+      targetId: req.user.id,
+    });
+  } catch (err) {
+    console.error("Change password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// LOGOUT (invalidate on client; we record the event server-side)
+exports.logout = async (req, res) => {
+  try {
+    // Resolve username for clearer audit message
+    let username = undefined;
+    if (req.user?.id) {
+      try {
+        const staffDoc = await Admin.findById(req.user.id).select(
+          "username email"
+        );
+        if (staffDoc) {
+          username =
+            staffDoc.username || staffDoc.email || staffDoc._id?.toString();
+        }
+      } catch (_) {}
+    }
+
+    // Audit: staff logout
+    logEvent(req, {
+      eventType: "auth",
+      action: `Staff logged out${username ? ` (${username})` : ""}`,
+      targetModel: "Admin",
+      targetId: req.user?.id,
+      metadata: username ? { username } : undefined,
+    });
+    return res.status(200).json({ message: "Logged out" });
+  } catch (err) {
+    console.error("Admin logout error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };

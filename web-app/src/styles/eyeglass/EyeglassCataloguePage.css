@@ -1,0 +1,431 @@
+.catalogue-content {
+  height: 100%;
+}
+
+.catalogue-bulk {
+  height: 100vh;
+  padding: 1.5% 15%;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.search {
+  background-color: #ffffff;
+  border: 2px solid #474747;
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 1.5%;
+  padding: 15px;
+  border-radius: 18px;
+}
+
+.options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.options-cta {
+  display: flex;
+}
+
+.options-sorting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.options-action-buttons {
+  padding: 0;
+  min-width: 100px;
+  min-height: 40px;
+  margin: 0 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.15s ease-in-out;
+}
+
+.active-delete-button {
+  background-color: #6e0d21;
+  color: white;
+}
+
+.options-sort-buttons {
+  margin: 0 5px;
+  padding: 10px 20px;
+  background-color: white;
+  border: 1px solid #888888;
+  color: #252525;
+  /* font color lol */
+  transition: 0.15s linear;
+}
+
+.options-sort-buttons:hover {
+  color: white;
+  background-color: #bd9c80;
+}
+
+.selections {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  background-color: #f5ddb3;
+  border-radius: 18px;
+}
+
+.selections-grid {
+  width: 100%;
+  margin: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  flex-direction: row;
+  place-items: center;
+}
+
+.eyeglass-listing.eyeglass-listing--catalogue {
+  width: 300px;
+  height: 340px;
+  /* make responsive */
+  background-color: transparent;
+}
+
+.eyeglass-listing.eyeglass-listing--catalogue #eyeglass-img {
+  width: 260px;
+  height: 260px;
+}
+
+/* Alert Modal Responsive */
+.alert-modal-container {
+  display: none;
+}
+
+.alert-modal-container.active {
+  display: block;
+}
+
+.modal-overlay {
+  display: none;
+}
+
+.modal-overlay.active {
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.alert-modal-content {
+  display: none;
+}
+
+.alert-modal-content.active {
+  display: block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  z-index: 1000;
+  max-width: 90%;
+  width: 500px;
+}
+
+/* Responsive Design */
+
+/* Large Tablets (1200px and below) */
+@media (max-width: 1200px) {
+  .catalogue-bulk {
+    padding: 1.5% 10%;
+  }
+
+  .selections-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+  }
+
+  .eyeglass-listing.eyeglass-listing--catalogue {
+    width: 280px;
+    height: 320px;
+  }
+
+  .eyeglass-listing.eyeglass-listing--catalogue #eyeglass-img {
+    width: 240px;
+    height: 240px;
+  }
+}
+
+/* Medium Tablets (992px and below) */
+@media (max-width: 992px) {
+  .catalogue-bulk {
+    padding: 2% 5%;
+  }
+
+  .search {
+    max-width: 100%;
+    padding: 12px;
+  }
+
+  .options {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+
+  .options-cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .options-sorting {
+    width: 100%;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .options-sorting p {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 5px;
+  }
+
+  .options-action-buttons {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  .options-sort-buttons {
+    flex: 1;
+    min-width: 80px;
+  }
+
+  .selections-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin: 15px;
+  }
+
+  .eyeglass-listing.eyeglass-listing--catalogue {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+  }
+
+  .eyeglass-listing.eyeglass-listing--catalogue #eyeglass-img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
+
+/* Small Tablets and Large Mobile (768px and below) */
+@media (max-width: 768px) {
+  .catalogue-bulk {
+    padding: 2% 3%;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .search {
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .options-cta {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .options-action-buttons {
+    width: 100%;
+    margin: 0;
+    min-height: 45px;
+  }
+
+  .options-sorting {
+    flex-direction: column;
+  }
+
+  .options-sort-buttons {
+    width: 100%;
+    margin: 0;
+    padding: 12px 15px;
+  }
+
+  .selections {
+    border-radius: 12px;
+  }
+
+  .selections-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 12px;
+  }
+
+  .alert-modal-content.active {
+    width: 90%;
+    max-width: 450px;
+    padding: 18px;
+  }
+
+  .alert-modal-content-header h2 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Mobile Landscape (640px and below) */
+@media (max-width: 640px) {
+  .catalogue-bulk {
+    padding: 3% 2%;
+  }
+
+  .topbar {
+    margin-bottom: 15px;
+  }
+
+  .search {
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .options-action-buttons {
+    min-height: 42px;
+    font-size: 0.95rem;
+  }
+
+  .options-sort-buttons {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+
+  .selections-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin: 10px;
+  }
+
+  .eyeglass-listing.eyeglass-listing--catalogue {
+    max-width: 250px;
+  }
+}
+
+/* Mobile Portrait (480px and below) */
+@media (max-width: 480px) {
+  .catalogue-bulk {
+    padding: 4% 2%;
+  }
+
+  .search {
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 15px;
+  }
+
+  .options {
+    gap: 12px;
+  }
+
+  .options-cta {
+    gap: 8px;
+  }
+
+  .options-action-buttons {
+    min-height: 40px;
+    font-size: 0.9rem;
+    padding: 8px;
+  }
+
+  .options-sorting p {
+    font-size: 0.9rem;
+  }
+
+  .options-sort-buttons {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+
+  .selections {
+    border-radius: 10px;
+  }
+
+  .selections-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin: 10px;
+  }
+
+  .eyeglass-listing.eyeglass-listing--catalogue {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .alert-modal-content.active {
+    width: 95%;
+    padding: 15px;
+    border-radius: 10px;
+  }
+
+  .alert-modal-content-header h2 {
+    font-size: 1.25rem;
+  }
+
+  .alert-modal-content-body p {
+    font-size: 0.9rem;
+  }
+
+  .amcb-continue-cta {
+    flex-direction: column;
+  }
+
+  .amcb-continue-cta button {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
+/* Extra Small Mobile (375px and below) */
+@media (max-width: 375px) {
+  .catalogue-bulk {
+    padding: 5% 1.5%;
+  }
+
+  .search {
+    padding: 6px;
+  }
+
+  .options-action-buttons,
+  .options-sort-buttons {
+    font-size: 0.85rem;
+    padding: 8px;
+    min-height: 38px;
+  }
+
+  .options-sorting p {
+    font-size: 0.85rem;
+  }
+
+  .selections-grid {
+    margin: 8px;
+  }
+
+  .alert-modal-content-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .alert-modal-content-body p {
+    font-size: 0.85rem;
+  }
+}

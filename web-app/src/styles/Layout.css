@@ -1,12 +1,41 @@
-/* layout affects everything, is more or less the "root" of the app here in css terms */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-/* place your base shits (e.g. bg color and what not) here, and add the fine details/specifications in the other styles (BIG ASSUMPTION) */
-
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
 
 #root {
-    height: 100%;
+  height: 100%;
 }
 
 .page {
-    height: calc(100vh - 154px);
+  height: calc(100vh - 154px);
+  padding-bottom: 2rem;
+}
+
+@media print {
+    html,
+    body,
+    #root,
+    .layout-container,
+    .page {
+        height: auto !important;
+        min-height: auto !important;
+        overflow: visible !important;
+    }
+}
+
+h1,
+p {
+    line-height: 1.2;
+    margin-top: 0;
+    margin-bottom: 0;
 }

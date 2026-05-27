@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 
 const orderSchema = new mongoose.Schema(
   {
+    orderId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      trim: true,
+    },
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -38,11 +45,65 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    paymentMethod: String,
+    deliveryMethod: {
+      type: String,
+      enum: ["Pick Up", "Third-Party Delivery"],
+      default: "Pick Up",
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["Pay Cash on Pickup", "Gcash"],
+    },
+    thirdPartyDelivery: {
+      type: String,
+      enum: ["Lalamove", "J&T", "GrabExpress"],
+    },
     status: {
       type: String,
-      enum: ["pending", "preparing", "ready to pick up"],
+      enum: [
+        "pending",
+        "processing",
+        "ready_to_pickup",
+        "ready_for_shipment",
+        "in_transit",
+        "completed",
+        "cancelled",
+        "cancelled_pending",
+      ],
       default: "pending",
+    },
+    cancellationReason: {
+      type: String,
+      trim: true,
+    },
+    declineReason: {
+      type: String,
+      trim: true,
+    },
+    receiptSentAt: {
+      type: Date,
+    },
+    receiptSendingAt: {
+      type: Date,
+    },
+    address: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Address",
+    },
+    proofOfPayment: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ProofOfPayment",
+    },
+    rating: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Rating",
+    },
+    pickupLocation: {
+      type: String,
+      trim: true,
+    },
+    pickupTime: {
+      type: Date,
     },
   },
   {
