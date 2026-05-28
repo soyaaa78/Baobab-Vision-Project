@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 
 import '../constants.dart';
+import '../services/api_client.dart';
+import '../utils/api_error_message.dart';
 import '../widgets/custom_dialog.dart';
 import '../widgets/custom_inkwell_button.dart';
 import 'email_reset_password_screen.dart';
@@ -22,17 +22,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> sendOtp() async {
     setState(() => _isLoading = true);
-    final url = Uri.parse(
-        'https://baobab-vision-project-0234.onrender.com/api/auth/request-otp');
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': emailController.text.trim()}),
+      final response = await ApiClient.postJson(
+        '/api/auth/request-otp',
+        {'email': emailController.text.trim()},
       );
 
-      final resData = jsonDecode(response.body);
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         Navigator.pushReplacement(
@@ -45,16 +42,25 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       } else {
         customDialog(
           context,
-          title: 'Email Not Found',
-          content: resData['message'] ?? 'No account found for this email.',
+          title: response.statusCode == 404 ? 'Email Not Found' : 'Error',
+          content: apiResponseMessage(
+            response.body,
+            response.statusCode == 404
+                ? 'No account found for this email.'
+                : 'Unable to send OTP email. Please try again later.',
+          ),
         );
       }
     } catch (e) {
+      if (!mounted) return;
+      final networkFailure = isNetworkFailure(e);
       customDialog(context,
-          title: 'No Internet',
-          content: 'Unexpected error occurred. Please check your connection.');
+          title: networkFailure ? 'Network Error' : 'Error',
+          content: networkFailure
+              ? 'Please check your internet connection and try again.'
+              : 'Unable to request password reset. Please try again later.');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
