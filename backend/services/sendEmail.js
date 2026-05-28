@@ -6,6 +6,30 @@ const normalizeEnvValue = (value) => {
   return value.trim().replace(/^['"]|['"]$/g, "").replace(/\r?\n/g, "");
 };
 
+const escapeHtml = (value) =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const textToHtml = (text) => {
+  const normalizedText = String(text || "").trim();
+  if (!normalizedText) return "<p></p>";
+
+  return normalizedText
+    .split(/\n\s*\n/)
+    .map((paragraph) =>
+      `<p>${paragraph
+        .trim()
+        .split(/\n/)
+        .map((line) => escapeHtml(line.trim()))
+        .join("<br />")}</p>`
+    )
+    .join("");
+};
+
 const sendWithBrevo = async ({ to, subject, text, html }) => {
   const apiKey = normalizeEnvValue(
     process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY
@@ -31,9 +55,7 @@ const sendWithBrevo = async ({ to, subject, text, html }) => {
   sendSmtpEmail.sender = { email: senderEmail, name: senderName };
   sendSmtpEmail.to = [{ email: to }];
   sendSmtpEmail.textContent = text;
-  if (html) {
-    sendSmtpEmail.htmlContent = html;
-  }
+  sendSmtpEmail.htmlContent = html || textToHtml(text);
 
   await apiInstance.sendTransacEmail(sendSmtpEmail);
 };

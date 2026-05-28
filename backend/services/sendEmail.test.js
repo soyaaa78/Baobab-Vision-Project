@@ -146,6 +146,38 @@ test("sendEmail logs Brevo when SMTP is absent and Brevo succeeds", async () => 
   assert.equal(brevoCalls, 1);
 });
 
+test("sendEmail sends generated HTML to Brevo for text-only messages", async () => {
+  process.env.BREVO_API_KEY = "xkeysib-enabled";
+  process.env.BREVO_SENDER_EMAIL = "sender@example.com";
+  process.env.BREVO_SENDER_NAME = "Baobab Vision";
+  delete process.env.EMAIL_USER;
+  delete process.env.EMAIL_PASS;
+
+  let brevoMessage;
+  const sendEmail = loadSendEmail({
+    brevoSend: async (message) => {
+      brevoMessage = message;
+    },
+    smtpSend: async () => {
+      throw new Error("SMTP should not be called");
+    },
+  });
+
+  await captureConsoleInfo(async () => {
+    await sendEmail(
+      "customer@example.com",
+      "Subject",
+      "Line <one>\n\nLine two"
+    );
+  });
+
+  assert.equal(brevoMessage.textContent, "Line <one>\n\nLine two");
+  assert.equal(
+    brevoMessage.htmlContent,
+    "<p>Line &lt;one&gt;</p><p>Line two</p>"
+  );
+});
+
 test("sendEmail falls back to SMTP when Brevo rejects the configured key", async (t) => {
   t.mock.method(console, "error", () => {});
   process.env.BREVO_API_KEY = "xkeysib-disabled";
