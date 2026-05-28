@@ -98,7 +98,7 @@
     "whatwg-url": "^14.2.0"
   },
   "scripts": {
-    "test": "node --test services/storageUrlParser.test.js services/storageService.test.js services/colorwayTargetMapper.test.js routes/storageRoutes.test.js routes/slideShowRoutes.test.js",
+    "test": "node --test services/storageUrlParser.test.js services/storageService.test.js services/colorwayTargetMapper.test.js routes/storageRoutes.test.js routes/slideShowRoutes.test.js controllers/authController.test.js",
     "check:legacy-firebase-urls": "node scripts/checkLegacyFirebaseUrls.js",
     "repair:r2-public-base-url": "node scripts/replaceR2PublicBaseUrl.js",
     "start": "node server.js",

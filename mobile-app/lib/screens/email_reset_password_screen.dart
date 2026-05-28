@@ -1,10 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 
 import '../constants.dart';
+import '../services/api_client.dart';
+import '../utils/api_error_message.dart';
 import '../widgets/custom_dialog.dart';
 import '../widgets/custom_inkwell_button.dart';
 import 'reset_password_screen.dart';
@@ -58,25 +58,27 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
 
   Future<void> verifyOtp() async {
     setState(() => isLoading = true);
-    final url = Uri.parse(
-        'https://baobab-vision-project-0234.onrender.com/api/auth/verify-otp');
 
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+      final response = await ApiClient.postJson(
+        '/api/auth/verify-otp',
+        {
           'email': widget.email,
           'otp': otpController.text.trim(),
-        }),
+        },
       );
 
-      print('VERIFY OTP RESPONSE CODE: ${response.statusCode}');
-      print('VERIFY OTP RESPONSE BODY: ${response.body}');
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final resData = jsonDecode(response.body);
+        final resData = apiResponseJson(response.body);
         final resetToken = resData['resetToken'];
+        if (resetToken == null) {
+          customDialog(context,
+              title: 'Error',
+              content: 'Unable to verify OTP. Please try again later.');
+          return;
+        }
 
         Navigator.pushReplacement(
           context,
@@ -88,40 +90,52 @@ class _EmailResetPasswordScreenState extends State<EmailResetPasswordScreen> {
           ),
         );
       } else {
-        final resData = jsonDecode(response.body);
         customDialog(context,
-            title: 'Invalid OTP', content: resData['message'] ?? 'OTP error');
+            title: 'Invalid OTP',
+            content: apiResponseMessage(response.body, 'OTP error'));
       }
     } catch (e) {
-      print('VERIFY OTP EXCEPTION: $e');
+      if (!mounted) return;
+      final networkFailure = isNetworkFailure(e);
       customDialog(context,
-          title: 'Error',
-          content: 'Failed to verify. Check your network or try again.');
+          title: networkFailure ? 'Network Error' : 'Error',
+          content: networkFailure
+              ? 'Please check your internet connection and try again.'
+              : 'Unable to verify OTP. Please try again later.');
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
   Future<void> resendOtp() async {
-    final url = Uri.parse(
-        'https://baobab-vision-project-0234.onrender.com/api/auth/resend-otp');
-
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': widget.email}),
+      final response = await ApiClient.postJson(
+        '/api/auth/resend-otp',
+        {'email': widget.email},
       );
 
-      print('RESEND OTP RESPONSE: ${response.body}');
-      customDialog(context,
-          title: 'OTP Sent', content: 'A new OTP has been sent to your email.');
+      if (!mounted) return;
 
-      /// Restart timer when resend
-      startTimer();
+      if (response.statusCode == 200) {
+        customDialog(context,
+            title: 'OTP Sent',
+            content: 'A new OTP has been sent to your email.');
+
+        /// Restart timer when resend
+        startTimer();
+      } else {
+        customDialog(context,
+            title: 'Error',
+            content: apiResponseMessage(response.body, 'Failed to resend OTP'));
+      }
     } catch (e) {
-      print('RESEND OTP ERROR: $e');
-      customDialog(context, title: 'Error', content: 'Failed to resend OTP');
+      if (!mounted) return;
+      final networkFailure = isNetworkFailure(e);
+      customDialog(context,
+          title: networkFailure ? 'Network Error' : 'Error',
+          content: networkFailure
+              ? 'Please check your internet connection and try again.'
+              : 'Unable to resend OTP. Please try again later.');
     }
   }
 

@@ -1,9 +1,9 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 
 import '../constants.dart';
+import '../services/api_client.dart';
+import '../utils/api_error_message.dart';
 import '../widgets/custom_dialog.dart';
 import '../widgets/custom_inkwell_button.dart';
 
@@ -81,20 +81,16 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     setState(() => isLoading = true);
 
-    final url = Uri.parse(
-        'https://baobab-vision-project-0234.onrender.com/api/auth/reset-password');
-
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
+      final response = await ApiClient.postJson(
+        '/api/auth/reset-password',
+        {
           'token': widget.token,
           'newPassword': passwordController.text.trim(),
-        }),
+        },
       );
 
-      final resData = jsonDecode(response.body);
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         customDialog(
@@ -104,6 +100,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         );
 
         await Future.delayed(const Duration(seconds: 2));
+        if (!mounted) return;
 
         Navigator.pushNamedAndRemoveUntil(
           context,
@@ -113,13 +110,19 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       } else {
         customDialog(context,
             title: 'Error',
-            content: resData['message'] ?? 'Password reset failed.');
+            content:
+                apiResponseMessage(response.body, 'Password reset failed.'));
       }
     } catch (e) {
+      if (!mounted) return;
+      final networkFailure = isNetworkFailure(e);
       customDialog(context,
-          title: 'Error', content: 'Something went wrong. Please try again.');
+          title: networkFailure ? 'Network Error' : 'Error',
+          content: networkFailure
+              ? 'Please check your internet connection and try again.'
+              : 'Unable to reset password. Please try again later.');
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
