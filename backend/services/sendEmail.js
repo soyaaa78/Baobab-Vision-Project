@@ -1,32 +1,43 @@
 const SibApiV3Sdk = require("sib-api-v3-sdk");
+const nodemailer = require("nodemailer");
 
 const normalizeEnvValue = (value) => {
   if (typeof value !== "string") return value;
   return value.trim().replace(/^['"]|['"]$/g, "").replace(/\r?\n/g, "");
 };
 
-/**
- * Sends an email using Brevo (Sendinblue) SDK.
- * @param {string} to - Recipient email
- * @param {string} subject - Subject line
- * @param {string} text - Fallback plain text
- * @param {string} html - Optional HTML content (e.g., buttons)
- */
-const sendEmail = async (to, subject, text, html = null) => {
+const escapeHtml = (value) =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const textToHtml = (text) => {
+  const normalizedText = String(text || "").trim();
+  if (!normalizedText) return "<p></p>";
+
+  return normalizedText
+    .split(/\n\s*\n/)
+    .map((paragraph) =>
+      `<p>${paragraph
+        .trim()
+        .split(/\n/)
+        .map((line) => escapeHtml(line.trim()))
+        .join("<br />")}</p>`
+    )
+    .join("");
+};
+
+const sendWithBrevo = async ({ to, subject, text, html }) => {
   const apiKey = normalizeEnvValue(
     process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY
   );
-  if (!apiKey) {
-    throw new Error(
-      "BREVO_API_KEY environment variable is not set (or empty)."
-    );
-  }
+  if (!apiKey) throw new Error("BREVO_API_KEY is not configured.");
   if (!apiKey.startsWith("xkeysib-")) {
-    throw new Error(
-      "BREVO_API_KEY appears malformed. Ensure it is a single-line Brevo key starting with xkeysib-."
-    );
+    throw new Error("BREVO_API_KEY appears malformed.");
   }
-
   SibApiV3Sdk.ApiClient.instance.authentications["api-key"].apiKey = apiKey;
   const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 
@@ -44,24 +55,103 @@ const sendEmail = async (to, subject, text, html = null) => {
   sendSmtpEmail.sender = { email: senderEmail, name: senderName };
   sendSmtpEmail.to = [{ email: to }];
   sendSmtpEmail.textContent = text;
-  if (html) {
-    sendSmtpEmail.htmlContent = html;
+  sendSmtpEmail.htmlContent = html || textToHtml(text);
+
+  await apiInstance.sendTransacEmail(sendSmtpEmail);
+};
+
+const getSmtpConfig = () => {
+  const user = normalizeEnvValue(process.env.EMAIL_USER);
+  const pass = normalizeEnvValue(process.env.EMAIL_PASS);
+  if (!user || !pass) return null;
+
+  return {
+    user,
+    pass,
+    senderName:
+      normalizeEnvValue(process.env.BREVO_SENDER_NAME) || "Baobab Vision",
+  };
+};
+
+const sendWithSmtp = async ({ to, subject, text, html }) => {
+  const smtpConfig = getSmtpConfig();
+  if (!smtpConfig) {
+    throw new Error("EMAIL_USER and EMAIL_PASS are not configured.");
   }
 
-  try {
-    await apiInstance.sendTransacEmail(sendSmtpEmail);
-  } catch (error) {
-    const responseStatus = error?.response?.status;
-    const responseBody = error?.response?.body || error?.response?.text;
-    console.error("Failed to send email via Brevo:", {
-      message: error.message,
-      code: error.code,
-      responseStatus,
-      responseBody,
-      stack: error.stack,
-    });
-    throw new Error(error.message);
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: smtpConfig.user,
+      pass: smtpConfig.pass,
+    },
+  });
+
+  const mailOptions = {
+    from: `${smtpConfig.senderName} <${smtpConfig.user}>`,
+    to,
+    subject,
+    text,
+  };
+  if (html) mailOptions.html = html;
+
+  await transporter.sendMail(mailOptions);
+};
+
+/**
+ * Sends an email using Brevo first, then falls back to SMTP if configured.
+ * @param {string} to - Recipient email
+ * @param {string} subject - Subject line
+ * @param {string} text - Fallback plain text
+ * @param {string} html - Optional HTML content (e.g., buttons)
+ */
+const sendEmail = async (to, subject, text, html = null) => {
+  const smtpConfig = getSmtpConfig();
+  const brevoApiKey = normalizeEnvValue(
+    process.env.BREVO_API_KEY || process.env.SENDINBLUE_API_KEY
+  );
+
+  if (brevoApiKey) {
+    try {
+      await sendWithBrevo({ to, subject, text, html });
+      console.info("Sent email via Brevo", { to, subject });
+      return;
+    } catch (brevoError) {
+      const responseStatus = brevoError?.response?.status;
+      const responseBody =
+        brevoError?.response?.body || brevoError?.response?.text;
+      console.error("Failed to send email via Brevo:", {
+        message: brevoError.message,
+        code: brevoError.code,
+        responseStatus,
+        responseBody,
+        stack: brevoError.stack,
+      });
+
+      if (!smtpConfig) {
+        throw new Error(brevoError.message);
+      }
+    }
   }
+
+  if (smtpConfig) {
+    try {
+      await sendWithSmtp({ to, subject, text, html });
+      console.info("Sent email via SMTP", { to, subject });
+      return;
+    } catch (smtpError) {
+      console.error("Failed to send email via SMTP fallback:", {
+        message: smtpError.message,
+        code: smtpError.code,
+        stack: smtpError.stack,
+      });
+      throw new Error(smtpError.message);
+    }
+  }
+
+  throw new Error(
+    "No email provider configured. Set BREVO_API_KEY or EMAIL_USER and EMAIL_PASS."
+  );
 };
 
 module.exports = sendEmail;
