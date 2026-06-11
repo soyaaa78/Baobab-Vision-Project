@@ -6,6 +6,28 @@ const sendEmail = require("../services/sendEmail");
 const { logEvent } = require("../services/auditLogService");
 const crypto = require("crypto");
 
+const OTP_EXPIRY_MS = 5 * 60 * 1000;
+const RESET_TOKEN_EXPIRY = "10m";
+const GENERIC_RESET_REQUEST_MESSAGE =
+  "If an admin account exists for that email, a reset code has been sent.";
+const RESET_EMAIL_FAILURE_MESSAGE =
+  "Unable to send password reset code. Please try again later.";
+const INVALID_OTP_MESSAGE = "Invalid or expired OTP";
+const INVALID_RESET_TOKEN_MESSAGE = "Invalid or expired reset token";
+const PASSWORD_POLICY_MESSAGE =
+  "Password must be 8-32 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*)";
+
+const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+const isValidAdminPassword = (password) =>
+  typeof password === "string" &&
+  password.length >= 8 &&
+  password.length <= 32 &&
+  /[A-Z]/.test(password) &&
+  /[a-z]/.test(password) &&
+  /\d/.test(password) &&
+  /[!@#$%^&*]/.test(password);
+
 // LOGIN
 exports.login = async (req, res) => {
   const { username, password } = req.body;
@@ -83,6 +105,144 @@ exports.login = async (req, res) => {
   } catch (error) {
     console.error("Admin login error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// ADMIN PASSWORD RESET: REQUEST OTP
+exports.requestPasswordResetOtp = async (req, res) => {
+  const { email } = req.body || {};
+
+  try {
+    if (!email) {
+      return res.status(200).json({ message: GENERIC_RESET_REQUEST_MESSAGE });
+    }
+
+    const admin = await Admin.findOne({ email });
+    if (!admin || admin.isDisabled) {
+      return res.status(200).json({ message: GENERIC_RESET_REQUEST_MESSAGE });
+    }
+
+    const otp = generateOtp();
+    const otpExpiry = Date.now() + OTP_EXPIRY_MS;
+    await Admin.updateOne({ _id: admin._id }, { $set: { otp, otpExpiry } });
+
+    try {
+      await sendEmail(
+        admin.email,
+        "Admin Password Reset OTP",
+        `Your admin password reset OTP is: ${otp}. This code is valid for 5 minutes.`
+      );
+    } catch (err) {
+      console.error("Admin password reset OTP email error:", err);
+      return res.status(500).json({ message: RESET_EMAIL_FAILURE_MESSAGE });
+    }
+
+    logEvent(req, {
+      eventType: "auth",
+      action: "Admin password reset OTP sent",
+      targetModel: "Admin",
+      targetId: admin._id,
+      metadata: { email: admin.email },
+      forceSystem: true,
+    });
+
+    return res.status(200).json({ message: GENERIC_RESET_REQUEST_MESSAGE });
+  } catch (err) {
+    console.error("Admin password reset OTP request error:", err);
+    return res.status(500).json({ message: RESET_EMAIL_FAILURE_MESSAGE });
+  }
+};
+
+// ADMIN PASSWORD RESET: VERIFY OTP
+exports.verifyPasswordResetOtp = async (req, res) => {
+  const { email, otp } = req.body || {};
+
+  try {
+    if (!email || !otp) {
+      return res.status(400).json({ message: INVALID_OTP_MESSAGE });
+    }
+
+    const admin = await Admin.findOne({ email });
+    if (
+      !admin ||
+      admin.isDisabled ||
+      !admin.otp ||
+      !admin.otpExpiry ||
+      admin.otp !== otp ||
+      Date.now() > admin.otpExpiry
+    ) {
+      return res.status(400).json({ message: INVALID_OTP_MESSAGE });
+    }
+
+    const resetToken = jwt.sign(
+      { id: admin._id },
+      process.env.RESET_PASSWORD_SECRET,
+      { expiresIn: RESET_TOKEN_EXPIRY }
+    );
+
+    logEvent(req, {
+      eventType: "auth",
+      action: "Admin password reset OTP verified",
+      targetModel: "Admin",
+      targetId: admin._id,
+      metadata: { email: admin.email },
+      forceSystem: true,
+    });
+
+    return res.status(200).json({ message: "OTP verified", resetToken });
+  } catch (err) {
+    console.error("Admin password reset OTP verification error:", err);
+    return res
+      .status(500)
+      .json({ message: "Server error during OTP verification" });
+  }
+};
+
+// ADMIN PASSWORD RESET: UPDATE PASSWORD
+exports.resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body || {};
+
+  try {
+    if (!token) {
+      return res.status(400).json({ message: INVALID_RESET_TOKEN_MESSAGE });
+    }
+
+    const decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
+    const admin = await Admin.findById(decoded.id);
+    if (!admin || admin.isDisabled) {
+      return res.status(400).json({ message: INVALID_RESET_TOKEN_MESSAGE });
+    }
+
+    if (!isValidAdminPassword(newPassword)) {
+      return res.status(400).json({ message: PASSWORD_POLICY_MESSAGE });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await Admin.updateOne(
+      { _id: admin._id },
+      {
+        $set: {
+          password: hashedPassword,
+          otp: null,
+          otpExpiry: null,
+          isVerified: true,
+        },
+      }
+    );
+
+    logEvent(req, {
+      eventType: "auth",
+      action: "Admin password reset completed",
+      targetModel: "Admin",
+      targetId: admin._id,
+      metadata: { email: admin.email },
+      forceSystem: true,
+    });
+
+    return res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    console.error("Admin reset password error:", err);
+    return res.status(400).json({ message: INVALID_RESET_TOKEN_MESSAGE });
   }
 };
 
@@ -440,10 +600,8 @@ exports.changePassword = async (req, res) => {
       return res.status(400).json({ message: "Current password is incorrect" });
     }
 
-    if (newPassword.length < 6) {
-      return res
-        .status(400)
-        .json({ message: "New password must be at least 6 characters long" });
+    if (!isValidAdminPassword(newPassword)) {
+      return res.status(400).json({ message: PASSWORD_POLICY_MESSAGE });
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);

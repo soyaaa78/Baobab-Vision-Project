@@ -16,6 +16,15 @@ const isSuperAdmin = (req, res, next) => {
 // Routes
 router.post("/login", adminController.login);
 router.post(
+  "/request-password-reset-otp",
+  adminController.requestPasswordResetOtp
+);
+router.post(
+  "/verify-password-reset-otp",
+  adminController.verifyPasswordResetOtp
+);
+router.post("/reset-password", adminController.resetPassword);
+router.post(
   "/create-staff",
   adminAuth.verifyToken,
   isSuperAdmin,
