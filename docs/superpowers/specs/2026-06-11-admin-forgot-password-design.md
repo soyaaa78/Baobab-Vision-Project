@@ -39,6 +39,7 @@ Implement handlers in `backend/controllers/adminController.js`.
 `requestPasswordResetOtp`:
 
 - Accepts `{ email }`.
+- Treats non-string or empty `email` values like missing email: return the same generic HTTP 200 response without querying or sending email.
 - Looks up an active `Admin` by email.
 - Always returns HTTP 200 with a generic message such as: `If an admin account exists for that email, a reset code has been sent.`
 - If no admin exists or the account is disabled, do not send an email and do not expose that fact.
@@ -48,8 +49,10 @@ Implement handlers in `backend/controllers/adminController.js`.
 `verifyPasswordResetOtp`:
 
 - Accepts `{ email, otp }`.
+- Rejects non-string or empty `email` or `otp` values before querying.
 - Finds the admin by email and rejects missing, disabled, missing OTP, non-`password_reset` purpose, mismatched OTP, or expired OTP with a generic invalid/expired OTP response.
 - On success, generates and stores a CSPRNG `resetPasswordNonce`, then returns a reset token signed with `RESET_PASSWORD_SECRET` and valid for 10 minutes.
+- The nonce write is atomic and requires the matching reset OTP state to still be unexpired.
 - The reset token includes the current reset-state fields (`otpExpiry` and `resetPasswordNonce`) and can only be used while the matching `password_reset` OTP state still exists.
 - Logs a safe audit event.
 
@@ -109,9 +112,11 @@ Add focused controller unit tests using the existing `node:test` and `require.ca
 Cover:
 
 - Reset-code request returns generic HTTP 200 for missing email.
+- Reset-code request returns generic HTTP 200 without querying for non-string or empty email.
 - Reset-code request does not send email for disabled admins.
 - Reset-code request returns the same generic HTTP 200 and clears reset OTP state if email sending fails for an active admin.
 - OTP verification rejects missing, disabled, mismatched, and expired cases generically.
+- OTP verification rejects non-string or empty email/OTP values before querying.
 - OTP verification rejects OTPs created for the other admin OTP purpose.
 - OTP verification returns a reset token with a stored reset nonce for a valid active admin.
 - Password reset rejects invalid or expired reset tokens.

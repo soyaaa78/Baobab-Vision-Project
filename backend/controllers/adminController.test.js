@@ -194,6 +194,26 @@ test("requestPasswordResetOtp returns generic HTTP 200 when email is not an admi
   assert.equal(logCalls.length, 0);
 });
 
+test("requestPasswordResetOtp returns generic HTTP 200 without querying for object-valued email", async () => {
+  const admin = {
+    findOne: async () => assert.fail("object email should not query admin"),
+    updateOne: async () => assert.fail("object email should not update admin"),
+  };
+  const { requestPasswordResetOtp } = loadAdminController({
+    admin,
+    sendEmail: async () => assert.fail("object email should not send email"),
+  });
+  const res = createResponse();
+
+  await requestPasswordResetOtp(
+    { body: { email: { $ne: null } } },
+    res
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, { message: GENERIC_RESET_REQUEST_MESSAGE });
+});
+
 test("requestPasswordResetOtp does not send email for disabled admins", async () => {
   const sendEmailCalls = [];
   const admin = {
@@ -354,6 +374,62 @@ test("verifyStaffOtp rejects password reset OTPs", async () => {
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
   assert.equal(didUpdate, false);
+});
+
+test("verifyStaffOtp rejects object-valued email before querying or signing", async () => {
+  let didSign = false;
+  const admin = {
+    findOne: async () => assert.fail("object email should not query admin"),
+    updateOne: async () => assert.fail("object email should not update admin"),
+  };
+  const { verifyStaffOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "admin-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyStaffOtp(
+    { body: { email: { $ne: null }, otp: "123456" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+  assert.equal(didSign, false);
+});
+
+test("verifyStaffOtp rejects object-valued OTP before querying or signing", async () => {
+  let didSign = false;
+  const admin = {
+    findOne: async () => assert.fail("object OTP should not query admin"),
+    updateOne: async () => assert.fail("object OTP should not update admin"),
+  };
+  const { verifyStaffOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "admin-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyStaffOtp(
+    { body: { email: "active@example.com", otp: { $ne: null } } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+  assert.equal(didSign, false);
 });
 
 test("verifyStaffOtp rejects disabled admins with staff verification OTPs without signing a JWT", async () => {
@@ -532,6 +608,62 @@ test("verifyPasswordResetOtp rejects a missing admin with a generic invalid OTP 
 
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+});
+
+test("verifyPasswordResetOtp rejects object-valued email before querying", async () => {
+  let didSign = false;
+  const admin = {
+    findOne: async () => assert.fail("object email should not query admin"),
+    updateOne: async () => assert.fail("object email should not update admin"),
+  };
+  const { verifyPasswordResetOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "reset-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyPasswordResetOtp(
+    { body: { email: { $ne: null }, otp: "123456" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+  assert.equal(didSign, false);
+});
+
+test("verifyPasswordResetOtp rejects object-valued OTP before querying", async () => {
+  let didSign = false;
+  const admin = {
+    findOne: async () => assert.fail("object OTP should not query admin"),
+    updateOne: async () => assert.fail("object OTP should not update admin"),
+  };
+  const { verifyPasswordResetOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "reset-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyPasswordResetOtp(
+    { body: { email: "active@example.com", otp: { $ne: null } } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+  assert.equal(didSign, false);
 });
 
 test("verifyPasswordResetOtp rejects a disabled admin with a generic invalid OTP response", async () => {
@@ -743,7 +875,8 @@ test("verifyPasswordResetOtp returns a reset token for a valid active admin", as
   assert.deepEqual(updateCall.query.isDisabled, { $ne: true });
   assert.equal(updateCall.query.otp, "123456");
   assert.equal(updateCall.query.otpPurpose, PASSWORD_RESET_PURPOSE);
-  assert.deepEqual(updateCall.query.otpExpiry, { $eq: otpExpiry });
+  assert.deepEqual(updateCall.query.otpExpiry.$eq, otpExpiry);
+  assert.ok(updateCall.query.otpExpiry.$gt instanceof Date);
   assert.deepEqual(updateCall.update, {
     $set: { resetPasswordNonce: "reset-nonce-1" },
   });
@@ -760,6 +893,52 @@ test("verifyPasswordResetOtp returns a reset token for a valid active admin", as
   const logText = JSON.stringify(logCalls.map((args) => args[1]));
   assert.equal(logText.includes("123456"), false);
   assert.equal(logText.includes("reset-token"), false);
+});
+
+test("verifyPasswordResetOtp rejects when OTP expires before the nonce write", async () => {
+  process.env.RESET_PASSWORD_SECRET = "reset-secret";
+  let didSign = false;
+  let updateQuery;
+  const otpExpiry = new Date(Date.now() + 60 * 1000);
+  coreCrypto.randomUUID = () => "reset-nonce-1";
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "active@example.com",
+      isDisabled: false,
+      otp: "123456",
+      otpExpiry,
+      otpPurpose: PASSWORD_RESET_PURPOSE,
+    }),
+    updateOne: async (query) => {
+      updateQuery = query;
+      const predicateChecksUnexpiredOtp = query.otpExpiry?.$gt instanceof Date;
+      return { modifiedCount: predicateChecksUnexpiredOtp ? 0 : 1 };
+    },
+  };
+  const { verifyPasswordResetOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "reset-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyPasswordResetOtp(
+    { body: { email: "active@example.com", otp: "123456" } },
+    res
+  );
+
+  assert.equal(updateQuery._id, "admin-1");
+  assert.deepEqual(updateQuery.otpExpiry.$eq, otpExpiry);
+  assert.ok(updateQuery.otpExpiry.$gt instanceof Date);
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+  assert.equal(didSign, false);
 });
 
 test("resetPassword rejects invalid or expired reset tokens", async () => {
@@ -1219,6 +1398,22 @@ test("resendOtp stores a staff verification OTP purpose using crypto randomInt",
   assert.equal(savedAdmin.otp, "345678");
   assert.ok(Number(savedAdmin.otpExpiry) > Date.now());
   assert.equal(savedAdmin.otpPurpose, STAFF_VERIFICATION_PURPOSE);
+});
+
+test("resendOtp rejects object-valued email before querying", async () => {
+  const admin = {
+    findOne: async () => assert.fail("object email should not query admin"),
+  };
+  const { resendOtp } = loadAdminController({
+    admin,
+    sendEmail: async () => assert.fail("object email should not send email"),
+  });
+  const res = createResponse();
+
+  await resendOtp({ body: { email: { $ne: null } } }, res);
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: "Invalid email" });
 });
 
 test("Admin schema exposes optional OTP purpose and reset nonce fields", () => {
