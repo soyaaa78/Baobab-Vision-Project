@@ -151,7 +151,12 @@ exports.requestPasswordResetOtp = async (req, res) => {
     } catch (err) {
       console.error("Admin password reset OTP email error:", err);
       await Admin.updateOne(
-        { _id: admin._id },
+        {
+          _id: admin._id,
+          otp,
+          otpExpiry,
+          otpPurpose: PASSWORD_RESET_OTP_PURPOSE,
+        },
         { $set: { otp: null, otpExpiry: null, otpPurpose: null } }
       );
       return res.status(200).json({ message: GENERIC_RESET_REQUEST_MESSAGE });
@@ -399,9 +404,13 @@ exports.verifyStaffOtp = async (req, res) => {
     const admin = await Admin.findOne({ email });
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
+    const hasStaffVerificationPurpose =
+      admin.otpPurpose === STAFF_VERIFICATION_OTP_PURPOSE ||
+      (admin.otpPurpose == null && !admin.isVerified && !admin.isDisabled);
+
     if (
       !admin.otp ||
-      admin.otpPurpose !== STAFF_VERIFICATION_OTP_PURPOSE ||
+      !hasStaffVerificationPurpose ||
       admin.otp !== otp ||
       Date.now() > admin.otpExpiry
     ) {

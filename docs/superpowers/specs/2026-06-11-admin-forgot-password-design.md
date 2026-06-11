@@ -21,6 +21,7 @@ Add a forgot-password flow for the web admin login screen so staff and system ad
 - Allow unverified staff accounts to reset their password; successful reset also marks the account verified.
 - Reuse `Admin.otp` and `Admin.otpExpiry` for reset OTPs, with `Admin.otpPurpose` set to `password_reset` so reset codes cannot be used on the staff verification endpoint.
 - Staff email verification OTPs use `otpPurpose: staff_verification` so they cannot be exchanged for password-reset tokens.
+- During rollout, staff verification may also accept legacy null-purpose OTPs only for unverified, enabled admins; password-reset verification must never accept null-purpose OTPs.
 - Enforce the shared strong password policy server-side.
 - Write audit events for reset request, OTP verification, and reset completion when an admin account exists.
 - Do not add integration tests for this feature.
@@ -42,7 +43,7 @@ Implement handlers in `backend/controllers/adminController.js`.
 - Always returns HTTP 200 with a generic message such as: `If an admin account exists for that email, a reset code has been sent.`
 - If no admin exists or the account is disabled, do not send an email and do not expose that fact.
 - If an active admin exists, generate a cryptographically secure 6-digit OTP, store it in `otp` with a 5-minute `otpExpiry` and `otpPurpose: password_reset`, send it by email, and log a safe audit event.
-- If email sending fails for an active admin after OTP storage, clear `otp`, `otpExpiry`, and `otpPurpose`, log the internal error server-side, and still return the same generic HTTP 200 response. Do not expose delivery failure to the client.
+- If email sending fails for an active admin after OTP storage, clear `otp`, `otpExpiry`, and `otpPurpose` only when the current reset state still matches the written OTP, expiry, and purpose; log the internal error server-side, and still return the same generic HTTP 200 response. Do not expose delivery failure to the client.
 
 `verifyPasswordResetOtp`:
 
@@ -116,7 +117,7 @@ Cover:
 - Password reset rejects invalid or expired reset tokens.
 - Password reset rejects passwords that violate the shared policy.
 - Password reset hashes the password, requires matching `password_reset` OTP state, clears OTP fields and `otpPurpose`, and marks unverified admins verified.
-- Staff verification requires `staff_verification` OTP state and clears `otpPurpose` on success.
+- Staff verification requires `staff_verification` OTP state, except for the transitional legacy null-purpose staff OTP case, and clears `otpPurpose` on success.
 - Existing authenticated change-password enforces the same shared password policy.
 
 Verification commands:

@@ -255,7 +255,12 @@ test("requestPasswordResetOtp returns generic HTTP 200 and clears reset state wh
   assert.ok(Number(updateCalls[0].update.$set.otpExpiry) > Date.now());
   assert.equal(updateCalls[0].update.$set.otpPurpose, PASSWORD_RESET_PURPOSE);
   assert.deepEqual(updateCalls[1], {
-    query: { _id: "admin-1" },
+    query: {
+      _id: "admin-1",
+      otp: updateCalls[0].update.$set.otp,
+      otpExpiry: updateCalls[0].update.$set.otpExpiry,
+      otpPurpose: PASSWORD_RESET_PURPOSE,
+    },
     update: { $set: { otp: null, otpExpiry: null, otpPurpose: null } },
   });
 });
@@ -375,6 +380,41 @@ test("verifyStaffOtp clears OTP purpose after successful staff verification", as
         otpPurpose: null,
       },
     },
+  });
+});
+
+test("verifyStaffOtp accepts a legacy null-purpose OTP for an unverified enabled admin", async () => {
+  let updateCall;
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "legacy@example.com",
+      role: "staff_product",
+      isDisabled: false,
+      isVerified: false,
+      otp: "123456",
+      otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: null,
+    }),
+    updateOne: async (query, update) => {
+      updateCall = { query, update };
+      return { modifiedCount: 1 };
+    },
+  };
+  const { verifyStaffOtp } = loadAdminController({ admin });
+  const res = createResponse();
+
+  await verifyStaffOtp(
+    { body: { email: "legacy@example.com", otp: "123456" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(updateCall.update.$set, {
+    isVerified: true,
+    otp: null,
+    otpExpiry: null,
+    otpPurpose: null,
   });
 });
 
@@ -510,6 +550,41 @@ test("verifyPasswordResetOtp rejects staff verification OTPs", async () => {
 
   await verifyPasswordResetOtp(
     { body: { email: "active@example.com", otp: "123456" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+  assert.equal(didSign, false);
+});
+
+test("verifyPasswordResetOtp rejects legacy null-purpose OTPs", async () => {
+  let didSign = false;
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "legacy@example.com",
+      isDisabled: false,
+      isVerified: false,
+      otp: "123456",
+      otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: null,
+    }),
+  };
+  const { verifyPasswordResetOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "reset-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyPasswordResetOtp(
+    { body: { email: "legacy@example.com", otp: "123456" } },
     res
   );
 
