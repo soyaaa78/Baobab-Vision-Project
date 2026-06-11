@@ -9,10 +9,10 @@
 - Spacing scale: 8px base with common form gaps at 16px, 20px, 25px, and 40px.
 - Radius scale: 6px for messages, 7-8px for inputs/buttons, 10px for the auth card.
 - Typography scale: Rubik for form controls and Red Rose for brand/title text; compact helper text at 0.85-0.95rem.
-- Color roles: Primary action #171717, primary hover #000000, warm accent #eab676, muted accent #a9927d, page background #fcf7f2, text #252525/#2a383d, error #c33 on #fee, success #176d2d on #efe.
+- Color roles: Primary action #171717, primary hover #000000, warm accent #eab676, accessible secondary action #6f5844, secondary action hover #5c4737, page background #fcf7f2, text #252525/#2a383d, error #c33 on #fee, success #176d2d on #efe.
 
 ## Components
-- Button: Full-width dark primary submit button with amber secondary text/outline actions; disabled state lowers opacity and removes lift.
+- Button: Full-width dark primary submit button with darker secondary text/outline actions (#6f5844, hover #5c4737); disabled state lowers emphasis and removes lift.
 - Input: Cream input fill with left icon, 8px radius, amber focus border and soft focus ring.
 - Card: White auth card with subtle shadow, 10px radius, responsive padding that tightens on mobile.
 - Modal: Not used on the login page; auth recovery remains inline in the card instead of introducing overlays.

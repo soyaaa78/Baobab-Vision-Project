@@ -173,11 +173,18 @@ function LoginPage() {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    const trimmedOtp = otp.trim();
+    if (!/^\d{6}$/.test(trimmedOtp)) {
+      setError("Enter the 6-digit verification code.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const res = await axios.post(`${SERVER_URL}/api/admin/verify-otp`, {
         email,
-        otp,
+        otp: trimmedOtp,
       });
       login(res.data.token, res.data.role);
       Cookies.remove("pendingEmail");
@@ -455,7 +462,7 @@ function LoginPage() {
                 {renderMessage()}
               </form>
             ) : step === "verify" ? (
-              <form onSubmit={handleVerify} className="login-form">
+              <form onSubmit={handleVerify} className="login-form" noValidate>
                 <div className="input-group">
                   <input
                     type="text"
@@ -463,6 +470,9 @@ function LoginPage() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={6}
+                    minLength={6}
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
                     required
                     autoComplete="one-time-code"
                     aria-label="Verification code"
