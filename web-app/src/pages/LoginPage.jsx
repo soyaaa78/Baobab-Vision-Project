@@ -83,7 +83,12 @@ function LoginPage() {
 
   const renderMessage = () =>
     (error || success) && (
-      <div className="form-message-box">
+      <div
+        className="form-message-box"
+        role={error ? "alert" : "status"}
+        aria-live={error ? "assertive" : "polite"}
+        aria-atomic="true"
+      >
         {error && <p className="form-error">{error}</p>}
         {success && <p className="form-success">{success}</p>}
       </div>
@@ -390,6 +395,8 @@ function LoginPage() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
+                    autoComplete="username"
+                    aria-label="Username"
                     className="form-input"
                     disabled={isSubmitting}
                   />
@@ -403,6 +410,8 @@ function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    autoComplete="current-password"
+                    aria-label="Password"
                     className="form-input"
                     disabled={isSubmitting}
                   />
@@ -447,6 +456,8 @@ function LoginPage() {
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={6}
                     required
+                    autoComplete="one-time-code"
+                    aria-label="Verification code"
                     className="form-input"
                     disabled={isSubmitting}
                   />
@@ -482,6 +493,8 @@ function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    autoComplete="email"
+                    aria-label="Admin email"
                     className="form-input"
                     disabled={isSubmitting}
                   />
@@ -519,6 +532,8 @@ function LoginPage() {
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={6}
                     required
+                    autoComplete="one-time-code"
+                    aria-label="Password reset code"
                     className="form-input"
                     disabled={isSubmitting}
                   />
@@ -552,6 +567,8 @@ function LoginPage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
+                      autoComplete="new-password"
+                      aria-label="New password"
                       className="form-input"
                       disabled={isSubmitting}
                     />
@@ -581,6 +598,8 @@ function LoginPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    autoComplete="new-password"
+                    aria-label="Confirm new password"
                     className="form-input"
                     disabled={isSubmitting}
                   />

@@ -22,4 +22,4 @@
 - Easing: Standard ease/ease-in-out for UI controls and slideshow transitions; linear only for continuous marquee motion.
 
 ## Notes
-- 2026-06-12: Added admin forgot-password inline flow direction. Reset steps reuse the existing auth card, input, button, and message language; reset token remains in component state only; helper and secondary actions use compact text styles to avoid mobile overflow.
+- 2026-06-11: Added admin forgot-password inline flow direction. Reset steps reuse the existing auth card, input, button, and message language; reset token remains in component state only; helper and secondary actions use compact text styles to avoid mobile overflow.

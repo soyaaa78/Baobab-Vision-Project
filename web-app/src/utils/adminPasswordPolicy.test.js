@@ -35,7 +35,7 @@ test("getAdminPasswordPolicyErrors reports missing character classes", () => {
   ]);
 });
 
-test("getAdminPasswordPolicyErrors only accepts configured special characters", () => {
+test("getAdminPasswordPolicyErrors requires at least one configured special character", () => {
   assert.deepEqual(getAdminPasswordPolicyErrors("Password1?"), [
     "Add a special character (!@#$%^&*).",
   ]);
