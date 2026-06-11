@@ -1,14 +1,20 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import baobablogo from "../assets/bvfull.png";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
+  faEnvelope,
   faEye,
   faEyeSlash,
+  faKey,
   faUser,
   faLock,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  ADMIN_PASSWORD_POLICY_HINT,
+  getAdminPasswordPolicyErrors,
+} from "../utils/adminPasswordPolicy";
 import "../styles/LoginPage.css";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -19,9 +25,13 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [email, setEmail] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [step, setStep] = useState("login");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
   const { login, isAuthenticated, loading } = useAuth();
   const [passVisibility, setPassVisibility] = useState(true);
@@ -32,6 +42,52 @@ function LoginPage() {
   const togglePasswordVisibility = () => {
     setPassVisibility((prev) => !prev);
   };
+
+  const formTitle =
+    {
+      login: "SIGN IN",
+      verify: "VERIFY ACCOUNT",
+      forgot: "RESET PASSWORD",
+      resetOtp: "RESET CODE",
+      newPassword: "NEW PASSWORD",
+    }[step] || "SIGN IN";
+
+  const clearMessages = () => {
+    setError("");
+    setSuccess("");
+  };
+
+  const clearResetState = () => {
+    setEmail("");
+    setOtp("");
+    setResetToken("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setPassVisibility(true);
+  };
+
+  const goToForgotPassword = () => {
+    clearMessages();
+    clearResetState();
+    if (username.trim().includes("@")) {
+      setEmail(username.trim());
+    }
+    setStep("forgot");
+  };
+
+  const returnToLogin = () => {
+    clearMessages();
+    clearResetState();
+    setStep("login");
+  };
+
+  const renderMessage = () =>
+    (error || success) && (
+      <div className="form-message-box">
+        {error && <p className="form-error">{error}</p>}
+        {success && <p className="form-success">{success}</p>}
+      </div>
+    );
 
   // Fetch slideshow images for background left panel
   useEffect(() => {
@@ -72,6 +128,7 @@ function LoginPage() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setIsSubmitting(true);
     try {
       const res = await axios.post(
         `${SERVER_URL}/api/admin/login`,
@@ -102,6 +159,8 @@ function LoginPage() {
         return;
       }
       setError(res?.data?.message || "Login failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -109,6 +168,7 @@ function LoginPage() {
     e.preventDefault();
     setError("");
     setSuccess("");
+    setIsSubmitting(true);
     try {
       const res = await axios.post(`${SERVER_URL}/api/admin/verify-otp`, {
         email,
@@ -120,12 +180,15 @@ function LoginPage() {
       setTimeout(() => navigate("/dashboard"), 1500);
     } catch (err) {
       setError(err.response?.data?.message || "Verification failed.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleResendOtp = async () => {
     setError("");
     setSuccess("");
+    setIsSubmitting(true);
     try {
       await axios.post(`${SERVER_URL}/api/admin/resend-otp`, {
         email,
@@ -133,6 +196,119 @@ function LoginPage() {
       setSuccess("Verification code resent to your email.");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to resend code.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleRequestPasswordReset = async (e) => {
+    e.preventDefault();
+    clearMessages();
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError("Enter your admin email address.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await axios.post(`${SERVER_URL}/api/admin/request-password-reset-otp`, {
+        email: trimmedEmail,
+      });
+      setEmail(trimmedEmail);
+      setOtp("");
+      setStep("resetOtp");
+      setSuccess(
+        "If an admin account exists, a reset code has been sent to that email."
+      );
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Unable to send reset code. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifyResetOtp = async (e) => {
+    e.preventDefault();
+    clearMessages();
+
+    const trimmedEmail = email.trim();
+    const trimmedOtp = otp.trim();
+    if (!trimmedEmail) {
+      setError("Start again with your admin email address.");
+      setStep("forgot");
+      return;
+    }
+
+    if (!trimmedOtp) {
+      setError("Enter the reset code from your email.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const res = await axios.post(
+        `${SERVER_URL}/api/admin/verify-password-reset-otp`,
+        {
+          email: trimmedEmail,
+          otp: trimmedOtp,
+        }
+      );
+      const token = res.data?.resetToken;
+      if (!token) {
+        setError("Reset code could not be verified. Request a new code.");
+        return;
+      }
+      setResetToken(token);
+      setOtp("");
+      setStep("newPassword");
+      setSuccess("Code verified. Create a new admin password.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid or expired reset code.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    clearMessages();
+
+    if (!resetToken) {
+      setError("Reset session expired. Request a new code.");
+      setStep("forgot");
+      return;
+    }
+
+    const policyErrors = getAdminPasswordPolicyErrors(newPassword);
+    if (policyErrors.length) {
+      setError(policyErrors[0]);
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await axios.post(`${SERVER_URL}/api/admin/reset-password`, {
+        token: resetToken,
+        newPassword,
+      });
+      clearResetState();
+      setPassword("");
+      setStep("login");
+      setSuccess("Password reset successfully. Sign in with your new password.");
+    } catch (err) {
+      setError(err.response?.data?.message || "Password reset failed.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -202,7 +378,7 @@ function LoginPage() {
             </p>
           </div>
           <div className="form-container">
-            <h2 className="form-title">SIGN IN</h2>
+            <h2 className="form-title">{formTitle}</h2>
 
             {step === "login" ? (
               <form onSubmit={handleLogin} className="login-form">
@@ -215,6 +391,7 @@ function LoginPage() {
                     onChange={(e) => setUsername(e.target.value)}
                     required
                     className="form-input"
+                    disabled={isSubmitting}
                   />
                 </div>
 
@@ -227,29 +404,40 @@ function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     className="form-input"
+                    disabled={isSubmitting}
                   />
-                  <div
+                  <button
+                    type="button"
                     className="password-toggle"
                     onClick={togglePasswordVisibility}
+                    aria-label={
+                      passVisibility ? "Show password" : "Hide password"
+                    }
                   >
                     <FontAwesomeIcon
                       icon={passVisibility ? faEye : faEyeSlash}
                     />
-                  </div>
+                  </button>
                 </div>
 
-                <button type="submit" className="login-btn">
-                  LOGIN
+                <div className="form-secondary-row">
+                  <button
+                    type="button"
+                    className="secondary-action-btn"
+                    onClick={goToForgotPassword}
+                    disabled={isSubmitting}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+
+                <button type="submit" className="login-btn" disabled={isSubmitting}>
+                  {isSubmitting ? "LOGGING IN..." : "LOGIN"}
                 </button>
 
-                {(error || success) && (
-                  <div className="form-message-box">
-                    {error && <p className="form-error">{error}</p>}
-                    {success && <p className="form-success">{success}</p>}
-                  </div>
-                )}
+                {renderMessage()}
               </form>
-            ) : (
+            ) : step === "verify" ? (
               <form onSubmit={handleVerify} className="login-form">
                 <div className="input-group">
                   <input
@@ -260,27 +448,160 @@ function LoginPage() {
                     maxLength={6}
                     required
                     className="form-input"
+                    disabled={isSubmitting}
                   />
                 </div>
 
-                <button type="submit" className="login-btn">
-                  VERIFY
+                <button type="submit" className="login-btn" disabled={isSubmitting}>
+                  {isSubmitting ? "VERIFYING..." : "VERIFY"}
                 </button>
 
                 <button
                   type="button"
                   onClick={handleResendOtp}
                   className="resend-btn"
+                  disabled={isSubmitting}
                 >
                   Resend Verification Code
                 </button>
 
-                {(error || success) && (
-                  <div className="form-message-box">
-                    {error && <p className="form-error">{error}</p>}
-                    {success && <p className="form-success">{success}</p>}
+                {renderMessage()}
+              </form>
+            ) : step === "forgot" ? (
+              <form onSubmit={handleRequestPasswordReset} className="login-form">
+                <p className="reset-step-intro">
+                  Enter the email for your admin account. If it exists, we will
+                  send a reset code.
+                </p>
+
+                <div className="input-group">
+                  <FontAwesomeIcon icon={faEnvelope} className="input-icon" />
+                  <input
+                    type="email"
+                    placeholder="Admin email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="form-input"
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <button type="submit" className="login-btn" disabled={isSubmitting}>
+                  {isSubmitting ? "SENDING..." : "SEND RESET CODE"}
+                </button>
+
+                <div className="form-secondary-row centered">
+                  <button
+                    type="button"
+                    className="secondary-action-btn"
+                    onClick={returnToLogin}
+                    disabled={isSubmitting}
+                  >
+                    Back to login
+                  </button>
+                </div>
+
+                {renderMessage()}
+              </form>
+            ) : step === "resetOtp" ? (
+              <form onSubmit={handleVerifyResetOtp} className="login-form">
+                <p className="reset-step-intro">
+                  Enter the reset code sent to your admin email.
+                </p>
+
+                <div className="input-group">
+                  <FontAwesomeIcon icon={faKey} className="input-icon" />
+                  <input
+                    type="text"
+                    placeholder="Enter 6-digit reset code"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                    required
+                    className="form-input"
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <button type="submit" className="login-btn" disabled={isSubmitting}>
+                  {isSubmitting ? "VERIFYING..." : "VERIFY CODE"}
+                </button>
+
+                <div className="form-secondary-row centered">
+                  <button
+                    type="button"
+                    className="secondary-action-btn"
+                    onClick={returnToLogin}
+                    disabled={isSubmitting}
+                  >
+                    Back to login
+                  </button>
+                </div>
+
+                {renderMessage()}
+              </form>
+            ) : (
+              <form onSubmit={handleResetPassword} className="login-form">
+                <div className="field-stack">
+                  <div className="input-group">
+                    <FontAwesomeIcon icon={faLock} className="input-icon" />
+                    <input
+                      type={passVisibility ? "password" : "text"}
+                      placeholder="New password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      className="form-input"
+                      disabled={isSubmitting}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={togglePasswordVisibility}
+                      aria-label={
+                        passVisibility ? "Show password" : "Hide password"
+                      }
+                    >
+                      <FontAwesomeIcon
+                        icon={passVisibility ? faEye : faEyeSlash}
+                      />
+                    </button>
                   </div>
-                )}
+                  <p className="password-policy-hint">
+                    {ADMIN_PASSWORD_POLICY_HINT}
+                  </p>
+                </div>
+
+                <div className="input-group">
+                  <FontAwesomeIcon icon={faLock} className="input-icon" />
+                  <input
+                    type={passVisibility ? "password" : "text"}
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="form-input"
+                    disabled={isSubmitting}
+                  />
+                </div>
+
+                <button type="submit" className="login-btn" disabled={isSubmitting}>
+                  {isSubmitting ? "RESETTING..." : "RESET PASSWORD"}
+                </button>
+
+                <div className="form-secondary-row centered">
+                  <button
+                    type="button"
+                    className="secondary-action-btn"
+                    onClick={returnToLogin}
+                    disabled={isSubmitting}
+                  >
+                    Back to login
+                  </button>
+                </div>
+
+                {renderMessage()}
               </form>
             )}
           </div>
