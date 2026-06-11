@@ -6,7 +6,7 @@ import 'auth_storage.dart';
 class ApiClient {
   static const String _configuredBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://baobab-vision-project-0234.onrender.com',
+    defaultValue: 'http://10.0.2.2:3001',
   );
   static final String baseUrl = _normalizeBaseUrl(_configuredBaseUrl);
 

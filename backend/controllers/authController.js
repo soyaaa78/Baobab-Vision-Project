@@ -207,36 +207,43 @@ const resendEmailOtp = async (req, res) => {
 
 // PASSWORD RESET: REQUEST OTP
 const requestOtp = async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: "Email not found" });
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "Email not found" });
 
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  await User.updateOne(
-    { _id: user._id },
-    { $set: { otp, otpExpiry: Date.now() + 5 * 60 * 1000 } }
-  );
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { otp, otpExpiry: Date.now() + 5 * 60 * 1000 } }
+    );
 
-  await sendEmail(
-    user.email,
-    "Password Reset Request - OTP",
-    `
-      Hi ${user.firstname},
-  
-      We have received a request to reset your password for your account. To proceed, please use the one-time password (OTP) provided below:
-  
-      OTP: ${otp}
-  
-      This OTP is valid for the next 5 minutes. If you did not request a password reset, please disregard this message.
-  
-      If you need any help or have any questions, please do not hesitate to contact our support team.
-  
-      Best regards,
-      The Baobab Vision Team
-    `
-  );
+    await sendEmail(
+      user.email,
+      "Password Reset Request - OTP",
+      `
+        Hi ${user.firstname},
 
-  res.status(200).json({ message: "OTP sent to email" });
+        We have received a request to reset your password for your account. To proceed, please use the one-time password (OTP) provided below:
+
+        OTP: ${otp}
+
+        This OTP is valid for the next 5 minutes. If you did not request a password reset, please disregard this message.
+
+        If you need any help or have any questions, please do not hesitate to contact our support team.
+
+        Best regards,
+        The Baobab Vision Team
+      `
+    );
+
+    res.status(200).json({ message: "OTP sent to email" });
+  } catch (err) {
+    console.error("Request OTP error:", err);
+    res
+      .status(500)
+      .json({ message: "Unable to send OTP email. Please try again later." });
+  }
 };
 
 // PASSWORD RESET: VERIFY OTP
@@ -270,36 +277,43 @@ const verifyOtp = async (req, res) => {
 
 // PASSWORD RESET: RESEND OTP
 const resendOtp = async (req, res) => {
-  const { email } = req.body;
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: "User not found" });
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-  const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-  await User.updateOne(
-    { _id: user._id },
-    { $set: { otp: newOtp, otpExpiry: Date.now() + 5 * 60 * 1000 } }
-  );
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { otp: newOtp, otpExpiry: Date.now() + 5 * 60 * 1000 } }
+    );
 
-  await sendEmail(
-    user.email,
-    "Your New OTP - Password Reset",
-    `
-      Hi ${user.firstname},
-  
-      We have received a request to resend your OTP for resetting your password. Please use the one-time password (OTP) provided below:
-  
-      OTP: ${newOtp}
-  
-      This OTP is valid for 5 minutes. If you did not request a password reset, please disregard this message.
-  
-      Should you require any assistance, please contact our support team.
-  
-      Best regards,
-      The Baobab Vision Team
-    `
-  );
+    await sendEmail(
+      user.email,
+      "Your New OTP - Password Reset",
+      `
+        Hi ${user.firstname},
 
-  res.status(200).json({ message: "OTP resent" });
+        We have received a request to resend your OTP for resetting your password. Please use the one-time password (OTP) provided below:
+
+        OTP: ${newOtp}
+
+        This OTP is valid for 5 minutes. If you did not request a password reset, please disregard this message.
+
+        Should you require any assistance, please contact our support team.
+
+        Best regards,
+        The Baobab Vision Team
+      `
+    );
+
+    res.status(200).json({ message: "OTP resent" });
+  } catch (err) {
+    console.error("Resend OTP error:", err);
+    res
+      .status(500)
+      .json({ message: "Unable to resend OTP email. Please try again later." });
+  }
 };
 
 // PASSWORD RESET: UPDATE PASSWORD
