@@ -543,6 +543,12 @@ exports.resendOtp = async (req, res) => {
 
     const admin = await Admin.findOne({ email: requestEmail });
     if (!admin) return res.status(404).json({ message: "Admin not found" });
+    if (admin.isDisabled) {
+      return res.status(403).json({
+        message: "Your account is disabled. Please contact support.",
+        isDisabled: true,
+      });
+    }
     if (admin.isVerified)
       return res.status(400).json({ message: "Email already verified" });
 

@@ -1536,6 +1536,34 @@ test("resendOtp stores a staff verification OTP purpose using crypto randomInt",
   assert.equal(savedAdmin.otpPurpose, STAFF_VERIFICATION_PURPOSE);
 });
 
+test("resendOtp rejects disabled admins without saving, sending email, or logging", async () => {
+  const logCalls = [];
+  const staff = {
+    _id: "admin-1",
+    email: "disabled@example.com",
+    isDisabled: true,
+    isVerified: false,
+    save: async () => assert.fail("disabled admin should not be saved"),
+  };
+  const admin = { findOne: async () => staff };
+  const { resendOtp } = loadAdminController({
+    admin,
+    sendEmail: async () =>
+      assert.fail("disabled admin should not receive an OTP email"),
+    logEvent: (...args) => logCalls.push(args),
+  });
+  const res = createResponse();
+
+  await resendOtp({ body: { email: "disabled@example.com" } }, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.deepEqual(res.body, {
+    message: "Your account is disabled. Please contact support.",
+    isDisabled: true,
+  });
+  assert.equal(logCalls.length, 0);
+});
+
 test("resendOtp rejects object-valued email before querying", async () => {
   const admin = {
     findOne: async () => assert.fail("object email should not query admin"),
