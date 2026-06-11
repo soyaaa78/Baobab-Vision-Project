@@ -9,7 +9,7 @@
 - Spacing scale: 8px base with common form gaps at 16px, 20px, 25px, and 40px.
 - Radius scale: 6px for messages, 7-8px for inputs/buttons, 10px for the auth card.
 - Typography scale: Rubik for form controls and Red Rose for brand/title text; compact helper text at 0.85-0.95rem.
-- Color roles: Primary action #171717, primary hover #000000, warm accent #eab676, muted accent #a9927d, page background #fcf7f2, text #252525/#2a383d, error #c33 on #fee, success #3c3 on #efe.
+- Color roles: Primary action #171717, primary hover #000000, warm accent #eab676, muted accent #a9927d, page background #fcf7f2, text #252525/#2a383d, error #c33 on #fee, success #176d2d on #efe.
 
 ## Components
 - Button: Full-width dark primary submit button with amber secondary text/outline actions; disabled state lowers opacity and removes lift.

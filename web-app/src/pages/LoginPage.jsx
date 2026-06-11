@@ -249,8 +249,8 @@ function LoginPage() {
       return;
     }
 
-    if (!trimmedOtp) {
-      setError("Enter the reset code from your email.");
+    if (!/^\d{6}$/.test(trimmedOtp)) {
+      setError("Enter the 6-digit reset code.");
       return;
     }
 
@@ -311,7 +311,15 @@ function LoginPage() {
       setStep("login");
       setSuccess("Password reset successfully. Sign in with your new password.");
     } catch (err) {
-      setError(err.response?.data?.message || "Password reset failed.");
+      if (err.response) {
+        setResetToken("");
+        setNewPassword("");
+        setConfirmPassword("");
+        setStep("forgot");
+        setError("Reset session expired. Request a new code.");
+      } else {
+        setError("Password reset failed.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -518,7 +526,11 @@ function LoginPage() {
                 {renderMessage()}
               </form>
             ) : step === "resetOtp" ? (
-              <form onSubmit={handleVerifyResetOtp} className="login-form">
+              <form
+                onSubmit={handleVerifyResetOtp}
+                className="login-form"
+                noValidate
+              >
                 <p className="reset-step-intro">
                   Enter the reset code sent to your admin email.
                 </p>
@@ -531,6 +543,9 @@ function LoginPage() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     maxLength={6}
+                    minLength={6}
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
                     required
                     autoComplete="one-time-code"
                     aria-label="Password reset code"
@@ -569,6 +584,7 @@ function LoginPage() {
                       required
                       autoComplete="new-password"
                       aria-label="New password"
+                      aria-describedby="admin-password-policy-hint"
                       className="form-input"
                       disabled={isSubmitting}
                     />
@@ -585,7 +601,10 @@ function LoginPage() {
                       />
                     </button>
                   </div>
-                  <p className="password-policy-hint">
+                  <p
+                    id="admin-password-policy-hint"
+                    className="password-policy-hint"
+                  >
                     {ADMIN_PASSWORD_POLICY_HINT}
                   </p>
                 </div>
