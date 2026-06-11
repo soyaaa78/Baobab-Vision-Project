@@ -1,5 +1,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const coreCrypto = require("node:crypto");
 
 const adminControllerPath = require.resolve("./adminController");
 const adminModelPath = require.resolve("../models/Admin");
@@ -19,6 +22,7 @@ const PASSWORD_POLICY_MESSAGE =
   "Password must be 8-32 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*)";
 
 const originalResetSecret = process.env.RESET_PASSWORD_SECRET;
+const originalRandomInt = coreCrypto.randomInt;
 
 const clearControllerCache = () => {
   delete require.cache[adminControllerPath];
@@ -114,6 +118,7 @@ const silenceConsoleError = async (callback) => {
 
 test.afterEach(() => {
   clearControllerCache();
+  coreCrypto.randomInt = originalRandomInt;
   if (originalResetSecret === undefined) {
     delete process.env.RESET_PASSWORD_SECRET;
   } else {
@@ -173,7 +178,7 @@ test("requestPasswordResetOtp does not send email for disabled admins", async ()
 });
 
 test("requestPasswordResetOtp returns JSON HTTP 500 when email sending fails for an active admin", async () => {
-  let updateCall;
+  const updateCalls = [];
   const admin = {
     findOne: async () => ({
       _id: "admin-1",
@@ -182,7 +187,7 @@ test("requestPasswordResetOtp returns JSON HTTP 500 when email sending fails for
       isDisabled: false,
     }),
     updateOne: async (query, update) => {
-      updateCall = { query, update };
+      updateCalls.push({ query, update });
       return { modifiedCount: 1 };
     },
   };
@@ -203,15 +208,25 @@ test("requestPasswordResetOtp returns JSON HTTP 500 when email sending fails for
 
   assert.equal(res.statusCode, 500);
   assert.deepEqual(res.body, { message: RESET_EMAIL_FAILURE_MESSAGE });
-  assert.deepEqual(updateCall.query, { _id: "admin-1" });
-  assert.match(updateCall.update.$set.otp, /^\d{6}$/);
-  assert.ok(Number(updateCall.update.$set.otpExpiry) > Date.now());
+  assert.equal(updateCalls.length, 2);
+  assert.deepEqual(updateCalls[0].query, { _id: "admin-1" });
+  assert.match(updateCalls[0].update.$set.otp, /^\d{6}$/);
+  assert.ok(Number(updateCalls[0].update.$set.otpExpiry) > Date.now());
+  assert.deepEqual(updateCalls[1], {
+    query: { _id: "admin-1" },
+    update: { $set: { otp: null, otpExpiry: null } },
+  });
 });
 
 test("requestPasswordResetOtp stores an OTP, sends email, and logs safely for an active admin", async () => {
   let updateCall;
+  const randomIntCalls = [];
   const sendEmailCalls = [];
   const logCalls = [];
+  coreCrypto.randomInt = (min, max) => {
+    randomIntCalls.push([min, max]);
+    return 654321;
+  };
   const admin = {
     findOne: async () => ({
       _id: "admin-1",
@@ -238,8 +253,9 @@ test("requestPasswordResetOtp stores an OTP, sends email, and logs safely for an
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.body, { message: GENERIC_RESET_REQUEST_MESSAGE });
+  assert.deepEqual(randomIntCalls, [[100000, 1000000]]);
   assert.deepEqual(updateCall.query, { _id: "admin-1" });
-  assert.match(updateCall.update.$set.otp, /^\d{6}$/);
+  assert.equal(updateCall.update.$set.otp, "654321");
   assert.ok(Number(updateCall.update.$set.otpExpiry) > Date.now());
   assert.equal(sendEmailCalls.length, 1);
   assert.equal(logCalls.length, 1);
@@ -356,13 +372,14 @@ test("verifyPasswordResetOtp returns a reset token for a valid active admin", as
   process.env.RESET_PASSWORD_SECRET = "reset-secret";
   let signCall;
   const logCalls = [];
+  const otpExpiry = new Date(Date.now() + 60 * 1000);
   const admin = {
     findOne: async () => ({
       _id: "admin-1",
       email: "active@example.com",
       isDisabled: false,
       otp: "123456",
-      otpExpiry: Date.now() + 60 * 1000,
+      otpExpiry,
     }),
   };
   const { verifyPasswordResetOtp } = loadAdminController({
@@ -389,7 +406,7 @@ test("verifyPasswordResetOtp returns a reset token for a valid active admin", as
     resetToken: "reset-token",
   });
   assert.deepEqual(signCall, {
-    payload: { id: "admin-1" },
+    payload: { id: "admin-1", otpExpiry: otpExpiry.getTime() },
     secret: "reset-secret",
     options: { expiresIn: "10m" },
   });
@@ -426,14 +443,52 @@ test("resetPassword rejects invalid or expired reset tokens", async () => {
   assert.deepEqual(res.body, { message: INVALID_RESET_TOKEN_MESSAGE });
 });
 
+test("resetPassword rejects tokens without a reset-state nonce", async () => {
+  process.env.RESET_PASSWORD_SECRET = "reset-secret";
+  let didLoadAdmin = false;
+  const admin = {
+    findById: async () => {
+      didLoadAdmin = true;
+      return {
+        _id: "admin-1",
+        email: "active@example.com",
+        isDisabled: false,
+      };
+    },
+    updateOne: async () => ({ modifiedCount: 1 }),
+  };
+  const { resetPassword } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => assert.fail("sign should not run while resetting password"),
+      verify: () => ({ id: "admin-1" }),
+    },
+  });
+  const res = createResponse();
+
+  await resetPassword(
+    { body: { token: "token-without-nonce", newPassword: "ValidPass1!" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_RESET_TOKEN_MESSAGE });
+  assert.equal(didLoadAdmin, false);
+});
+
 test("resetPassword rejects disabled admins without hashing the password", async () => {
   process.env.RESET_PASSWORD_SECRET = "reset-secret";
+  const otpExpiryMs = Date.now() + 60 * 1000;
   const admin = {
     findById: async () => ({ _id: "admin-1", isDisabled: true }),
     updateOne: async () => assert.fail("disabled admin should not be updated"),
   };
   const { resetPassword } = loadAdminController({
     admin,
+    jwt: {
+      sign: () => assert.fail("sign should not run while resetting password"),
+      verify: () => ({ id: "admin-1", otpExpiry: otpExpiryMs }),
+    },
     bcrypt: {
       compare: async () => true,
       hash: async () => assert.fail("disabled admin password should not hash"),
@@ -452,6 +507,7 @@ test("resetPassword rejects disabled admins without hashing the password", async
 
 test("resetPassword rejects passwords that violate the shared password policy", async () => {
   process.env.RESET_PASSWORD_SECRET = "reset-secret";
+  const otpExpiryMs = Date.now() + 60 * 1000;
   const admin = {
     findById: async () => ({
       _id: "admin-1",
@@ -462,6 +518,10 @@ test("resetPassword rejects passwords that violate the shared password policy", 
   };
   const { resetPassword } = loadAdminController({
     admin,
+    jwt: {
+      sign: () => assert.fail("sign should not run while resetting password"),
+      verify: () => ({ id: "admin-1", otpExpiry: otpExpiryMs }),
+    },
     bcrypt: {
       compare: async () => true,
       hash: async () => assert.fail("invalid password should not hash"),
@@ -484,6 +544,7 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
   let hashCall;
   let updateCall;
   const logCalls = [];
+  const otpExpiryMs = Date.now() + 60 * 1000;
   const admin = {
     findById: async (id) => {
       assert.equal(id, "admin-1");
@@ -492,6 +553,8 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
         email: "active@example.com",
         isDisabled: false,
         isVerified: false,
+        otp: "123456",
+        otpExpiry: new Date(otpExpiryMs),
       };
     },
     updateOne: async (query, update) => {
@@ -512,7 +575,7 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
       sign: () => assert.fail("sign should not run while resetting password"),
       verify: (token, secret) => {
         verifyCall = { token, secret };
-        return { id: "admin-1" };
+        return { id: "admin-1", otpExpiry: otpExpiryMs };
       },
     },
     logEvent: (...args) => logCalls.push(args),
@@ -531,21 +594,78 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
     secret: "reset-secret",
   });
   assert.deepEqual(hashCall, { password: "ValidPass1!", rounds: 10 });
-  assert.deepEqual(updateCall, {
-    query: { _id: "admin-1" },
-    update: {
-      $set: {
-        password: "hashed-new-password",
-        otp: null,
-        otpExpiry: null,
-        isVerified: true,
-      },
+  assert.equal(updateCall.query._id, "admin-1");
+  assert.deepEqual(updateCall.query.isDisabled, { $ne: true });
+  assert.deepEqual(updateCall.query.otp, { $exists: true, $ne: null });
+  assert.deepEqual(updateCall.query.otpExpiry.$eq, new Date(otpExpiryMs));
+  assert.ok(updateCall.query.otpExpiry.$gt instanceof Date);
+  assert.deepEqual(updateCall.update, {
+    $set: {
+      password: "hashed-new-password",
+      otp: null,
+      otpExpiry: null,
+      isVerified: true,
     },
   });
   assert.equal(logCalls.length, 1);
   const logText = JSON.stringify(logCalls.map((args) => args[1]));
   assert.equal(logText.includes("ValidPass1!"), false);
   assert.equal(logText.includes("hashed-new-password"), false);
+});
+
+test("resetPassword rejects replay after reset state is consumed", async () => {
+  process.env.RESET_PASSWORD_SECRET = "reset-secret";
+  const otpExpiryMs = Date.now() + 60 * 1000;
+  let resetStateAvailable = true;
+  const admin = {
+    findById: async () => ({
+      _id: "admin-1",
+      email: "active@example.com",
+      isDisabled: false,
+      otp: resetStateAvailable ? "123456" : null,
+      otpExpiry: resetStateAvailable ? new Date(otpExpiryMs) : null,
+    }),
+    updateOne: async (query) => {
+      const requiresResetState =
+        query.otp?.$exists === true &&
+        query.otp?.$ne === null &&
+        query.otpExpiry?.$eq?.getTime?.() === otpExpiryMs &&
+        query.otpExpiry?.$gt instanceof Date;
+
+      if (requiresResetState && resetStateAvailable) {
+        resetStateAvailable = false;
+        return { modifiedCount: 1 };
+      }
+
+      return { modifiedCount: 0 };
+    },
+  };
+  const { resetPassword } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => assert.fail("sign should not run while resetting password"),
+      verify: () => ({ id: "admin-1", otpExpiry: otpExpiryMs }),
+    },
+    bcrypt: {
+      compare: async () => true,
+      hash: async () => "hashed-new-password",
+    },
+  });
+  const firstResponse = createResponse();
+  const secondResponse = createResponse();
+
+  await resetPassword(
+    { body: { token: "valid-token", newPassword: "ValidPass1!" } },
+    firstResponse
+  );
+  await resetPassword(
+    { body: { token: "valid-token", newPassword: "ValidPass1!" } },
+    secondResponse
+  );
+
+  assert.equal(firstResponse.statusCode, 200);
+  assert.equal(secondResponse.statusCode, 400);
+  assert.deepEqual(secondResponse.body, { message: INVALID_RESET_TOKEN_MESSAGE });
 });
 
 test("changePassword enforces the shared password policy", async () => {
@@ -580,4 +700,13 @@ test("changePassword enforces the shared password policy", async () => {
 
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: PASSWORD_POLICY_MESSAGE });
+});
+
+test("npm test includes adminController.test.js", () => {
+  const packageJsonPath = path.join(__dirname, "..", "package.json");
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+
+  assert.ok(
+    packageJson.scripts.test.includes("controllers/adminController.test.js")
+  );
 });

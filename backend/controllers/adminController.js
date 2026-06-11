@@ -17,7 +17,7 @@ const INVALID_RESET_TOKEN_MESSAGE = "Invalid or expired reset token";
 const PASSWORD_POLICY_MESSAGE =
   "Password must be 8-32 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*)";
 
-const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
+const generateOtp = () => crypto.randomInt(100000, 1000000).toString();
 
 const isValidAdminPassword = (password) =>
   typeof password === "string" &&
@@ -123,7 +123,7 @@ exports.requestPasswordResetOtp = async (req, res) => {
     }
 
     const otp = generateOtp();
-    const otpExpiry = Date.now() + OTP_EXPIRY_MS;
+    const otpExpiry = new Date(Date.now() + OTP_EXPIRY_MS);
     await Admin.updateOne({ _id: admin._id }, { $set: { otp, otpExpiry } });
 
     try {
@@ -134,6 +134,10 @@ exports.requestPasswordResetOtp = async (req, res) => {
       );
     } catch (err) {
       console.error("Admin password reset OTP email error:", err);
+      await Admin.updateOne(
+        { _id: admin._id },
+        { $set: { otp: null, otpExpiry: null } }
+      );
       return res.status(500).json({ message: RESET_EMAIL_FAILURE_MESSAGE });
     }
 
@@ -163,19 +167,21 @@ exports.verifyPasswordResetOtp = async (req, res) => {
     }
 
     const admin = await Admin.findOne({ email });
+    const otpExpiryTime = new Date(admin?.otpExpiry).getTime();
     if (
       !admin ||
       admin.isDisabled ||
       !admin.otp ||
       !admin.otpExpiry ||
       admin.otp !== otp ||
-      Date.now() > admin.otpExpiry
+      !Number.isFinite(otpExpiryTime) ||
+      Date.now() > otpExpiryTime
     ) {
       return res.status(400).json({ message: INVALID_OTP_MESSAGE });
     }
 
     const resetToken = jwt.sign(
-      { id: admin._id },
+      { id: admin._id, otpExpiry: otpExpiryTime },
       process.env.RESET_PASSWORD_SECRET,
       { expiresIn: RESET_TOKEN_EXPIRY }
     );
@@ -208,6 +214,17 @@ exports.resetPassword = async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
+    const resetStateExpiryTime = Number(decoded?.otpExpiry);
+    if (!decoded?.id || !Number.isFinite(resetStateExpiryTime)) {
+      return res.status(400).json({ message: INVALID_RESET_TOKEN_MESSAGE });
+    }
+
+    const resetStateExpiry = new Date(resetStateExpiryTime);
+    const now = new Date();
+    if (resetStateExpiry <= now) {
+      return res.status(400).json({ message: INVALID_RESET_TOKEN_MESSAGE });
+    }
+
     const admin = await Admin.findById(decoded.id);
     if (!admin || admin.isDisabled) {
       return res.status(400).json({ message: INVALID_RESET_TOKEN_MESSAGE });
@@ -218,8 +235,13 @@ exports.resetPassword = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await Admin.updateOne(
-      { _id: admin._id },
+    const updateResult = await Admin.updateOne(
+      {
+        _id: admin._id,
+        isDisabled: { $ne: true },
+        otp: { $exists: true, $ne: null },
+        otpExpiry: { $eq: resetStateExpiry, $gt: now },
+      },
       {
         $set: {
           password: hashedPassword,
@@ -229,6 +251,9 @@ exports.resetPassword = async (req, res) => {
         },
       }
     );
+    if (updateResult.modifiedCount !== 1) {
+      return res.status(400).json({ message: INVALID_RESET_TOKEN_MESSAGE });
+    }
 
     logEvent(req, {
       eventType: "auth",
