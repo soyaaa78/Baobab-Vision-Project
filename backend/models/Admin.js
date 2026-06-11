@@ -33,6 +33,10 @@ const AdminSchema = new mongoose.Schema(
       enum: ["staff_verification", "password_reset"],
       default: null,
     },
+    resetPasswordNonce: {
+      type: String,
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

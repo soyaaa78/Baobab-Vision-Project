@@ -23,6 +23,7 @@ const PASSWORD_RESET_PURPOSE = "password_reset";
 
 const originalResetSecret = process.env.RESET_PASSWORD_SECRET;
 const originalRandomInt = coreCrypto.randomInt;
+const originalRandomUUID = coreCrypto.randomUUID;
 
 const clearControllerCache = () => {
   delete require.cache[adminControllerPath];
@@ -119,6 +120,7 @@ const silenceConsoleError = async (callback) => {
 test.afterEach(() => {
   clearControllerCache();
   coreCrypto.randomInt = originalRandomInt;
+  coreCrypto.randomUUID = originalRandomUUID;
   if (originalResetSecret === undefined) {
     delete process.env.RESET_PASSWORD_SECRET;
   } else {
@@ -254,14 +256,23 @@ test("requestPasswordResetOtp returns generic HTTP 200 and clears reset state wh
   assert.match(updateCalls[0].update.$set.otp, /^\d{6}$/);
   assert.ok(Number(updateCalls[0].update.$set.otpExpiry) > Date.now());
   assert.equal(updateCalls[0].update.$set.otpPurpose, PASSWORD_RESET_PURPOSE);
+  assert.equal(updateCalls[0].update.$set.resetPasswordNonce, null);
   assert.deepEqual(updateCalls[1], {
     query: {
       _id: "admin-1",
       otp: updateCalls[0].update.$set.otp,
       otpExpiry: updateCalls[0].update.$set.otpExpiry,
       otpPurpose: PASSWORD_RESET_PURPOSE,
+      resetPasswordNonce: null,
     },
-    update: { $set: { otp: null, otpExpiry: null, otpPurpose: null } },
+    update: {
+      $set: {
+        otp: null,
+        otpExpiry: null,
+        otpPurpose: null,
+        resetPasswordNonce: null,
+      },
+    },
   });
 });
 
@@ -305,6 +316,7 @@ test("requestPasswordResetOtp stores an OTP, sends email, and logs safely for an
   assert.equal(updateCall.update.$set.otp, "654321");
   assert.ok(Number(updateCall.update.$set.otpExpiry) > Date.now());
   assert.equal(updateCall.update.$set.otpPurpose, PASSWORD_RESET_PURPOSE);
+  assert.equal(updateCall.update.$set.resetPasswordNonce, null);
   assert.equal(sendEmailCalls.length, 1);
   assert.equal(logCalls.length, 1);
   const logEvents = logCalls.map((args) => args[1]);
@@ -344,16 +356,100 @@ test("verifyStaffOtp rejects password reset OTPs", async () => {
   assert.equal(didUpdate, false);
 });
 
+test("verifyStaffOtp rejects disabled admins with staff verification OTPs without signing a JWT", async () => {
+  let didUpdate = false;
+  let didSign = false;
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "disabled@example.com",
+      role: "staff_product",
+      isDisabled: true,
+      isVerified: false,
+      otp: "123456",
+      otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: STAFF_VERIFICATION_PURPOSE,
+    }),
+    updateOne: async () => {
+      didUpdate = true;
+      return { modifiedCount: 1 };
+    },
+  };
+  const { verifyStaffOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "admin-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyStaffOtp(
+    { body: { email: "disabled@example.com", otp: "123456" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(didUpdate, false);
+  assert.equal(didSign, false);
+});
+
+test("verifyStaffOtp rejects disabled admins with legacy null-purpose OTPs without signing a JWT", async () => {
+  let didUpdate = false;
+  let didSign = false;
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "disabled@example.com",
+      role: "staff_product",
+      isDisabled: true,
+      isVerified: false,
+      otp: "123456",
+      otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: null,
+    }),
+    updateOne: async () => {
+      didUpdate = true;
+      return { modifiedCount: 1 };
+    },
+  };
+  const { verifyStaffOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "admin-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyStaffOtp(
+    { body: { email: "disabled@example.com", otp: "123456" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 403);
+  assert.equal(didUpdate, false);
+  assert.equal(didSign, false);
+});
+
 test("verifyStaffOtp clears OTP purpose after successful staff verification", async () => {
   let updateCall;
+  const otpExpiryMs = Date.now() + 60 * 1000;
   const admin = {
     findOne: async () => ({
       _id: "admin-1",
       email: "active@example.com",
       role: "staff_product",
       isDisabled: false,
+      isVerified: false,
       otp: "123456",
-      otpExpiry: Date.now() + 60 * 1000,
+      otpExpiry: new Date(otpExpiryMs),
       otpPurpose: STAFF_VERIFICATION_PURPOSE,
     }),
     updateOne: async (query, update) => {
@@ -370,15 +466,21 @@ test("verifyStaffOtp clears OTP purpose after successful staff verification", as
   );
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(updateCall, {
-    query: { _id: "admin-1" },
-    update: {
-      $set: {
-        isVerified: true,
-        otp: null,
-        otpExpiry: null,
-        otpPurpose: null,
-      },
+  assert.equal(updateCall.query._id, "admin-1");
+  assert.deepEqual(updateCall.query.isDisabled, { $ne: true });
+  assert.equal(updateCall.query.isVerified, false);
+  assert.equal(updateCall.query.otp, "123456");
+  assert.equal(Number(updateCall.query.otpExpiry.$eq), otpExpiryMs);
+  assert.ok(updateCall.query.otpExpiry.$gt instanceof Date);
+  assert.deepEqual(updateCall.query.$or, [
+    { otpPurpose: STAFF_VERIFICATION_PURPOSE },
+  ]);
+  assert.deepEqual(updateCall.update, {
+    $set: {
+      isVerified: true,
+      otp: null,
+      otpExpiry: null,
+      otpPurpose: null,
     },
   });
 });
@@ -596,8 +698,10 @@ test("verifyPasswordResetOtp rejects legacy null-purpose OTPs", async () => {
 test("verifyPasswordResetOtp returns a reset token for a valid active admin", async () => {
   process.env.RESET_PASSWORD_SECRET = "reset-secret";
   let signCall;
+  let updateCall;
   const logCalls = [];
   const otpExpiry = new Date(Date.now() + 60 * 1000);
+  coreCrypto.randomUUID = () => "reset-nonce-1";
   const admin = {
     findOne: async () => ({
       _id: "admin-1",
@@ -607,6 +711,10 @@ test("verifyPasswordResetOtp returns a reset token for a valid active admin", as
       otpExpiry,
       otpPurpose: PASSWORD_RESET_PURPOSE,
     }),
+    updateOne: async (query, update) => {
+      updateCall = { query, update };
+      return { modifiedCount: 1 };
+    },
   };
   const { verifyPasswordResetOtp } = loadAdminController({
     admin,
@@ -631,8 +739,20 @@ test("verifyPasswordResetOtp returns a reset token for a valid active admin", as
     message: "OTP verified",
     resetToken: "reset-token",
   });
+  assert.equal(updateCall.query._id, "admin-1");
+  assert.deepEqual(updateCall.query.isDisabled, { $ne: true });
+  assert.equal(updateCall.query.otp, "123456");
+  assert.equal(updateCall.query.otpPurpose, PASSWORD_RESET_PURPOSE);
+  assert.deepEqual(updateCall.query.otpExpiry, { $eq: otpExpiry });
+  assert.deepEqual(updateCall.update, {
+    $set: { resetPasswordNonce: "reset-nonce-1" },
+  });
   assert.deepEqual(signCall, {
-    payload: { id: "admin-1", otpExpiry: otpExpiry.getTime() },
+    payload: {
+      id: "admin-1",
+      otpExpiry: otpExpiry.getTime(),
+      resetPasswordNonce: "reset-nonce-1",
+    },
     secret: "reset-secret",
     options: { expiresIn: "10m" },
   });
@@ -671,6 +791,7 @@ test("resetPassword rejects invalid or expired reset tokens", async () => {
 
 test("resetPassword rejects tokens without a reset-state nonce", async () => {
   process.env.RESET_PASSWORD_SECRET = "reset-secret";
+  const otpExpiryMs = Date.now() + 60 * 1000;
   let didLoadAdmin = false;
   const admin = {
     findById: async () => {
@@ -687,7 +808,7 @@ test("resetPassword rejects tokens without a reset-state nonce", async () => {
     admin,
     jwt: {
       sign: () => assert.fail("sign should not run while resetting password"),
-      verify: () => ({ id: "admin-1" }),
+      verify: () => ({ id: "admin-1", otpExpiry: otpExpiryMs }),
     },
   });
   const res = createResponse();
@@ -713,7 +834,11 @@ test("resetPassword rejects disabled admins without hashing the password", async
     admin,
     jwt: {
       sign: () => assert.fail("sign should not run while resetting password"),
-      verify: () => ({ id: "admin-1", otpExpiry: otpExpiryMs }),
+      verify: () => ({
+        id: "admin-1",
+        otpExpiry: otpExpiryMs,
+        resetPasswordNonce: "reset-nonce-1",
+      }),
     },
     bcrypt: {
       compare: async () => true,
@@ -746,7 +871,11 @@ test("resetPassword rejects passwords that violate the shared password policy", 
     admin,
     jwt: {
       sign: () => assert.fail("sign should not run while resetting password"),
-      verify: () => ({ id: "admin-1", otpExpiry: otpExpiryMs }),
+      verify: () => ({
+        id: "admin-1",
+        otpExpiry: otpExpiryMs,
+        resetPasswordNonce: "reset-nonce-1",
+      }),
     },
     bcrypt: {
       compare: async () => true,
@@ -778,11 +907,12 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
         _id: "admin-1",
         email: "active@example.com",
         isDisabled: false,
-        isVerified: false,
-        otp: "123456",
-        otpExpiry: new Date(otpExpiryMs),
-        otpPurpose: PASSWORD_RESET_PURPOSE,
-      };
+      isVerified: false,
+      otp: "123456",
+      otpExpiry: new Date(otpExpiryMs),
+      otpPurpose: PASSWORD_RESET_PURPOSE,
+      resetPasswordNonce: "reset-nonce-1",
+    };
     },
     updateOne: async (query, update) => {
       updateCall = { query, update };
@@ -802,7 +932,11 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
       sign: () => assert.fail("sign should not run while resetting password"),
       verify: (token, secret) => {
         verifyCall = { token, secret };
-        return { id: "admin-1", otpExpiry: otpExpiryMs };
+        return {
+          id: "admin-1",
+          otpExpiry: otpExpiryMs,
+          resetPasswordNonce: "reset-nonce-1",
+        };
       },
     },
     logEvent: (...args) => logCalls.push(args),
@@ -826,12 +960,14 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
   assert.deepEqual(updateCall.query.otp, { $exists: true, $ne: null });
   assert.equal(updateCall.query.otpPurpose, PASSWORD_RESET_PURPOSE);
   assert.deepEqual(updateCall.query.otpExpiry, { $eq: new Date(otpExpiryMs) });
+  assert.equal(updateCall.query.resetPasswordNonce, "reset-nonce-1");
   assert.deepEqual(updateCall.update, {
     $set: {
       password: "hashed-new-password",
       otp: null,
       otpExpiry: null,
       otpPurpose: null,
+      resetPasswordNonce: null,
       isVerified: true,
     },
   });
@@ -855,6 +991,7 @@ test("resetPassword accepts matching reset state after original OTP expiry when 
         otp: "123456",
         otpExpiry: new Date(otpExpiryMs),
         otpPurpose: PASSWORD_RESET_PURPOSE,
+        resetPasswordNonce: "reset-nonce-1",
       };
     },
     updateOne: async (query, update) => {
@@ -870,7 +1007,11 @@ test("resetPassword accepts matching reset state after original OTP expiry when 
     },
     jwt: {
       sign: () => assert.fail("sign should not run while resetting password"),
-      verify: () => ({ id: "admin-1", otpExpiry: otpExpiryMs }),
+      verify: () => ({
+        id: "admin-1",
+        otpExpiry: otpExpiryMs,
+        resetPasswordNonce: "reset-nonce-1",
+      }),
     },
   });
   const res = createResponse();
@@ -887,15 +1028,74 @@ test("resetPassword accepts matching reset state after original OTP expiry when 
   assert.deepEqual(updateCall.query.otp, { $exists: true, $ne: null });
   assert.equal(updateCall.query.otpPurpose, PASSWORD_RESET_PURPOSE);
   assert.deepEqual(updateCall.query.otpExpiry, { $eq: new Date(otpExpiryMs) });
+  assert.equal(updateCall.query.resetPasswordNonce, "reset-nonce-1");
   assert.deepEqual(updateCall.update, {
     $set: {
       password: "hashed-new-password",
       otp: null,
       otpExpiry: null,
       otpPurpose: null,
+      resetPasswordNonce: null,
       isVerified: true,
     },
   });
+});
+
+test("resetPassword rejects older reset tokens when the current reset nonce differs", async () => {
+  process.env.RESET_PASSWORD_SECRET = "reset-secret";
+  const otpExpiryMs = Date.now() + 60 * 1000;
+  let updateCall;
+  const currentResetState = {
+    otp: "654321",
+    otpExpiry: new Date(otpExpiryMs),
+    otpPurpose: PASSWORD_RESET_PURPOSE,
+    resetPasswordNonce: "new-reset-nonce",
+  };
+  const admin = {
+    findById: async () => ({
+      _id: "admin-1",
+      email: "active@example.com",
+      isDisabled: false,
+      ...currentResetState,
+    }),
+    updateOne: async (query, update) => {
+      updateCall = { query, update };
+      const wouldMatchCurrentMongoState =
+        query.otp?.$exists === true &&
+        query.otp?.$ne === null &&
+        query.otpPurpose === currentResetState.otpPurpose &&
+        query.otpExpiry?.$eq?.getTime?.() === otpExpiryMs &&
+        (query.resetPasswordNonce === undefined ||
+          query.resetPasswordNonce === currentResetState.resetPasswordNonce);
+
+      return { modifiedCount: wouldMatchCurrentMongoState ? 1 : 0 };
+    },
+  };
+  const { resetPassword } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => assert.fail("sign should not run while resetting password"),
+      verify: () => ({
+        id: "admin-1",
+        otpExpiry: otpExpiryMs,
+        resetPasswordNonce: "old-reset-nonce",
+      }),
+    },
+    bcrypt: {
+      compare: async () => true,
+      hash: async () => "hashed-new-password",
+    },
+  });
+  const res = createResponse();
+
+  await resetPassword(
+    { body: { token: "older-token", newPassword: "ValidPass1!" } },
+    res
+  );
+
+  assert.equal(updateCall.query.resetPasswordNonce, "old-reset-nonce");
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_RESET_TOKEN_MESSAGE });
 });
 
 test("resetPassword rejects replay after reset state is consumed", async () => {
@@ -910,12 +1110,14 @@ test("resetPassword rejects replay after reset state is consumed", async () => {
       otp: resetStateAvailable ? "123456" : null,
       otpExpiry: resetStateAvailable ? new Date(otpExpiryMs) : null,
       otpPurpose: resetStateAvailable ? PASSWORD_RESET_PURPOSE : null,
+      resetPasswordNonce: resetStateAvailable ? "reset-nonce-1" : null,
     }),
     updateOne: async (query) => {
       const requiresResetState =
         query.otp?.$exists === true &&
         query.otp?.$ne === null &&
-        query.otpExpiry?.$eq?.getTime?.() === otpExpiryMs;
+        query.otpExpiry?.$eq?.getTime?.() === otpExpiryMs &&
+        query.resetPasswordNonce === "reset-nonce-1";
 
       if (requiresResetState && resetStateAvailable) {
         resetStateAvailable = false;
@@ -929,7 +1131,11 @@ test("resetPassword rejects replay after reset state is consumed", async () => {
     admin,
     jwt: {
       sign: () => assert.fail("sign should not run while resetting password"),
-      verify: () => ({ id: "admin-1", otpExpiry: otpExpiryMs }),
+      verify: () => ({
+        id: "admin-1",
+        otpExpiry: otpExpiryMs,
+        resetPasswordNonce: "reset-nonce-1",
+      }),
     },
     bcrypt: {
       compare: async () => true,
@@ -1015,10 +1221,11 @@ test("resendOtp stores a staff verification OTP purpose using crypto randomInt",
   assert.equal(savedAdmin.otpPurpose, STAFF_VERIFICATION_PURPOSE);
 });
 
-test("Admin schema exposes an optional OTP purpose field", () => {
+test("Admin schema exposes optional OTP purpose and reset nonce fields", () => {
   clearControllerCache();
   const Admin = require("../models/Admin");
   const otpPurposePath = Admin.schema.path("otpPurpose");
+  const resetPasswordNoncePath = Admin.schema.path("resetPasswordNonce");
 
   assert.ok(otpPurposePath);
   assert.deepEqual([...otpPurposePath.enumValues].sort(), [
@@ -1026,6 +1233,9 @@ test("Admin schema exposes an optional OTP purpose field", () => {
     STAFF_VERIFICATION_PURPOSE,
   ]);
   assert.equal(otpPurposePath.defaultValue, null);
+  assert.ok(resetPasswordNoncePath);
+  assert.equal(resetPasswordNoncePath.instance, "String");
+  assert.equal(resetPasswordNoncePath.defaultValue, null);
 });
 
 test("npm test includes adminController.test.js", () => {
