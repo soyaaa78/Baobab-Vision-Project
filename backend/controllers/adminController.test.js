@@ -14,12 +14,12 @@ const jwtPath = require.resolve("jsonwebtoken");
 
 const GENERIC_RESET_REQUEST_MESSAGE =
   "If an admin account exists for that email, a reset code has been sent.";
-const RESET_EMAIL_FAILURE_MESSAGE =
-  "Unable to send password reset code. Please try again later.";
 const INVALID_OTP_MESSAGE = "Invalid or expired OTP";
 const INVALID_RESET_TOKEN_MESSAGE = "Invalid or expired reset token";
 const PASSWORD_POLICY_MESSAGE =
   "Password must be 8-32 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*)";
+const STAFF_VERIFICATION_PURPOSE = "staff_verification";
+const PASSWORD_RESET_PURPOSE = "password_reset";
 
 const originalResetSecret = process.env.RESET_PASSWORD_SECRET;
 const originalRandomInt = coreCrypto.randomInt;
@@ -126,6 +126,47 @@ test.afterEach(() => {
   }
 });
 
+test("login unverified admin stores a staff verification OTP purpose using crypto randomInt", async () => {
+  const randomIntCalls = [];
+  let updateCall;
+  coreCrypto.randomInt = (min, max) => {
+    randomIntCalls.push([min, max]);
+    return 234567;
+  };
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "staff@example.com",
+      username: "staff",
+      password: "stored-password",
+      role: "staff_product",
+      isDisabled: false,
+      isVerified: false,
+    }),
+    updateOne: async (query, update) => {
+      updateCall = { query, update };
+      return { modifiedCount: 1 };
+    },
+  };
+  const { login } = loadAdminController({
+    admin,
+    bcrypt: { compare: async () => true, hash: async () => "unused" },
+  });
+  const res = createResponse();
+
+  await login({ body: { username: "staff", password: "password" } }, res);
+
+  assert.equal(res.statusCode, 403);
+  assert.deepEqual(randomIntCalls, [[100000, 1000000]]);
+  assert.deepEqual(updateCall.query, { _id: "admin-1" });
+  assert.deepEqual(updateCall.update.$set, {
+    otp: "234567",
+    otpExpiry: updateCall.update.$set.otpExpiry,
+    otpPurpose: STAFF_VERIFICATION_PURPOSE,
+  });
+  assert.ok(Number(updateCall.update.$set.otpExpiry) > Date.now());
+});
+
 test("requestPasswordResetOtp returns generic HTTP 200 when email is not an admin account", async () => {
   const sendEmailCalls = [];
   const logCalls = [];
@@ -177,7 +218,7 @@ test("requestPasswordResetOtp does not send email for disabled admins", async ()
   assert.equal(sendEmailCalls.length, 0);
 });
 
-test("requestPasswordResetOtp returns JSON HTTP 500 when email sending fails for an active admin", async () => {
+test("requestPasswordResetOtp returns generic HTTP 200 and clears reset state when email sending fails for an active admin", async () => {
   const updateCalls = [];
   const admin = {
     findOne: async () => ({
@@ -206,15 +247,16 @@ test("requestPasswordResetOtp returns JSON HTTP 500 when email sending fails for
     );
   });
 
-  assert.equal(res.statusCode, 500);
-  assert.deepEqual(res.body, { message: RESET_EMAIL_FAILURE_MESSAGE });
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, { message: GENERIC_RESET_REQUEST_MESSAGE });
   assert.equal(updateCalls.length, 2);
   assert.deepEqual(updateCalls[0].query, { _id: "admin-1" });
   assert.match(updateCalls[0].update.$set.otp, /^\d{6}$/);
   assert.ok(Number(updateCalls[0].update.$set.otpExpiry) > Date.now());
+  assert.equal(updateCalls[0].update.$set.otpPurpose, PASSWORD_RESET_PURPOSE);
   assert.deepEqual(updateCalls[1], {
     query: { _id: "admin-1" },
-    update: { $set: { otp: null, otpExpiry: null } },
+    update: { $set: { otp: null, otpExpiry: null, otpPurpose: null } },
   });
 });
 
@@ -257,6 +299,7 @@ test("requestPasswordResetOtp stores an OTP, sends email, and logs safely for an
   assert.deepEqual(updateCall.query, { _id: "admin-1" });
   assert.equal(updateCall.update.$set.otp, "654321");
   assert.ok(Number(updateCall.update.$set.otpExpiry) > Date.now());
+  assert.equal(updateCall.update.$set.otpPurpose, PASSWORD_RESET_PURPOSE);
   assert.equal(sendEmailCalls.length, 1);
   assert.equal(logCalls.length, 1);
   const logEvents = logCalls.map((args) => args[1]);
@@ -264,6 +307,75 @@ test("requestPasswordResetOtp stores an OTP, sends email, and logs safely for an
     JSON.stringify(logEvents).includes(updateCall.update.$set.otp),
     false
   );
+});
+
+test("verifyStaffOtp rejects password reset OTPs", async () => {
+  let didUpdate = false;
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "active@example.com",
+      role: "staff_product",
+      isDisabled: false,
+      otp: "123456",
+      otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: PASSWORD_RESET_PURPOSE,
+    }),
+    updateOne: async () => {
+      didUpdate = true;
+      return { modifiedCount: 1 };
+    },
+  };
+  const { verifyStaffOtp } = loadAdminController({ admin });
+  const res = createResponse();
+
+  await verifyStaffOtp(
+    { body: { email: "active@example.com", otp: "123456" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+  assert.equal(didUpdate, false);
+});
+
+test("verifyStaffOtp clears OTP purpose after successful staff verification", async () => {
+  let updateCall;
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "active@example.com",
+      role: "staff_product",
+      isDisabled: false,
+      otp: "123456",
+      otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: STAFF_VERIFICATION_PURPOSE,
+    }),
+    updateOne: async (query, update) => {
+      updateCall = { query, update };
+      return { modifiedCount: 1 };
+    },
+  };
+  const { verifyStaffOtp } = loadAdminController({ admin });
+  const res = createResponse();
+
+  await verifyStaffOtp(
+    { body: { email: "active@example.com", otp: "123456" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(updateCall, {
+    query: { _id: "admin-1" },
+    update: {
+      $set: {
+        isVerified: true,
+        otp: null,
+        otpExpiry: null,
+        otpPurpose: null,
+      },
+    },
+  });
 });
 
 test("verifyPasswordResetOtp rejects a missing admin with a generic invalid OTP response", async () => {
@@ -288,6 +400,7 @@ test("verifyPasswordResetOtp rejects a disabled admin with a generic invalid OTP
       isDisabled: true,
       otp: "123456",
       otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: PASSWORD_RESET_PURPOSE,
     }),
   };
   const { verifyPasswordResetOtp } = loadAdminController({ admin });
@@ -310,6 +423,7 @@ test("verifyPasswordResetOtp rejects a missing stored OTP with a generic invalid
       isDisabled: false,
       otp: null,
       otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: PASSWORD_RESET_PURPOSE,
     }),
   };
   const { verifyPasswordResetOtp } = loadAdminController({ admin });
@@ -332,6 +446,7 @@ test("verifyPasswordResetOtp rejects a mismatched OTP with a generic invalid OTP
       isDisabled: false,
       otp: "123456",
       otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: PASSWORD_RESET_PURPOSE,
     }),
   };
   const { verifyPasswordResetOtp } = loadAdminController({ admin });
@@ -354,6 +469,7 @@ test("verifyPasswordResetOtp rejects an expired OTP with a generic invalid OTP r
       isDisabled: false,
       otp: "123456",
       otpExpiry: Date.now() - 1000,
+      otpPurpose: PASSWORD_RESET_PURPOSE,
     }),
   };
   const { verifyPasswordResetOtp } = loadAdminController({ admin });
@@ -368,6 +484,40 @@ test("verifyPasswordResetOtp rejects an expired OTP with a generic invalid OTP r
   assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
 });
 
+test("verifyPasswordResetOtp rejects staff verification OTPs", async () => {
+  let didSign = false;
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "active@example.com",
+      isDisabled: false,
+      otp: "123456",
+      otpExpiry: Date.now() + 60 * 1000,
+      otpPurpose: STAFF_VERIFICATION_PURPOSE,
+    }),
+  };
+  const { verifyPasswordResetOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "reset-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyPasswordResetOtp(
+    { body: { email: "active@example.com", otp: "123456" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+  assert.equal(didSign, false);
+});
+
 test("verifyPasswordResetOtp returns a reset token for a valid active admin", async () => {
   process.env.RESET_PASSWORD_SECRET = "reset-secret";
   let signCall;
@@ -380,6 +530,7 @@ test("verifyPasswordResetOtp returns a reset token for a valid active admin", as
       isDisabled: false,
       otp: "123456",
       otpExpiry,
+      otpPurpose: PASSWORD_RESET_PURPOSE,
     }),
   };
   const { verifyPasswordResetOtp } = loadAdminController({
@@ -555,6 +706,7 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
         isVerified: false,
         otp: "123456",
         otpExpiry: new Date(otpExpiryMs),
+        otpPurpose: PASSWORD_RESET_PURPOSE,
       };
     },
     updateOne: async (query, update) => {
@@ -597,6 +749,7 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
   assert.equal(updateCall.query._id, "admin-1");
   assert.deepEqual(updateCall.query.isDisabled, { $ne: true });
   assert.deepEqual(updateCall.query.otp, { $exists: true, $ne: null });
+  assert.equal(updateCall.query.otpPurpose, PASSWORD_RESET_PURPOSE);
   assert.deepEqual(updateCall.query.otpExpiry.$eq, new Date(otpExpiryMs));
   assert.ok(updateCall.query.otpExpiry.$gt instanceof Date);
   assert.deepEqual(updateCall.update, {
@@ -604,6 +757,7 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
       password: "hashed-new-password",
       otp: null,
       otpExpiry: null,
+      otpPurpose: null,
       isVerified: true,
     },
   });
@@ -624,6 +778,7 @@ test("resetPassword rejects replay after reset state is consumed", async () => {
       isDisabled: false,
       otp: resetStateAvailable ? "123456" : null,
       otpExpiry: resetStateAvailable ? new Date(otpExpiryMs) : null,
+      otpPurpose: resetStateAvailable ? PASSWORD_RESET_PURPOSE : null,
     }),
     updateOne: async (query) => {
       const requiresResetState =
@@ -700,6 +855,47 @@ test("changePassword enforces the shared password policy", async () => {
 
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: PASSWORD_POLICY_MESSAGE });
+});
+
+test("resendOtp stores a staff verification OTP purpose using crypto randomInt", async () => {
+  const randomIntCalls = [];
+  let savedAdmin;
+  coreCrypto.randomInt = (min, max) => {
+    randomIntCalls.push([min, max]);
+    return 345678;
+  };
+  const staff = {
+    _id: "admin-1",
+    email: "active@example.com",
+    isVerified: false,
+    save: async function save() {
+      savedAdmin = { ...this };
+    },
+  };
+  const admin = { findOne: async () => staff };
+  const { resendOtp } = loadAdminController({ admin });
+  const res = createResponse();
+
+  await resendOtp({ body: { email: "active@example.com" } }, res);
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(randomIntCalls, [[100000, 1000000]]);
+  assert.equal(savedAdmin.otp, "345678");
+  assert.ok(Number(savedAdmin.otpExpiry) > Date.now());
+  assert.equal(savedAdmin.otpPurpose, STAFF_VERIFICATION_PURPOSE);
+});
+
+test("Admin schema exposes an optional OTP purpose field", () => {
+  clearControllerCache();
+  const Admin = require("../models/Admin");
+  const otpPurposePath = Admin.schema.path("otpPurpose");
+
+  assert.ok(otpPurposePath);
+  assert.deepEqual([...otpPurposePath.enumValues].sort(), [
+    PASSWORD_RESET_PURPOSE,
+    STAFF_VERIFICATION_PURPOSE,
+  ]);
+  assert.equal(otpPurposePath.defaultValue, null);
 });
 
 test("npm test includes adminController.test.js", () => {

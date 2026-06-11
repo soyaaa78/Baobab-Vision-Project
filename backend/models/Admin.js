@@ -28,6 +28,11 @@ const AdminSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    otpPurpose: {
+      type: String,
+      enum: ["staff_verification", "password_reset"],
+      default: null,
+    },
     createdAt: {
       type: Date,
       default: Date.now,

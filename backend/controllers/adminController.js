@@ -8,10 +8,10 @@ const crypto = require("crypto");
 
 const OTP_EXPIRY_MS = 5 * 60 * 1000;
 const RESET_TOKEN_EXPIRY = "10m";
+const STAFF_VERIFICATION_OTP_PURPOSE = "staff_verification";
+const PASSWORD_RESET_OTP_PURPOSE = "password_reset";
 const GENERIC_RESET_REQUEST_MESSAGE =
   "If an admin account exists for that email, a reset code has been sent.";
-const RESET_EMAIL_FAILURE_MESSAGE =
-  "Unable to send password reset code. Please try again later.";
 const INVALID_OTP_MESSAGE = "Invalid or expired OTP";
 const INVALID_RESET_TOKEN_MESSAGE = "Invalid or expired reset token";
 const PASSWORD_POLICY_MESSAGE =
@@ -49,12 +49,19 @@ exports.login = async (req, res) => {
 
     if (!admin.isVerified) {
       // Only update OTP fields, not the whole document
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otp = generateOtp();
       admin.otp = otp;
       admin.otpExpiry = Date.now() + 5 * 60 * 1000;
+      admin.otpPurpose = STAFF_VERIFICATION_OTP_PURPOSE;
       await Admin.updateOne(
         { _id: admin._id },
-        { $set: { otp: admin.otp, otpExpiry: admin.otpExpiry } }
+        {
+          $set: {
+            otp: admin.otp,
+            otpExpiry: admin.otpExpiry,
+            otpPurpose: admin.otpPurpose,
+          },
+        }
       );
 
       await sendEmail(
@@ -124,7 +131,16 @@ exports.requestPasswordResetOtp = async (req, res) => {
 
     const otp = generateOtp();
     const otpExpiry = new Date(Date.now() + OTP_EXPIRY_MS);
-    await Admin.updateOne({ _id: admin._id }, { $set: { otp, otpExpiry } });
+    await Admin.updateOne(
+      { _id: admin._id },
+      {
+        $set: {
+          otp,
+          otpExpiry,
+          otpPurpose: PASSWORD_RESET_OTP_PURPOSE,
+        },
+      }
+    );
 
     try {
       await sendEmail(
@@ -136,9 +152,9 @@ exports.requestPasswordResetOtp = async (req, res) => {
       console.error("Admin password reset OTP email error:", err);
       await Admin.updateOne(
         { _id: admin._id },
-        { $set: { otp: null, otpExpiry: null } }
+        { $set: { otp: null, otpExpiry: null, otpPurpose: null } }
       );
-      return res.status(500).json({ message: RESET_EMAIL_FAILURE_MESSAGE });
+      return res.status(200).json({ message: GENERIC_RESET_REQUEST_MESSAGE });
     }
 
     logEvent(req, {
@@ -153,7 +169,7 @@ exports.requestPasswordResetOtp = async (req, res) => {
     return res.status(200).json({ message: GENERIC_RESET_REQUEST_MESSAGE });
   } catch (err) {
     console.error("Admin password reset OTP request error:", err);
-    return res.status(500).json({ message: RESET_EMAIL_FAILURE_MESSAGE });
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -173,6 +189,7 @@ exports.verifyPasswordResetOtp = async (req, res) => {
       admin.isDisabled ||
       !admin.otp ||
       !admin.otpExpiry ||
+      admin.otpPurpose !== PASSWORD_RESET_OTP_PURPOSE ||
       admin.otp !== otp ||
       !Number.isFinite(otpExpiryTime) ||
       Date.now() > otpExpiryTime
@@ -240,6 +257,7 @@ exports.resetPassword = async (req, res) => {
         _id: admin._id,
         isDisabled: { $ne: true },
         otp: { $exists: true, $ne: null },
+        otpPurpose: PASSWORD_RESET_OTP_PURPOSE,
         otpExpiry: { $eq: resetStateExpiry, $gt: now },
       },
       {
@@ -247,6 +265,7 @@ exports.resetPassword = async (req, res) => {
           password: hashedPassword,
           otp: null,
           otpExpiry: null,
+          otpPurpose: null,
           isVerified: true,
         },
       }
@@ -385,14 +404,26 @@ exports.verifyStaffOtp = async (req, res) => {
     const admin = await Admin.findOne({ email });
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
-    if (!admin.otp || admin.otp !== otp || Date.now() > admin.otpExpiry) {
+    if (
+      !admin.otp ||
+      admin.otpPurpose !== STAFF_VERIFICATION_OTP_PURPOSE ||
+      admin.otp !== otp ||
+      Date.now() > admin.otpExpiry
+    ) {
       return res.status(400).json({ message: "Invalid or expired OTP" });
     }
 
     // Only update relevant fields, do not save incomplete document
     await Admin.updateOne(
       { _id: admin._id },
-      { $set: { isVerified: true, otp: null, otpExpiry: null } }
+      {
+        $set: {
+          isVerified: true,
+          otp: null,
+          otpExpiry: null,
+          otpPurpose: null,
+        },
+      }
     );
 
     const jti = crypto.randomUUID();
@@ -430,9 +461,10 @@ exports.resendOtp = async (req, res) => {
     if (admin.isVerified)
       return res.status(400).json({ message: "Email already verified" });
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateOtp();
     admin.otp = otp;
     admin.otpExpiry = Date.now() + 5 * 60 * 1000;
+    admin.otpPurpose = STAFF_VERIFICATION_OTP_PURPOSE;
     await admin.save();
 
     await sendEmail(admin.email, "Verification OTP", `Your new OTP is: ${otp}`);
