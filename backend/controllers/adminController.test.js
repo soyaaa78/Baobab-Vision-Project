@@ -750,8 +750,7 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
   assert.deepEqual(updateCall.query.isDisabled, { $ne: true });
   assert.deepEqual(updateCall.query.otp, { $exists: true, $ne: null });
   assert.equal(updateCall.query.otpPurpose, PASSWORD_RESET_PURPOSE);
-  assert.deepEqual(updateCall.query.otpExpiry.$eq, new Date(otpExpiryMs));
-  assert.ok(updateCall.query.otpExpiry.$gt instanceof Date);
+  assert.deepEqual(updateCall.query.otpExpiry, { $eq: new Date(otpExpiryMs) });
   assert.deepEqual(updateCall.update, {
     $set: {
       password: "hashed-new-password",
@@ -765,6 +764,63 @@ test("resetPassword hashes the password, clears OTP fields, and marks unverified
   const logText = JSON.stringify(logCalls.map((args) => args[1]));
   assert.equal(logText.includes("ValidPass1!"), false);
   assert.equal(logText.includes("hashed-new-password"), false);
+});
+
+test("resetPassword accepts matching reset state after original OTP expiry when JWT is valid", async () => {
+  process.env.RESET_PASSWORD_SECRET = "reset-secret";
+  const otpExpiryMs = Date.now() - 1000;
+  let updateCall;
+  const admin = {
+    findById: async (id) => {
+      assert.equal(id, "admin-1");
+      return {
+        _id: "admin-1",
+        email: "active@example.com",
+        isDisabled: false,
+        otp: "123456",
+        otpExpiry: new Date(otpExpiryMs),
+        otpPurpose: PASSWORD_RESET_PURPOSE,
+      };
+    },
+    updateOne: async (query, update) => {
+      updateCall = { query, update };
+      return { modifiedCount: 1 };
+    },
+  };
+  const { resetPassword } = loadAdminController({
+    admin,
+    bcrypt: {
+      compare: async () => true,
+      hash: async () => "hashed-new-password",
+    },
+    jwt: {
+      sign: () => assert.fail("sign should not run while resetting password"),
+      verify: () => ({ id: "admin-1", otpExpiry: otpExpiryMs }),
+    },
+  });
+  const res = createResponse();
+
+  await resetPassword(
+    { body: { token: "valid-token", newPassword: "ValidPass1!" } },
+    res
+  );
+
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, { message: "Password reset successful" });
+  assert.equal(updateCall.query._id, "admin-1");
+  assert.deepEqual(updateCall.query.isDisabled, { $ne: true });
+  assert.deepEqual(updateCall.query.otp, { $exists: true, $ne: null });
+  assert.equal(updateCall.query.otpPurpose, PASSWORD_RESET_PURPOSE);
+  assert.deepEqual(updateCall.query.otpExpiry, { $eq: new Date(otpExpiryMs) });
+  assert.deepEqual(updateCall.update, {
+    $set: {
+      password: "hashed-new-password",
+      otp: null,
+      otpExpiry: null,
+      otpPurpose: null,
+      isVerified: true,
+    },
+  });
 });
 
 test("resetPassword rejects replay after reset state is consumed", async () => {
@@ -784,8 +840,7 @@ test("resetPassword rejects replay after reset state is consumed", async () => {
       const requiresResetState =
         query.otp?.$exists === true &&
         query.otp?.$ne === null &&
-        query.otpExpiry?.$eq?.getTime?.() === otpExpiryMs &&
-        query.otpExpiry?.$gt instanceof Date;
+        query.otpExpiry?.$eq?.getTime?.() === otpExpiryMs;
 
       if (requiresResetState && resetStateAvailable) {
         resetStateAvailable = false;

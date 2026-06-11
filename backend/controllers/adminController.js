@@ -237,11 +237,6 @@ exports.resetPassword = async (req, res) => {
     }
 
     const resetStateExpiry = new Date(resetStateExpiryTime);
-    const now = new Date();
-    if (resetStateExpiry <= now) {
-      return res.status(400).json({ message: INVALID_RESET_TOKEN_MESSAGE });
-    }
-
     const admin = await Admin.findById(decoded.id);
     if (!admin || admin.isDisabled) {
       return res.status(400).json({ message: INVALID_RESET_TOKEN_MESSAGE });
@@ -258,7 +253,7 @@ exports.resetPassword = async (req, res) => {
         isDisabled: { $ne: true },
         otp: { $exists: true, $ne: null },
         otpPurpose: PASSWORD_RESET_OTP_PURPOSE,
-        otpExpiry: { $eq: resetStateExpiry, $gt: now },
+        otpExpiry: { $eq: resetStateExpiry },
       },
       {
         $set: {
