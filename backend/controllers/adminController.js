@@ -16,6 +16,8 @@ const INVALID_OTP_MESSAGE = "Invalid or expired OTP";
 const INVALID_RESET_TOKEN_MESSAGE = "Invalid or expired reset token";
 const PASSWORD_POLICY_MESSAGE =
   "Password must be 8-32 characters long and include at least one uppercase letter, one lowercase letter, one number, and one special character (!@#$%^&*)";
+const SAFE_ADMIN_SELECT =
+  "-password -otp -otpExpiry -otpPurpose -resetPasswordNonce";
 
 const generateOtp = () => crypto.randomInt(100000, 1000000).toString();
 
@@ -33,9 +35,14 @@ const isValidAdminPassword = (password) =>
 
 // LOGIN
 exports.login = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password } = req.body || {};
+  const requestUsername = getNonEmptyRequestString(username);
   try {
-    const admin = await Admin.findOne({ username });
+    if (!requestUsername) {
+      return res.status(404).json({ message: "Admin not found" });
+    }
+
+    const admin = await Admin.findOne({ username: requestUsername });
 
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
@@ -225,6 +232,7 @@ exports.verifyPasswordResetOtp = async (req, res) => {
         otp: requestOtp,
         otpPurpose: PASSWORD_RESET_OTP_PURPOSE,
         otpExpiry: { $eq: admin.otpExpiry, $gt: new Date() },
+        resetPasswordNonce: null,
       },
       { $set: { resetPasswordNonce } }
     );
@@ -388,7 +396,7 @@ exports.getAllStaff = async (req, res) => {
     // Get all staff_product and staff_order roles
     const staff = await Admin.find({
       role: { $in: ["staff_product", "staff_order"] },
-    }).select("-password");
+    }).select(SAFE_ADMIN_SELECT);
     res.status(200).json(staff);
   } catch (err) {
     console.error("Get all staff error:", err);
@@ -706,9 +714,7 @@ exports.deleteStaff = async (req, res) => {
 // GET STAFF PROFILE
 exports.getStaffProfile = async (req, res) => {
   try {
-    const staff = await Admin.findById(req.user.id).select(
-      "-password -otp -otpExpiry"
-    );
+    const staff = await Admin.findById(req.user.id).select(SAFE_ADMIN_SELECT);
     if (!staff) {
       return res.status(404).json({ message: "Staff not found" });
     }

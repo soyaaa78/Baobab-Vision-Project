@@ -128,6 +128,43 @@ test.afterEach(() => {
   }
 });
 
+const SAFE_ADMIN_SELECT =
+  "-password -otp -otpExpiry -otpPurpose -resetPasswordNonce";
+
+test("login rejects object-valued username before querying or signing", async () => {
+  let didCompare = false;
+  let didSign = false;
+  const admin = {
+    findOne: async () => assert.fail("object username should not query admin"),
+    updateOne: async () => assert.fail("object username should not update admin"),
+  };
+  const { login } = loadAdminController({
+    admin,
+    bcrypt: {
+      compare: async () => {
+        didCompare = true;
+        return true;
+      },
+      hash: async () => "unused",
+    },
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "admin-token";
+      },
+      verify: () => assert.fail("verify should not run while logging in"),
+    },
+  });
+  const res = createResponse();
+
+  await login({ body: { username: { $ne: null }, password: "password" } }, res);
+
+  assert.equal(res.statusCode, 404);
+  assert.deepEqual(res.body, { message: "Admin not found" });
+  assert.equal(didCompare, false);
+  assert.equal(didSign, false);
+});
+
 test("login unverified admin stores a staff verification OTP purpose using crypto randomInt", async () => {
   const randomIntCalls = [];
   let updateCall;
@@ -877,6 +914,7 @@ test("verifyPasswordResetOtp returns a reset token for a valid active admin", as
   assert.equal(updateCall.query.otpPurpose, PASSWORD_RESET_PURPOSE);
   assert.deepEqual(updateCall.query.otpExpiry.$eq, otpExpiry);
   assert.ok(updateCall.query.otpExpiry.$gt instanceof Date);
+  assert.equal(updateCall.query.resetPasswordNonce, null);
   assert.deepEqual(updateCall.update, {
     $set: { resetPasswordNonce: "reset-nonce-1" },
   });
@@ -939,6 +977,104 @@ test("verifyPasswordResetOtp rejects when OTP expires before the nonce write", a
   assert.equal(res.statusCode, 400);
   assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
   assert.equal(didSign, false);
+});
+
+test("verifyPasswordResetOtp rejects repeated token minting when a reset nonce already exists", async () => {
+  process.env.RESET_PASSWORD_SECRET = "reset-secret";
+  let didSign = false;
+  let updateQuery;
+  const otpExpiry = new Date(Date.now() + 60 * 1000);
+  coreCrypto.randomUUID = () => "new-reset-nonce";
+  const admin = {
+    findOne: async () => ({
+      _id: "admin-1",
+      email: "active@example.com",
+      isDisabled: false,
+      otp: "123456",
+      otpExpiry,
+      otpPurpose: PASSWORD_RESET_PURPOSE,
+      resetPasswordNonce: "existing-reset-nonce",
+    }),
+    updateOne: async (query) => {
+      updateQuery = query;
+      return { modifiedCount: query.resetPasswordNonce === null ? 0 : 1 };
+    },
+  };
+  const { verifyPasswordResetOtp } = loadAdminController({
+    admin,
+    jwt: {
+      sign: () => {
+        didSign = true;
+        return "reset-token";
+      },
+      verify: () => assert.fail("verify should not run while verifying OTP"),
+    },
+  });
+  const res = createResponse();
+
+  await verifyPasswordResetOtp(
+    { body: { email: "active@example.com", otp: "123456" } },
+    res
+  );
+
+  assert.equal(updateQuery.resetPasswordNonce, null);
+  assert.equal(res.statusCode, 400);
+  assert.deepEqual(res.body, { message: INVALID_OTP_MESSAGE });
+  assert.equal(didSign, false);
+});
+
+test("getAllStaff excludes sensitive admin auth fields", async () => {
+  let findQuery;
+  let selectedFields;
+  const staffRecords = [{ _id: "staff-1", email: "staff@example.com" }];
+  const admin = {
+    find: (query) => {
+      findQuery = query;
+      return {
+        select: async (fields) => {
+          selectedFields = fields;
+          return staffRecords;
+        },
+      };
+    },
+  };
+  const { getAllStaff } = loadAdminController({ admin });
+  const res = createResponse();
+
+  await getAllStaff({}, res);
+
+  assert.deepEqual(findQuery, {
+    role: { $in: ["staff_product", "staff_order"] },
+  });
+  assert.equal(selectedFields, SAFE_ADMIN_SELECT);
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, staffRecords);
+});
+
+test("getStaffProfile excludes sensitive admin auth fields", async () => {
+  let findByIdCall;
+  let selectedFields;
+  const staffProfile = { _id: "staff-1", email: "staff@example.com" };
+  const admin = {
+    findById: (id) => {
+      findByIdCall = id;
+      return {
+        select: async (fields) => {
+          selectedFields = fields;
+          return staffProfile;
+        },
+      };
+    },
+  };
+  const { getStaffProfile } = loadAdminController({ admin });
+  const res = createResponse();
+
+  await getStaffProfile({ user: { id: "staff-1" } }, res);
+
+  assert.equal(findByIdCall, "staff-1");
+  assert.equal(selectedFields, SAFE_ADMIN_SELECT);
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, staffProfile);
 });
 
 test("resetPassword rejects invalid or expired reset tokens", async () => {

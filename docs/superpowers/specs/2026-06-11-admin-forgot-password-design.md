@@ -21,6 +21,7 @@ Add a forgot-password flow for the web admin login screen so staff and system ad
 - Allow unverified staff accounts to reset their password; successful reset also marks the account verified.
 - Reuse `Admin.otp` and `Admin.otpExpiry` for reset OTPs, with `Admin.otpPurpose` set to `password_reset` so reset codes cannot be used on the staff verification endpoint.
 - Staff email verification OTPs use `otpPurpose: staff_verification` so they cannot be exchanged for password-reset tokens.
+- Do not expose admin auth-state fields (`otp`, `otpExpiry`, `otpPurpose`, `resetPasswordNonce`, or `password`) in staff list/profile responses.
 - During rollout, staff verification may also accept legacy null-purpose OTPs only for unverified, enabled admins; password-reset verification must never accept null-purpose OTPs.
 - Enforce the shared strong password policy server-side.
 - Write audit events for reset request, OTP verification, and reset completion when an admin account exists.
@@ -53,6 +54,7 @@ Implement handlers in `backend/controllers/adminController.js`.
 - Finds the admin by email and rejects missing, disabled, missing OTP, non-`password_reset` purpose, mismatched OTP, or expired OTP with a generic invalid/expired OTP response.
 - On success, generates and stores a CSPRNG `resetPasswordNonce`, then returns a reset token signed with `RESET_PASSWORD_SECRET` and valid for 10 minutes.
 - The nonce write is atomic and requires the matching reset OTP state to still be unexpired.
+- The nonce write also requires `resetPasswordNonce: null`, so a reset OTP can mint only one reset token until a new reset OTP is requested.
 - The reset token includes the current reset-state fields (`otpExpiry` and `resetPasswordNonce`) and can only be used while the matching `password_reset` OTP state still exists.
 - Logs a safe audit event.
 
@@ -97,6 +99,7 @@ CSS additions should stay within `web-app/src/styles/LoginPage.css` and reuse th
 - Do not reveal email delivery failures from the reset-request endpoint.
 - Do not expose disabled account status in public reset endpoints.
 - Do not log OTPs, reset tokens, or password values.
+- Do not expose admin OTP or reset nonce fields through staff/profile reads.
 - Separate staff verification OTPs from password-reset OTPs with `otpPurpose` checks.
 - Clear OTP fields and `otpPurpose` after successful staff verification, after successful reset, and after failed reset email delivery; clear `resetPasswordNonce` whenever password-reset OTP state is invalidated.
 - Keep reset tokens short-lived at 10 minutes.
@@ -119,6 +122,7 @@ Cover:
 - OTP verification rejects non-string or empty email/OTP values before querying.
 - OTP verification rejects OTPs created for the other admin OTP purpose.
 - OTP verification returns a reset token with a stored reset nonce for a valid active admin.
+- OTP verification rejects repeated reset-token minting when a reset nonce already exists.
 - Password reset rejects invalid or expired reset tokens.
 - Password reset rejects passwords that violate the shared policy.
 - Password reset hashes the password, requires matching `password_reset` OTP state and reset nonce, clears OTP fields, `otpPurpose`, and `resetPasswordNonce`, and marks unverified admins verified.
