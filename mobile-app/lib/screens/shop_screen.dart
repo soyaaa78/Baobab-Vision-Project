@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:baobab_vision_project/models/productModel.dart';
 import 'package:baobab_vision_project/screens/detail_screen.dart';
 import 'package:baobab_vision_project/screens/recommender_screen.dart';
-import 'package:baobab_vision_project/screens/vto_screen.dart';
+import 'package:baobab_vision_project/screens/native_vto_screen.dart';
 import 'package:baobab_vision_project/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -299,7 +299,7 @@ class _ShopScreenState extends State<ShopScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => VirtualTryOnScreen()),
+                            builder: (context) => const NativeVtoScreen()),
                       );
                     },
                     style: ElevatedButton.styleFrom(

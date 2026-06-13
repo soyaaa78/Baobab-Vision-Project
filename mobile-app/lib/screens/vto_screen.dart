@@ -23,7 +23,7 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
 
   static const String _defaultBaseUrl = String.fromEnvironment(
     'VTO_WEB_BASE_URL',
-    defaultValue: 'https://baobab-vto.vercel.app',
+    defaultValue: 'https://baobab-vto.netlify.app',
   );
   static const String _defaultModelSlug = 'lana';
   static const String _defaultVariantSlug = 'rich-black';
