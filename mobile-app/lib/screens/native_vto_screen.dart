@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_mesh_detection/google_mlkit_face_mesh_detection.dart';
 import 'dart:io';
-import 'package:flutter/services.dart';
+import '../services/face_tracker_service.dart';
+import '../models/face_anchor_data.dart';
 
 class NativeVtoScreen extends StatefulWidget {
   const NativeVtoScreen({Key? key}) : super(key: key);
@@ -13,9 +14,9 @@ class NativeVtoScreen extends StatefulWidget {
 
 class _NativeVtoScreenState extends State<NativeVtoScreen> {
   CameraController? _cameraController;
-  FaceMeshDetector? _faceMeshDetector;
-  bool _isDetecting = false;
-  FaceMesh? _activeFaceMesh;
+  final FaceTrackerService _faceTrackerService = FaceTrackerService();
+  
+  FaceAnchorData? _activeAnchorData;
   Size? _imageSize;
   InputImageRotation? _imageRotation;
   String _debugInfo = "Initializing...";
@@ -27,7 +28,18 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
   }
 
   Future<void> _initializeDetectorAndCamera() async {
-    _faceMeshDetector = FaceMeshDetector(option: FaceMeshDetectorOptions.faceMesh);
+    _faceTrackerService.faceAnchorStream.listen((anchorData) {
+      if (!mounted) return;
+      setState(() {
+        if (anchorData.isTracking) {
+          _activeAnchorData = anchorData;
+          _debugInfo = "Face tracked: ${anchorData.landmarks.length} points";
+        } else {
+          _activeAnchorData = null;
+          _debugInfo = "Searching for face...";
+        }
+      });
+    });
 
     final cameras = await availableCameras();
     final frontCamera = cameras.firstWhere(
@@ -58,71 +70,20 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
 
   void _startStream() {
     _cameraController?.startImageStream((CameraImage image) {
-      if (_isDetecting) return;
-      _isDetecting = true;
-      _processImage(image, _cameraController!.description.sensorOrientation);
+      if (!mounted) return;
+      // Keep track of the image dimensions and orientation for the debug painter
+      _imageSize = Size(image.width.toDouble(), image.height.toDouble());
+      _imageRotation = InputImageRotationValue.fromRawValue(_cameraController!.description.sensorOrientation) ?? InputImageRotation.rotation0deg;
+      
+      _faceTrackerService.processCameraImage(image, _cameraController!.description.sensorOrientation);
     });
-  }
-
-  Future<void> _processImage(CameraImage image, int sensorOrientation) async {
-    final inputImage = _convertCameraImage(image, sensorOrientation);
-    if (inputImage == null) {
-      _isDetecting = false;
-      return;
-    }
-
-    try {
-      final faceMeshes = await _faceMeshDetector!.processImage(inputImage);
-      if (mounted) {
-        setState(() {
-          if (faceMeshes.isNotEmpty) {
-            _activeFaceMesh = faceMeshes.first;
-            _imageSize = Size(image.width.toDouble(), image.height.toDouble());
-            _imageRotation = inputImage.metadata?.rotation;
-            _debugInfo = "Face tracked: ${_activeFaceMesh!.points.length} points";
-          } else {
-            _activeFaceMesh = null;
-            _debugInfo = "Searching for face...";
-          }
-        });
-      }
-    } catch (e) {
-      print("Error processing face mesh: $e");
-    } finally {
-      if (mounted) {
-        _isDetecting = false;
-      }
-    }
-  }
-
-  InputImage? _convertCameraImage(CameraImage image, int sensorOrientation) {
-    final format = InputImageFormatValue.fromRawValue(image.format.raw) ??
-        (Platform.isAndroid ? InputImageFormat.nv21 : InputImageFormat.bgra8888);
-
-    final rotation = InputImageRotationValue.fromRawValue(sensorOrientation) ??
-        InputImageRotation.rotation0deg;
-
-    final bytes = WriteBuffer();
-    for (final plane in image.planes) {
-      bytes.putUint8List(plane.bytes);
-    }
-
-    return InputImage.fromBytes(
-      bytes: bytes.done().buffer.asUint8List(),
-      metadata: InputImageMetadata(
-        size: Size(image.width.toDouble(), image.height.toDouble()),
-        rotation: rotation,
-        format: format,
-        bytesPerRow: image.planes[0].bytesPerRow,
-      ),
-    );
   }
 
   @override
   void dispose() {
     _cameraController?.stopImageStream();
     _cameraController?.dispose();
-    _faceMeshDetector?.close();
+    _faceTrackerService.dispose();
     super.dispose();
   }
 
@@ -146,10 +107,10 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
         fit: StackFit.expand,
         children: [
           CameraPreview(_cameraController!),
-          if (_activeFaceMesh != null && _imageSize != null && _imageRotation != null)
+          if (_activeAnchorData != null && _imageSize != null && _imageRotation != null)
             CustomPaint(
               painter: FaceMeshDebugPainter(
-                _activeFaceMesh!,
+                _activeAnchorData!,
                 _imageSize!,
                 _imageRotation!,
               ),
@@ -175,11 +136,11 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
 }
 
 class FaceMeshDebugPainter extends CustomPainter {
-  final FaceMesh faceMesh;
+  final FaceAnchorData anchorData;
   final Size imageSize;
   final InputImageRotation rotation;
 
-  FaceMeshDebugPainter(this.faceMesh, this.imageSize, this.rotation);
+  FaceMeshDebugPainter(this.anchorData, this.imageSize, this.rotation);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -211,7 +172,7 @@ class FaceMeshDebugPainter extends CustomPainter {
       offsetY = (size.height - previewRenderBoxSize.height * scale) / 2;
     }
 
-    for (final point in faceMesh.points) {
+    for (final point in anchorData.landmarks) {
       double x = point.x * scale + offsetX;
       double y = point.y * scale + offsetY;
 
@@ -224,7 +185,7 @@ class FaceMeshDebugPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(FaceMeshDebugPainter oldDelegate) {
-    return oldDelegate.faceMesh != faceMesh ||
+    return oldDelegate.anchorData != anchorData ||
            oldDelegate.imageSize != imageSize ||
            oldDelegate.rotation != rotation;
   }
