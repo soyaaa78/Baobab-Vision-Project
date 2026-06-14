@@ -16,8 +16,6 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
   final ArSessionService _arSession = ArSessionService();
 
   FaceAnchorData? _activeAnchorData;
-  Size? _imageSize;
-  InputImageRotation? _imageRotation;
   String _debugInfo = 'Initializing...';
   bool _cameraReady = false;
 
@@ -56,14 +54,6 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
       setState(() {
         if (anchorData.isTracking && controller != null) {
           _activeAnchorData = anchorData;
-          // previewSize on Android is reported as (height × width), so swap.
-          final preview = controller.value.previewSize!;
-          _imageSize = Size(preview.height, preview.width);
-          _imageRotation =
-              InputImageRotationValue.fromRawValue(
-                controller.description.sensorOrientation,
-              ) ??
-              InputImageRotation.rotation0deg;
           _debugInfo = 'Face tracked: ${anchorData.landmarks.length} points';
         } else {
           _activeAnchorData = null;
@@ -84,8 +74,20 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
     final controller = _arSession.cameraController;
     final isInitialized = controller != null && controller.value.isInitialized;
 
+    Size? previewSize;
+    InputImageRotation? imageRotation;
+
+    if (isInitialized && controller.value.previewSize != null) {
+      final p = controller.value.previewSize!;
+      previewSize = Size(p.height, p.width);
+      imageRotation = InputImageRotationValue.fromRawValue(
+            controller.description.sensorOrientation,
+          ) ??
+          InputImageRotation.rotation0deg;
+    }
+
     // Show spinner + status while session is starting.
-    if (!_cameraReady || !isInitialized) {
+    if (!_cameraReady || !isInitialized || previewSize == null) {
       return Scaffold(
         backgroundColor: Colors.black,
         body: Center(
@@ -118,17 +120,22 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
         fit: StackFit.expand,
         children: [
           // Live camera feed
-          CameraPreview(controller),
+          FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: previewSize.width,
+              height: previewSize.height,
+              child: CameraPreview(controller),
+            ),
+          ),
 
           // 468-point face mesh overlay
-          if (_activeAnchorData != null &&
-              _imageSize != null &&
-              _imageRotation != null)
+          if (_activeAnchorData != null)
             CustomPaint(
               painter: FaceMeshDebugPainter(
                 _activeAnchorData!,
-                _imageSize!,
-                _imageRotation!,
+                previewSize,
+                imageRotation!,
               ),
             ),
 

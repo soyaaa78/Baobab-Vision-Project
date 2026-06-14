@@ -69,10 +69,6 @@ class ArSessionService with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
-      // Only tear down on paused/detached — not inactive.
-      // inactive fires transiently (Overview button, in-app dialogs) and
-      // is always followed by either paused or resumed, so we let those
-      // states drive the actual camera lifecycle.
       case AppLifecycleState.paused:
       case AppLifecycleState.detached:
         pause();
@@ -112,7 +108,7 @@ class ArSessionService with WidgetsBindingObserver {
 
         _cameraController = CameraController(
           frontCamera,
-          ResolutionPreset.high,
+          ResolutionPreset.low,
           enableAudio: false,
           imageFormatGroup: Platform.isAndroid
               ? ImageFormatGroup.nv21
