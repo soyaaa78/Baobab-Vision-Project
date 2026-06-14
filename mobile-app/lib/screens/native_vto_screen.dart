@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mlkit_face_mesh_detection/google_mlkit_face_mesh_detection.dart';
-import 'dart:io';
-import '../services/face_tracker_service.dart';
+
 import '../models/face_anchor_data.dart';
+import '../services/ar_session_service.dart';
 
 class NativeVtoScreen extends StatefulWidget {
   const NativeVtoScreen({Key? key}) : super(key: key);
@@ -13,101 +13,117 @@ class NativeVtoScreen extends StatefulWidget {
 }
 
 class _NativeVtoScreenState extends State<NativeVtoScreen> {
-  CameraController? _cameraController;
-  final FaceTrackerService _faceTrackerService = FaceTrackerService();
-  
+  final ArSessionService _arSession = ArSessionService();
+
   FaceAnchorData? _activeAnchorData;
   Size? _imageSize;
   InputImageRotation? _imageRotation;
-  String _debugInfo = "Initializing...";
+  String _debugInfo = 'Initializing...';
+  bool _cameraReady = false;
 
   @override
   void initState() {
     super.initState();
-    _initializeDetectorAndCamera();
+    _start();
   }
 
-  Future<void> _initializeDetectorAndCamera() async {
-    _faceTrackerService.faceAnchorStream.listen((anchorData) {
-      if (!mounted) return;
-      setState(() {
-        if (anchorData.isTracking) {
-          _activeAnchorData = anchorData;
-          _debugInfo = "Face tracked: ${anchorData.landmarks.length} points";
-        } else {
-          _activeAnchorData = null;
-          _debugInfo = "Searching for face...";
-        }
-      });
-    });
+  Future<void> _start() async {
+    _arSession.onStateChanged = () {
+      if (mounted) setState(() {});
+    };
 
-    final cameras = await availableCameras();
-    final frontCamera = cameras.firstWhere(
-      (c) => c.lensDirection == CameraLensDirection.front,
-      orElse: () => cameras.first,
-    );
+    // Gate: ensure device can support face tracking before we start.
+    final supported = await ArSessionService.isFaceTrackingSupported();
+    if (!mounted) return;
 
-    _cameraController = CameraController(
-      frontCamera,
-      ResolutionPreset.high,
-      enableAudio: false,
-      imageFormatGroup: Platform.isAndroid ? ImageFormatGroup.nv21 : ImageFormatGroup.bgra8888,
-    );
+    if (!supported) {
+      setState(() => _debugInfo = 'Face tracking not supported on this device.');
+      return;
+    }
 
-    await _cameraController!.initialize();
+    await _arSession.start();
     if (!mounted) return;
 
     setState(() {
-      _debugInfo = "Camera ready. Searching for face...";
+      _cameraReady = true;
+      _debugInfo = 'Camera ready. Searching for face...';
     });
 
-    // Wait for CameraPreview to attach its Surface before reconfiguring
-    // the session with an image stream. Without this delay the session
-    // closes before the preview surface is ready (mirrors recommender_screen.dart).
-    await Future.delayed(const Duration(milliseconds: 400));
-    if (mounted) _startStream();
-  }
-
-  void _startStream() {
-    _cameraController?.startImageStream((CameraImage image) {
+    // Listen to FaceAnchorData emitted by the session service.
+    _arSession.faceAnchorStream.listen((anchorData) {
       if (!mounted) return;
-      // Keep track of the image dimensions and orientation for the debug painter
-      _imageSize = Size(image.width.toDouble(), image.height.toDouble());
-      _imageRotation = InputImageRotationValue.fromRawValue(_cameraController!.description.sensorOrientation) ?? InputImageRotation.rotation0deg;
-      
-      _faceTrackerService.processCameraImage(image, _cameraController!.description.sensorOrientation);
+      final controller = _arSession.cameraController;
+      setState(() {
+        if (anchorData.isTracking && controller != null) {
+          _activeAnchorData = anchorData;
+          // previewSize on Android is reported as (height × width), so swap.
+          final preview = controller.value.previewSize!;
+          _imageSize = Size(preview.height, preview.width);
+          _imageRotation =
+              InputImageRotationValue.fromRawValue(
+                controller.description.sensorOrientation,
+              ) ??
+              InputImageRotation.rotation0deg;
+          _debugInfo = 'Face tracked: ${anchorData.landmarks.length} points';
+        } else {
+          _activeAnchorData = null;
+          _debugInfo = 'Searching for face...';
+        }
+      });
     });
   }
 
   @override
   void dispose() {
-    _cameraController?.stopImageStream();
-    _cameraController?.dispose();
-    _faceTrackerService.dispose();
+    _arSession.stop();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_cameraController == null || !_cameraController!.value.isInitialized) {
-      return const Scaffold(
+    final controller = _arSession.cameraController;
+    final isInitialized = controller != null && controller.value.isInitialized;
+
+    // Show spinner + status while session is starting.
+    if (!_cameraReady || !isInitialized) {
+      return Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: Colors.white),
+              const SizedBox(height: 16),
+              Text(
+                _debugInfo,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Native VTO (Debug)', style: TextStyle(color: Colors.white)),
+        title: const Text(
+          'Native VTO (Debug)',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.transparent,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          CameraPreview(_cameraController!),
-          if (_activeAnchorData != null && _imageSize != null && _imageRotation != null)
+          // Live camera feed
+          CameraPreview(controller),
+
+          // 468-point face mesh overlay
+          if (_activeAnchorData != null &&
+              _imageSize != null &&
+              _imageRotation != null)
             CustomPaint(
               painter: FaceMeshDebugPainter(
                 _activeAnchorData!,
@@ -115,6 +131,8 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
                 _imageRotation!,
               ),
             ),
+
+          // Debug status bar
           Positioned(
             bottom: 40,
             left: 20,
@@ -124,7 +142,8 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
               color: Colors.black54,
               child: Text(
                 _debugInfo,
-                style: const TextStyle(color: Colors.greenAccent, fontSize: 16),
+                style:
+                    const TextStyle(color: Colors.greenAccent, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -134,6 +153,8 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
     );
   }
 }
+
+// ── Debug Painter ──────────────────────────────────────────────────────────────
 
 class FaceMeshDebugPainter extends CustomPainter {
   final FaceAnchorData anchorData;
@@ -148,22 +169,18 @@ class FaceMeshDebugPainter extends CustomPainter {
       ..color = Colors.greenAccent
       ..style = PaintingStyle.fill;
 
-    // Handle rotation by swapping dimensions for portrait
-    Size previewRenderBoxSize;
-    if (rotation == InputImageRotation.rotation90deg || rotation == InputImageRotation.rotation270deg) {
-      previewRenderBoxSize = Size(imageSize.height, imageSize.width);
-    } else {
-      previewRenderBoxSize = imageSize;
-    }
+    // imageSize is already swapped in _start() to match the portrait orientation
+    final Size previewRenderBoxSize = imageSize;
 
-    final double arPreview = previewRenderBoxSize.width / previewRenderBoxSize.height;
+    final double arPreview =
+        previewRenderBoxSize.width / previewRenderBoxSize.height;
     final double arContainer = size.width / size.height;
 
     double scale;
     double offsetX = 0.0;
     double offsetY = 0.0;
 
-    // Calculate scale and offset to match CameraPreview's BoxFit.cover behavior
+    // Match CameraPreview's BoxFit.cover behaviour.
     if (arPreview > arContainer) {
       scale = size.height / previewRenderBoxSize.height;
       offsetX = (size.width - previewRenderBoxSize.width * scale) / 2;
@@ -174,9 +191,9 @@ class FaceMeshDebugPainter extends CustomPainter {
 
     for (final point in anchorData.landmarks) {
       double x = point.x * scale + offsetX;
-      double y = point.y * scale + offsetY;
+      final double y = point.y * scale + offsetY;
 
-      // Assume front camera (mirrored)
+      // Mirror horizontally for front camera.
       x = size.width - x;
 
       canvas.drawCircle(Offset(x, y), 2, paint);
@@ -186,7 +203,7 @@ class FaceMeshDebugPainter extends CustomPainter {
   @override
   bool shouldRepaint(FaceMeshDebugPainter oldDelegate) {
     return oldDelegate.anchorData != anchorData ||
-           oldDelegate.imageSize != imageSize ||
-           oldDelegate.rotation != rotation;
+        oldDelegate.imageSize != imageSize ||
+        oldDelegate.rotation != rotation;
   }
 }
