@@ -78,7 +78,7 @@ class FaceTrackerService {
 
   FaceAnchorData _calculateFaceAnchorData(FaceMesh faceMesh) {
     final landmarks = faceMesh.points
-        .map((p) => Vector3(p.x.toDouble(), p.y.toDouble(), p.z.toDouble()))
+        .map((p) => Vector3(p.x.toDouble(), p.y.toDouble(), -p.z.toDouble()))
         .toList();
 
     if (landmarks.length < 468) return FaceAnchorData.mock();
@@ -99,10 +99,16 @@ class FaceTrackerService {
     final orthogonalY = zAxis.cross(xAxis).normalized();
 
     final transform = Matrix4.identity();
-    transform.setColumn(0, Vector4(xAxis.x, xAxis.y, xAxis.z, 0.0));
-    transform.setColumn(1, Vector4(orthogonalY.x, orthogonalY.y, orthogonalY.z, 0.0));
+    // Negate X and Y axes to get a proper rotation matrix (det = +1).
+    // - X is negated for front-camera horizontal mirroring.
+    // - Y is negated to keep the model right-side up.
+    // - Z is left as-is. Negating all three (det = -1) created an improper
+    //   rotation that reflected roll, causing glasses to tilt opposite to
+    //   the user's head.
+    transform.setColumn(0, Vector4(-xAxis.x, -xAxis.y, -xAxis.z, 0.0));
+    transform.setColumn(1, Vector4(-orthogonalY.x, -orthogonalY.y, -orthogonalY.z, 0.0));
     transform.setColumn(2, Vector4(zAxis.x, zAxis.y, zAxis.z, 0.0));
-    transform.setColumn(3, Vector4(nosebridge.x, nosebridge.y, nosebridge.z, 1.0));
+    transform.setColumn(3, Vector4(nosebridge.x, nosebridge.y, -nosebridge.z, 1.0));
 
     return FaceAnchorData(
       transform: transform,

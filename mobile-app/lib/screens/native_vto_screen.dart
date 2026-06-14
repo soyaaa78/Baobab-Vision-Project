@@ -4,6 +4,7 @@ import 'package:google_mlkit_face_mesh_detection/google_mlkit_face_mesh_detectio
 
 import '../models/face_anchor_data.dart';
 import '../services/ar_session_service.dart';
+import '../widgets/glasses_renderer.dart';
 
 class NativeVtoScreen extends StatefulWidget {
   const NativeVtoScreen({Key? key}) : super(key: key);
@@ -138,6 +139,13 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
                 imageRotation!,
               ),
             ),
+
+          // Proof of Concept 3D Glasses Rendering
+          GlassesRenderer(
+            glbPath: 'assets/models/bennett/rich-black.glb', // Hardcoded for testing
+            faceDataStream: _arSession.faceAnchorStream,
+            previewSize: previewSize,
+          ),
 
           // Debug status bar
           Positioned(
