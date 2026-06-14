@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'package:baobab_vision_project/screens/email_otp_verification_screen.dart';
 import 'package:baobab_vision_project/screens/email_verification_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_client.dart';
 import '../constants.dart';
 import '../screens/home_screen.dart';
+import '../screens/native_vto_screen.dart';
 import '../widgets/custom_dialog.dart';
 import '../widgets/custom_inkwell_button.dart';
 import '../widgets/custom_text.dart';
@@ -243,6 +245,35 @@ class _LogInScreenState extends State<LogInScreen> {
                           ),
                         ),
                       ),
+
+                      // DEV ONLY: skip auth and jump straight to NativeVtoScreen.
+                      // Stripped out automatically in release builds.
+                      if (kDebugMode) ...[
+                        SizedBox(height: 12.h),
+                        OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const NativeVtoScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.developer_mode, size: 16),
+                          label: Text(
+                            '[DEV] Skip to VTO',
+                            style: TextStyle(fontSize: 13.sp),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.deepPurple,
+                            side: const BorderSide(color: Colors.deepPurple),
+                            minimumSize: Size(double.infinity, 40.h),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.r),
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
