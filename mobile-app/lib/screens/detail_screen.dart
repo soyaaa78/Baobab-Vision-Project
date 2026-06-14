@@ -1,5 +1,5 @@
 // import 'package:baobab_vision_project/screens/cart_screen.dart';
-import 'package:baobab_vision_project/screens/vto_screen.dart';
+import 'package:baobab_vision_project/screens/native_vto_screen.dart';
 import 'package:baobab_vision_project/screens/reviews_screen.dart';
 import 'package:baobab_vision_project/widgets/cart_animation_button.dart';
 import 'package:flutter/material.dart';
@@ -611,7 +611,7 @@ class _DetailScreenState extends State<DetailScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => VirtualTryOnScreen()),
+                                builder: (context) => const NativeVtoScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(

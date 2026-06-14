@@ -26,6 +26,7 @@ dependencies:
   camera: ^0.10.5+5
   pretty_qr_code: ^3.5.0
   connectivity_plus: ^6.0.3
+  vector_math: ^2.2.0
 
 dev_dependencies:
   flutter_test:
