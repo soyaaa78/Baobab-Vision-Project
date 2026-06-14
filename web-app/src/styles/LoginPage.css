@@ -461,10 +461,75 @@
   cursor: pointer;
   color: #2a383d;
   font-size: 1rem;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .password-toggle:hover {
   color: #eab676;
+}
+
+.field-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reset-step-intro,
+.password-policy-hint {
+  color: #2a383d;
+  font-family: "Rubik", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  margin: 0;
+  text-align: center;
+}
+
+.password-policy-hint {
+  color: #666;
+  font-size: 0.84rem;
+  text-align: left;
+}
+
+.form-secondary-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -14px;
+  min-width: 0;
+}
+
+.form-secondary-row.centered {
+  justify-content: center;
+  margin-top: -8px;
+}
+
+.secondary-action-btn {
+  background: transparent;
+  border: 0;
+  color: #6f5844;
+  cursor: pointer;
+  font-family: "Rubik", sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 0;
+  text-align: right;
+  transition: color 0.25s ease;
+}
+
+.secondary-action-btn:hover {
+  color: #5c4737;
+  text-decoration: underline;
+}
+
+.form-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 /* Form Options */
@@ -489,14 +554,14 @@
 }
 
 .forgot-password {
-  color: #eab676;
+  color: #6f5844;
   text-decoration: none;
   font-size: 0.9rem;
   transition: color 0.3s ease;
 }
 
 .forgot-password:hover {
-  color: #a9927d;
+  color: #5c4737;
   text-decoration: underline;
 }
 
@@ -529,10 +594,19 @@
   box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.45);
 }
 
+.login-btn:disabled,
+.login-btn:disabled:hover {
+  background: #171717;
+  box-shadow: 0 4px 14px -4px rgba(0, 0, 0, 0.25);
+  cursor: not-allowed;
+  opacity: 0.58;
+  transform: none;
+}
+
 .resend-btn {
   background: transparent;
-  color: #eab676;
-  border: 2px solid #eab676;
+  color: #6f5844;
+  border: 2px solid #6f5844;
   padding: 12px;
   border-radius: 8px;
   font-size: 1rem;
@@ -543,8 +617,18 @@
 }
 
 .resend-btn:hover {
-  background: #eab676;
+  background: #5c4737;
   color: white;
+}
+
+.resend-btn:disabled,
+.resend-btn:disabled:hover,
+.secondary-action-btn:disabled,
+.secondary-action-btn:disabled:hover {
+  background: transparent;
+  color: #6f5844;
+  cursor: not-allowed;
+  text-decoration: none;
 }
 
 /* Account Options */
@@ -618,7 +702,7 @@
 
 .form-success {
   background-color: #efe;
-  color: #3c3;
+  color: #176d2d;
   border: 1px solid #cfc;
 }
 
@@ -1152,7 +1236,10 @@
   }
 
   .checkbox-container,
-  .forgot-password {
+  .forgot-password,
+  .secondary-action-btn,
+  .reset-step-intro,
+  .password-policy-hint {
     font-size: 0.85rem;
   }
 
