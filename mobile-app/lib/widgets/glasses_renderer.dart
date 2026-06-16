@@ -91,7 +91,7 @@ class _GlassesRendererState extends State<GlassesRenderer> {
           final earDy = data.rightEar.y - data.leftEar.y;
           final cameraRoll = dart_math.atan2(earDy, earDx);
           final displayRoll = -cameraRoll;
-f
+          
           // build transform from scratch: position -> roll -> pitch/yaw offsets -> scale
           appliedTransform.translate(transX + offsetX, transY + offsetY, offsetZ);
           appliedTransform.rotateZ(displayRoll + rollOffset);
