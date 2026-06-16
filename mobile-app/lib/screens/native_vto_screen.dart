@@ -4,7 +4,9 @@ import 'package:google_mlkit_face_mesh_detection/google_mlkit_face_mesh_detectio
 
 import '../models/face_anchor_data.dart';
 import '../services/ar_session_service.dart';
+import '../services/model_loader_service.dart';
 import '../widgets/glasses_renderer.dart';
+import '../widgets/model_selector.dart';
 
 class NativeVtoScreen extends StatefulWidget {
   const NativeVtoScreen({Key? key}) : super(key: key);
@@ -15,10 +17,16 @@ class NativeVtoScreen extends StatefulWidget {
 
 class _NativeVtoScreenState extends State<NativeVtoScreen> {
   final ArSessionService _arSession = ArSessionService();
+  final ModelLoaderService _modelLoader = ModelLoaderService();
 
   FaceAnchorData? _activeAnchorData;
   String _debugInfo = 'Initializing...';
   bool _cameraReady = false;
+
+  String _selectedProduct = 'bennett';
+  String _selectedVariant = 'rich-black';
+  String _currentGlbPath = 'assets/models/bennett/rich-black.glb';
+  bool _isLoadingModel = false;
 
   @override
   void initState() {
@@ -68,6 +76,30 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
   void dispose() {
     _arSession.stop();
     super.dispose();
+  }
+
+  Future<void> _loadModel(String product, String variant) async {
+    setState(() {
+      _isLoadingModel = true;
+      _selectedProduct = product;
+      _selectedVariant = variant;
+    });
+    try {
+      final path = await _modelLoader.loadModel(product, variant);
+      if (mounted) {
+        setState(() {
+          _currentGlbPath = path;
+          _isLoadingModel = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _debugInfo = 'Error loading model: $e';
+          _isLoadingModel = false;
+        });
+      }
+    }
   }
 
   @override
@@ -142,14 +174,16 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
 
           // Proof of Concept 3D Glasses Rendering
           GlassesRenderer(
-            glbPath: 'assets/models/bennett/rich-black.glb', // Hardcoded for testing
+            glbPath: _currentGlbPath,
             faceDataStream: _arSession.faceAnchorStream,
             previewSize: previewSize,
           ),
+          if (_isLoadingModel)
+            const Center(child: CircularProgressIndicator(color: Colors.white)),
 
           // Debug status bar
           Positioned(
-            bottom: 40,
+            top: 100,
             left: 20,
             right: 20,
             child: Container(
@@ -162,6 +196,15 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
+          ),
+
+          // Model Selection UI
+          ModelSelector(
+            selectedProduct: _selectedProduct,
+            selectedVariant: _selectedVariant,
+            onVariantSelected: (product, variant) {
+              _loadModel(product, variant);
+            },
           ),
         ],
       ),
