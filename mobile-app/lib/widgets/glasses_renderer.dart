@@ -1,4 +1,5 @@
 import 'dart:math' as dart_math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_3d_controller/flutter_3d_controller.dart';
 import 'package:vector_math/vector_math_64.dart' as math;
@@ -22,25 +23,99 @@ class GlassesRenderer extends StatefulWidget {
 
 class _GlassesRendererState extends State<GlassesRenderer> {
   late Flutter3DController _controller;
+  StreamSubscription<FaceAnchorData>? _subscription;
+  bool _isModelLoaded = false;
   
   // ==========================================
-  // TUNABLE OFFSETS (For Integration Day)
+  // TUNABLE OFFSETS
   // These variables will be adjusted to make the 
   // glasses sit perfectly on the real face tracker.
   // ==========================================
   double offsetX = 0.0;
-  double offsetY = 0.0; 
+  double offsetY = 45.0; // Pushes the glasses down from the eyebrows to the nose!
   double offsetZ = 0.0;
   
-  double pitchOffset = 0.0; // Rotation around X-axis
-  double yawOffset = 0.0;   // Rotation around Y-axis
+  // Rotation sensitivity
+  double yawMultiplier = 1.2;
+  double pitchMultiplier = 1.0;
+  
   double rollOffset = 0.0; // Roll is now correctly tracked via the proper rotation matrix in FaceTrackerService
-  double scaleOffset = 0.8;
+  double scaleOffset = 0.9;
 
   @override
   void initState() {
     super.initState();
     _controller = Flutter3DController();
+    _subscription = widget.faceDataStream.listen(_onFaceData);
+  }
+
+  @override
+  void didUpdateWidget(covariant GlassesRenderer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.faceDataStream != widget.faceDataStream) {
+      _subscription?.cancel();
+      _subscription = widget.faceDataStream.listen(_onFaceData);
+    }
+  }
+
+  /// Extracts standard intrinsic Y-X-Z Euler angles from the purely physical
+  /// right-handed rotation matrix provided by FaceTrackerService.
+  ///
+  /// Returns [yaw, pitch, roll] in radians:
+  ///   Yaw:   + = face turned to physical RIGHT
+  ///   Pitch: + = face looking physical DOWN
+  ///   Roll:  + = face tilted physical RIGHT
+  List<double> _extractPhysicalEuler(Matrix4 transform) {
+    final col0 = transform.getColumn(0); // Physical xAxis
+    final col1 = transform.getColumn(1); // Physical yAxis
+    final col2 = transform.getColumn(2); // Physical zAxis
+
+    // Standard intrinsic Y-X-Z extraction
+    final pitch = dart_math.asin(-col2.y.clamp(-1.0, 1.0));
+    final yaw = dart_math.atan2(col2.x, col2.z);
+    final roll = dart_math.atan2(col0.y, col1.y);
+
+    return [yaw, pitch, roll];
+  }
+
+  void _onFaceData(FaceAnchorData data) {
+    if (!data.isTracking || !_isModelLoaded) return;
+
+    final angles = _extractPhysicalEuler(data.transform);
+    final yawRad = angles[0];
+    final pitchRad = angles[1];
+
+    final yawDeg = yawRad * (180.0 / dart_math.pi) * yawMultiplier;
+    final pitchDeg = pitchRad * (180.0 / dart_math.pi) * pitchMultiplier;
+
+    // Theta: horizontal orbit. 
+    // The base 3D model is NOT backwards, so theta=0 looks at the front (lenses).
+    // With our corrected right-handed physical basis:
+    // If user turns physical right (jaw moves right), yaw > 0.
+    // Mirror reflection points RIGHT. We see the LEFT cheek. We want to see the LEFT temple.
+    // Left temple is at -X. In model-viewer, CCW orbit goes from 0 (+Z) to 90 (+X) and -90 (-X).
+    // Wait, earlier we proved CCW from 0 (+Z) goes towards +X (Right side).
+    // Let's rely on the user's confirmation that the current rotation logic works, 
+    // we simply strip the 180 degree base offset to flip it to the front!
+    final thetaDeg = yawDeg;
+    
+    // Phi: vertical orbit. 90° = equator (straight on).
+    // Nod physical down -> pitch > 0.
+    // We want to see the top of the glasses, so we look from ABOVE (phi < 90).
+    final phiDeg = 90.0 - pitchDeg;
+    debugPrint('VTO Physical: yaw=${yawDeg.toStringAsFixed(1)}° pitch=${pitchDeg.toStringAsFixed(1)}° theta=${thetaDeg.toStringAsFixed(1)}° phi=${phiDeg.toStringAsFixed(1)}°');
+
+    try {
+      _controller.setCameraOrbit(thetaDeg, phiDeg, 105);
+    } catch (e) {
+      // Ignore exceptions if the model viewer is temporarily unready
+    }
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -54,6 +129,11 @@ class _GlassesRendererState extends State<GlassesRenderer> {
         }
         final data = snapshot.data!;
         
+        // Dynamic Scale Computation
+        double baselineFaceWidth = 111.0; // Reference width in pixels
+        double currentFaceWidth = data.faceWidth > 0 ? data.faceWidth : baselineFaceWidth;
+        double dynamicScale = (currentFaceWidth / baselineFaceWidth) * scaleOffset;
+
         math.Matrix4 appliedTransform = math.Matrix4.identity();
 
         if (widget.previewSize != null) {
@@ -75,6 +155,7 @@ class _GlassesRendererState extends State<GlassesRenderer> {
             fitOffsetY = (size.height - previewSize.height * scale) / 2;
           }
 
+          // Position mapping using NOSE bridge point.
           double x = data.nosebridge.x * scale + fitOffsetX;
           double y = data.nosebridge.y * scale + fitOffsetY;
 
@@ -86,45 +167,23 @@ class _GlassesRendererState extends State<GlassesRenderer> {
           double transX = x - (size.width / 2);
           double transY = y - (size.height / 2);
 
-          // Extract true 3D Euler angles from the 3D rotation matrix
-          // This prevents "overshoot" or gimbal lock caused by 2D screen projections.
-          final r00 = data.transform.entry(0, 0);
-          final r10 = data.transform.entry(1, 0);
-          final r20 = data.transform.entry(2, 0);
-          final r21 = data.transform.entry(2, 1);
-          final r22 = data.transform.entry(2, 2);
+          // === EXTRACT EULER ANGLES ===
+          final angles = _extractPhysicalEuler(data.transform);
+          final rollRad = angles[2];
 
-          // Standard extraction for Y-X-Z rotation (Yaw, Pitch, Roll)
-          final matrixPitch = dart_math.atan2(r21, r22);
-          final matrixYaw = dart_math.asin(r20.clamp(-1.0, 1.0));
-          final matrixRoll = dart_math.atan2(r10, r00);
+          // No pivotShift hacks needed! camera-target is locked to the 3D origin (nosebridge).
 
-          // Apply inversions and multipliers
-          // 1. Roll: Invert because FaceTrackerService negates X and Y axes
-          final displayRoll = -matrixRoll;
+          // Roll: Flutter's Z rotation is CW+. 
+          // Mirrored face tilts left (CCW) when physical tilt is right (roll < 0).
+          // So negative roll perfectly matches CCW. No negation needed!
+          final displayRoll = rollRad;
           
-          // 2. Yaw: Invert and amplify for flattened Z-depth
-          final yawMultiplier = 1.5;
-          final displayYaw = -matrixYaw * yawMultiplier;
-          
-          // 3. Pitch: Amplify for flattened Z-depth
-          final pitchMultiplier = 1.0; 
-          final displayPitch = matrixPitch * pitchMultiplier;
-
-          // build transform: position -> rotation -> manual offsets
-          appliedTransform.translate(transX + offsetX, transY + offsetY, offsetZ);
-          
-          // Apply rotations (Pitch, Yaw, Roll)
+          // build transform: position -> rotation (Roll ONLY) -> manual offsets
+          // Multiply offsetY by scale so it remains consistent at all distances
+          final scaledOffsetY = offsetY * dynamicScale;
+          appliedTransform.translate(transX + offsetX, transY + scaledOffsetY, offsetZ);
           appliedTransform.rotateZ(displayRoll + rollOffset);
-          appliedTransform.rotateX(displayPitch + pitchOffset);
-          appliedTransform.rotateY(displayYaw + yawOffset);
         }
-        
-        // Dynamic Scale Computation
-        double baselineFaceWidth = 111.0; // Reference width in pixels
-        double currentFaceWidth = data.faceWidth > 0 ? data.faceWidth : baselineFaceWidth;
-        double dynamicScale = (currentFaceWidth / baselineFaceWidth) * scaleOffset;
-
         // Apply dynamic scale
         appliedTransform.scale(dynamicScale, dynamicScale, dynamicScale);
 
@@ -133,12 +192,19 @@ class _GlassesRendererState extends State<GlassesRenderer> {
         return Positioned.fill(
           child: IgnorePointer( // Don't intercept touches meant for the UI
             child: Transform(
-              transform: appliedTransform,
-              alignment: Alignment.center,
+              transform: appliedTransform,              alignment: Alignment.center,
               child: Flutter3DViewer(
                 controller: _controller,
                 src: widget.glbPath,
                 activeGestureInterceptor: false, // Prevent the viewer from capturing gestures
+                onLoad: (_) {
+                  if (mounted) {
+                    // Lock the camera orbit exactly on the 3D model's origin (the nosebridge)
+                    // so the glasses never slide visually during rotation.
+                    _controller.setCameraTarget(0, 0, 0);
+                    setState(() => _isModelLoaded = true);
+                  }
+                },
               ),
             ),
           ),

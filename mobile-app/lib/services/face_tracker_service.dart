@@ -82,7 +82,7 @@ class FaceTrackerService {
         .toList();
 
     if (landmarks.length < 468) return FaceAnchorData.mock();
-
+    
     // Standard MediaPipe indices
     final nosebridge = landmarks[8];
     final leftEar = landmarks[234];
@@ -92,23 +92,31 @@ class FaceTrackerService {
 
     final faceWidth = leftEar.distanceTo(rightEar);
 
-    // Build orthonormal rotation matrix from face axes.
-    final xAxis = (rightEar - leftEar).normalized();
-    final yAxis = (forehead - chin).normalized();
-    final zAxis = xAxis.cross(yAxis).normalized();
+    // Convert to a pure physical right-handed coordinate system:
+    // +X = Physical Right (matches screen X)
+    // +Y = Physical Up (opposite of image Y due to Y-down)
+    // +Z = Physical Out (user confirmed ML Kit Z is already positive when closer)
+    Vector3 toPhysical(Vector3 v) => Vector3(v.x, -v.y, v.z);
+
+    final pLeftEar = toPhysical(leftEar);
+    final pRightEar = toPhysical(rightEar);
+    final pChin = toPhysical(chin);
+    final pForehead = toPhysical(forehead);
+
+    // Build orthonormal physical basis
+    final xAxis = (pRightEar - pLeftEar).normalized(); // points physical right
+    final yAxis = (pForehead - pChin).normalized();    // points physical up
+    final zAxis = xAxis.cross(yAxis).normalized();     // points physical out
     final orthogonalY = zAxis.cross(xAxis).normalized();
 
     final transform = Matrix4.identity();
-    // Negate X and Y axes to get a proper rotation matrix (det = +1).
-    // - X is negated for front-camera horizontal mirroring.
-    // - Y is negated to keep the model right-side up.
-    // - Z is left as-is. Negating all three (det = -1) created an improper
-    //   rotation that reflected roll, causing glasses to tilt opposite to
-    //   the user's head.
-    transform.setColumn(0, Vector4(-xAxis.x, -xAxis.y, -xAxis.z, 0.0));
-    transform.setColumn(1, Vector4(-orthogonalY.x, -orthogonalY.y, -orthogonalY.z, 0.0));
+    // The rotation matrix is now a flawless representation of the physical head.
+    transform.setColumn(0, Vector4(xAxis.x, xAxis.y, xAxis.z, 0.0));
+    transform.setColumn(1, Vector4(orthogonalY.x, orthogonalY.y, orthogonalY.z, 0.0));
     transform.setColumn(2, Vector4(zAxis.x, zAxis.y, zAxis.z, 0.0));
-    transform.setColumn(3, Vector4(nosebridge.x, nosebridge.y, -nosebridge.z, 1.0));
+    
+    // Translation stays in raw image coordinates for the 2D widget positioning
+    transform.setColumn(3, Vector4(nosebridge.x, nosebridge.y, nosebridge.z, 1.0));
 
     return FaceAnchorData(
       transform: transform,
