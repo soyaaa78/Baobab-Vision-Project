@@ -25,10 +25,10 @@ class FaceAnchorData {
     return FaceAnchorData(
       transform: Matrix4.identity(),
       landmarks: [],
-      nosebridge: Vector3(0.0, 0.0, -0.05),
-      leftEar: Vector3(-0.07, 0.0, -0.02),
-      rightEar: Vector3(0.07, 0.0, -0.02),
-      faceWidth: 0.14,
+      nosebridge: Vector3(180.0, 320.0, -10.0), // Center of typical screen/camera
+      leftEar: Vector3(80.0, 320.0, -5.0),
+      rightEar: Vector3(280.0, 320.0, -5.0),
+      faceWidth: 200.0,
       isTracking: true,
     );
   }

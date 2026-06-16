@@ -86,21 +86,47 @@ class _GlassesRendererState extends State<GlassesRenderer> {
           double transX = x - (size.width / 2);
           double transY = y - (size.height / 2);
 
-          // compute roll from ear landmarks and mirror for front camera
-          final earDx = data.rightEar.x - data.leftEar.x;
-          final earDy = data.rightEar.y - data.leftEar.y;
-          final cameraRoll = dart_math.atan2(earDy, earDx);
-          final displayRoll = -cameraRoll;
+          // Extract true 3D Euler angles from the 3D rotation matrix
+          // This prevents "overshoot" or gimbal lock caused by 2D screen projections.
+          final r00 = data.transform.entry(0, 0);
+          final r10 = data.transform.entry(1, 0);
+          final r20 = data.transform.entry(2, 0);
+          final r21 = data.transform.entry(2, 1);
+          final r22 = data.transform.entry(2, 2);
+
+          // Standard extraction for Y-X-Z rotation (Yaw, Pitch, Roll)
+          final matrixPitch = dart_math.atan2(r21, r22);
+          final matrixYaw = dart_math.asin(r20.clamp(-1.0, 1.0));
+          final matrixRoll = dart_math.atan2(r10, r00);
+
+          // Apply inversions and multipliers
+          // 1. Roll: Invert because FaceTrackerService negates X and Y axes
+          final displayRoll = -matrixRoll;
           
-          // build transform from scratch: position -> roll -> pitch/yaw offsets -> scale
+          // 2. Yaw: Invert and amplify for flattened Z-depth
+          final yawMultiplier = 1.5;
+          final displayYaw = -matrixYaw * yawMultiplier;
+          
+          // 3. Pitch: Amplify for flattened Z-depth
+          final pitchMultiplier = 1.0; 
+          final displayPitch = matrixPitch * pitchMultiplier;
+
+          // build transform: position -> rotation -> manual offsets
           appliedTransform.translate(transX + offsetX, transY + offsetY, offsetZ);
+          
+          // Apply rotations (Pitch, Yaw, Roll)
           appliedTransform.rotateZ(displayRoll + rollOffset);
-          appliedTransform.rotateX(pitchOffset);
-          appliedTransform.rotateY(yawOffset);
+          appliedTransform.rotateX(displayPitch + pitchOffset);
+          appliedTransform.rotateY(displayYaw + yawOffset);
         }
         
-        // Apply scale
-        appliedTransform.scale(scaleOffset, scaleOffset, scaleOffset);
+        // Dynamic Scale Computation
+        double baselineFaceWidth = 111.0; // Reference width in pixels
+        double currentFaceWidth = data.faceWidth > 0 ? data.faceWidth : baselineFaceWidth;
+        double dynamicScale = (currentFaceWidth / baselineFaceWidth) * scaleOffset;
+
+        // Apply dynamic scale
+        appliedTransform.scale(dynamicScale, dynamicScale, dynamicScale);
 
         // We wrap the 3D Viewer in a Transform widget to apply the Matrix4 
         // coming from the AR pipeline.
