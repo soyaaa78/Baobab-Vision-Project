@@ -1427,6 +1427,21 @@ const EditEyeglassPage = () => {
                                 {colorwayModelFiles[optionIndex]?.name ||
                                   "Unknown file"}
                               </span>
+                              {colorwayModelFiles[optionIndex]?.url && (
+                                <a
+                                  href={colorwayModelFiles[optionIndex].url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    marginLeft: "10px",
+                                    fontSize: "0.9em",
+                                    color: "#007bff",
+                                    textDecoration: "underline"
+                                  }}
+                                >
+                                  Download File
+                                </a>
+                              )}
                               <button
                                 type="button"
                                 onClick={() =>
