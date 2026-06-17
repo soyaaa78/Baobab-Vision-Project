@@ -27,6 +27,7 @@ dependencies:
   pretty_qr_code: ^3.5.0
   connectivity_plus: ^6.0.3
   vector_math: ^2.2.0
+  flutter_3d_controller: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -77,6 +78,16 @@ flutter:
     - assets/images/gcash.png
     - assets/images/bvicon.png
     - assets/images/bvicon-mobile.png
+    - assets/models/
+    - assets/models/bennett/
+    - assets/models/cove/
+    - assets/models/elba/
+    - assets/models/jax/
+    - assets/models/lana/
+    - assets/models/leto/
+    - assets/models/lindy/
+    - assets/models/lou/
+    - assets/models/sample/
 
   fonts:
     - family: Poppins
