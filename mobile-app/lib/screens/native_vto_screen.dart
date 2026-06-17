@@ -6,10 +6,11 @@ import '../models/face_anchor_data.dart';
 import '../services/ar_session_service.dart';
 import '../services/model_loader_service.dart';
 import '../widgets/glasses_renderer.dart';
-import '../widgets/model_selector.dart';
 
 class NativeVtoScreen extends StatefulWidget {
-  const NativeVtoScreen({Key? key}) : super(key: key);
+  final String? model3dUrl;
+
+  const NativeVtoScreen({Key? key, this.model3dUrl}) : super(key: key);
 
   @override
   State<NativeVtoScreen> createState() => _NativeVtoScreenState();
@@ -23,9 +24,7 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
   String _debugInfo = 'Initializing...';
   bool _cameraReady = false;
 
-  String _selectedProduct = 'bennett';
-  String _selectedVariant = 'rich-black';
-  String _currentGlbPath = 'assets/models/bennett/rich-black.glb';
+  String? _currentGlbPath;
   bool _isLoadingModel = false;
   bool _isExiting = false;
 
@@ -39,6 +38,10 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
     _arSession.onStateChanged = () {
       if (mounted) setState(() {});
     };
+
+    if (widget.model3dUrl != null && widget.model3dUrl!.isNotEmpty) {
+      _loadModelUrl(widget.model3dUrl!);
+    }
 
     // Gate: ensure device can support face tracking before we start.
     final supported = await ArSessionService.isFaceTrackingSupported();
@@ -80,14 +83,12 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
     super.dispose();
   }
 
-  Future<void> _loadModel(String product, String variant) async {
+  Future<void> _loadModelUrl(String url) async {
     setState(() {
       _isLoadingModel = true;
-      _selectedProduct = product;
-      _selectedVariant = variant;
     });
     try {
-      final path = await _modelLoader.loadModel(product, variant);
+      final path = await _modelLoader.loadModelFromUrl(url);
       if (mounted) {
         setState(() {
           _currentGlbPath = path;
@@ -180,9 +181,9 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
             ),
 
           // Proof of Concept 3D Glasses Rendering
-          if (!_isExiting)
+          if (!_isExiting && _currentGlbPath != null)
             GlassesRenderer(
-              glbPath: _currentGlbPath,
+              glbPath: _currentGlbPath!,
               faceDataStream: _arSession.faceAnchorStream,
               previewSize: previewSize,
             ),
@@ -204,15 +205,6 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
                 textAlign: TextAlign.center,
               ),
             ),
-          ),
-
-          // Model Selection UI
-          ModelSelector(
-            selectedProduct: _selectedProduct,
-            selectedVariant: _selectedVariant,
-            onVariantSelected: (product, variant) {
-              _loadModel(product, variant);
-            },
           ),
         ],
       ),

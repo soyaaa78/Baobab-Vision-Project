@@ -1,6 +1,6 @@
 // import 'package:baobab_vision_project/screens/cart_screen.dart';
-import 'package:baobab_vision_project/screens/native_vto_screen.dart';
 import 'package:baobab_vision_project/screens/reviews_screen.dart';
+import 'package:baobab_vision_project/services/vto_router.dart';
 import 'package:baobab_vision_project/widgets/cart_animation_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -84,6 +84,7 @@ class DetailScreen extends StatefulWidget {
   final List<String> prodImages;
   final List<ColorOption> colorOptions;
   final List<LensOption> lensOptions;
+  final String? model3dUrl;
 
   const DetailScreen({
     super.key,
@@ -97,6 +98,7 @@ class DetailScreen extends StatefulWidget {
     required this.prodImages,
     required this.colorOptions,
     required this.lensOptions,
+    this.model3dUrl,
   });
 
   static DetailScreen fromJson(Map<String, dynamic> json) {
@@ -121,6 +123,7 @@ class DetailScreen extends StatefulWidget {
       prodImages: List<String>.from(json['imageUrls'] ?? []),
       colorOptions: colorOptionsList,
       lensOptions: lensOptionsList,
+      model3dUrl: json['model3dUrl'],
     );
   }
 
@@ -608,10 +611,23 @@ class _DetailScreenState extends State<DetailScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
+                          final product = Product(
+                            name: widget.prodName,
+                            description: widget.description,
+                            price: double.tryParse(widget.prodPrice) ?? 0.0,
+                            imageUrls: widget.prodImages,
+                            specs: [],
+                            stock: widget.quantity,
+                            numStars: widget.numStars,
+                            recommendedFor: false,
+                            sales: 0,
+                            model3dUrl: widget.model3dUrl,
+                            colorOptions: widget.colorOptions,
+                          );
+                          VtoRouter.navigateToVto(
                             context,
-                            MaterialPageRoute(
-                                builder: (context) => const NativeVtoScreen()),
+                            product,
+                            widget.colorOptions[selectedColorIndex],
                           );
                         },
                         style: ElevatedButton.styleFrom(
