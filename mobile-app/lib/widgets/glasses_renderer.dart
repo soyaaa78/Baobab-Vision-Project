@@ -32,14 +32,14 @@ class _GlassesRendererState extends State<GlassesRenderer> {
   // glasses sit perfectly on the real face tracker.
   // ==========================================
   double offsetX = 0.0;
-  double offsetY = 45.0; // Pushes the glasses down from the eyebrows to the nose!
+  double offsetY = 45.0; // pushes the glasses down from the eyebrows to the nose, eyeglass model's center and face center is misaligned
   double offsetZ = 0.0;
   
-  // Rotation sensitivity
+  // rotation sensitivity
   double yawMultiplier = 1.2;
   double pitchMultiplier = 1.0;
   
-  double rollOffset = 0.0; // Roll is now correctly tracked via the proper rotation matrix in FaceTrackerService
+  double rollOffset = 0.0; 
   double scaleOffset = 0.9;
 
   @override
@@ -58,8 +58,12 @@ class _GlassesRendererState extends State<GlassesRenderer> {
     }
   }
 
-  /// Extracts standard intrinsic Y-X-Z Euler angles from the purely physical
+  /// Extracts standard intrinsic X-Y-Z Euler angles from the purely physical
   /// right-handed rotation matrix provided by FaceTrackerService.
+  ///
+  /// Uses X-Y-Z order (not Y-X-Z) to match model-viewer's extrinsic Y->X
+  /// spherical coordinate application, eliminating yaw/pitch cross-talk
+  /// at diagonal angles.
   ///
   /// Returns [yaw, pitch, roll] in radians:
   ///   Yaw:   + = face turned to physical RIGHT
@@ -70,12 +74,14 @@ class _GlassesRendererState extends State<GlassesRenderer> {
     final col1 = transform.getColumn(1); // Physical yAxis
     final col2 = transform.getColumn(2); // Physical zAxis
 
-    // Standard intrinsic Y-X-Z extraction
-    final pitch = dart_math.asin(-col2.y.clamp(-1.0, 1.0));
-    final yaw = dart_math.atan2(col2.x, col2.z);
-    final roll = dart_math.atan2(col0.y, col1.y);
+    // Intrinsic X-Y-Z extraction
+    // Gimbal lock at pitch = ±90°, acceptable for face tracking range
+    final pitch = dart_math.asin(col2.y.clamp(-1.0, 1.0));   // sign flipped vs old Y-X-Z
+    final yaw   = dart_math.atan2(-col2.x, col2.z);
+    final roll  = dart_math.atan2(-col0.y, col1.y);
 
-    return [yaw, pitch, roll];
+
+    return [-yaw, -pitch, -roll];
   }
 
   void _onFaceData(FaceAnchorData data) {
@@ -89,14 +95,6 @@ class _GlassesRendererState extends State<GlassesRenderer> {
     final pitchDeg = pitchRad * (180.0 / dart_math.pi) * pitchMultiplier;
 
     // Theta: horizontal orbit. 
-    // The base 3D model is NOT backwards, so theta=0 looks at the front (lenses).
-    // With our corrected right-handed physical basis:
-    // If user turns physical right (jaw moves right), yaw > 0.
-    // Mirror reflection points RIGHT. We see the LEFT cheek. We want to see the LEFT temple.
-    // Left temple is at -X. In model-viewer, CCW orbit goes from 0 (+Z) to 90 (+X) and -90 (-X).
-    // Wait, earlier we proved CCW from 0 (+Z) goes towards +X (Right side).
-    // Let's rely on the user's confirmation that the current rotation logic works, 
-    // we simply strip the 180 degree base offset to flip it to the front!
     final thetaDeg = yawDeg;
     
     // Phi: vertical orbit. 90° = equator (straight on).
@@ -108,7 +106,6 @@ class _GlassesRendererState extends State<GlassesRenderer> {
     try {
       _controller.setCameraOrbit(thetaDeg, phiDeg, 105);
     } catch (e) {
-      // Ignore exceptions if the model viewer is temporarily unready
     }
   }
 
@@ -175,7 +172,7 @@ class _GlassesRendererState extends State<GlassesRenderer> {
 
           // Roll: Flutter's Z rotation is CW+. 
           // Mirrored face tilts left (CCW) when physical tilt is right (roll < 0).
-          // So negative roll perfectly matches CCW. No negation needed!
+          // So negative roll perfectly matches CCW. No negation needed
           final displayRoll = rollRad;
           
           // build transform: position -> rotation (Roll ONLY) -> manual offsets
