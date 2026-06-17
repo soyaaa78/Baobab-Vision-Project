@@ -25,6 +25,10 @@ class _GlassesRendererState extends State<GlassesRenderer> {
   late Flutter3DController _controller;
   StreamSubscription<FaceAnchorData>? _subscription;
   bool _isModelLoaded = false;
+
+  double? _lastThetaDeg;
+  double? _lastPhiDeg;
+  final double _orbitEpsilon = 0.5; // Threshold in degrees to avoid spamming platform channels
   
   // ==========================================
   // TUNABLE OFFSETS
@@ -32,7 +36,7 @@ class _GlassesRendererState extends State<GlassesRenderer> {
   // glasses sit perfectly on the real face tracker.
   // ==========================================
   double offsetX = 0.0;
-  double offsetY = 45.0; // pushes the glasses down from the eyebrows to the nose, eyeglass model's center and face center is misaligned
+  double offsetY = 30.0; // pushes the glasses down from the eyebrows to the nose, eyeglass model's center and face center is misaligned
   double offsetZ = 0.0;
   
   // rotation sensitivity
@@ -40,7 +44,7 @@ class _GlassesRendererState extends State<GlassesRenderer> {
   double pitchMultiplier = 1.0;
   
   double rollOffset = 0.0; 
-  double scaleOffset = 0.9;
+  double scaleOffset = 0.95;
 
   @override
   void initState() {
@@ -55,6 +59,12 @@ class _GlassesRendererState extends State<GlassesRenderer> {
     if (oldWidget.faceDataStream != widget.faceDataStream) {
       _subscription?.cancel();
       _subscription = widget.faceDataStream.listen(_onFaceData);
+    }
+    if (oldWidget.glbPath != widget.glbPath) {
+      _controller = Flutter3DController();
+      _isModelLoaded = false;
+      _lastThetaDeg = null;
+      _lastPhiDeg = null;
     }
   }
 
@@ -85,6 +95,7 @@ class _GlassesRendererState extends State<GlassesRenderer> {
   }
 
   void _onFaceData(FaceAnchorData data) {
+    if (!mounted) return;
     if (!data.isTracking || !_isModelLoaded) return;
 
     final angles = _extractPhysicalEuler(data.transform);
@@ -101,10 +112,18 @@ class _GlassesRendererState extends State<GlassesRenderer> {
     // Nod physical down -> pitch > 0.
     // We want to see the top of the glasses, so we look from ABOVE (phi < 90).
     final phiDeg = 90.0 - pitchDeg;
-    debugPrint('VTO Physical: yaw=${yawDeg.toStringAsFixed(1)}° pitch=${pitchDeg.toStringAsFixed(1)}° theta=${thetaDeg.toStringAsFixed(1)}° phi=${phiDeg.toStringAsFixed(1)}°');
+    // Throttle bridge calls if movement is microscopic
+    if (_lastThetaDeg != null && _lastPhiDeg != null) {
+      if ((thetaDeg - _lastThetaDeg!).abs() < _orbitEpsilon &&
+          (phiDeg - _lastPhiDeg!).abs() < _orbitEpsilon) {
+        return; // Skip updating camera orbit
+      }
+    }
 
     try {
       _controller.setCameraOrbit(thetaDeg, phiDeg, 105);
+      _lastThetaDeg = thetaDeg;
+      _lastPhiDeg = phiDeg;
     } catch (e) {
     }
   }
@@ -119,12 +138,13 @@ class _GlassesRendererState extends State<GlassesRenderer> {
   Widget build(BuildContext context) {
     return StreamBuilder<FaceAnchorData>(
       stream: widget.faceDataStream,
-      initialData: FaceAnchorData.mock(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData || !snapshot.data!.isTracking) {
-          return const SizedBox.shrink(); // Hide if no face is detected
-        }
-        final data = snapshot.data!;
+        final rawData = snapshot.data;
+        final isTracking = rawData?.isTracking ?? false;
+        
+        // We use mock data for positioning when not tracking so the Transform widget
+        // doesn't crash and the 3D model can warm up in the background.
+        final data = isTracking ? rawData! : FaceAnchorData.mock();
         
         // Dynamic Scale Computation
         double baselineFaceWidth = 111.0; // Reference width in pixels
@@ -188,11 +208,15 @@ class _GlassesRendererState extends State<GlassesRenderer> {
         // coming from the AR pipeline.
         return Positioned.fill(
           child: IgnorePointer( // Don't intercept touches meant for the UI
-            child: Transform(
-              transform: appliedTransform,              alignment: Alignment.center,
-              child: Flutter3DViewer(
+            child: Opacity(
+              opacity: isTracking ? 1.0 : 0.0,
+              child: Transform(
+                transform: appliedTransform,              alignment: Alignment.center,
+                child: Flutter3DViewer(
+                key: ValueKey(widget.glbPath),
                 controller: _controller,
                 src: widget.glbPath,
+                progressBarColor: Colors.transparent, // Hide the default loading bar
                 activeGestureInterceptor: false, // Prevent the viewer from capturing gestures
                 onLoad: (_) {
                   if (mounted) {
@@ -202,6 +226,7 @@ class _GlassesRendererState extends State<GlassesRenderer> {
                     setState(() => _isModelLoaded = true);
                   }
                 },
+              ),
               ),
             ),
           ),

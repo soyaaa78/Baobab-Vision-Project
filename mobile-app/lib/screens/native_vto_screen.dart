@@ -27,6 +27,7 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
   String _selectedVariant = 'rich-black';
   String _currentGlbPath = 'assets/models/bennett/rich-black.glb';
   bool _isLoadingModel = false;
+  bool _isExiting = false;
 
   @override
   void initState() {
@@ -75,6 +76,7 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
   @override
   void dispose() {
     _arSession.stop();
+    _modelLoader.clearCache();
     super.dispose();
   }
 
@@ -139,8 +141,13 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
       );
     }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
+    return PopScope(
+      canPop: true,
+      onPopInvoked: (didPop) {
+        if (mounted) setState(() => _isExiting = true);
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text(
           'Native VTO (Debug)',
@@ -173,11 +180,12 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
             ),
 
           // Proof of Concept 3D Glasses Rendering
-          GlassesRenderer(
-            glbPath: _currentGlbPath,
-            faceDataStream: _arSession.faceAnchorStream,
-            previewSize: previewSize,
-          ),
+          if (!_isExiting)
+            GlassesRenderer(
+              glbPath: _currentGlbPath,
+              faceDataStream: _arSession.faceAnchorStream,
+              previewSize: previewSize,
+            ),
           if (_isLoadingModel)
             const Center(child: CircularProgressIndicator(color: Colors.white)),
 
@@ -208,7 +216,7 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
           ),
         ],
       ),
-    );
+    ));
   }
 }
 
