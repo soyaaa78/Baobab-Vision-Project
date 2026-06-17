@@ -247,33 +247,31 @@ class _LogInScreenState extends State<LogInScreen> {
                       ),
 
                       // DEV ONLY: skip auth and jump straight to NativeVtoScreen.
-                      // Stripped out automatically in release builds.
-                      if (kDebugMode) ...[
-                        SizedBox(height: 12.h),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const NativeVtoScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.developer_mode, size: 16),
-                          label: Text(
-                            '[DEV] Skip to VTO',
-                            style: TextStyle(fontSize: 13.sp),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.deepPurple,
-                            side: const BorderSide(color: Colors.deepPurple),
-                            minimumSize: Size(double.infinity, 40.h),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10.r),
+                      // Temporarily enabled for testing release builds without login
+                      SizedBox(height: 12.h),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NativeVtoScreen(),
                             ),
+                          );
+                        },
+                        icon: const Icon(Icons.developer_mode, size: 16),
+                        label: Text(
+                          '[DEV] Skip to VTO',
+                          style: TextStyle(fontSize: 13.sp),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.deepPurple,
+                          side: const BorderSide(color: Colors.deepPurple),
+                          minimumSize: Size(double.infinity, 40.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.r),
                           ),
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),
