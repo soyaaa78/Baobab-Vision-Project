@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_provider/path_provider.dart';
+import 'api_client.dart';
 
 class ModelLoaderService {
   final String _baseUrl = 'https://r2.your-domain.com/models'; // Placeholder for Integration Day
@@ -68,9 +69,11 @@ class ModelLoaderService {
   Future<String> loadModelFromUrl(String url) async {
     if (url.isEmpty) throw Exception('Model URL is empty');
 
-    // Map localhost to Android Emulator's host machine IP
-    if (Platform.isAndroid && url.contains('localhost')) {
-      url = url.replaceAll('localhost', '10.0.2.2');
+    // Map localhost to the dynamic API_BASE_URL so it works on physical devices
+    if (url.contains('localhost') || url.contains('10.0.2.2')) {
+      final baseUri = Uri.parse(ApiClient.baseUrl);
+      final hostWithPort = '${baseUri.host}${baseUri.hasPort ? ':${baseUri.port}' : ''}';
+      url = url.replaceAll(RegExp(r'(localhost|10\.0\.2\.2)(:\d+)?'), hostWithPort);
     }
 
     final fileName = url.split('/').last.split('?').first;
