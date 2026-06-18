@@ -1,4 +1,5 @@
 class Product {
+  final String id;
   final String name;
   final String description;
   final double price;
@@ -10,8 +11,10 @@ class Product {
   final int sales;
   final String? model3dUrl;
   final List<ColorOption> colorOptions;
+  final List<LensOption> lensOptions;
 
   Product({
+    required this.id,
     required this.name,
     required this.description,
     required this.price,
@@ -23,10 +26,12 @@ class Product {
     required this.sales,
     this.model3dUrl,
     required this.colorOptions,
+    required this.lensOptions,
   });
 
   factory Product.fromJson(Map<String, dynamic> json) {
     return Product(
+      id: json['_id'] ?? json['productId'] ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       price: (json['price'] as num).toDouble(),
@@ -40,6 +45,32 @@ class Product {
       colorOptions: (json['colorOptions'] as List<dynamic>? ?? [])
           .map((e) => ColorOption.fromJson(e))
           .toList(),
+      lensOptions: (json['lensOptions'] as List<dynamic>? ?? [])
+          .map((e) => LensOption.fromJson(e))
+          .toList(),
+    );
+  }
+}
+
+class LensOption {
+  final String id;
+  final String label;
+  final double price;
+  final String type;
+
+  LensOption({
+    required this.id,
+    required this.label,
+    required this.price,
+    required this.type,
+  });
+
+  factory LensOption.fromJson(Map<String, dynamic> json) {
+    return LensOption(
+      id: json['_id'] ?? '',
+      label: json['label'],
+      price: (json['price'] ?? 0).toDouble(),
+      type: json['type'] ?? 'builtin',
     );
   }
 }
