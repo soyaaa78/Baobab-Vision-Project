@@ -278,7 +278,8 @@ class _LogInScreenState extends State<LogInScreen> {
 
                 /// Register Link (bottom section)
                 Container(
-                  height: 55.h,
+                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+                  height: 55.h + MediaQuery.of(context).padding.bottom,
                   width: double.infinity,
                   color: BLACK_COLOR,
                   alignment: Alignment.center,

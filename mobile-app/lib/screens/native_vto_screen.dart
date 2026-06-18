@@ -312,7 +312,7 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
-                  margin: const EdgeInsets.fromLTRB(16, 0, 16, 32),
+                  margin: EdgeInsets.fromLTRB(16, 0, 16, MediaQuery.of(context).padding.bottom + 20),
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
                     color: Colors.white,
