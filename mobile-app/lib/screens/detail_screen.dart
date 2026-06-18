@@ -12,30 +12,6 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:baobab_vision_project/services/api_client.dart';
-
-class LensOption {
-  final String id;
-  final String label;
-  final double price;
-  final String type;
-
-  LensOption({
-    required this.id,
-    required this.label,
-    required this.price,
-    required this.type,
-  });
-
-  factory LensOption.fromJson(Map<String, dynamic> json) {
-    return LensOption(
-      id: json['_id'] ?? '',
-      label: json['label'],
-      price: (json['price'] ?? 0).toDouble(),
-      type: json['type'] ?? 'builtin',
-    );
-  }
-}
-
 Future<void> addToCart(
   String token,
   String productId,
@@ -234,11 +210,17 @@ class _DetailScreenState extends State<DetailScreen> {
                             itemBuilder: (context, index) {
                               return ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.network(
-                                  allImages[index],
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                ),
+                                child: allImages[index].startsWith('http') 
+                                    ? Image.network(
+                                        allImages[index],
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                      )
+                                    : Image.asset(
+                                        allImages[index],
+                                        fit: BoxFit.cover,
+                                        width: double.infinity,
+                                      ),
                               );
                             },
                           ),
@@ -399,12 +381,19 @@ class _DetailScreenState extends State<DetailScreen> {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  allImages[index],
-                                  height: 60,
-                                  width: 60,
-                                  fit: BoxFit.cover,
-                                ),
+                                child: allImages[index].startsWith('http')
+                                    ? Image.network(
+                                        allImages[index],
+                                        height: 60,
+                                        width: 60,
+                                        fit: BoxFit.cover,
+                                      )
+                                    : Image.asset(
+                                        allImages[index],
+                                        height: 60,
+                                        width: 60,
+                                        fit: BoxFit.cover,
+                                      ),
                               ),
                             ),
                           );
@@ -612,9 +601,10 @@ class _DetailScreenState extends State<DetailScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           final product = Product(
+                            id: widget.productId,
                             name: widget.prodName,
                             description: widget.description,
-                            price: double.tryParse(widget.prodPrice) ?? 0.0,
+                            price: double.tryParse(widget.prodPrice.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0,
                             imageUrls: widget.prodImages,
                             specs: [],
                             stock: widget.quantity,
@@ -623,6 +613,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             sales: 0,
                             model3dUrl: widget.model3dUrl,
                             colorOptions: widget.colorOptions,
+                            lensOptions: widget.lensOptions,
                           );
                           VtoRouter.navigateToVto(
                             context,
