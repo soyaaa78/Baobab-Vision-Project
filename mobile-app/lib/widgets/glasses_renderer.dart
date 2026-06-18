@@ -44,7 +44,7 @@ class _GlassesRendererState extends State<GlassesRenderer> {
   double pitchMultiplier = 1.0;
   
   double rollOffset = 0.0; 
-  double scaleOffset = 0.95;
+  double scaleOffset = 1.1;
 
   @override
   void initState() {
