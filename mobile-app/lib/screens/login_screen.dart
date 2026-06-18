@@ -248,7 +248,7 @@ class _LogInScreenState extends State<LogInScreen> {
 
                       // DEV ONLY: skip auth and jump straight to NativeVtoScreen.
                       // Temporarily enabled for testing release builds without login
-                      SizedBox(height: 12.h),
+                      /* SizedBox(height: 12.h),
                       OutlinedButton.icon(
                         onPressed: () {
                           Navigator.push(
@@ -271,14 +271,16 @@ class _LogInScreenState extends State<LogInScreen> {
                             borderRadius: BorderRadius.circular(10.r),
                           ),
                         ),
-                      ),
+                      ), */
                     ],
                   ),
                 ),
 
                 /// Register Link (bottom section)
                 Container(
-                  height: 55.h,
+                  padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).padding.bottom),
+                  height: 55.h + MediaQuery.of(context).padding.bottom,
                   width: double.infinity,
                   color: BLACK_COLOR,
                   alignment: Alignment.center,

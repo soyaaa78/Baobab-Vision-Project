@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:baobab_vision_project/models/productModel.dart';
 import 'package:baobab_vision_project/screens/detail_screen.dart';
 import 'package:baobab_vision_project/screens/recommender_screen.dart';
-import 'package:baobab_vision_project/screens/native_vto_screen.dart';
+import 'package:baobab_vision_project/services/vto_router.dart';
 import 'package:baobab_vision_project/screens/profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -296,10 +296,72 @@ class _ShopScreenState extends State<ShopScreen> {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const NativeVtoScreen()),
+                      // Fallback if no products loaded
+                      final fallbackProduct = Product(
+                        id: '',
+                        name: 'bennett',
+                        description: '',
+                        price: 0,
+                        imageUrls: [],
+                        specs: [],
+                        stock: 0,
+                        numStars: 5,
+                        recommendedFor: false,
+                        sales: 0,
+                        lensOptions: [],
+                        colorOptions: [
+                          ColorOption(
+                            id: '0',
+                            name: 'rich-black',
+                            type: 'solid',
+                            colors: ['#000000'],
+                            swatchUrl: '',
+                            imageUrl: '',
+                          )
+                        ],
+                      );
+                      
+                      final List<Product> allProducts = forYou.map((productData) {
+                        final colorOptionsList = (productData['colorOptions'] as List<dynamic>? ?? [])
+                            .map((e) => ColorOption.fromJson(e))
+                            .toList();
+                        
+                        final lensOptionsList = (productData['lensOptions'] as List<dynamic>? ?? [])
+                            .map((e) => LensOption.fromJson(e))
+                            .toList();
+                        
+                        return Product(
+                          id: productData['_id'] ?? productData['productId'] ?? '',
+                          name: productData['name'] ?? 'bennett',
+                          description: productData['description'] ?? '',
+                          price: (productData['price'] as num?)?.toDouble() ?? 0.0,
+                          imageUrls: List<String>.from(productData['imageUrls'] ?? []),
+                          specs: [],
+                          stock: productData['stock'] ?? 1,
+                          numStars: productData['averageRating']?.toInt() ?? 5,
+                          recommendedFor: false,
+                          sales: 0,
+                          model3dUrl: productData['model3dUrl'],
+                          colorOptions: colorOptionsList,
+                          lensOptions: lensOptionsList,
+                        );
+                      }).toList();
+
+                      Product initialProduct = fallbackProduct;
+                      ColorOption initialColor = fallbackProduct.colorOptions[0];
+
+                      if (allProducts.isNotEmpty) {
+                        initialProduct = allProducts.first;
+                        if (initialProduct.colorOptions.isNotEmpty) {
+                          initialColor = initialProduct.colorOptions[0];
+                        }
+                      }
+
+                      VtoRouter.navigateToVto(
+                        context, 
+                        initialProduct, 
+                        initialColor, 
+                        allProducts: allProducts,
                       );
                     },
                     style: ElevatedButton.styleFrom(
