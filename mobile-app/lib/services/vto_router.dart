@@ -10,8 +10,9 @@ class VtoRouter {
   static Future<void> navigateToVto(
     BuildContext context,
     Product product,
-    ColorOption selectedColor,
-  ) async {
+    ColorOption selectedColor, {
+    List<Product>? allProducts,
+  }) async {
     final String? model3dUrl = selectedColor.model3dUrl ?? product.model3dUrl;
 
     // check if user device can use native AR experience
@@ -23,7 +24,11 @@ class VtoRouter {
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => NativeVtoScreen(model3dUrl: model3dUrl),
+            builder: (context) => NativeVtoScreen(
+              product: product,
+              initialColor: selectedColor,
+              allProducts: allProducts,
+            ),
           ),
         );
         return;
