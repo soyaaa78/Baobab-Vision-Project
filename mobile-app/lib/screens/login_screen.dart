@@ -248,37 +248,38 @@ class _LogInScreenState extends State<LogInScreen> {
 
                       // DEV ONLY: skip auth and jump straight to NativeVtoScreen.
                       // Temporarily enabled for testing release builds without login
-                      // SizedBox(height: 12.h),
-                      // OutlinedButton.icon(
-                      //   onPressed: () {
-                      //     Navigator.push(
-                      //       context,
-                      //       MaterialPageRoute(
-                      //         // builder: (_) => const NativeVtoScreen(),
-                      //       ),
-                      //     );
-                      //   },
-                      //   icon: const Icon(Icons.developer_mode, size: 16),
-                      //   label: Text(
-                      //     '[DEV] Skip to VTO',
-                      //     style: TextStyle(fontSize: 13.sp),
-                      //   ),
-                      //   style: OutlinedButton.styleFrom(
-                      //     foregroundColor: Colors.deepPurple,
-                      //     side: const BorderSide(color: Colors.deepPurple),
-                      //     minimumSize: Size(double.infinity, 40.h),
-                      //     shape: RoundedRectangleBorder(
-                      //       borderRadius: BorderRadius.circular(10.r),
-                      //     ),
-                      //   ),
-                      // ),
+                      /* SizedBox(height: 12.h),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NativeVtoScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.developer_mode, size: 16),
+                        label: Text(
+                          '[DEV] Skip to VTO',
+                          style: TextStyle(fontSize: 13.sp),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.deepPurple,
+                          side: const BorderSide(color: Colors.deepPurple),
+                          minimumSize: Size(double.infinity, 40.h),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.r),
+                          ),
+                        ),
+                      ), */
                     ],
                   ),
                 ),
 
                 /// Register Link (bottom section)
                 Container(
-                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
+                  padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).padding.bottom),
                   height: 55.h + MediaQuery.of(context).padding.bottom,
                   width: double.infinity,
                   color: BLACK_COLOR,
