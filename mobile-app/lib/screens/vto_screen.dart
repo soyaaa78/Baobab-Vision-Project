@@ -23,7 +23,7 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
 
   static const String _defaultBaseUrl = String.fromEnvironment(
     'VTO_WEB_BASE_URL',
-    defaultValue: 'https://baobab-vto.vercel.app',
+    defaultValue: 'https://next-webar-tryon.netlify.app',
   );
   static const String _defaultModelSlug = 'lana';
   static const String _defaultVariantSlug = 'rich-black';
@@ -96,7 +96,7 @@ class _VirtualTryOnScreenState extends State<VirtualTryOnScreen> {
         initialSettings: InAppWebViewSettings(
           javaScriptEnabled: true,
           mediaPlaybackRequiresUserGesture: false,
-          useHybridComposition: true,
+          useHybridComposition: false,
           domStorageEnabled: true,
           allowContentAccess: true,
           allowsInlineMediaPlayback: true,
