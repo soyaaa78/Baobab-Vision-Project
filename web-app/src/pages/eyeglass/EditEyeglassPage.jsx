@@ -387,19 +387,6 @@ const EditEyeglassPage = () => {
       };
     });
 
-    // Update 3D model display name if the option name changed
-    if (field === "name" && colorwayModelFiles[optionIndex]) {
-      setColorwayModelFiles((prev) => {
-        const next = [...prev];
-        if (next[optionIndex] && next[optionIndex].name) {
-          next[optionIndex] = {
-            ...next[optionIndex],
-            name: `${form.name || "Product"} - ${value}.glb`,
-          };
-        }
-        return next;
-      });
-    }
   };
   const handleColorOptionColorChange = (optionIndex, colorIndex, color) => {
     setForm((prev) => {
@@ -435,10 +422,8 @@ const EditEyeglassPage = () => {
     e.preventDefault();
     const file = e.dataTransfer?.files?.[0];
     if (file && is3dModelFile(file)) {
-      const colorOptionName =
-        form.colorOptions[optionIndex]?.name || `Color ${optionIndex + 1}`;
       const displayFile = {
-        name: `${form.name || "Product"} - ${colorOptionName}.glb`,
+        name: file.name,
         rawFile: file,
       };
       setColorwayModelFiles((prev) => {
@@ -1138,16 +1123,16 @@ const EditEyeglassPage = () => {
                             type="button"
                             onClick={() => handleRemoveColorOption(optionIndex)}
                             style={{
-                              backgroundColor: "#ff4444",
-                              color: "white",
-                              border: "none",
+                              backgroundColor: "transparent",
+                              color: "#ff4444",
+                              border: "1px solid #ff4444",
                               borderRadius: "4px",
-                              padding: "5px 10px",
+                              padding: "4px 8px",
                               cursor: "pointer",
                               fontSize: "0.8em",
                             }}
                           >
-                            Remove Option
+                            Remove Variant
                           </button>
                         </div>
                         <div style={{ marginBottom: "10px" }}>
@@ -1359,55 +1344,52 @@ const EditEyeglassPage = () => {
                         </div>
                         <div style={{ marginTop: "10px" }}>
                           <label>Virtual Try-On 3D Model (optional)</label>
-                          <div
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) =>
-                              handleColorwayModelDrop(e, optionIndex)
-                            }
-                            style={{
-                              border: "2px dashed #bbb",
-                              borderRadius: "6px",
-                              padding: "12px",
-                              textAlign: "center",
-                              color: "#666",
-                              background: "#fafafa",
-                              cursor: "pointer",
-                            }}
-                            onClick={() =>
-                              document
-                                .getElementById(`cw3d-${optionIndex}`)
-                                ?.click()
-                            }
-                          >
-                            <div style={{ fontSize: "0.9em" }}>
-                              Drag & drop .glb here, or click to browse
-                            </div>
-                            <input
-                              id={`cw3d-${optionIndex}`}
-                              type="file"
-                              accept=".glb"
-                              style={{ display: "none" }}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0] || null;
-                                if (file && is3dModelFile(file)) {
-                                  const colorOptionName =
-                                    form.colorOptions[optionIndex]?.name ||
-                                    `Color ${optionIndex + 1}`;
-                                  const displayFile = {
-                                    name: `${
-                                      form.name || "Product"
-                                    } - ${colorOptionName}.glb`,
-                                    rawFile: file,
-                                  };
-                                  setColorwayModelFiles((prev) => {
-                                    const next = [...prev];
-                                    next[optionIndex] = displayFile;
-                                    return next;
-                                  });
-                                }
+                          {!colorwayModelFiles[optionIndex] && (
+                            <div
+                              onDragOver={(e) => e.preventDefault()}
+                              onDrop={(e) =>
+                                handleColorwayModelDrop(e, optionIndex)
+                              }
+                              style={{
+                                border: "2px dashed #bbb",
+                                borderRadius: "6px",
+                                padding: "12px",
+                                textAlign: "center",
+                                color: "#666",
+                                background: "#fafafa",
+                                cursor: "pointer",
                               }}
-                            />
-                          </div>
+                              onClick={() =>
+                                document
+                                  .getElementById(`cw3d-${optionIndex}`)
+                                  ?.click()
+                              }
+                            >
+                              <div style={{ fontSize: "0.9em" }}>
+                                Drag & drop .glb here, or click to browse
+                              </div>
+                              <input
+                                id={`cw3d-${optionIndex}`}
+                                type="file"
+                                accept=".glb"
+                                style={{ display: "none" }}
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0] || null;
+                                  if (file && is3dModelFile(file)) {
+                                    const displayFile = {
+                                      name: file.name,
+                                      rawFile: file,
+                                    };
+                                    setColorwayModelFiles((prev) => {
+                                      const next = [...prev];
+                                      next[optionIndex] = displayFile;
+                                      return next;
+                                    });
+                                  }
+                                }}
+                              />
+                            </div>
+                          )}
                           {colorwayModelFiles[optionIndex] && (
                             <div
                               style={{
@@ -1427,40 +1409,52 @@ const EditEyeglassPage = () => {
                                 {colorwayModelFiles[optionIndex]?.name ||
                                   "Unknown file"}
                               </span>
-                              {colorwayModelFiles[optionIndex]?.url && (
-                                <a
-                                  href={colorwayModelFiles[optionIndex].url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                                {colorwayModelFiles[optionIndex]?.url && (
+                                  <a
+                                    href={colorwayModelFiles[optionIndex].url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{
+                                      fontSize: "0.9em",
+                                      color: "#007bff",
+                                      textDecoration: "underline"
+                                    }}
+                                  >
+                                    Download File
+                                  </a>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setColorwayModelFiles((prev) => {
+                                      const next = [...prev];
+                                      next[optionIndex] = null; // explicit removal
+                                      return next;
+                                    });
+                                    // Clear the input value so the same file can be selected again
+                                    const fileInput = document.getElementById(`cw3d-${optionIndex}`);
+                                    if (fileInput) fileInput.value = "";
+                                  }}
                                   style={{
-                                    marginLeft: "10px",
-                                    fontSize: "0.9em",
-                                    color: "#007bff",
-                                    textDecoration: "underline"
+                                    backgroundColor: "#ff4444",
+                                    color: "white",
+                                    border: "none",
+                                    borderRadius: "4px",
+                                    padding: "4px 8px",
+                                    cursor: "pointer",
+                                    fontSize: "0.85em",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px",
                                   }}
                                 >
-                                  Download File
-                                </a>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setColorwayModelFiles((prev) => {
-                                    const next = [...prev];
-                                    next[optionIndex] = null; // explicit removal
-                                    return next;
-                                  })
-                                }
-                                style={{
-                                  backgroundColor: "transparent",
-                                  border: "none",
-                                  color: "#ff4444",
-                                  cursor: "pointer",
-                                  fontSize: "1.2em",
-                                }}
-                              >
-                                ✕
-                              </button>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M10 11v6M14 11v6"/>
+                                  </svg>
+                                  Remove File
+                                </button>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1573,7 +1567,7 @@ const EditEyeglassPage = () => {
         title={modal.title}
         message={modal.message}
         variant={modal.variant}
-        primaryText={modal.onPrimary ? "Continue" : "OK"}
+        primaryText={modal.onPrimary ? "Exit to Catalogue" : "OK"}
         onPrimary={modal.onPrimary}
       />
     </>
