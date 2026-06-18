@@ -177,6 +177,13 @@ class _GlassesRendererState extends State<GlassesRenderer> {
           double y = data.nosebridge.y * scale + fitOffsetY;
 
           // mirror horizontally for front camera
+          if (!isTracking) {
+          // SAFE HIDE: Throw the PlatformView completely off-screen instead of using Opacity=0.0
+          // Setting Opacity to 0.0 or using Offstage causes Flutter to cull the Android WebView from the
+          // layer tree, which forces the underlying CameraPreview SurfaceView to recalculate its z-order,
+          // resulting in a split-second flash of its oldest camera frame buffer.
+          appliedTransform.translate(-10000.0, -10000.0, 0.0);
+        } else {
           x = size.width - x;
 
           // transform is anchored at the center of the screen
@@ -200,17 +207,17 @@ class _GlassesRendererState extends State<GlassesRenderer> {
           final scaledOffsetY = offsetY * dynamicScale;
           appliedTransform.translate(transX + offsetX, transY + scaledOffsetY, offsetZ);
           appliedTransform.rotateZ(displayRoll + rollOffset);
+          
+          // Apply dynamic scale
+          appliedTransform.scale(dynamicScale, dynamicScale, dynamicScale);
         }
-        // Apply dynamic scale
-        appliedTransform.scale(dynamicScale, dynamicScale, dynamicScale);
+        }
 
         // We wrap the 3D Viewer in a Transform widget to apply the Matrix4 
         // coming from the AR pipeline.
         return Positioned.fill(
           child: IgnorePointer( // Don't intercept touches meant for the UI
-            child: Opacity(
-              opacity: isTracking ? 1.0 : 0.0,
-              child: Transform(
+            child: Transform(
                 transform: appliedTransform,              alignment: Alignment.center,
                 child: Flutter3DViewer(
                 key: ValueKey(widget.glbPath),
@@ -226,7 +233,6 @@ class _GlassesRendererState extends State<GlassesRenderer> {
                     setState(() => _isModelLoaded = true);
                   }
                 },
-              ),
               ),
             ),
           ),

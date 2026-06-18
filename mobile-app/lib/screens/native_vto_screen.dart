@@ -129,7 +129,17 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
   }
 
   Widget _buildProductSelector() {
-    if (widget.allProducts == null || widget.allProducts!.length <= 1) {
+    if (widget.allProducts == null) {
+      return const SizedBox.shrink();
+    }
+
+    final vtoProducts = widget.allProducts!.where((p) {
+      final hasProductModel = p.model3dUrl != null && p.model3dUrl!.isNotEmpty;
+      final hasColorModel = p.colorOptions.any((c) => c.model3dUrl != null && c.model3dUrl!.isNotEmpty);
+      return hasProductModel || hasColorModel;
+    }).toList();
+
+    if (vtoProducts.length <= 1) {
       return const SizedBox.shrink();
     }
     
@@ -148,12 +158,12 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
           ),
         ),
         SizedBox(
-          height: 80,
+          height: 105,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: widget.allProducts!.length,
+            itemCount: vtoProducts.length,
             itemBuilder: (context, index) {
-              final product = widget.allProducts![index];
+              final product = vtoProducts[index];
               final isSelected = _activeProduct.id == product.id;
               final imageUrl = product.imageUrls.isNotEmpty ? product.imageUrls.first : '';
               
@@ -162,18 +172,40 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
                 child: Container(
                   width: 80,
                   margin: const EdgeInsets.only(right: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isSelected ? const Color(0xFFEAB676) : Colors.transparent,
-                      width: 4,
-                    ),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: imageUrl.startsWith('http')
-                        ? Image.network(imageUrl, fit: BoxFit.cover)
-                        : Image.asset(imageUrl, fit: BoxFit.cover),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        height: 80,
+                        width: 80,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFFEAB676) : Colors.transparent,
+                            width: 4,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: imageUrl.startsWith('http')
+                              ? Image.network(imageUrl, fit: BoxFit.cover)
+                              : Image.asset(imageUrl, fit: BoxFit.cover),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        product.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: isSelected ? BLACK_COLOR : Colors.grey[600],
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                          fontFamily: 'Rubik',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );
@@ -330,7 +362,7 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Drag Handle for expanding/collapsing
-                      if (widget.allProducts != null && widget.allProducts!.length > 1)
+                      if (widget.allProducts != null && widget.allProducts!.where((p) => (p.model3dUrl != null && p.model3dUrl!.isNotEmpty) || p.colorOptions.any((c) => c.model3dUrl != null && c.model3dUrl!.isNotEmpty)).length > 1)
                         Center(
                           child: GestureDetector(
                             onTap: () => setState(() => _isSheetExpanded = !_isSheetExpanded),
@@ -347,7 +379,7 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
                         ),
 
                       // Expanded Content (Product Carousel)
-                      if (_isSheetExpanded && widget.allProducts != null && widget.allProducts!.length > 1)
+                      if (_isSheetExpanded && widget.allProducts != null && widget.allProducts!.where((p) => (p.model3dUrl != null && p.model3dUrl!.isNotEmpty) || p.colorOptions.any((c) => c.model3dUrl != null && c.model3dUrl!.isNotEmpty)).length > 1)
                         _buildProductSelector(),
 
                       // Product Info
