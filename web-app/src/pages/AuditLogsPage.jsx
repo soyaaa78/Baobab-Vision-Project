@@ -53,6 +53,9 @@ const AuditLogsPage = () => {
   const [selectedLog, setSelectedLog] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [filterEventType, setFilterEventType] = useState("all");
   const [filterAction, setFilterAction] = useState("all");
   const [filterDateFrom, setFilterDateFrom] = useState("");
@@ -147,6 +150,20 @@ const AuditLogsPage = () => {
     return "User";
   };
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchQuery]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, filterEventType, filterAction, filterDateFrom, filterDateTo]);
+
   // Client-side search and filtering
   const filteredLogs = useMemo(() => {
     let filtered = auditLogs;
@@ -175,8 +192,8 @@ const AuditLogsPage = () => {
     }
 
     // Search functionality - search across all relevant fields
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedSearchQuery.trim()) {
+      const query = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter((log) => {
         const actorName = getActorDisplayName(log).toLowerCase();
         const eventType = log.eventType?.toLowerCase() || "";
@@ -215,12 +232,19 @@ const AuditLogsPage = () => {
     return filtered;
   }, [
     auditLogs,
-    searchQuery,
+    debouncedSearchQuery,
     filterEventType,
     filterAction,
     filterDateFrom,
     filterDateTo,
   ]);
+
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
+
+  const currentLogs = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredLogs.slice(start, start + itemsPerPage);
+  }, [filteredLogs, currentPage, itemsPerPage]);
 
   const handleViewDetails = (log) => {
     setSelectedLog(log);
@@ -627,8 +651,8 @@ const AuditLogsPage = () => {
       {/* Results Summary */}
       <div className="results-summary">
         <p>
-          Showing {filteredLogs.length} of {auditLogs.length} audit logs
-          {searchQuery && ` for "${searchQuery}"`}
+          Showing {currentLogs.length} of {filteredLogs.length} matching logs
+          {debouncedSearchQuery && ` for "${debouncedSearchQuery}"`}
           {(filterEventType !== "all" ||
             filterAction !== "all" ||
             filterDateFrom ||
@@ -651,7 +675,7 @@ const AuditLogsPage = () => {
             </tr>
           </thead>
           <tbody>
-            {filteredLogs.length === 0 ? (
+            {currentLogs.length === 0 ? (
               <tr>
                 <td colSpan="7" className="no-data">
                   {hasActiveFilters
@@ -660,7 +684,7 @@ const AuditLogsPage = () => {
                 </td>
               </tr>
             ) : (
-              filteredLogs.map((log) => (
+              currentLogs.map((log) => (
                 <tr key={log._id} className="log-row">
                   <td className="date-cell">{formatDate(log.createdAt)}</td>
                   <td className="actor-cell">
@@ -713,6 +737,42 @@ const AuditLogsPage = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="pagination">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="pagination-btn"
+          >
+            Previous
+          </button>
+          <span className="pagination-info">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="pagination-btn"
+          >
+            Next
+          </button>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className="items-per-page-select"
+          >
+            <option value={10}>10 per page</option>
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
+        </div>
+      )}
 
       <div
         ref={exportContentRef}

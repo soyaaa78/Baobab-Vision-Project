@@ -383,6 +383,10 @@
 }
 
 /* Print / PDF styles */
+@page {
+  margin: 5mm 10mm;
+}
+
 @media print {
   /* Hide navigation bar */
   .navigation {
@@ -446,12 +450,14 @@
   .auditlogs-header-actions,
   .results-summary,
   .actions-cell,
-  .auditlogs-table th:last-child {
+  .auditlogs-table th:last-child,
+  .pagination {
     display: none !important;
   }
 
   .page#auditlogs {
-    padding: 1rem 1.25rem;
+    padding: 0 1.25rem;
+    margin-top: 0;
     height: auto !important;
     min-height: auto !important;
     overflow: visible !important;
@@ -560,3 +566,57 @@
     min-width: 120px;
   }
 }
+
+/* Pagination Controls */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 0 0 12px 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #334155;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.items-per-page-select {
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #334155;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+  outline: none;
+}
+.items-per-page-select:focus {
+  border-color: #8b5a3c;
+}
+
