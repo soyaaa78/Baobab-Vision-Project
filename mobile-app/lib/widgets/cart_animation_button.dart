@@ -7,8 +7,9 @@ import 'package:baobab_vision_project/screens/cart_screen.dart'; // Import CartS
 class CartAnimationButton extends StatefulWidget {
   final VoidCallback onPressed;
   final String label;
+  final double? fontSize;
 
-  CartAnimationButton({required this.onPressed, required this.label});
+  CartAnimationButton({required this.onPressed, required this.label, this.fontSize});
 
   @override
   _CartAnimationButtonState createState() => _CartAnimationButtonState();
@@ -92,7 +93,7 @@ class _CartAnimationButtonState extends State<CartAnimationButton> {
         ),
         child: CustomText(
           text: widget.label,
-          fontSize: ScreenUtil().setSp(15),
+          fontSize: widget.fontSize ?? ScreenUtil().setSp(15),
           color: Colors.white,
         ),
       ),
