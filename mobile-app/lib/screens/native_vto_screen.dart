@@ -430,7 +430,8 @@ class _NativeVtoScreenState extends State<NativeVtoScreen> {
                           Expanded(
                             flex: 2,
                             child: CartAnimationButton(
-                              label: 'Buy Now',
+                              label: 'Add to Cart',
+                              fontSize: 14.sp,
                               onPressed: () async {
                                 final token = await AuthStorage.getToken();
                                 if (token != null) {
