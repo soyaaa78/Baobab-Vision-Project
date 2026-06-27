@@ -141,22 +141,28 @@ const rating_patch = catchAsync(async (req, res, next) => {
   if (hasAdminResponse && isAdminOrStaff) {
     try {
       let action;
+      let actionCategory;
       const newResp = updated.adminResponse ?? "";
       const oldResp = prevAdminResponse ?? "";
 
       if (oldResp && !newResp) {
         action = `Cleared response to rating (${updated._id})`;
+        actionCategory = "clear_response";
       } else if (!oldResp && newResp) {
         action = `Responded to rating (${updated._id})`;
+        actionCategory = "respond";
       } else if (oldResp !== newResp) {
         action = `Edited response to rating (${updated._id})`;
+        actionCategory = "edit_response";
       } else {
         action = `Updated response to rating (${updated._id})`;
+        actionCategory = "respond";
       }
 
       logEvent(req, {
         eventType: "rating",
         action,
+        actionCategory,
         targetModel: "Rating",
         targetId: updated._id,
         oldValues: { adminResponse: prevAdminResponse },

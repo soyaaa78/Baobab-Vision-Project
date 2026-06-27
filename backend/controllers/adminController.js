@@ -84,6 +84,7 @@ exports.login = async (req, res) => {
       logEvent(req, {
         eventType: "auth",
         action: "Staff login verification OTP sent",
+        actionCategory: "otp",
         targetModel: "Admin",
         targetId: admin._id,
         metadata: { email: admin.email },
@@ -109,6 +110,7 @@ exports.login = async (req, res) => {
     logEvent(req, {
       eventType: "auth",
       action: `Staff logged in (${username})`,
+      actionCategory: "login",
       targetModel: "Admin",
       targetId: admin._id,
       metadata: { username },
@@ -185,6 +187,7 @@ exports.requestPasswordResetOtp = async (req, res) => {
     logEvent(req, {
       eventType: "auth",
       action: "Admin password reset OTP sent",
+      actionCategory: "password_reset",
       targetModel: "Admin",
       targetId: admin._id,
       metadata: { email: admin.email },
@@ -249,6 +252,7 @@ exports.verifyPasswordResetOtp = async (req, res) => {
     logEvent(req, {
       eventType: "auth",
       action: "Admin password reset OTP verified",
+      actionCategory: "password_reset",
       targetModel: "Admin",
       targetId: admin._id,
       metadata: { email: admin.email },
@@ -323,6 +327,7 @@ exports.resetPassword = async (req, res) => {
     logEvent(req, {
       eventType: "auth",
       action: "Admin password reset completed",
+      actionCategory: "password_reset",
       targetModel: "Admin",
       targetId: admin._id,
       metadata: { email: admin.email },
@@ -369,6 +374,7 @@ exports.createStaff = async (req, res) => {
     logEvent(req, {
       eventType: "staff",
       action: `Created staff account (${username})`,
+      actionCategory: "create",
       targetModel: "Admin",
       targetId: staff._id,
       newValues: { firstname, lastname, username, email, role, permissions },
@@ -432,6 +438,7 @@ exports.updatePermissions = async (req, res) => {
     logEvent(req, {
       eventType: "staff",
       action: `Updated staff permissions (${staff.username})`,
+      actionCategory: "update_permissions",
       targetModel: "Admin",
       targetId: staff._id,
       newValues: { permissions },
@@ -518,6 +525,7 @@ exports.verifyStaffOtp = async (req, res) => {
     logEvent(req, {
       eventType: "auth",
       action: `Staff email verified (${requestEmail})`,
+      actionCategory: "email_verification",
       targetModel: "Admin",
       targetId: admin._id,
       metadata: { email: requestEmail },
@@ -563,6 +571,7 @@ exports.resendOtp = async (req, res) => {
     logEvent(req, {
       eventType: "auth",
       action: "Staff verification OTP resent",
+      actionCategory: "otp",
       targetModel: "Admin",
       targetId: admin._id,
       metadata: { email: requestEmail },
@@ -584,6 +593,7 @@ exports.disableUser = async (req, res) => {
     // Audit: disable user
     logEvent(req, {
       eventType: "user",
+      actionCategory: "disable",
       action: `Disabled user account (${
         user.username || user.email || user._id
       })`,
@@ -607,6 +617,7 @@ exports.enableUser = async (req, res) => {
     // Audit: enable user
     logEvent(req, {
       eventType: "user",
+      actionCategory: "enable",
       action: `Enabled user account (${
         user.username || user.email || user._id
       })`,
@@ -628,6 +639,7 @@ exports.deleteUser = async (req, res) => {
     // Audit: delete user
     logEvent(req, {
       eventType: "user",
+      actionCategory: "delete",
       action: `Deleted user account (${
         user?.username || user?.email || req.params.id
       })`,
@@ -658,6 +670,7 @@ exports.disableStaff = async (req, res) => {
     logEvent(req, {
       eventType: "staff",
       action: `Disabled staff account (${staff.username})`,
+      actionCategory: "disable",
       targetModel: "Admin",
       targetId: req.params.id,
     });
@@ -685,6 +698,7 @@ exports.enableStaff = async (req, res) => {
     logEvent(req, {
       eventType: "staff",
       action: `Enabled staff account (${staff.username})`,
+      actionCategory: "enable",
       targetModel: "Admin",
       targetId: req.params.id,
     });
@@ -707,6 +721,7 @@ exports.deleteStaff = async (req, res) => {
     logEvent(req, {
       eventType: "staff",
       action: `Deleted staff account (${staff.username})`,
+      actionCategory: "delete",
       targetModel: "Admin",
       targetId: req.params.id,
     });
@@ -763,6 +778,7 @@ exports.changePassword = async (req, res) => {
     logEvent(req, {
       eventType: "admin",
       action: "Changed account password",
+      actionCategory: "change_password",
       targetModel: "Admin",
       targetId: req.user.id,
     });
@@ -793,6 +809,7 @@ exports.logout = async (req, res) => {
     logEvent(req, {
       eventType: "auth",
       action: `Staff logged out${username ? ` (${username})` : ""}`,
+      actionCategory: "logout",
       targetModel: "Admin",
       targetId: req.user?.id,
       metadata: username ? { username } : undefined,

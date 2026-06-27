@@ -35,6 +35,36 @@ const AuditLogSchema = new mongoose.Schema(
     },
     action: { type: String, required: true }, // e.g., login, verify_otp, create, update, delete, enable, disable, approve, decline, update_status
 
+    // Canonical coarse action taxonomy for filtering (free-form `action` above stays human-readable).
+    // Intentionally OPTIONAL: audit logging is best-effort and must never fail over a missing/invalid category.
+    actionCategory: {
+      type: String,
+      enum: [
+        "login",
+        "logout",
+        "password_reset",
+        "otp",
+        "email_verification",
+        "create",
+        "update",
+        "update_permissions",
+        "update_recommendation",
+        "update_status",
+        "enable",
+        "disable",
+        "delete",
+        "payment_approve",
+        "payment_decline",
+        "cancellation_approve",
+        "cancellation_decline",
+        "respond",
+        "edit_response",
+        "clear_response",
+        "change_password",
+      ],
+      required: false,
+    },
+
     // What it acted on
     targetModel: { type: String, required: false }, // e.g., Product, User, Admin, Order, ProofOfPayment
     targetId: { type: mongoose.Schema.Types.Mixed, required: false }, // ObjectId or string like orderId

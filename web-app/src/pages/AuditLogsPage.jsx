@@ -15,36 +15,18 @@ import {
 import axios from "axios";
 import Cookies from "js-cookie";
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import baobablogo from "../assets/bvfull.png";
-import {
-  addPaginatedCanvasToPdf,
-  captureElementCanvas,
-} from "../utils/pdfReportExport";
 import {
   buildAuditChangeExportText,
   buildAuditMetadataExportText,
   buildAuditTargetExportText,
 } from "../utils/auditExportFormat";
 import {
-  AUDIT_PDF_CELL_TEXT_STYLE,
-  AUDIT_PDF_COLUMN_WIDTHS,
-  AUDIT_PDF_EXPORT_FONT_SIZE_PX,
-} from "../utils/auditPdfExportLayout";
+  getActionCategoriesForEventType,
+  getActionCategoryLabel,
+} from "../utils/auditActionTaxonomy";
 import { getPdfExportButtonLabel } from "../utils/pdfExportUi";
-
-const exportHeaderCellStyle = {
-  border: "1px solid #cbd5e1",
-  padding: "6px",
-  textAlign: "left",
-  ...AUDIT_PDF_CELL_TEXT_STYLE,
-};
-
-const exportBodyCellStyle = {
-  border: "1px solid #cbd5e1",
-  padding: "6px",
-  verticalAlign: "top",
-  ...AUDIT_PDF_CELL_TEXT_STYLE,
-};
 
 const AuditLogsPage = () => {
   const SERVER_URL = import.meta.env.VITE_SERVER_URL;
@@ -64,7 +46,6 @@ const AuditLogsPage = () => {
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const printRef = useRef(null);
   const contentRef = useRef(null);
-  const exportContentRef = useRef(null);
 
   // Event type options for filtering
   const eventTypes = [
@@ -79,21 +60,11 @@ const AuditLogsPage = () => {
     "rating",
   ];
 
-  // Common actions for filtering
-  const actions = [
-    "all",
-    "login",
-    "logout",
-    "create",
-    "update",
-    "delete",
-    "enable",
-    "disable",
-    "approve",
-    "decline",
-    "update_status",
-    "verify_otp",
-  ];
+  // Action category options derived from the taxonomy for the selected event type.
+  const actionCategoryOptions = useMemo(
+    () => getActionCategoriesForEventType(filterEventType),
+    [filterEventType]
+  );
 
   useEffect(() => {
     const t = Cookies.get("token");
@@ -173,9 +144,9 @@ const AuditLogsPage = () => {
       filtered = filtered.filter((log) => log.eventType === filterEventType);
     }
 
-    // Filter by action
+    // Filter by action category (canonical token provided by the backend)
     if (filterAction !== "all") {
-      filtered = filtered.filter((log) => log.action === filterAction);
+      filtered = filtered.filter((log) => log.actionCategory === filterAction);
     }
 
     // Filter by date range
@@ -349,17 +320,19 @@ const AuditLogsPage = () => {
           })
       );
 
+  // Descriptive action text shown in the table/export "Action" column.
+  const getActionDisplayText = (log) =>
+    actionLabels[log.action] ||
+    (log.action
+      ? log.action.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
+      : "N/A");
+
   const handleExportPDF = async () => {
     if (isExportingPdf) return;
-    const element = exportContentRef.current || contentRef.current;
-    if (!element) return;
 
     setIsExportingPdf(true);
     try {
-      const [logoBase64, canvas] = await Promise.all([
-        loadImageAsBase64(baobablogo),
-        captureElementCanvas(element, { scale: 2 }),
-      ]);
+      const logoBase64 = await loadImageAsBase64(baobablogo);
 
       const pdf = new jsPDF({
         orientation: "landscape",
@@ -369,75 +342,153 @@ const AuditLogsPage = () => {
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
 
-      const contentY = 34;
-      const footerY = pageHeight - 12;
-      const availableContentHeight = footerY - contentY;
       const generatedAt = new Date().toLocaleString();
 
       const filterParts = [];
       if (filterEventType !== "all") filterParts.push(`Event: ${filterEventType}`);
-      if (filterAction !== "all") filterParts.push(`Action: ${filterAction}`);
+      if (filterAction !== "all")
+        filterParts.push(`Action: ${getActionCategoryLabel(filterAction)}`);
       if (filterDateFrom) filterParts.push(`From: ${filterDateFrom}`);
       if (filterDateTo) filterParts.push(`To: ${filterDateTo}`);
       const filterText = filterParts.length ? `Filters: ${filterParts.join(" | ")}` : "";
 
-      addPaginatedCanvasToPdf({
-        pdf,
-        canvas,
-        contentY,
-        contentWidth: pageWidth,
-        contentHeightPerPage: availableContentHeight,
-        drawPageDecorators: ({ pageNumber, totalPages }) => {
-          pdf.setFillColor(252, 247, 242);
-          pdf.rect(0, 0, pageWidth, 30, "F");
+      const head = [
+        [
+          "Date & Time",
+          "Staff",
+          "Role",
+          "Type",
+          "Action",
+          "Target",
+          "IP",
+          "Device",
+          "Metadata",
+          "Changes",
+        ],
+      ];
 
-          pdf.addImage(logoBase64, "PNG", 8, 6, 58, 19);
+      const body =
+        filteredLogs.length === 0
+          ? [
+              [
+                {
+                  content: "No audit logs found",
+                  colSpan: 10,
+                  styles: { halign: "center" },
+                },
+              ],
+            ]
+          : filteredLogs.map((log) => [
+              formatDate(log.createdAt),
+              getActorDisplayName(log),
+              getActorRoleDisplay(log.actorRole),
+              eventTypeLabels[log.eventType] || log.eventType || "N/A",
+              getActionDisplayText(log),
+              buildAuditTargetExportText(log),
+              log.ip || "N/A",
+              log.userAgent || "N/A",
+              buildAuditMetadataExportText(log),
+              buildAuditChangeExportText(log),
+            ]);
 
-          pdf.setTextColor(139, 90, 60);
-          pdf.setFont("helvetica", "bold");
-          pdf.setFontSize(15);
-          pdf.text("AUDIT LOG REPORT", pageWidth - 8, 14, { align: "right" });
+      const drawPageDecorators = () => {
+        // Header band
+        pdf.setFillColor(252, 247, 242);
+        pdf.rect(0, 0, pageWidth, 30, "F");
 
-          pdf.setFont("helvetica", "normal");
-          pdf.setFontSize(8);
-          pdf.setTextColor(100, 116, 139);
-          pdf.text(`Generated: ${generatedAt}`, pageWidth - 8, 21, { align: "right" });
-          if (filterText) {
-            pdf.text(filterText, pageWidth - 8, 27, { align: "right" });
-          }
+        pdf.addImage(logoBase64, "PNG", 8, 6, 58, 19);
 
-          pdf.setFillColor(139, 90, 60);
-          pdf.rect(0, 30, pageWidth, 1.5, "F");
-          pdf.setFillColor(234, 182, 118);
-          pdf.rect(0, 31.5, pageWidth, 0.8, "F");
+        pdf.setTextColor(139, 90, 60);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(15);
+        pdf.text("AUDIT LOG REPORT", pageWidth - 8, 14, { align: "right" });
 
-          pdf.setFillColor(252, 247, 242);
-          pdf.rect(0, pageHeight - 12, pageWidth, 12, "F");
-          pdf.setFillColor(139, 90, 60);
-          pdf.rect(0, pageHeight - 12, pageWidth, 0.8, "F");
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(`Generated: ${generatedAt}`, pageWidth - 8, 21, { align: "right" });
+        if (filterText) {
+          pdf.text(filterText, pageWidth - 8, 27, { align: "right" });
+        }
 
-          pdf.setFont("helvetica", "bold");
-          pdf.setFontSize(7);
-          pdf.setTextColor(139, 90, 60);
-          pdf.text(
-            "Baobab Vision Eyewear - CONFIDENTIAL - FOR INTERNAL USE ONLY",
-            8,
-            pageHeight - 4.5
-          );
+        pdf.setFillColor(139, 90, 60);
+        pdf.rect(0, 30, pageWidth, 1.5, "F");
+        pdf.setFillColor(234, 182, 118);
+        pdf.rect(0, 31.5, pageWidth, 0.8, "F");
 
-          pdf.setFont("helvetica", "normal");
-          pdf.setTextColor(100, 116, 139);
-          pdf.text(
-            `Records: ${filteredLogs.length} shown of ${auditLogs.length} total`,
-            pageWidth / 2,
-            pageHeight - 4.5,
-            { align: "center" }
-          );
-          pdf.text(`Page ${pageNumber} of ${totalPages}`, pageWidth - 8, pageHeight - 4.5, {
-            align: "right",
-          });
+        // Footer band
+        pdf.setFillColor(252, 247, 242);
+        pdf.rect(0, pageHeight - 12, pageWidth, 12, "F");
+        pdf.setFillColor(139, 90, 60);
+        pdf.rect(0, pageHeight - 12, pageWidth, 0.8, "F");
+
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(139, 90, 60);
+        pdf.text(
+          "Baobab Vision Eyewear - CONFIDENTIAL - FOR INTERNAL USE ONLY",
+          8,
+          pageHeight - 4.5
+        );
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(
+          `Records: ${filteredLogs.length} shown of ${auditLogs.length} total`,
+          pageWidth / 2,
+          pageHeight - 4.5,
+          { align: "center" }
+        );
+        const pageNumber = pdf.internal.getNumberOfPages();
+        pdf.text(`Page ${pageNumber}`, pageWidth - 8, pageHeight - 4.5, {
+          align: "right",
+        });
+      };
+
+      autoTable(pdf, {
+        head,
+        body,
+        margin: { top: 34, bottom: 14, left: 8, right: 8 },
+        styles: {
+          fontSize: 7,
+          cellPadding: 1.5,
+          overflow: "linebreak",
+          valign: "top",
         },
+        headStyles: {
+          fillColor: [139, 90, 60],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        // Relative widths summing to ~281mm usable width (A4 landscape - 16mm margins).
+        columnStyles: {
+          0: { cellWidth: 26 }, // Date & Time
+          1: { cellWidth: 26 }, // Staff
+          2: { cellWidth: 20 }, // Role
+          3: { cellWidth: 16 }, // Type
+          4: { cellWidth: 24 }, // Action
+          5: { cellWidth: 28 }, // Target
+          6: { cellWidth: 22 }, // IP
+          7: { cellWidth: 40 }, // Device (user-agent, capped + wraps)
+          8: { cellWidth: 39 }, // Metadata
+          9: { cellWidth: 40 }, // Changes
+        },
+        didDrawPage: drawPageDecorators,
       });
+
+      // Backfill "Page N of M" now that the total page count is known.
+      const totalPages = pdf.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i += 1) {
+        pdf.setPage(i);
+        pdf.setFillColor(252, 247, 242);
+        pdf.rect(pageWidth - 40, pageHeight - 9, 32, 6, "F");
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 116, 139);
+        pdf.text(`Page ${i} of ${totalPages}`, pageWidth - 8, pageHeight - 4.5, {
+          align: "right",
+        });
+      }
 
       const dateStr = new Date().toISOString().split("T")[0];
       pdf.save(`audit-log-${dateStr}.pdf`);
@@ -575,7 +626,20 @@ const AuditLogsPage = () => {
             <select
               id="eventTypeFilter"
               value={filterEventType}
-              onChange={(e) => setFilterEventType(e.target.value)}
+              onChange={(e) => {
+                const nextEventType = e.target.value;
+                setFilterEventType(nextEventType);
+                // Smart-preserve the selected action if the new event type still
+                // offers it; otherwise reset to "all".
+                const nextCategories =
+                  getActionCategoriesForEventType(nextEventType);
+                if (
+                  filterAction !== "all" &&
+                  !nextCategories.includes(filterAction)
+                ) {
+                  setFilterAction("all");
+                }
+              }}
               className="filter-select"
             >
               {eventTypes.map((type) => (
@@ -599,11 +663,10 @@ const AuditLogsPage = () => {
               onChange={(e) => setFilterAction(e.target.value)}
               className="filter-select"
             >
-              {actions.map((action) => (
-                <option key={action} value={action}>
-                  {action === "all"
-                    ? "All Actions"
-                    : action.charAt(0).toUpperCase() + action.slice(1)}
+              <option value="all">All Actions</option>
+              {actionCategoryOptions.map((token) => (
+                <option key={token} value={token}>
+                  {getActionCategoryLabel(token)}
                 </option>
               ))}
             </select>
@@ -773,89 +836,6 @@ const AuditLogsPage = () => {
           </select>
         </div>
       )}
-
-      <div
-        ref={exportContentRef}
-        style={{
-          position: "fixed",
-          left: "-100000px",
-          top: 0,
-          width: "2200px",
-          background: "#ffffff",
-          color: "#0f172a",
-          padding: "12px 16px",
-          boxSizing: "border-box",
-          fontSize: `${AUDIT_PDF_EXPORT_FONT_SIZE_PX}px`,
-        }}
-      >
-        <table
-          style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            tableLayout: "fixed",
-          }}
-        >
-          <thead>
-            <tr>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.dateTime}px` }}>Date & Time</th>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.staff}px` }}>Staff</th>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.role}px` }}>Role</th>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.type}px` }}>Type</th>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.action}px` }}>Action</th>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.target}px` }}>Target</th>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.ip}px` }}>IP</th>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.device}px` }}>Device</th>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.metadata}px` }}>Metadata</th>
-              <th style={{ ...exportHeaderCellStyle, width: `${AUDIT_PDF_COLUMN_WIDTHS.changes}px` }}>Changes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredLogs.length === 0 ? (
-              <tr>
-                <td colSpan="10" style={{ ...exportBodyCellStyle, textAlign: "center" }}>
-                  {hasActiveFilters
-                    ? "No audit logs match your search criteria"
-                    : "No audit logs found"}
-                </td>
-              </tr>
-            ) : (
-              filteredLogs.map((log) => (
-                <tr key={`export-${log._id}`}>
-                  <td style={exportBodyCellStyle}>{formatDate(log.createdAt)}</td>
-                  <td style={exportBodyCellStyle}>{getActorDisplayName(log)}</td>
-                  <td style={exportBodyCellStyle}>{getActorRoleDisplay(log.actorRole)}</td>
-                  <td style={exportBodyCellStyle}>
-                    {eventTypeLabels[log.eventType] || log.eventType || "N/A"}
-                  </td>
-                  <td style={exportBodyCellStyle}>
-                    {actionLabels[log.action] ||
-                      (log.action
-                        ? log.action
-                            .replace(/_/g, " ")
-                            .replace(/\b\w/g, (c) => c.toUpperCase())
-                        : "N/A")}
-                  </td>
-                  <td style={exportBodyCellStyle}>
-                    {buildAuditTargetExportText(log)}
-                  </td>
-                  <td style={exportBodyCellStyle}>
-                    {log.ip || "N/A"}
-                  </td>
-                  <td style={exportBodyCellStyle}>
-                    {log.userAgent || "N/A"}
-                  </td>
-                  <td style={exportBodyCellStyle}>
-                    {buildAuditMetadataExportText(log)}
-                  </td>
-                  <td style={exportBodyCellStyle}>
-                    {buildAuditChangeExportText(log)}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
 
       </div>{/* end printRef */}
 
