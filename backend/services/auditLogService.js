@@ -33,6 +33,7 @@ async function logEvent(
   {
     eventType,
     action,
+    actionCategory,
     targetModel,
     targetId,
     oldValues,
@@ -64,6 +65,7 @@ async function logEvent(
       userAgent: ctx.userAgent,
       eventType,
       action,
+      actionCategory,
       targetModel,
       targetId,
       oldValues: sanitize(oldValues),

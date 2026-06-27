@@ -770,6 +770,7 @@ exports.createProduct = catchAsync(async (req, res, next) => {
       logEvent(req, {
         eventType: "product",
         action: `Created product (${product.name})`,
+        actionCategory: "create",
         targetModel: "Product",
         targetId: product._id,
         oldValues: null,
@@ -950,6 +951,7 @@ exports.addProductToRecommended = async (req, res) => {
       logEvent(req, {
         eventType: "product",
         action: `Updated product recommendation status (${product.name})`,
+        actionCategory: "update_recommendation",
         targetModel: "Product",
         targetId: product._id,
         oldValues,
@@ -1117,6 +1119,7 @@ exports.updateProduct = async (req, res) => {
       logEvent(req, {
         eventType: "product",
         action: `Updated product details (${product.name})`,
+        actionCategory: "update",
         targetModel: "Product",
         targetId: product._id,
         oldValues,
@@ -1160,6 +1163,7 @@ exports.deleteProduct = async (req, res) => {
       logEvent(req, {
         eventType: "product",
         action: `Deleted product (${product.name || id})`,
+        actionCategory: "delete",
         targetModel: "Product",
         targetId: id,
         oldValues: product,

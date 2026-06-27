@@ -426,30 +426,36 @@ const order_put = catchAsync(async (req, res, next) => {
     if (status && oldStatus !== newStatus) {
       const ordId = updatedOrder.orderId || updatedOrder._id?.toString();
       let action = `Status Updated to ${newStatus} for order ${ordId}`;
+      let actionCategory = "update_status";
       const metadata = { oldStatus, newStatus, orderId: ordId };
 
       // Special logging for payment approval/disapproval
       if (updatedOrder.paymentMethod === "Gcash") {
         if (oldStatus === "pending" && newStatus === "processing") {
           action = `Payment Approved for order ${ordId}`;
+          actionCategory = "payment_approve";
         } else if (oldStatus === "pending" && newStatus === "cancelled") {
           action = `Payment Disapproved for order ${ordId}`;
+          actionCategory = "payment_decline";
         }
       }
 
       // Special logging for cancellation approval
       if (oldStatus === "cancelled_pending" && newStatus === "cancelled") {
         action = `Cancellation Approved for order ${ordId}`;
+        actionCategory = "cancellation_approve";
       } else if (
         oldStatus === "cancelled_pending" &&
         newStatus === "processing"
       ) {
         action = `Cancellation Disapproved for order ${ordId}`;
+        actionCategory = "cancellation_decline";
       }
 
       logEvent(req, {
         eventType: "order",
         action,
+        actionCategory,
         targetModel: "Order",
         targetId: updatedOrder._id,
         oldValues: { status: oldStatus },
@@ -514,6 +520,7 @@ const order_delete = catchAsync(async (req, res, next) => {
     logEvent(req, {
       eventType: "order",
       action: `Deleted order ${ordId}`,
+      actionCategory: "delete",
       targetModel: "Order",
       targetId: id,
       oldValues: deletedOrder.toObject(),
