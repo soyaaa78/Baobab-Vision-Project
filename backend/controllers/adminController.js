@@ -36,13 +36,15 @@ const isValidAdminPassword = (password) =>
 // LOGIN
 exports.login = async (req, res) => {
   const { username, password } = req.body || {};
-  const requestUsername = getNonEmptyRequestString(username);
+  const requestLogin = getNonEmptyRequestString(username);
   try {
-    if (!requestUsername) {
+    if (!requestLogin) {
       return res.status(404).json({ message: "Admin not found" });
     }
 
-    const admin = await Admin.findOne({ username: requestUsername });
+    const admin = await Admin.findOne({
+      $or: [{ username: requestLogin }, { email: requestLogin }],
+    });
 
     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
@@ -109,11 +111,11 @@ exports.login = async (req, res) => {
     // Audit: staff login
     logEvent(req, {
       eventType: "auth",
-      action: `Staff logged in (${username})`,
+      action: `Staff logged in (${admin.username || requestLogin})`,
       actionCategory: "login",
       targetModel: "Admin",
       targetId: admin._id,
-      metadata: { username },
+      metadata: { username: admin.username || requestLogin },
     });
 
     return res.status(200).json({
