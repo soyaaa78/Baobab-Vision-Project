@@ -165,6 +165,65 @@ test("login rejects object-valued username before querying or signing", async ()
   assert.equal(didSign, false);
 });
 
+test("login accepts an email address through the username field", async () => {
+  let findOneQuery;
+  let compareCall;
+  let signPayload;
+  const admin = {
+    findOne: async (query) => {
+      findOneQuery = query;
+      return {
+        _id: "admin-1",
+        email: "staff@example.com",
+        username: "staff",
+        password: "stored-password",
+        role: "staff_product",
+        isDisabled: false,
+        isVerified: true,
+      };
+    },
+  };
+  const { login } = loadAdminController({
+    admin,
+    bcrypt: {
+      compare: async (password, storedPassword) => {
+        compareCall = { password, storedPassword };
+        return true;
+      },
+      hash: async () => "unused",
+    },
+    jwt: {
+      sign: (payload) => {
+        signPayload = payload;
+        return "admin-token";
+      },
+      verify: () => assert.fail("verify should not run while logging in"),
+    },
+  });
+  const res = createResponse();
+
+  await login(
+    { body: { username: "staff@example.com", password: "password" } },
+    res
+  );
+
+  assert.deepEqual(findOneQuery, {
+    $or: [{ username: "staff@example.com" }, { email: "staff@example.com" }],
+  });
+  assert.deepEqual(compareCall, {
+    password: "password",
+    storedPassword: "stored-password",
+  });
+  assert.equal(signPayload.id, "admin-1");
+  assert.equal(signPayload.role, "staff_product");
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(res.body, {
+    message: "Login successful",
+    token: "admin-token",
+    role: "staff_product",
+  });
+});
+
 test("login unverified admin stores a staff verification OTP purpose using crypto randomInt", async () => {
   const randomIntCalls = [];
   let updateCall;

@@ -406,12 +406,12 @@ function LoginPage() {
                   <FontAwesomeIcon icon={faUser} className="input-icon" />
                   <input
                     type="text"
-                    placeholder="Username"
+                    placeholder="Username or email"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
                     autoComplete="username"
-                    aria-label="Username"
+                    aria-label="Username or email"
                     className="form-input"
                     disabled={isSubmitting}
                   />
