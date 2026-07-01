@@ -1,18 +1,13 @@
 import 'dart:convert';
 import 'package:baobab_vision_project/screens/email_otp_verification_screen.dart';
-import 'package:baobab_vision_project/screens/email_verification_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_client.dart';
 import '../constants.dart';
-import '../screens/home_screen.dart';
-import '../screens/native_vto_screen.dart';
 import '../widgets/custom_dialog.dart';
 import '../widgets/custom_inkwell_button.dart';
-import '../widgets/custom_text.dart';
 
 class LogInScreen extends StatefulWidget {
   const LogInScreen({super.key});
@@ -27,28 +22,11 @@ class _LogInScreenState extends State<LogInScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   bool _isObscure = true;
 
-  // Function to save the user's info to SharedPreferences
-  Future<void> _saveUserInfo(
-    String username,
-    String firstname,
-    String lastname,
-    String email,
-    String token,
-    String userId,
-  ) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString('username', username);
-    await prefs.setString('firstname', firstname);
-    await prefs.setString('lastname', lastname);
-    await prefs.setString('email', email);
-    await prefs.setString('token', token); // Save the token
-    await prefs.setString('userId', userId);
-  }
-
   // Login function
   Future<void> login() async {
-    var connectivityResult = await (Connectivity().checkConnectivity());
-    if (connectivityResult == ConnectivityResult.none) {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      if (!mounted) return;
       customDialog(
         context,
         title: 'No Internet',
@@ -63,10 +41,6 @@ class _LogInScreenState extends State<LogInScreen> {
         'password': passwordController.text.trim(),
       });
 
-      print('🔄 LOGIN URL: ${ApiClient.baseUrl}/api/auth/login');
-      print('🔄 LOGIN STATUS: ${response.statusCode}');
-      print('🔄 LOGIN RESPONSE: ${response.body}');
-
       Map<String, dynamic> resData = {};
       final rawBody = response.body.trim();
       if (rawBody.startsWith('{')) {
@@ -75,10 +49,10 @@ class _LogInScreenState extends State<LogInScreen> {
           resData = decoded;
         }
       }
-      print('🔄 LOGIN RESPONSE (decoded): $resData');
 
       if (response.statusCode == 403 &&
           resData['requiresVerification'] == true) {
+        if (!mounted) return;
         // Navigate to email verification screen if the email is not verified
         Navigator.pushReplacement(
           context,
@@ -105,6 +79,7 @@ class _LogInScreenState extends State<LogInScreen> {
         await prefs.setString('email', email); // Save email
         await prefs.setString('username', username); //
 
+        if (!mounted) return;
         // Navigate to home screen
         Navigator.pushReplacementNamed(context, '/home');
       } else {
@@ -112,6 +87,7 @@ class _LogInScreenState extends State<LogInScreen> {
         final fallbackMessage = rawBody.isNotEmpty
             ? rawBody
             : 'Request failed (${response.statusCode})';
+        if (!mounted) return;
         customDialog(
           context,
           title: 'Login Failed',
@@ -119,7 +95,7 @@ class _LogInScreenState extends State<LogInScreen> {
         );
       }
     } catch (e) {
-      print('❌ Login Exception: $e');
+      if (!mounted) return;
       customDialog(
         context,
         title: 'Error',
