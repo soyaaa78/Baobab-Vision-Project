@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart'; // ✅ Added
 
 import '../constants.dart';
+import '../services/api_client.dart';
 import '../widgets/custom_inkwell_button.dart';
 import '../widgets/custom_text.dart';
 import '../widgets/custom_dialog.dart'; // ✅ Import custom_dialog
@@ -52,8 +52,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     // ✅ Check internet connection first
-    var connectivityResult = await Connectivity().checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
+    final connectivityResult = await Connectivity().checkConnectivity();
+    if (connectivityResult.contains(ConnectivityResult.none)) {
+      if (!mounted) return;
       customDialog(context,
           title: 'No Internet',
           content:
@@ -62,23 +63,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     try {
-      var url = Uri.parse(
-          'https://baobab-vision-project-0234.onrender.com/api/auth/register');
+      final response = await ApiClient.postJson('/api/auth/register', {
+        'firstname': firstnameController.text,
+        'lastname': lastnameController.text,
+        'email': emailController.text,
+        'username': usernameController.text,
+        'password': passwordController.text,
+      });
 
-      var response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'firstname': firstnameController.text,
-          'lastname': lastnameController.text,
-          'email': emailController.text,
-          'username': usernameController.text,
-          'password': passwordController.text,
-        }),
-      );
-
-      var resData = json.decode(response.body);
+      final resData = json.decode(response.body);
       if (response.statusCode == 201) {
+        if (!mounted) return;
         // ✅ Use customDialog for success
         customDialog(
           context,
@@ -88,12 +83,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
         // Navigate to login after a short delay
         Future.delayed(const Duration(milliseconds: 15000), () {
+          if (!mounted) return;
           Navigator.pushReplacementNamed(context, '/login');
         });
       } else {
+        if (!mounted) return;
         customDialog(context, title: 'Failed', content: resData['message']);
       }
     } catch (e) {
+      if (!mounted) return;
       customDialog(context,
           title: 'Network Connection',
           content: 'Something went wrong. Please try again later.');

@@ -6,13 +6,13 @@ This Flutter app reads compile-time environment variables via `--dart-define`.
 
 ### Available variables
 
-- `API_BASE_URL` (default: `https://baobab-vision-project.onrender.com`)
+- `API_BASE_URL` (default: `https://baobab-vision-project-0234.onrender.com`)
 - `VTO_WEB_BASE_URL` (default: `https://baobab-vto.vercel.app`)
 
 ### Example values
 
 ```env
-API_BASE_URL=https://baobab-vision-project.onrender.com
+API_BASE_URL=https://baobab-vision-project-0234.onrender.com
 VTO_WEB_BASE_URL=https://baobab-vto.vercel.app
 ```
 
@@ -20,7 +20,6 @@ VTO_WEB_BASE_URL=https://baobab-vto.vercel.app
 
 ```bash
 flutter run \
-  --dart-define=API_BASE_URL=https://baobab-vision-project.onrender.com \
+  --dart-define=API_BASE_URL=https://baobab-vision-project-0234.onrender.com \
   --dart-define=VTO_WEB_BASE_URL=https://baobab-vto.vercel.app
 ```
-
