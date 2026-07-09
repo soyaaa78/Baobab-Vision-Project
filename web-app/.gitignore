@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Mobile app release binary (too large for git; deploy separately)
+public/*.apk

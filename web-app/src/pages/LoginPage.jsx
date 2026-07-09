@@ -10,6 +10,7 @@ import {
   faKey,
   faUser,
   faLock,
+  faDownload,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   ADMIN_PASSWORD_POLICY_HINT,
@@ -655,6 +656,16 @@ function LoginPage() {
           </div>
         </div>
       </div>
+
+      <a
+        href="/baobab-vision.apk"
+        download
+        className="download-app-btn"
+        aria-label="Download mobile app"
+      >
+        <FontAwesomeIcon icon={faDownload} />
+        Download App
+      </a>
     </div>
   );
 }
